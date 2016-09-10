@@ -9,6 +9,8 @@ Main discussion (in Russian): [http://www.gamedev.ru/flame/forum/?id=217041](htt
 ## License
 Licensed under the MIT license, see License.txt for details.
 
+tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
+
 ## Credits
 
 ### Arctic Engine code:
