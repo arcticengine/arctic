@@ -22,3 +22,15 @@ Licensed under the MIT license, see License.txt for details.
 ## Code style
 
 Arctic Engine follows Google C++ Style Guide ([https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html))
+
+## Tools used
+
+### UML Editor
+
+* UML Designer 7.0.0
+([http://www.obeo.fr/](http://www.obeo.fr/))
+
+### IDE
+
+* Visual Studio Community 2015
+([https://www.visualstudio.com/](https://www.visualstudio.com/))
