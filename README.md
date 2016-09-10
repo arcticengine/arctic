@@ -4,7 +4,7 @@
 
 Arctic Engine is an open-source free game engine released under the MIT license. Arctic Engine is implemented in C++ and focuses on simplicity.
 
-Main discussion (in Russian): [http://www.gamedev.ru/projects/forum/?id=215627](http://www.gamedev.ru/projects/forum/?id=215627)
+Main discussion (in Russian): [http://www.gamedev.ru/flame/forum/?id=217041](http://www.gamedev.ru/flame/forum/?id=217041)
 
 ## License
 Licensed under the MIT license, see License.txt for details.
