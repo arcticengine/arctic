@@ -1,0 +1,6 @@
+{
+  "name": "Arctic",
+  "tagline": "Arctic Engine",
+  "body": "# Arctic Engine\r\n\r\n### Designed to give you control and not take anything away.\r\n\r\nArctic Engine is an open-source free game engine released under the MIT license. Arctic Engine is implemented in C++ and focuses on simplicity.\r\n\r\nMain discussion (in Russian): [http://www.gamedev.ru/flame/forum/?id=217041](http://www.gamedev.ru/flame/forum/?id=217041)\r\n\r\n## License\r\nLicensed under the MIT license, see License.txt for details.\r\n\r\ntl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)\r\n\r\n## Credits\r\n\r\n### Arctic Engine code:\r\n\r\n* FrostyMorning\r\n\r\n### Third-party components:\r\n\r\n* piLibs C++ (14/06/2016) by Íñigo Quílez ([http://www.iquilezles.org/code/piLibs/piLibs.htm](http://www.iquilezles.org/code/piLibs/piLibs.htm))\r\n\r\n## Code style\r\n\r\nArctic Engine follows Google C++ Style Guide ([https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html))\r\n\r\n## Tools used\r\n\r\n### UML Editor\r\n\r\n* UML Designer 7.0.0\r\n([http://www.obeo.fr/](http://www.obeo.fr/))\r\n\r\n### IDE\r\n\r\n* Visual Studio Community 2015\r\n([https://www.visualstudio.com/](https://www.visualstudio.com/))\r\n",
+  "note": "Don't delete this file! It's used internally to help with page regeneration."
+}
