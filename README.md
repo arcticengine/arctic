@@ -29,8 +29,7 @@ Arctic Engine follows Google C++ Style Guide ([https://google.github.io/stylegui
 
 ### UML Editor
 
-* UML Designer 7.0.0
-([http://www.obeo.fr/](http://www.obeo.fr/))
+* Visual Paradigm Community Edition ([https://www.visual-paradigm.com/download/community.jsp])https://www.visual-paradigm.com/download/community.jsp))
 
 ### IDE
 
