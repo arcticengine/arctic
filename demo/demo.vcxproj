@@ -149,6 +149,22 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\engine\arctic_input.h" />
+    <ClInclude Include="..\engine\arctic_math.h" />
+    <ClInclude Include="..\engine\arctic_types.h" />
+    <ClInclude Include="..\engine\bound2f.h" />
+    <ClInclude Include="..\engine\bound3f.h" />
+    <ClInclude Include="..\engine\frustum3f.h" />
+    <ClInclude Include="..\engine\mat22f.h" />
+    <ClInclude Include="..\engine\mat33f.h" />
+    <ClInclude Include="..\engine\mat44f.h" />
+    <ClInclude Include="..\engine\scalar_math.h" />
+    <ClInclude Include="..\engine\vec2f.h" />
+    <ClInclude Include="..\engine\vec2si32.h" />
+    <ClInclude Include="..\engine\vec3f.h" />
+    <ClInclude Include="..\engine\vec3si32.h" />
+    <ClInclude Include="..\engine\vec4f.h" />
+    <ClInclude Include="..\engine\vec4si32.h" />
     <ClInclude Include="demo.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
@@ -163,8 +179,8 @@
     <ResourceCompile Include="demo.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="demo.ico" />
-    <Image Include="small.ico" />
+    <Image Include="app_icon.ico" />
+    <Image Include="small_app_icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
