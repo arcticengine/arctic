@@ -15,7 +15,7 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 ### Arctic Engine code:
 
-* FrostyMorning
+* Huldra aka FrostyMorning
 
 ### Third-party components:
 
@@ -33,7 +33,7 @@ Arctic Engine follows Google C++ Style Guide ([https://google.github.io/stylegui
 
 ### IDE
 
-* Visual Studio Community 2015
+* Visual Studio Community 2017
 ([https://www.visualstudio.com/](https://www.visualstudio.com/))
 
 ### Python
