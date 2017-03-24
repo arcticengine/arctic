@@ -35,3 +35,7 @@ Arctic Engine follows Google C++ Style Guide ([https://google.github.io/stylegui
 
 * Visual Studio Community 2015
 ([https://www.visualstudio.com/](https://www.visualstudio.com/))
+
+### Python
+
+* Python 2.7 ([https://www.python.org/downloads/](https://www.python.org/downloads/))
