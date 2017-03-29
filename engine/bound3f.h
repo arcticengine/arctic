@@ -26,6 +26,8 @@
 
 #include <cmath>
 #include "engine/arctic_types.h"
+#include "engine/vec3f.h"
+#include "engine/mat44f.h"
 
 namespace arctic {
 
@@ -137,9 +139,9 @@ inline float Distance(const Bound3F &b, const Vec3F &p) {
   const Vec3F br = 0.5f
     * Vec3F(b.max_x - b.min_x, b.max_y - b.min_y, b.max_z - b.min_z);
 
-  const Vec3F d = abs(p - bc) - br;
+  const Vec3F d = Abs(p - bc) - br;
   return fminf(fmaxf(d.x, fmaxf(d.y, d.z)), 0.0f)
-    + Length(max(d, 0.0f));  // NOLINT
+    + Length(Max(d, 0.0f));  // NOLINT
 }
 
 inline bool Contains(Bound3F const &b, Vec3F const &p) {

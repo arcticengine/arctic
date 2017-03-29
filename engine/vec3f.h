@@ -26,6 +26,8 @@
 
 #include <cmath>
 #include "engine/arctic_types.h"
+#include "engine/vec2f.h"
+#include "engine/vec3si32.h"
 
 namespace arctic {
 
@@ -250,7 +252,7 @@ struct Vec3F {
   }
 };
 
-inline Vec3F operator+(Vec3F  const &v, float const &s) {
+inline Vec3F operator+(const Vec3F &v, float const &s) {
   return Vec3F(v.x + s, v.y + s, v.z + s);
 }
 inline Vec3F operator+(float const &s, Vec3F  const &v) {
@@ -387,26 +389,26 @@ inline Vec3F sqrt(const Vec3F &v) {
   return Vec3F(sqrtf(v.x), sqrtf(v.y), sqrtf(v.z));
 }
 
-inline Vec3F min(const Vec3F &v, float mi) {
+inline Vec3F Min(const Vec3F &v, float mi) {
   return Vec3F((v.x < mi) ? v.x : mi,
     (v.y < mi) ? v.y : mi,
     (v.z < mi) ? v.z : mi);
 }
-inline Vec3F max(const Vec3F &v, float ma) {
+inline Vec3F Max(const Vec3F &v, float ma) {
   return Vec3F((v.x > ma) ? v.x : ma,
     (v.y > ma) ? v.y : ma,
     (v.z > ma) ? v.z : ma);
 }
 inline Vec3F Clamp(const Vec3F &v, float mi, float ma) {
-  return max(min(v, ma), mi);
+  return Max(Min(v, ma), mi);
 }
 inline Vec3F Clamp01(const Vec3F &v) {
-  return max(min(v, 1.0f), 0.0f);
+  return Max(Min(v, 1.0f), 0.0f);
 }
 inline Vec3F Clamp1(const Vec3F &v) {
-  return max(min(v, 1.0f), -1.0f);  // NOLINT
+  return Max(Min(v, 1.0f), -1.0f);  // NOLINT
 }
-inline Vec3F abs(const Vec3F &v) {
+inline Vec3F Abs(const Vec3F &v) {
   return Vec3F(fabsf(v.x), fabsf(v.y), fabsf(v.z));
 }
 

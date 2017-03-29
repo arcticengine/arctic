@@ -23,7 +23,7 @@
 #ifndef ENGINE_ARCTIC_TYPES_H_
 #define ENGINE_ARCTIC_TYPES_H_
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace arctic {
 

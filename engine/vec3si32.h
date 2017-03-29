@@ -51,12 +51,12 @@ struct Vec3Si32 {
     y = s;
     z = s;
   }
-  explicit Vec3Si32(const Vec3F &v) {
+/*  explicit Vec3Si32(const Vec3F &v) {
     x = (Si32)v.x;
     y = (Si32)v.y;
     z = (Si32)v.z;
   }
-
+  */
   Si32 &operator[](Si32 i) {
     return element[i];
   }
@@ -64,48 +64,48 @@ struct Vec3Si32 {
     return element[i];
   }
 
-  Vec3Si32 &operator =(Vec3Si32 const &v) {
+  Vec3Si32 &operator =(const Vec3Si32 &v) {
     x = v.x;
     y = v.y;
     z = v.z;
     return *this;
   }
-  Vec3Si32 &operator+=(Si32 const &s) {
+  Vec3Si32 &operator+=(const Si32 &s) {
     x += s;
     y += s;
     return *this;
   }
-  Vec3Si32 &operator+=(Vec3Si32 const &v) {
+  Vec3Si32 &operator+=(const Vec3Si32 &v) {
     x += v.x;
     y += v.y;
     return *this;
   }
-  Vec3Si32 &operator-=(Si32 const &s) {
+  Vec3Si32 &operator-=(const Si32 &s) {
     x -= s;
     y -= s;
     return *this;
   }
-  Vec3Si32 &operator-=(Vec3Si32 const &v) {
+  Vec3Si32 &operator-=(const Vec3Si32 &v) {
     x -= v.x;
     y -= v.y;
     return *this;
   }
-  Vec3Si32 &operator*=(Si32 const &s) {
+  Vec3Si32 &operator*=(const Si32 &s) {
     x *= s;
     y *= s;
     return *this;
   }
-  Vec3Si32 &operator*=(Vec3Si32 const &v) {
+  Vec3Si32 &operator*=(const Vec3Si32 &v) {
     x *= v.x;
     y *= v.y;
     return *this;
   }
-  Vec3Si32 &operator/=(Si32 const &s) {
+  Vec3Si32 &operator/=(const Si32 &s) {
     x /= s;
     y /= s;
     return *this;
   }
-  Vec3Si32 &operator/=(Vec3Si32 const &v) {
+  Vec3Si32 &operator/=(const Vec3Si32 &v) {
     x /= v.x;
     y /= v.y;
     return *this;
@@ -156,13 +156,13 @@ inline Vec3Si32 operator/(Vec3Si32 const &a, Vec3Si32 const &b) {
   return Vec3Si32(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 
-inline Vec3Si32 min(const Vec3Si32 &v, Si32 mi) {
+inline Vec3Si32 Min(const Vec3Si32 &v, Si32 mi) {
   return Vec3Si32((v.x > mi) ? mi : v.x,
     (v.y > mi) ? mi : v.y,
     (v.z > mi) ? mi : v.z);
 }
 
-inline Vec3Si32 max(const Vec3Si32 &v, Si32 ma) {  // NOLINT
+inline Vec3Si32 Max(const Vec3Si32 &v, Si32 ma) {  // NOLINT
   return Vec3Si32((v.x < ma) ? ma : v.x,
     (v.y < ma) ? ma : v.y,
     (v.z < ma) ? ma : v.z);

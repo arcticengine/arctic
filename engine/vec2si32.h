@@ -136,29 +136,29 @@ inline Vec2Si32 operator*(Vec2Si32  const &v, Si32 const &s) {
 inline Vec2Si32 operator*(Si32 const &s, Vec2Si32  const &v) {
   return Vec2Si32(s * v.x, s * v.y);
 }
-inline Vec2Si32 operator*(Vec2Si32  const &a, Vec2Si32  const &b) {
+inline Vec2Si32 operator*(Vec2Si32 const &a, Vec2Si32 const &b) {
   return Vec2Si32(a.x * b.x, a.y * b.y);
 }
-inline Vec2Si32 operator/(Vec2Si32  const &v, Si32 const &s) {
+inline Vec2Si32 operator/(Vec2Si32 const &v, Si32 const &s) {
   return Vec2Si32(v.x / s, v.y / s);
 }
 inline Vec2Si32 operator/(Si32 const &s, Vec2Si32  const &v) {
   return Vec2Si32(s / v.x, s / v.y);
 }
-inline Vec2Si32 operator/(Vec2Si32  const &a, Vec2Si32  const &b) {
+inline Vec2Si32 operator/(Vec2Si32 const &a, Vec2Si32 const &b) {
   return Vec2Si32(a.x / b.x, a.y / b.y);
 }
 
 
-inline Vec2Si32 max(const Vec2Si32 &a, const Vec2Si32 &b) {
+inline Vec2Si32 Max(const Vec2Si32 &a, const Vec2Si32 &b) {
   return Vec2Si32((a.x > b.x) ? a.x : b.x, (a.y > b.y) ? a.y : b.y);
 }
 
-inline Vec2Si32 min(const Vec2Si32 &a, const Vec2Si32 &b) {
+inline Vec2Si32 Min(const Vec2Si32 &a, const Vec2Si32 &b) {
   return Vec2Si32((a.x < b.x) ? a.x : b.x, (a.y < b.y) ? a.y : b.y);
 }
 
-inline Vec2Si32 min(const Vec2Si32 &v, Si32 mi) {  // NOLINT
+inline Vec2Si32 Min(const Vec2Si32 &v, Si32 mi) {  // NOLINT
   return Vec2Si32((v.x > mi) ? mi : v.x, (v.y > mi) ? mi : v.y);
 }
 

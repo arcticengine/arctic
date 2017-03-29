@@ -26,6 +26,7 @@
 
 #include <cmath>
 #include "engine/arctic_types.h"
+#include "engine/vec2si32.h"
 
 namespace arctic {
 
