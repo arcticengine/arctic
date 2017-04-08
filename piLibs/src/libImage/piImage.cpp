@@ -10,7 +10,6 @@
 #include "formats/f_pcx.h"
 #include "formats/f_tga.h"
 #include "formats/f_jpg.h"
-#include "formats/f_png.h"
 
 namespace piLibs {
 
@@ -31,8 +30,7 @@ static FILEIO fileio[NUmFormatS] =
 	{TGA_Load, TGA_Save, L"tga" },
 	{GIF_Load, GIF_Save, L"gif" },
 	{BMP_Load, BMP_Save, L"bmp" },
-	{JPG_Load, 0,        L"jpg" },
-    {0 ,       PNG_Save, L"png" }
+	{JPG_Load, 0,        L"jpg" }
 
 };
 

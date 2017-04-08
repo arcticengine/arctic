@@ -262,8 +262,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="color\piIColor.cpp" />
-    <ClCompile Include="formats\f_png.cpp" />
-    <ClCompile Include="formats\tinyPngOut\tinyPngOut.cpp" />
     <ClCompile Include="piImage.cpp" />
     <ClCompile Include="processing\piImageCalcNormalMap.cpp" />
     <ClCompile Include="processing\piImageCanvasResize.cpp" />
@@ -323,7 +321,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="color\piIColor.h" />
-    <ClInclude Include="formats\f_png.h" />
     <ClInclude Include="formats\tinyPngOut\tinyPngOut.h" />
     <ClInclude Include="piImage.h" />
     <ClInclude Include="processing\piImageCalcNormalMap.h" />

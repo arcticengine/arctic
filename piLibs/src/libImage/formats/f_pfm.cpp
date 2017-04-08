@@ -1,11 +1,11 @@
-#include "image.h"
+#include "../piimage.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <math.h>
-#include "../../kernel/file.h"
-#include "../../kernel/sstr.h"
+#include "../../libSystem/pifile.h"
+#include "../../libSystem/pistr.h"
 
 static char *extractstring( char *str, FILE *fp )
 {
@@ -25,7 +25,7 @@ static char *extractstring( char *str, FILE *fp )
 
 
 
-int PFM_Load( IMAGE *bmp, const char *name )
+int PFM_Load( piLibs::piImage *bmp, const char *name )
 {
     FILE        *fp;
     char        str[256];
@@ -58,7 +58,7 @@ int PFM_Load( IMAGE *bmp, const char *name )
 }
 
 
-int PFM_Save( IMAGE *bmp, const char *name )
+int PFM_Save(piLibs::piImage *bmp, const char *name )
 {
     FILE        *fp;
     char        str[256];
