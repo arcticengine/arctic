@@ -39,3 +39,7 @@ Arctic Engine follows Google C++ Style Guide ([https://google.github.io/stylegui
 ### Python
 
 * Python 2.7 ([https://www.python.org/downloads/](https://www.python.org/downloads/))
+
+### Documentation generator
+
+* Doxygen 1.8.13 ([http://www.doxygen.org](http://www.doxygen.org))
