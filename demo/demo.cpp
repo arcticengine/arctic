@@ -250,7 +250,7 @@ KeyCode TranslateKeyCode(WPARAM word_param) {
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
-	KeyCode key = TranslateKeyCode(word_param);
+    KeyCode key = TranslateKeyCode(word_param);
 }
 
 //
