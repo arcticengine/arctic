@@ -122,7 +122,7 @@ inline Vec3F Transform(const Mat44F &m, const Vec3F &v) {
     v.x * m[8] + v.y * m[9] + v.z * m[10] + m[11]);
 }
 
-inline Vec3F Transform(Mat44F const &m, Vec3F const &v) {
+inline Vec3F Transform3(Mat44F const &m, Vec3F const &v) {
   return Vec3F(v.x * m[0] + v.y * m[1] + v.z * m[2],
     v.x * m[4] + v.y * m[5] + v.z * m[6],
     v.x * m[8] + v.y * m[9] + v.z * m[10]);

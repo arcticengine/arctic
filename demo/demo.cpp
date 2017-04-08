@@ -1,6 +1,6 @@
 // The MIT License(MIT)
 //
-// Copyright 2016 Huldra
+// Copyright 2016-2017 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -33,6 +33,7 @@
 #include <cmath>
 #include <random>
 
+#include "engine/arctic_input.h"
 #include "engine/vec3f.h"
 
 #pragma comment(lib, "OpenGL32.lib")
@@ -137,6 +138,121 @@ Ui32 g_texture_name;
 ByteArray g_texture_data;
 std::mt19937 g_twister;
 
+KeyCode TranslateKeyCode(WPARAM word_param) {
+    if (word_param >= 'A' && word_param <= 'Z') {
+        return static_cast<KeyCode>(word_param - 'A' + kKeyA);
+    }
+    if (word_param >= '0' && word_param <= '9') {
+        return static_cast<KeyCode>(word_param - '0' + kKey0);
+    }
+    if (word_param >= VK_F1 && word_param <= VK_F12) {
+        return static_cast<KeyCode>(word_param - VK_F1 + kKeyF1);
+    }
+    if (word_param >= VK_NUMPAD0 && word_param <= VK_NUMPAD9) {
+        return static_cast<KeyCode>(word_param - VK_NUMPAD0 + kKeyNumpad0);
+    }
+
+    switch (word_param) {
+    case VK_LEFT:
+        return kKeyLeft;
+    case VK_RIGHT:
+        return kKeyRight;
+    case VK_UP:
+        return kKeyUp;
+    case VK_DOWN:
+        return kKeyDown;
+    case VK_BACK:
+        return kKeyBackspace;
+    case VK_TAB:
+        return kKeyTab;
+    case VK_RETURN:
+        return kKeyEnter;
+    case VK_HOME:
+        return kKeyHome;
+    case VK_END:
+        return kKeyEnd;
+    case VK_PRIOR:
+        return kKeyPageUp;
+    case VK_NEXT:
+        return kKeyPageDown;
+    case VK_SHIFT:
+        return kKeyShift;
+    case VK_LSHIFT:
+        return kKeyLeftShift;
+    case VK_RSHIFT:
+        return kKeyRightShift;
+    case VK_CONTROL:
+        return kKeyControl;
+    case VK_LCONTROL:
+        return kKeyLeftControl;
+    case VK_RCONTROL:
+        return kKeyRightControl;
+    case VK_MENU:
+        return kKeyAlt;
+    case VK_LMENU:
+        return kKeyLeftAlt;
+    case VK_RMENU:
+        return kKeyRightAlt;
+    case VK_ESCAPE:
+        return kKeyEscape;
+    case VK_SPACE:
+        return kKeySpace;
+    case VK_PAUSE:
+        return kKeyPause;
+    case VK_NUMLOCK:
+        return kKeyNumLock;
+    case VK_SCROLL:
+        return kKeyScrollLock;
+    case VK_CAPITAL:
+        return kKeyCapsLock;
+    case VK_SNAPSHOT:
+        return kKeyPrintScreen;
+    case VK_INSERT:
+        return kKeyInsert;
+    case VK_DELETE:
+        return kKeyDelete;
+    case VK_DIVIDE:
+        return kKeyNumpadSlash;
+    case VK_MULTIPLY:
+        return kKeyNumpadAsterisk;
+    case VK_SUBTRACT:
+        return kKeyNumpadMinus;
+    case VK_ADD:
+        return kKeyNumpadPlus;
+    case VK_DECIMAL:
+        return kKeyNumpadPeriod;
+    case VK_OEM_COMMA:
+        return kKeyComma;
+    case VK_OEM_PERIOD:
+        return kKeyPeriod;
+    case VK_OEM_MINUS:
+        return kKeyMinus;
+    case VK_OEM_PLUS:
+        return kKeyEquals;
+    case VK_OEM_1:
+        return kKeySemicolon;
+    case VK_OEM_2:
+        return kKeySlash;
+    case VK_OEM_3:
+        return kKeyGraveAccent;
+    case VK_OEM_4:
+        return kKeyLeftSquareBracket;
+    case VK_OEM_5:
+        return kKeyBackslash;
+    case VK_OEM_6:
+        return kKeyRightSquareBracket;
+    case VK_OEM_7:
+        return kKeyApostrophe;
+    case VK_OEM_8:
+        return kKeySectionSign;
+    }
+    return kKeyUnknown;
+}
+
+void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
+	KeyCode key = TranslateKeyCode(word_param);
+}
+
 //
 //  Processes messages for the main window.
 //
@@ -150,13 +266,16 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         // TODO(Huldra): Add any drawing code that uses hdc here...
         EndPaint(window_handle, &ps);
     }
+    case WM_KEYUP:
+        arctic::OnKey(word_param, long_param, false);
+        break;
     case WM_KEYDOWN: {
+        arctic::OnKey(word_param, long_param, true);
         if (word_param == VK_ESCAPE) {
             PostQuitMessage(0);
         }
         break;
     }
-                        break;
     case WM_DESTROY: {
         PostQuitMessage(0);
         break;

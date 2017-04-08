@@ -1,7 +1,7 @@
 // The MIT License(MIT)
 //
 // Copyright 2015 - 2016 Inigo Quilez
-// Copyright 2016 Huldra
+// Copyright 2016 - 2017 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -30,29 +30,29 @@
 namespace arctic {
 
 enum KeyCode {
-  kKeyNone = 0,   // Indicates absence of any key, like SQL null
-  kKeyUnknown = 1,   // Indicates an unidentified key
+  kKeyNone = 0,   ///< Indicates absence of any key, like SQL null
+  kKeyUnknown = 1,   ///< Indicates an unidentified key
   // 2
   // 3
   kKeyLeft = 4,
   kKeyRight = 5,
   kKeyUp = 6,
   kKeyDown = 7,
-  kKeyBackspace = 8,   // ASCII Backspace
-  kKeyTab = 9,   // ASCII Horizontal Tab
+  kKeyBackspace = 8,   ///< ASCII Backspace
+  kKeyTab = 9,   ///< ASCII Horizontal Tab
 
   kKeyEnter = 13,  // ASCII Carriage Return
   kKeyHome = 14,
   kKeyEnd = 15,
   kKeyPageUp = 16,
   kKeyPageDown = 17,
-  kKeyShift = 18,  // TODO(Huldra): Check its existence
+  kKeyShift = 18,
   kKeyLeftShift = 19,
   kKeyRightShift = 20,
-  kKeyControl = 21,  // TODO(Huldra): Check its existence
+  kKeyControl = 21,
   kKeyLeftControl = 22,
   kKeyRightControl = 23,
-  kKeyAlt = 24,  // TODO(Huldra): Check its existence
+  kKeyAlt = 24,
   kKeyLeftAlt = 25,
   kKeyRightAlt = 26,
   kKeyEscape = 27,  // ASCII Escape
@@ -72,7 +72,7 @@ enum KeyCode {
   // 41
   // 42
   // 43
-  kKeyComa = 44,  // ','
+  kKeyComma = 44,  // ','
   kKeyMinus = 45,  // '-'
   kKeyPeriod = 46,  // '.'
   kKeySlash = 47,  // '//' ASCII Slash
@@ -151,13 +151,14 @@ enum KeyCode {
   kKeyNumpadAsterisk = 120,
   kKeyNumpadMinus = 121,
   kKeyNumpadPlus = 122,
-  kKeyNumpadEnter = 123,
-  kKeyNumpadPeriod = 124,
+  kKeyNumpadPeriod = 123,
+  // kKeyNumpadEnter = 124,  // Missing in windows (?)
   kKeyPrintScreen = 125,
   kKeyInsert = 126,
   kKeyDelete = 127,  // ASCII Delete
-
+  // [128, 244]
   kKeySectionSign = 245,  // ASCII Section sign
+  // [246, 255]
   kKeyCount = 256  // Key count, not a code
 };
 
