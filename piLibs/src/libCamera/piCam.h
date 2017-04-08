@@ -23,5 +23,6 @@ public:
 
     virtual piCamera *CreateCamera( int deviceID, int capID, int *xres, int *yres, int *rate ) = 0;
     virtual void      DestroyCamera( piCamera *cam ) = 0;
+	virtual ~piCameraMgr() {};
 };
 

@@ -58,29 +58,29 @@ void piTxtLogger::Printf( int messageId, int threadId, const wchar_t *file, cons
         {
         case 1:
             fwprintf( mFp, L"[%d]  %s::%s (%d) :", threadId, file, func, line );
-            fwprintf( mFp, str  );
+            fwprintf( mFp, L"%s", str  );
             fwprintf( mFp, L"\n" );
             break;
 
         case 2:
             fwprintf( mFp, L"[%d]  %s::%s (%d) :", threadId, file, func, line );
-            fwprintf( mFp, str  );
+            fwprintf( mFp, L"%s", str  );
             fwprintf( mFp, L"\n" );
             break;
 
         case 3:
             fwprintf( mFp, L"[%d]  %s::%s (%d) :", threadId, file, func, line );
-            fwprintf( mFp, str  );
+            fwprintf( mFp, L"%s", str  );
             fwprintf( mFp, L"\n" );
             break;
 
         case 4:
-            fwprintf( mFp, str  );
+            fwprintf( mFp, L"%s", str  );
             fwprintf( mFp, L"\n" );
             break;
 
         case 5:
-            fwprintf( mFp, str  );
+            fwprintf( mFp, L"%s", str  );
             fwprintf( mFp, L"\n" );
             break;
         }

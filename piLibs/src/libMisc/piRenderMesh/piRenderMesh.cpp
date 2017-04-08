@@ -175,7 +175,10 @@ bool piRenderMesh::InitFromMesh( piRenderer *renderer, const piMesh *mesh, piPri
 
     //------------------------------------------------------------
 
-    if (mesh->mFaceData.mType == piRMVEDT_Points && patchNum != piRMVEDT_Points ) return false;
+	if (mesh->mFaceData.mType == piRMVEDT_Points &&
+		patchNum != piPT_Point) {
+		return false;
+	}
     //if (mesh->mFaceData.mType == piRMVEDT_Polys  && patchNum != piPT_Triangle) return false;
 
 
@@ -210,7 +213,7 @@ bool piRenderMesh::InitFromMesh( piRenderer *renderer, const piMesh *mesh, piPri
 
     //------------------------------------------------------------
 
-    if (mesh->mFaceData.mType == piPT_Point)
+    if (mesh->mFaceData.mType == piRMVEDT_Points)
     {
         mIndexData.mType = piPT_Point;
 		mIndexData.mNumElementArrays = mesh->mFaceData.mNumIndexArrays;

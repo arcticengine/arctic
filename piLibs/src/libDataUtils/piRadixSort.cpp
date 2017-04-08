@@ -2,7 +2,7 @@
 
 namespace piLibs {
 
-static void radix( unsigned int byte, unsigned int N, unsigned int *source, unsigned int *dest )
+static void radix( unsigned int byte, unsigned int N, const unsigned int *source, unsigned int *dest )
 {
     int count[256];
     int index[256];

@@ -350,8 +350,10 @@ piWindowMgr piWindowMgr_Init( void )
 	me->mWindowClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
     me->hInstance = 0;
 
-    if( !RegisterClass(&me->mWindowClass) )
-        return( 0 );
+	if (!RegisterClass(&me->mWindowClass)) {
+		free(me);
+		return(0);
+	}
 
 	me->mNumWindows = 0;
 
@@ -460,8 +462,10 @@ piWindow piWindow_init( piWindowMgr vmgr, const wchar_t *title, int xo, int yo, 
         dmScreenSettings.dmPelsWidth  = xres;
         dmScreenSettings.dmPelsHeight = yres;
 
-        if( ChangeDisplaySettings(&dmScreenSettings,CDS_FULLSCREEN)!=DISP_CHANGE_SUCCESSFUL) return 0;
-
+		if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL) {
+			free(me);
+			return 0;
+		}
 		//EnumDisplayMonitors(NULL, NULL, MyInfoEnumProc, 0);
 /*
 
@@ -524,12 +528,16 @@ piWindow piWindow_init( piWindowMgr vmgr, const wchar_t *title, int xo, int yo, 
                                left,//(GetSystemMetrics(SM_CXSCREEN)-rec.right+rec.left)>>1,
                                top,//(GetSystemMetrics(SM_CYSCREEN)-rec.bottom+rec.top)>>1,
                                rec.right-rec.left, rec.bottom-rec.top, 0, 0, mgr->hInstance, 0 );
-    if( !me->hWnd )
-        return( 0 );
+	if (!me->hWnd) {
+		free(me);
+		return(0);
+	}
 
     me->hDC = GetDC( me->hWnd );
-    if( !me->hDC )
-        return( 0 );
+	if (!me->hDC) {
+		free(me);
+		return(0);
+	}
 
     me->mXres = xres;
     me->mYres = yres;

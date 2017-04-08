@@ -80,7 +80,8 @@ wchar_t *piFileName_ExtractName( const wchar_t *file )
 wchar_t *piFileName_ExtractNameWithoutExtension( const wchar_t *file )
 {
 	wchar_t	*res = piFileName_ExtractName( file );
-    
+	if (!res)
+		return nullptr;
 	int l = -1;
 	for( int i=0; res[i]; i++ )
 		if( res[i]=='.' )

@@ -74,7 +74,7 @@ void *piUOStringMap::Find(const piString * value) const
 
 piString *piUOStringMap::GetKey(unsigned int id) const
 {
-    if( id<0 || id>mNum ) return nullptr;
+    if( id>mNum ) return nullptr;
 
     unsigned char *ptr = mBuffer + id*mObjectsize;
 
@@ -83,7 +83,7 @@ piString *piUOStringMap::GetKey(unsigned int id) const
 
 void *piUOStringMap::GetValue(unsigned int id) const
 {
-    if (id<0 || id>mNum) return nullptr;
+    if ( id>mNum) return nullptr;
 
     unsigned char *ptr = mBuffer + id*mObjectsize;
 

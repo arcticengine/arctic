@@ -91,7 +91,7 @@ piMidiIn piMidiIn_Create( int id )
     if( midiInOpen(&me->mHandle,id,(DWORD)MyMidiInProc,(DWORD_PTR)me,CALLBACK_FUNCTION) != MMSYSERR_NOERROR )
     {
         me->mHandle = 0;
-        return false;
+        return nullptr;
     }
 
 	memset( me->mControllers, 0, 128*16 );

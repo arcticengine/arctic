@@ -74,11 +74,15 @@ piTextContainer piTextContainer_Create( int windowLen )
 
     me->mView.mLen = windowLen;
 
-    if (!me->mLines.Init(32, true))
+	if (!me->mLines.Init(32, true)) {
+		free(me);
 		return 0;
+	}
 
-	if( !allocateLine(me) )
+	if (!allocateLine(me)) {
+		free(me);
 		return 0;
+	}
 
 	me->mCursor[0] = 0;
 	me->mCursor[1] = 0;
@@ -178,7 +182,6 @@ void piTextContanier_SetView( piTextContainer vme, int y )
 	if( y<0 ) y=0;
 
     me->mView.mStart = y;
-	if( me->mView.mStart<0 ) me->mView.mStart=0;
     me->mView.mStop = me->mView.mStart + me->mView.mLen;
 }
 
@@ -194,7 +197,6 @@ void piTextContanier_ScrollView( piTextContainer vme, int dy )
 	if( y<0 ) y=0;
 
     me->mView.mStart = y;
-	if( me->mView.mStart<0 ) me->mView.mStart=0;
     me->mView.mStop = me->mView.mStart + me->mView.mLen;
 }
 
@@ -625,8 +627,7 @@ bool piTextContainer_NewKeys( void *vme, const piTextContainerKey key, const boo
                 }
             }
             else
-            {
-                const int len = line->mText.GetLength();
+            {          
                 const wchar_t *wstr = line->mText.GetS();
                 int found = -1;
                 for( int i=me->mCursor[1]-1; i>=1; i-- )

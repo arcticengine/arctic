@@ -172,6 +172,7 @@ NGLEXTINFO *piGL4X_Ext_Init( piRenderReporter *reporter)
         if( !info->myglfunc[i] )
         {
             reporter->Error( str, 0 );
+			free(info);
             return 0;              
         }
 

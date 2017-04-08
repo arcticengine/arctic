@@ -279,8 +279,8 @@ double piJSONReader::ParseDecimal(const wchar_t **data)
 
 
 // Macros to free an array/object
-#define FREE_ARRAY(x) { JSONArray::iterator iter; for (iter = x.begin(); iter != x.end(); iter++) { delete *iter; } }
-#define FREE_OBJECT(x) { JSONObject::iterator iter; for (iter = x.begin(); iter != x.end(); iter++) { delete (*iter).second; } }
+#define FREE_ARRAY(x) { JSONArray::iterator iter; for (iter = x.begin(); iter != x.end(); ++iter) { delete *iter; } }
+#define FREE_OBJECT(x) { JSONObject::iterator iter; for (iter = x.begin(); iter != x.end(); ++iter) { delete (*iter).second; } }
 
 /**
 * Parses a JSON encoded value to a JSONValue object
@@ -675,7 +675,7 @@ JSONValue::JSONValue(const JSONValue &m_source)
     {
                            JSONArray source_array = m_source.array_value;
                            JSONArray::iterator iter;
-                           for (iter = source_array.begin(); iter != source_array.end(); iter++)
+                           for (iter = source_array.begin(); iter != source_array.end(); ++iter)
                                array_value.push_back(new JSONValue(**iter));
                            break;
     }
@@ -684,7 +684,7 @@ JSONValue::JSONValue(const JSONValue &m_source)
     {
                             JSONObject source_object = m_source.object_value;
                             JSONObject::iterator iter;
-                            for (iter = source_object.begin(); iter != source_object.end(); iter++)
+                            for (iter = source_object.begin(); iter != source_object.end(); ++iter)
                             {
                                 std::wstring name = (*iter).first;
                                 object_value[name] = new JSONValue(*((*iter).second));
@@ -709,13 +709,13 @@ JSONValue::~JSONValue()
     if (type == JSONType_Array)
     {
         JSONArray::iterator iter;
-        for (iter = array_value.begin(); iter != array_value.end(); iter++)
+        for (iter = array_value.begin(); iter != array_value.end(); ++iter)
             delete *iter;
     }
     else if (type == JSONType_Object)
     {
         JSONObject::iterator iter;
-        for (iter = object_value.begin(); iter != object_value.end(); iter++)
+        for (iter = object_value.begin(); iter != object_value.end(); ++iter)
         {
             delete (*iter).second;
         }
@@ -983,7 +983,7 @@ std::vector<std::wstring> JSONValue::ObjectKeys() const
         {
             keys.push_back(iter->first);
 
-            iter++;
+            ++iter;
         }
     }
 
@@ -1151,7 +1151,7 @@ std::wstring JSONValue::StringifyString(const std::wstring &str)
             str_out += chr;
         }
 
-        iter++;
+        ++iter;
     }
 
     str_out += L"\"";

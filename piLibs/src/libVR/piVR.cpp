@@ -11,16 +11,20 @@ piVR * piVR::Create(HwType hw)
     if( hw==Oculus_Rift )
     {
         piVROculus * ome = new piVROculus();
-        if( !ome->Init() )
-            return nullptr;
+		if (!ome->Init()) {
+			delete ome;
+			return nullptr;
+		}
         me = ome;
     }
 
     if( hw==HTC_Vive)
     {
         piVRVive *ome = new piVRVive();
-        if (!ome->Init())
-            return nullptr;
+		if (!ome->Init()) {
+			delete ome;
+			return nullptr;
+		}
         me = ome;
     }
 

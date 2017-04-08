@@ -63,7 +63,7 @@ void piSkeleton::iUpdateBoneGlobalMatrix( piBone *me, piBone *parent )
 {
     mat4x4 m = me->mLocalMatrix;    
 
-    if( me !=nullptr ) m = parent->mGlobalMatrix * m;
+    if( parent !=nullptr ) m = parent->mGlobalMatrix * m;
 
     me->mGlobalMatrix = m;
 

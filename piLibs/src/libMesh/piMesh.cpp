@@ -928,8 +928,10 @@ int piMesh::Compact( void )
 	    {
 		    if( tmpHis[i] > 0 )
 		    {
-                if (!tmp.Append((char*)va->mBuffer + stride*i))
-				    return 0;
+				if (!tmp.Append((char*)va->mBuffer + stride*i)) {
+					free(tmpHis);
+					return 0;
+				}
 
 			    // change all references
 			    for( int j=0; j<numf; j++ )
@@ -948,8 +950,10 @@ int piMesh::Compact( void )
 
 	    free( va->mBuffer );
 	    va->mBuffer = malloc( num*stride );
-        if( !va->mBuffer )
-            return false;
+		if (!va->mBuffer) {
+			free(tmpHis);
+			return 0;
+		}
         memcpy(va->mBuffer, tmp.GetAddress(0), num*stride);
 	    va->mNum = num;
 	    va->mMax = num;

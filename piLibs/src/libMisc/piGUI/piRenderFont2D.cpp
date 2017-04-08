@@ -467,7 +467,7 @@ void piRenderFont2D::PrintsSyntax( piRenderer *renderer, float x, float y, float
     const float ixres = 1.0f / (float)xres;
 	const float csale = (mFontType==IQRFONT_COURIER) ? 0.0f : 16.0f/(float)xres;
 	
-    float curColor[4] = { 1.0f, 0.4f, 0.3f, 1.0f };
+    //float curColor[4] = { 1.0f, 0.4f, 0.3f, 1.0f };
 
 	float ita = 0.0f;
 	if( doItalic )

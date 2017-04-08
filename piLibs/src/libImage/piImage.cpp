@@ -130,6 +130,7 @@ static int iGetBpp(piImage::Format type)
     case piImage::FORMAT_I_RGBA:    return(4);
     case piImage::FORMAT_F_GREY:    return(4);
     case piImage::FORMAT_F_RGB:     return(12);
+	case piImage::FORMAT_F_RG:      return(8);
     case piImage::FORMAT_F_RGBA:    return(16);
     }
 
@@ -554,7 +555,7 @@ bool piImage::Compatibles( const piImage *b )
 int piImage::Clone( const piImage *b )
 {
     if( !Compatibles( b ) )
-        return false;
+        return 0;
 
     const int bpp = iGetBpp(mFormat);
     

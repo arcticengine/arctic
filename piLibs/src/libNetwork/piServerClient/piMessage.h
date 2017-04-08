@@ -67,8 +67,8 @@ private:
     int      mNumMessages;
     int      mWritePtr;
     int      mMaxSize;
-    char    *mBuffer;
     int      mReadPtr;
+	char    *mBuffer;
 
 };
 

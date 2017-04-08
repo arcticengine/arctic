@@ -72,7 +72,7 @@ public:
     virtual void BeginFrame( int *texIndexLeft, int *texIndexRight, bool *outNeedsMipMapping) = 0;
     virtual void EndFrame( void ) = 0;
     //virtual void Haptic(int id, float frequency, float amplitude, float duration) = 0;
-
+	virtual ~piVRHMD() {};
 };
 
 class piVR
@@ -89,6 +89,7 @@ public:
 
     virtual piVRHMD  *CreateHmd(int deviceID, float pixelDensity) = 0;
     virtual void      DestroyHmd(piVRHMD * me) = 0;
+	virtual ~piVR() {};
 };
 
 

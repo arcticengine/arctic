@@ -82,8 +82,11 @@ piSoundInput piSoundInput_Create( piSoundLibMgr memgr, int deviceID, int capID )
 	if( !me )
 		return 0;
 
-	if( !BASS_RecordInit(deviceID) )
+	if (!BASS_RecordInit(deviceID)) {
+		free(me);
 		return 0;
+	}
+
 
     me->deviceID = deviceID;
 	me->inputID = -1;
@@ -97,8 +100,10 @@ piSoundInput piSoundInput_Create( piSoundLibMgr memgr, int deviceID, int capID )
 		}
     }
 
-    if( me->inputID==-1 )
-        return 0;
+	if (me->inputID == -1) {
+		free(me);
+		return 0;
+	}
 
 	return me;
 }
@@ -184,8 +189,10 @@ piSoundOutput piSoundOutput_Create( piSoundLibMgr memgr, int deviceID, int capID
 	if( !me )
 		return 0;
 
-	if( !BASS_Init(-1,44100,0,0,NULL) )
+	if (!BASS_Init(-1, 44100, 0, 0, NULL)) {
+		free(me);
 		return 0;
+	}
 
     me->deviceID = deviceID;
 	me->inputID = -1;
@@ -268,8 +275,10 @@ piSoundSynth piSoundSynth_Create( piSoundLibMgr memgr, piSoundSynth_Callback fun
 	BASS_SetConfig( BASS_CONFIG_UPDATEPERIOD, period );
 
 	// setup output - get latency
-	if( !BASS_Init(-1,44100,BASS_DEVICE_LATENCY,0,NULL))
-		return( 0 );
+	if (!BASS_Init(-1, 44100, BASS_DEVICE_LATENCY, 0, NULL)) {
+		free(me);
+		return(0);
+	}
     BASS_INFO info;
 	BASS_GetInfo( &info );
 

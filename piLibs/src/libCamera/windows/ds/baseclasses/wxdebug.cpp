@@ -1298,7 +1298,7 @@ void WINAPI DisplayType(LPCTSTR label, const AM_MEDIA_TYPE *pmtIn)
         DisplayRECT(TEXT("Target rectangle"),pVideoInfo->rcTarget);
         DisplayBITMAPINFO(HEADER(pmtIn->pbFormat));
 
-    } if (pmtIn->formattype == FORMAT_VideoInfo2) {
+    } else if (pmtIn->formattype == FORMAT_VideoInfo2) {
 
         VIDEOINFOHEADER2 *pVideoInfo2 = (VIDEOINFOHEADER2 *)pmtIn->pbFormat;
 

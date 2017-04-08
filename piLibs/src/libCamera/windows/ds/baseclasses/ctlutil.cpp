@@ -1275,10 +1275,10 @@ HRESULT CSourceSeeking::SetPositions( __inout_opt LONGLONG * pCurrent,
 
 
     HRESULT hr = S_OK;
-    if(SUCCEEDED(hr) && StopPosBits) {
+    if(StopPosBits) {
         hr = ChangeStop();
     }
-    if(StartPosBits) {
+    if(SUCCEEDED(hr) && StartPosBits) {
         hr = ChangeStart();
     }
 

@@ -1657,11 +1657,11 @@ HRESULT CImageAllocator::CreateDIB(LONG InSize,DIBDATA &DibData)
     // may contain a source palette. When we do the BitBlt drawing operation
     // the target display device may contain a different palette (we may not
     // have the focus) in which case GDI will do after the palette mapping
-
+	if (m_pMediaType == NULL) {
+		DbgBreak("Invalid media type");
+	}
     pbmi = (BITMAPINFO *) HEADER(m_pMediaType->Format());
-    if (m_pMediaType == NULL) {
-        DbgBreak("Invalid media type");
-    }
+   
 
     hBitmap = CreateDIBSection((HDC) NULL,          // NO device context
                                pbmi,                // Format information

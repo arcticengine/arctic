@@ -700,8 +700,10 @@ piCamera *piCameraMgrWin::CreateCamera( int deviceID, int capID, int *xres, int 
 
     piCameraWin *cam = new piCameraWin();
 
-    if( !cam->Init( dev, capID, xres, yres, rate ) )
-        return nullptr;
+	if (!cam->Init(dev, capID, xres, yres, rate)) {
+		delete cam;
+		return nullptr;
+	}
 
     return cam;
 }

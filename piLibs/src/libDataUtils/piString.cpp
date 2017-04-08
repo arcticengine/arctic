@@ -25,9 +25,6 @@ piString::~piString()
 
 int piString::Init( unsigned long max )
 {
-    if( max<0 )
-        return( 0 );
-
     mBuffer = (wchar_t*)malloc( (max+1)*sizeof(wchar_t) );
     if( !mBuffer )
         return( 0 );
@@ -123,7 +120,7 @@ int piString::InitCopyW( const wchar_t *ori )
 	    return( 0 );
 	mNum = len;
     if( len>0 )
-	memcpy( mBuffer, ori, len*sizeof(wchar_t) );
+	    memcpy( mBuffer, ori, len*sizeof(wchar_t) );
 	mBuffer[len] = 0;
 	return( 1 );
 }
@@ -380,7 +377,6 @@ void piString::Reset( void )
 
 const wchar_t piString::GetC(const unsigned int n) const
 {
-    if( n<0 ) return 0;
     if( n>=mNum ) return( 0 );
 
     return mBuffer[n];

@@ -50,6 +50,7 @@ public:
 	virtual bool Init( const wchar_t *path, const piLogStartInfo *info ) = 0;
     virtual void End( void ) = 0;
 	virtual void Printf( int messageId, int threadId, const wchar_t *file, const wchar_t *func, int line, int type, const wchar_t *str ) = 0;
+	virtual ~piLogger() {};
 };
 
 class piLog

@@ -27,7 +27,7 @@ char *piFile::ReadString(char *buffer, int num)
 
 void piFile::Prints(const wchar_t *str)
 {
-    fwprintf( (FILE*)mInternal, str);
+    fwprintf( (FILE*)mInternal, L"%s", str);
 }
 
 void piFile::Printf(const wchar_t *format, ...)

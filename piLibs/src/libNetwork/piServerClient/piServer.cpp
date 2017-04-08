@@ -26,8 +26,7 @@ int piServer::myServerThread(void *data)
     piServer *me = (piServer*)data;
     piLog * log = me->mLog;
 
-    bool done = false;
-    while( !done )
+    while( true )
     {
         wchar_t buf[256];
         piTcpIpSocket newSocket;
@@ -37,7 +36,7 @@ int piServer::myServerThread(void *data)
         if (!piTcpIp_Accept(&me->mSocket, &newSocket))
         {
             log->Printf(LT_ERROR, L"Could not accept connection");
-            return false;
+            return 0;
         }
 
         if (!me->AddClient(&newSocket))
@@ -172,12 +171,10 @@ bool piServer::DelClient(int id)
 {
     mLog->Printf( LT_MESSAGE, L"Deleting client %d", id);
 
-    bool wasAlive = true;
-
     piMutex_Lock(mMutex);
 
     SClient *client = (SClient*)mClients.GetAddress(id);
-    wasAlive = client->mUsed;
+    bool wasAlive = client->mUsed;
     if( wasAlive )
     {
         piTcpIp_Close(&client->mSocket);
@@ -200,8 +197,7 @@ int piServer::myServerClientThread(void *data)
     SClient *me = (SClient*)data;
     piLog * log = me->mServer->mLog;
 
-    bool done = false;
-    while (!done)
+    while (true)
     {
         piMessage msg;
 

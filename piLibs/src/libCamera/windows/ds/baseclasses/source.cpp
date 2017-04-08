@@ -66,7 +66,7 @@ CSource::~CSource()
     /*  Free our pins and pin array */
     while (m_iPins != 0) {
 	// deleting the pins causes them to be removed from the array...
-	delete m_paStreams[m_iPins - 1];
+	    delete m_paStreams[m_iPins - 1];
     }
 
     ASSERT(m_paStreams == NULL);

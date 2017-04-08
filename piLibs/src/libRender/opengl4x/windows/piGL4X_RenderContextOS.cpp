@@ -172,7 +172,7 @@ int piGL4X_RenderContext::Create( const void **hwnd, int numwindows, bool disabl
         {
             PFNWGLSWAPINTERVALFARPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALFARPROC)wglGetProcAddress("wglSwapIntervalEXT");
             if( wglSwapIntervalEXT )
-                wglSwapIntervalEXT(false);
+                wglSwapIntervalEXT(0);
         }
 
 

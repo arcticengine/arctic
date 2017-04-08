@@ -77,7 +77,7 @@ void *piUOIntMap::Find(const uint32 key, int *eleID) const
 
 uint32 piUOIntMap::GetKey(unsigned int id) const
 {
-    if( id<0 || id>mNum ) return -1;
+    if(id>mNum ) return -1;
 
     unsigned char *ptr = mBuffer + id*mObjectsize;
 
@@ -86,7 +86,7 @@ uint32 piUOIntMap::GetKey(unsigned int id) const
 
 void *piUOIntMap::GetValue(unsigned int id) const
 {
-    if (id<0 || id>mNum) return nullptr;
+    if ( id>mNum) return nullptr;
 
     unsigned char *ptr = mBuffer + id*mObjectsize;
 

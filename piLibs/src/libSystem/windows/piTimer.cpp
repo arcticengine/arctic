@@ -24,12 +24,11 @@ typedef struct
 typedef struct
 {
     ALARM           *pAlarms;
-    int             pMaxAlarms;
-    int             pNumAlarms;
-
     __int64			pFreq;
     __int64	        hto;
     unsigned int		lto;
+	int             pMaxAlarms;
+	int             pNumAlarms;
 }iIqTimerMgr;
 
 
@@ -83,10 +82,11 @@ piTimer::Alarm piTimer::CreateAlarm( DoAlarmnCallback func, void *data, int delt
     ALARM   *al;
     if( id==-1 )
     {
-        if( me->pNumAlarms >= me->pNumAlarms ) return 0;
+		if (me->pNumAlarms >= me->pMaxAlarms) {
+			return 0;
+		}
         al = me->pAlarms + me->pNumAlarms;
         me->pNumAlarms++;
-
     }
     else
     {
@@ -147,8 +147,10 @@ bool piTimer::Init( void )
     me->pNumAlarms = 0;
     me->pMaxAlarms = 1024;
     me->pAlarms = (ALARM*)malloc(me->pMaxAlarms*sizeof(ALARM) );
-    if( !me->pAlarms )
-        return false;
+	if (!me->pAlarms) {
+		free(me);
+		return false;
+	}
     memset(me->pAlarms, 0, me->pMaxAlarms*sizeof(ALARM) );
 
     mImplementation = me;

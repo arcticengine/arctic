@@ -77,11 +77,11 @@ typedef struct
 {
     piTextureType   mType;
     piTextureFormat mFormat;
-    bool            mCompressed;
     int             mXres;
     int             mYres;
     int             mZres;
     int             mMultisample;
+	bool            mCompressed;
 unsigned int mDeleteMe;
 }piTextureInfo;
 
