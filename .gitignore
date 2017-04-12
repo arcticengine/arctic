@@ -27,3 +27,6 @@
 *.exe
 *.out
 *.app
+
+# Visual studio hidden stuff
+.vs
