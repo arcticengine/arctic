@@ -32,9 +32,12 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <memory>
 
 #include "engine/arctic_input.h"
+#include "engine/byte_array.h"
 #include "engine/vec3f.h"
+#include "engine/easy.h"
 
 #pragma comment(lib, "OpenGL32.lib")
 #pragma comment(lib, "glu32.lib")
@@ -44,65 +47,6 @@
 // Forward declarations of functions included in this code module:
 
 namespace arctic {
-
-class ByteArray {
- private:
-    Ui64 allocated_size_;
-    Ui64 size_;
-    Ui8 *data_;
-
- public:
-    ByteArray() {
-        allocated_size_ = 128;
-        size_ = 0;
-        data_ = static_cast<Ui8*>(GlobalAlloc(GMEM_FIXED,
-            static_cast<SIZE_T>(allocated_size_)));
-    }
-
-    explicit ByteArray(Ui64 size) {
-        allocated_size_ = size;
-        size_ = 0;
-        data_ = static_cast<Ui8*>(GlobalAlloc(GMEM_FIXED,
-            static_cast<SIZE_T>(allocated_size_)));
-    }
-
-    ~ByteArray() {
-        allocated_size_ = 0;
-        size_ = 0;
-        GlobalFree(data_);
-        data_ = nullptr;
-    }
-
-    void* GetVoidData() const {
-        return static_cast<void*>(data_);
-    }
-
-    Ui8* GetData() const {
-        return data_;
-    }
-
-    void Resize(Ui64 size) {
-        if (size <= allocated_size_) {
-            size_ = size;
-        } else {
-            Ui8 *data = static_cast<Ui8*>(GlobalAlloc(GMEM_FIXED,
-                static_cast<SIZE_T>(size)));
-            memcpy(data, data_, static_cast<size_t>(size_));
-            GlobalFree(data_);
-            allocated_size_ = size;
-            size_ = size;
-            data_ = data;
-        }
-    }
-
-    void Reserve(Ui64 size) {
-        if (size > size_) {
-            Ui64 oldSize = size_;
-            Resize(size);
-            Resize(oldSize);
-        }
-    }
-};
 
 class Rgb {
  public:
@@ -540,7 +484,7 @@ void Draw() {
         }
     }
 
-    Draw2d(g_width, g_height, g_texture_data.GetData());
+    Draw2d(g_width, g_height, g_texture_data.data());
 }
 
 }  // namespace arctic
@@ -571,3 +515,81 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     return static_cast<int>(msg.wParam);
 }
 
+using namespace arctic;
+using namespace arctic::easy;
+
+Sprite g_wall;
+Sprite g_hero;
+Sprite g_floor;
+Sound g_step;
+
+Si32 g_maze[16][10];
+Vec2Si32 g_hero_pos(1, 1);
+
+void Init() {
+    ResizeScreen(320, 200);
+
+    g_wall.Load("wall.tif");
+    g_hero.Load("hero.tif");
+    g_floor.Load("floor.tif");
+    g_step.Load("step.wav");
+
+    for (Si32 x = 0; x < 16; ++x) {
+        for (Si32 y = 0; y < 10; ++y) {
+            if (x == 0 || x == 15 || y == 0 || y == 9) {
+                g_maze[x][y] = 0;
+            } else {
+                g_maze[x][y] = 1;
+            }
+        }
+    }
+
+    g_hero_pos = Vec2Si32(1, 1);
+}
+
+void Update() {
+    Vec2Si32 step(0, 0);
+    if (IsKey(kKeyUp) || IsKey("w")) {
+        step.y = 1;
+    }
+    if (IsKey(kKeyDown) || IsKey("s")) {
+        step.y = -1;
+    }
+    if (IsKey(kKeyLeft) || IsKey("a")) {
+        step.x = 1;
+        step.y = 0;
+    }
+    if (IsKey(kKeyRight) || IsKey("d")) {
+        step.x = -1;
+        step.y = 0;
+    }
+
+    if (g_maze[g_hero_pos.x + step.x][g_hero_pos.y + step.y] == 1) {
+        g_step.Play();
+        g_hero_pos += step;
+    }
+}
+
+void Render() {
+    for (Si32 x = 0; x < 16; ++x) {
+        for (Si32 y = 0; y < 10; ++y) {
+            if (g_maze[x][y] == 0) {
+                g_wall.Draw(x * 20, y * 20);
+            } else {
+                g_floor.Draw(x * 20, y * 20);
+            }
+            if (x == g_hero_pos.x && y == g_hero_pos.y) {
+                g_hero.Draw(x * 20, y * 20);
+            }
+        }
+    }
+}
+
+void EasyMain() {
+    Init();
+    while (!IsKey(kKeyEscape)) {
+        Update();
+        Render();
+        ShowFrame();
+    }
+}
