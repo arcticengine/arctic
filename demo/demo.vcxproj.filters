@@ -99,6 +99,9 @@
     <ClInclude Include="..\engine\byte_array.h">
       <Filter>Source Files\engine</Filter>
     </ClInclude>
+    <ClInclude Include="..\engine\arctic_platform_def.h">
+      <Filter>Source Files\engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="demo.cpp">
@@ -120,6 +123,9 @@
       <Filter>Source Files\engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\byte_array.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_windows.cpp">
       <Filter>Source Files\engine</Filter>
     </ClCompile>
   </ItemGroup>

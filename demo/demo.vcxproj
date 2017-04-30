@@ -170,6 +170,7 @@
     <ClInclude Include="..\engine\mat22f.h" />
     <ClInclude Include="..\engine\mat33f.h" />
     <ClInclude Include="..\engine\mat44f.h" />
+    <ClInclude Include="..\engine\arctic_platform_def.h" />
     <ClInclude Include="..\engine\rgba.h" />
     <ClInclude Include="..\engine\scalar_math.h" />
     <ClInclude Include="..\engine\vec2f.h" />
@@ -183,6 +184,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\engine\arctic_platform_windows.cpp" />
     <ClCompile Include="..\engine\byte_array.cpp" />
     <ClCompile Include="..\engine\easy.cpp" />
     <ClCompile Include="..\engine\easy_sound.cpp" />
