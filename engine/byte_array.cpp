@@ -24,18 +24,20 @@
 
 #include <memory>
 
+#include "engine/arctic_platform.h"
+
 namespace arctic {
 
 ByteArray::ByteArray() {
     allocated_size_ = 128;
     size_ = 0;
-    data_ = static_cast<Ui8*>(malloc(allocated_size_));
+    data_ = static_cast<Ui8*>(malloc(static_cast<size_t>(allocated_size_)));
 }
 
 ByteArray::ByteArray(Ui64 size) {
     allocated_size_ = size;
     size_ = 0;
-    data_ = static_cast<Ui8*>(malloc(allocated_size_));
+    data_ = static_cast<Ui8*>(malloc(static_cast<size_t>(allocated_size_)));
 }
 
 ByteArray::~ByteArray() {
@@ -61,7 +63,8 @@ void ByteArray::Resize(Ui64 size) {
     if (size <= allocated_size_) {
         size_ = size;
     } else {
-        Ui8 *data = static_cast<Ui8*>(malloc(size));
+        Ui8 *data = static_cast<Ui8*>(malloc(static_cast<size_t>(size)));
+        Check(data != nullptr, "Allocaton error.");
         memcpy(data, data_, static_cast<size_t>(size_));
         free(data_);
         allocated_size_ = size;

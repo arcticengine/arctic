@@ -36,6 +36,7 @@
 #include <memory>
 
 #include "engine/arctic_input.h"
+#include "engine/arctic_platform.h"
 #include "engine/byte_array.h"
 #include "engine/vec3f.h"
 
@@ -45,8 +46,21 @@
 #define MAX_LOADSTRING 255
 
 namespace arctic {
+
+void Check(bool condition, const char *error_message) {
+    if (condition) {
+        return;
+    }
+    Fatal(error_message);
+}
+
+void Fatal(const char *message) {
+    MessageBox(NULL, message, "Arctic Engine", MB_OK | MB_ICONERROR);
+    exit(1);
+}
+
 class Rgb {
-public:
+ public:
     Ui8 r;
     Ui8 g;
     Ui8 b;
@@ -233,11 +247,16 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
 // Creates main window.
 //
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show) {
-    WCHAR title_bar_text[MAX_LOADSTRING];
-    WCHAR window_class_name[MAX_LOADSTRING];
+    // WCHAR title_bar_text[MAX_LOADSTRING];
+    // WCHAR window_class_name[MAX_LOADSTRING];
 
-    LoadStringW(instance_handle, IDS_APP_TITLE, title_bar_text, MAX_LOADSTRING);
-    LoadStringW(instance_handle, IDC_DEMO, window_class_name, MAX_LOADSTRING);
+    // LoadStringW(instance_handle, IDS_APP_TITLE,
+    //     title_bar_text, MAX_LOADSTRING);
+    // LoadStringW(instance_handle, IDC_DEMO,
+    //     window_class_name, MAX_LOADSTRING);
+
+    WCHAR title_bar_text[] = {L"Arctic Engine"};
+    WCHAR window_class_name[] = {L"ArcticEngineWindowClass"};
 
     g_width = GetSystemMetrics(SM_CXSCREEN);
     g_height = GetSystemMetrics(SM_CYSCREEN);
@@ -268,19 +287,20 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show) {
     }
 
     WNDCLASSEXW wcex;
+    memset(&wcex, 0, sizeof(wcex));
     wcex.cbSize = sizeof(WNDCLASSEX);
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = arctic::WndProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = instance_handle;
-    wcex.hIcon = LoadIcon(instance_handle, MAKEINTRESOURCE(IDI_APP_ICON));
+    //  wcex.hIcon = LoadIcon(instance_handle, MAKEINTRESOURCE(IDI_APP_ICON));
     wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_DEMO);
+    //  wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_DEMO);
     wcex.lpszClassName = window_class_name;
-    wcex.hIconSm = LoadIcon(wcex.hInstance,
-        MAKEINTRESOURCE(IDI_SMALL_APP_ICON));
+    // wcex.hIconSm = LoadIcon(wcex.hInstance,
+    //      MAKEINTRESOURCE(IDI_SMALL_APP_ICON));
 
     ATOM register_class_result = RegisterClassExW(&wcex);
 
@@ -297,26 +317,31 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show) {
 
     HDC hdc = GetDC(window_handle);
     if (!hdc) {
+        Fatal("Can't get the Device Context. Code: WIN01.");
         return false;
     }
     unsigned int pixel_format = ChoosePixelFormat(hdc, &pfd);
     if (!pixel_format) {
+        Fatal("Can't choose the Pixel Format. Code: WIN02.");
         return false;
     }
 
     BOOL is_ok = SetPixelFormat(hdc, pixel_format, &pfd);
     if (!is_ok) {
+        Fatal("Can't set the Pixel Format. Code: WIN03.");
         return false;
     }
 
     HGLRC hrc = wglCreateContext(hdc);
 
     if (!hrc) {
+        Fatal("Can't create the GL Context. Code: WIN04.");
         return false;
     }
 
     is_ok = wglMakeCurrent(hdc, hrc);
     if (!is_ok) {
+        Fatal("Can't make the GL Context current. Code: WIN05.");
         return false;
     }
 
@@ -351,6 +376,16 @@ void Swap() {
     wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
 }
 
+ByteArray gVisibleVerts;
+ByteArray gVisibleNormals;
+ByteArray gTexCoords;
+ByteArray gVisibleIndices;
+
+Si32 gVerts = 0;
+Si32 gNormals = 0;
+Si32 gTex = 0;
+Si32 gIndices = 0;
+
 void Draw2d(Si32 g_width, Si32 g_height, Ui8 *data) {
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, g_width, g_height, GL_RGB,
         GL_UNSIGNED_BYTE, static_cast<GLvoid*>(data));
@@ -371,15 +406,6 @@ void Draw2d(Si32 g_width, Si32 g_height, Ui8 *data) {
     glBindTexture(GL_TEXTURE_2D, g_texture_name);
 
     // draw quad
-    ByteArray gVisibleVerts;
-    ByteArray gVisibleNormals;
-    ByteArray gTexCoords;
-    ByteArray gVisibleIndices;
-
-    Si32 gVerts = 0;
-    Si32 gNormals = 0;
-    Si32 gTex = 0;
-    Si32 gIndices = 0;
 
     gVisibleVerts.Resize(16 << 20);
     gVisibleNormals.Resize(16 << 20);

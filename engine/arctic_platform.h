@@ -20,17 +20,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_ARCTIC_PLATFORM_DEF_H_
-#define ENGINE_ARCTIC_PLATFORM_DEF_H_
+#ifndef ENGINE_ARCTIC_PLATFORM_H_
+#define ENGINE_ARCTIC_PLATFORM_H_
 
 #include "engine/arctic_types.h"
 
-#ifdef _WIN32
-#define ARCTIC_PLATFORM_WINDOWS
-#endif  // _WIN32
-
 namespace arctic {
+
+void Check(bool condition, const char *error_message);
+void Fatal(const char *error_message);
 
 }  // namespace arctic
 
-#endif  // ENGINE_ARCTIC_PLATFORM_DEF_H_
+#endif  // ENGINE_ARCTIC_PLATFORM_H_
