@@ -46,6 +46,9 @@ void Sprite::Clear() {
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y) {
+    if (!sprite_instance) {
+        return;
+    }
     Draw(to_x, to_y, sprite_instance->width(), sprite_instance->height(),
         0, 0, sprite_instance->width(), sprite_instance->height());
 }

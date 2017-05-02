@@ -134,6 +134,9 @@
     <ClCompile Include="..\engine\arctic_platform_windows.cpp">
       <Filter>Source Files\engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\arctic_input.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="demo.rc">

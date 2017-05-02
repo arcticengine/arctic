@@ -28,7 +28,7 @@
 using namespace arctic;
 using namespace arctic::easy;
 
-/*Sprite g_wall;
+Sprite g_wall;
 Sprite g_hero;
 Sprite g_floor;
 Sound g_step;
@@ -43,6 +43,13 @@ void Init() {
     g_hero.Load("hero.tif");
     g_floor.Load("floor.tif");
     g_step.Load("step.wav");
+
+    // TODO(Huldra): Remove the following block:
+    {
+        g_wall.Create(20, 20);
+        g_hero.Create(20, 20);
+        g_floor.Create(20, 20);
+    }
 
     for (Si32 x = 0; x < 16; ++x) {
         for (Si32 y = 0; y < 10; ++y) {
@@ -100,13 +107,6 @@ void EasyMain() {
     while (!IsKey(kKeyEscape)) {
         Update();
         Render();
-        ShowFrame();
-    }
-}
-*/
-
-void EasyMain() {
-    while (true) {
         ShowFrame();
     }
 }

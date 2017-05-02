@@ -196,6 +196,11 @@ KeyCode TranslateKeyCode(WPARAM word_param) {
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
     KeyCode key = TranslateKeyCode(word_param);
+    InputMessage msg;
+    msg.kind = InputMessage::kKeyboard;
+    msg.keyboard.key = key;
+    msg.keyboard.key_state = (is_down ? 1 : 2);
+    PushInputMessage(msg);
 }
 
 //
@@ -215,18 +220,11 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         arctic::OnKey(word_param, long_param, false);
         break;
     case WM_KEYDOWN:
-    {
         arctic::OnKey(word_param, long_param, true);
-        if (word_param == VK_ESCAPE) {
-            PostQuitMessage(0);
-        }
         break;
-    }
     case WM_DESTROY:
-    {
         PostQuitMessage(0);
         break;
-    }
     default:
         return DefWindowProc(window_handle, message, word_param, long_param);
     }

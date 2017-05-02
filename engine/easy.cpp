@@ -27,6 +27,8 @@
 namespace arctic {
 namespace easy {
 
+static Ui32 g_key_state[kKeyCount] = {0};
+
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color);
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b);
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
@@ -37,11 +39,20 @@ void ShowFrame() {
     // TODO(Huldra): Implement this
     Draw();
     ProcessUserInput();
+
+    InputMessage message;
+    while (PopInputMessage(&message)) {
+        if (message.kind == InputMessage::kKeyboard) {
+            g_key_state[message.keyboard.key] = message.keyboard.key_state;
+        }
+    }
 }
 
 bool IsKeyImpl(Ui32 key_code) {
-    // TODO(Huldra): Imlement this
-    return false;
+    if (key_code >= kKeyCount) {
+        return false;
+    }
+    return ((g_key_state[key_code] & 1) != 0);
 }
 
 bool IsKey(const KeyCode key_code) {
@@ -49,7 +60,7 @@ bool IsKey(const KeyCode key_code) {
 }
 
 bool IsKey(const char *keys) {
-    for (const char *key = keys; key != nullptr; ++key) {
+    for (const char *key = keys; *key != 0; ++key) {
         if (IsKeyImpl(static_cast<Ui32>(*key))) {
             return true;
         }

@@ -178,7 +178,8 @@ struct InputMessage {
   };
   struct Keyboard {
     Ui32 state[kKeyCount];
-    Ui32 key[kKeyCount];
+    Ui32 key;
+    Ui32 key_state;
     Ui32 queue[1024];
     Ui32 queueLen;
   };
@@ -194,6 +195,8 @@ struct InputMessage {
   Mouse mouse;
 };
 
+bool PopInputMessage(InputMessage *out_message);
+void PushInputMessage(const InputMessage &message);
 
 }  // namespace arctic
 
