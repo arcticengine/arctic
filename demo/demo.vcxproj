@@ -175,6 +175,7 @@
     <ClInclude Include="..\engine\mat33f.h" />
     <ClInclude Include="..\engine\mat44f.h" />
     <ClInclude Include="..\engine\arctic_platform_def.h" />
+    <ClInclude Include="..\engine\rgb.h" />
     <ClInclude Include="..\engine\rgba.h" />
     <ClInclude Include="..\engine\scalar_math.h" />
     <ClInclude Include="..\engine\vec2f.h" />

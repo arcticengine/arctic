@@ -29,6 +29,8 @@ namespace arctic {
 
 void Check(bool condition, const char *error_message);
 void Fatal(const char *error_message);
+void Draw();
+void ProcessUserInput();
 
 }  // namespace arctic
 

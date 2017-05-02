@@ -25,20 +25,10 @@
 
 #include "engine/easy.h"
 
-
-// Forward declarations of functions included in this code module:
-
-namespace arctic {
-
-
-
-}  // namespace arctic
-
-
 using namespace arctic;
 using namespace arctic::easy;
 
-Sprite g_wall;
+/*Sprite g_wall;
 Sprite g_hero;
 Sprite g_floor;
 Sound g_step;
@@ -110,6 +100,13 @@ void EasyMain() {
     while (!IsKey(kKeyEscape)) {
         Update();
         Render();
+        ShowFrame();
+    }
+}
+*/
+
+void EasyMain() {
+    while (true) {
         ShowFrame();
     }
 }

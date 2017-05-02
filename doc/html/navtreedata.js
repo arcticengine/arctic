@@ -14,7 +14,7 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 ".html",
-"structarctic_1_1_vec4_f.html#a68d75ff6df4d6bd716ed3f7d783a73bc"
+"structarctic_1_1_vec3_f.html#acc3dd6c8ade25f460e40f63f4778852f"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

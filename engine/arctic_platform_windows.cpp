@@ -38,12 +38,15 @@
 #include "engine/arctic_input.h"
 #include "engine/arctic_platform.h"
 #include "engine/byte_array.h"
+#include "engine/rgb.h"
 #include "engine/vec3f.h"
 
 #pragma comment(lib, "OpenGL32.lib")
 #pragma comment(lib, "glu32.lib")
 
 #define MAX_LOADSTRING 255
+
+extern void EasyMain();
 
 namespace arctic {
 
@@ -58,19 +61,6 @@ void Fatal(const char *message) {
     MessageBox(NULL, message, "Arctic Engine", MB_OK | MB_ICONERROR);
     exit(1);
 }
-
-class Rgb {
- public:
-    Ui8 r;
-    Ui8 g;
-    Ui8 b;
-
-    Rgb(Ui8 in_r, Ui8 in_g, Ui8 in_b) {
-        r = in_r;
-        g = in_g;
-        b = in_b;
-    }
-};
 
 static const PIXELFORMATDESCRIPTOR pfd = {
     sizeof(PIXELFORMATDESCRIPTOR),
@@ -512,6 +502,17 @@ void Draw() {
     Draw2d(g_width, g_height, g_texture_data.data());
 }
 
+void ProcessUserInput() {
+    MSG msg;
+    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE | PM_NOYIELD) > 0) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    if (msg.message == WM_QUIT) {
+        exit(0);
+    }
+}
+
 }  // namespace arctic
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
@@ -522,22 +523,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     UNREFERENCED_PARAMETER(command_line);
 
     BOOL is_ok = SetProcessDPIAware();
-    // TODO(Huldra): Check is_ok
+    arctic::Check(is_ok != FALSE, "Error from SetProessDPIAware! Code: WIN06.");
 
     if (!arctic::CreateMainWindow(instance_handle, cmd_show)) {
+        arctic::Fatal("Can't create the Main Window! Code: WIN07.");
         return FALSE;
     }
 
-    MSG msg;
-    do {
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE | PM_NOYIELD) > 0) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        arctic::Draw();
-    } while (msg.message != WM_QUIT);
-
-    return static_cast<int>(msg.wParam);
+    arctic::ProcessUserInput();
+    EasyMain();
+    return 0;
 }
+
 
 #endif  // ARCTIC_PLATFORM_WINDOWS

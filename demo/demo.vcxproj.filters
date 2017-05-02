@@ -105,6 +105,9 @@
     <ClInclude Include="..\engine\arctic_platform.h">
       <Filter>Source Files\engine</Filter>
     </ClInclude>
+    <ClInclude Include="..\engine\rgb.h">
+      <Filter>Source Files\engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="demo.cpp">

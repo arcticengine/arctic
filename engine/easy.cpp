@@ -22,6 +22,8 @@
 
 #include "engine/easy.h"
 
+#include "engine/arctic_platform.h"
+
 namespace arctic {
 namespace easy {
 
@@ -33,6 +35,8 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
 void ShowFrame() {
     // TODO(Huldra): Implement this
+    Draw();
+    ProcessUserInput();
 }
 
 bool IsKeyImpl(Ui32 key_code) {
