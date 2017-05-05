@@ -21,9 +21,16 @@
 // IN THE SOFTWARE.
 
 #include "engine/easy_sprite_instance.h"
+#include "engine/rgba.h"
 
 namespace arctic {
 namespace easy {
+
+SpriteInstance::SpriteInstance(Si32 width, Si32 height)
+        : width_(width)
+        , height_(height)
+        , data_(width * height * sizeof(Rgba)) {
+}
 
 }  // namespace easy
 }  // namespace arctic

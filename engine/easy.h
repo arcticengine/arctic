@@ -32,6 +32,7 @@
 #include "engine/rgba.h"
 #include "engine/easy_sound.h"
 #include "engine/easy_sprite.h"
+#include "engine/engine.h"
 
 namespace arctic {
 namespace easy {
@@ -60,6 +61,8 @@ void Sleep(double duration_seconds);
 
 std::vector<Ui8> ReadFile(const char *file_name);
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
+
+Engine* GetEngine();
 
 }  // namespace easy
 }  // namespace arctic

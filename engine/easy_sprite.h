@@ -29,14 +29,14 @@
 #include "engine/easy_sprite_instance.h"
 #include "engine/arctic_types.h"
 #include "engine/vec2si32.h"
-
+#include "engine/rgba.h"
 
 namespace arctic {
 namespace easy {
 
 class Sprite {
  private:
-    std::shared_ptr<SpriteInstance> sprite_instance;
+    std::shared_ptr<SpriteInstance> sprite_instance_;
 
  public:
     void Load(const char *file_name);
@@ -51,7 +51,7 @@ class Sprite {
     void Draw(const Si32 to_x, const Si32 to_y,
         const Si32 to_width, const Si32 to_height,
         const Si32 from_x, const Si32 from_y,
-        const Si32 from_width, const Si32 form_height);
+        const Si32 from_width, const Si32 from_height);
     void Draw(const Vec2Si32 to_pos);
     void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size);
     void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
@@ -59,11 +59,12 @@ class Sprite {
     void Draw(const Si32 to_x, const Si32 to_y,
         const Si32 to_width, const Si32 to_height,
         const Si32 from_x, const Si32 from_y,
-        const Si32 from_width, const Si32 form_height,
-        Sprite *to_sprite);
+        const Si32 from_width, const Si32 from_height,
+        Sprite to_sprite);
     Si32 width() const;
     Si32 height() const;
     Ui8* RawData();
+    Rgba* RgbaData();
 };
 
 }  // namespace easy

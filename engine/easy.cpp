@@ -28,6 +28,7 @@ namespace arctic {
 namespace easy {
 
 static Ui32 g_key_state[kKeyCount] = {0};
+static Engine *g_engine = nullptr;
 
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color);
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b);
@@ -36,8 +37,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Rgba color_a, Rgba color_b, Rgba color_c);
 
 void ShowFrame() {
-    // TODO(Huldra): Implement this
-    Draw();
+    GetEngine()->Draw2d();
     ProcessUserInput();
 
     InputMessage message;
@@ -61,7 +61,7 @@ bool IsKey(const KeyCode key_code) {
 
 bool IsKey(const char *keys) {
     for (const char *key = keys; *key != 0; ++key) {
-        if (IsKeyImpl(static_cast<Ui32>(*key))) {
+        if (IsKey(*key)) {
             return true;
         }
     }
@@ -69,6 +69,11 @@ bool IsKey(const char *keys) {
 }
 
 bool IsKey(const char key) {
+    if (key >= 'a' && key <= 'z') {
+        return IsKeyImpl(static_cast<Ui32>(key)
+            + static_cast<Ui32>('A')
+            - static_cast<Ui32>('a'));
+    }
     return IsKeyImpl(static_cast<Ui32>(key));
 }
 
@@ -82,7 +87,7 @@ Vec2Si32 MouseMove();
 Vec2Si32 ScreenSize();
 
 void ResizeScreen(const Si32 width, const Si32 height) {
-    // TODO(Huldra): Implement this
+    GetEngine()->ResizeBackbuffer(width, height);
     return;
 }
 
@@ -91,6 +96,13 @@ void Sleep(double duration_seconds);
 
 std::vector<Ui8> ReadFile(const char *file_name);
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
+
+Engine *GetEngine() {
+    if (!g_engine) {
+        g_engine = new Engine();
+    }
+    return g_engine;
+}
 
 }  // namespace easy
 }  // namespace arctic

@@ -49,6 +49,38 @@ void Init() {
         g_wall.Create(20, 20);
         g_hero.Create(20, 20);
         g_floor.Create(20, 20);
+        for (Si32 y = 0; y < g_wall.height(); ++y) {
+            for (Si32 x = 0; x < g_wall.width(); ++x) {
+                Rgba *p = g_wall.RgbaData()
+                    + y * g_wall.width()
+                    + x;
+                p->r = 255;
+                p->a = 255;
+            }
+        }
+        for (Si32 y = 0; y < g_hero.height(); ++y) {
+            for (Si32 x = 0; x < g_hero.width(); ++x) {
+                Rgba *p = g_hero.RgbaData()
+                    + y * g_hero.width()
+                    + x;
+                Si32 cx = x - g_hero.width() / 2;
+                Si32 cy = y - g_hero.height() / 2;
+                if (cx * cx + cy * cy < g_hero.width() * g_hero.width() / 4) {
+                    p->g = 255;
+                    p->r = 255;
+                    p->a = 255;
+                }
+            }
+        }
+        for (Si32 y = 0; y < g_floor.height(); ++y) {
+            for (Si32 x = 0; x < g_floor.width(); ++x) {
+                Rgba *p = g_floor.RgbaData()
+                    + y * g_floor.width()
+                    + x;
+                p->b = 50;
+                p->a = 255;
+            }
+        }
     }
 
     for (Si32 x = 0; x < 16; ++x) {
@@ -73,11 +105,11 @@ void Update() {
         step.y = -1;
     }
     if (IsKey(kKeyLeft) || IsKey("a")) {
-        step.x = 1;
+        step.x = -1;
         step.y = 0;
     }
     if (IsKey(kKeyRight) || IsKey("d")) {
-        step.x = -1;
+        step.x = 1;
         step.y = 0;
     }
 

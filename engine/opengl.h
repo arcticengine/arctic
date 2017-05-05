@@ -1,6 +1,6 @@
 // The MIT License(MIT)
 //
-// Copyright 2017 Huldra
+// Copyright 2016 - 2017 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -20,38 +20,19 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_SPRITE_INSTANCE_H_
-#define ENGINE_EASY_SPRITE_INSTANCE_H_
+#ifndef ENGINE_OPENGL_H_
+#define ENGINE_OPENGL_H_
 
-#include "engine/arctic_types.h"
-#include "engine/byte_array.h"
+#include "engine/arctic_platform_def.h"
 
-namespace arctic {
-namespace easy {
+#ifdef ARCTIC_PLATFORM_WINDOWS
 
-class SpriteInstance {
- private:
-    Si32 width_;
-    Si32 height_;
-    ByteArray data_;
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
 
- public:
-    SpriteInstance(Si32 width, Si32 height);
+#endif  // ARCTIC_PLATFORM_WINDOWS
 
-    Si32 width() const {
-        return width_;
-    }
-
-    Si32 height() const {
-        return height_;
-    }
-
-    Ui8 *RawData() {
-        return data_.data();
-    }
-};
-
-}  // namespace easy
-}  // namespace arctic
-
-#endif  // ENGINE_EASY_SPRITE_INSTANCE_H_
+#endif  // ENGINE_OPENGL_H_

@@ -26,7 +26,6 @@
 #include "engine/arctic_types.h"
 
 namespace arctic {
-namespace easy {
 
 struct Rgba {
     union {
@@ -83,7 +82,6 @@ struct Rgba {
     }
 };
 
-}  // namespace easy
 }  // namespace arctic
 
 #endif  // ENGINE_RGBA_H_

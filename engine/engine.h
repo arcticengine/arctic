@@ -20,38 +20,40 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_SPRITE_INSTANCE_H_
-#define ENGINE_EASY_SPRITE_INSTANCE_H_
+#ifndef ENGINE_ENGINE_H_
+#define ENGINE_ENGINE_H_
 
-#include "engine/arctic_types.h"
-#include "engine/byte_array.h"
+#include "engine/arctic_platform.h"
+#include "engine/easy_sprite.h"
 
 namespace arctic {
-namespace easy {
 
-class SpriteInstance {
+class Engine {
  private:
-    Si32 width_;
-    Si32 height_;
-    ByteArray data_;
+    Si32 width_ = 0;
+    Si32 height_ = 0;
+    Ui32 backbuffer_texture_name_ = 0;
+    easy::Sprite backbuffer_texture_;
+
+    ByteArray visible_verts_;
+    ByteArray visible_normals_;
+    ByteArray tex_coords_;
+    ByteArray visible_indices_;
+
+    Si32 verts_ = 0;
+    Si32 normals_ = 0;
+    Si32 tex_ = 0;
+    Si32 indices_ = 0;
 
  public:
-    SpriteInstance(Si32 width, Si32 height);
-
-    Si32 width() const {
-        return width_;
+    void Init(Si32 width, Si32 height);
+    void Draw2d();
+    easy::Sprite GetBackbuffer() {
+        return backbuffer_texture_;
     }
-
-    Si32 height() const {
-        return height_;
-    }
-
-    Ui8 *RawData() {
-        return data_.data();
-    }
+    void ResizeBackbuffer(const Si32 width, const Si32 height);
 };
 
-}  // namespace easy
 }  // namespace arctic
 
-#endif  // ENGINE_EASY_SPRITE_INSTANCE_H_
+#endif  // ENGINE_ENGINE_H_
