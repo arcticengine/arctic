@@ -60,7 +60,34 @@ void Check(bool condition, const char *error_message) {
 
 void Fatal(const char *message) {
     MessageBox(NULL, message, "Arctic Engine", MB_OK | MB_ICONERROR);
-    exit(1);
+    ExitProcess(1);
+}
+
+static void FatalWithLastError(const char* message_prefix) {
+    DWORD dw = GetLastError();
+    char *message_postfix = "";
+    char *message = "";
+    FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        dw,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPTSTR)&message_postfix,
+        0, NULL);
+
+    size_t size = strlen(message_prefix) + strlen(message_postfix) + 1;
+    message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
+    sprintf_s(message, size, "%s%s", message_prefix, message_postfix);
+    Fatal(message);
+}
+
+static void CheckWithLastError(bool condition, const char *message_prefix) {
+    if (condition) {
+        return;
+    }
+    FatalWithLastError(message_prefix);
 }
 
 static const PIXELFORMATDESCRIPTOR pfd = {
@@ -299,37 +326,21 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
     //  Init opengl start
 
     HDC hdc = GetDC(window_handle);
-    if (!hdc) {
-        Fatal("Can't get the Device Context. Code: WIN01.");
-        return false;
-    }
+    Check(hdc != nullptr, "Can't get the Device Context. Code: WIN01.");
+
     unsigned int pixel_format = ChoosePixelFormat(hdc, &pfd);
-    if (!pixel_format) {
-        Fatal("Can't choose the Pixel Format. Code: WIN02.");
-        return false;
-    }
+    Check(pixel_format != 0, "Can't choose the Pixel Format. Code: WIN02.");
 
     BOOL is_ok = SetPixelFormat(hdc, pixel_format, &pfd);
-    if (!is_ok) {
-        Fatal("Can't set the Pixel Format. Code: WIN03.");
-        return false;
-    }
+    Check(!!is_ok, "Can't set the Pixel Format. Code: WIN03.");
 
     HGLRC hrc = wglCreateContext(hdc);
-
-    if (!hrc) {
-        Fatal("Can't create the GL Context. Code: WIN04.");
-        return false;
-    }
+    Check(hrc != nullptr, "Can't create the GL Context. Code: WIN04.");
 
     is_ok = wglMakeCurrent(hdc, hrc);
-    if (!is_ok) {
-        Fatal("Can't make the GL Context current. Code: WIN05.");
-        return false;
-    }
+    Check(!!is_ok, "Can't make the GL Context current. Code: WIN05.");
 
     ae->Init(screen_width, screen_height);
-
     //  Init opengl end
 
     ShowWindow(window_handle, cmd_show);
@@ -340,6 +351,33 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
 void Swap() {
     HDC hdc = wglGetCurrentDC();
     wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+}
+
+bool IsVSyncSupported() {
+    const char* (WINAPI *wglGetExtensionsStringEXT)();
+    wglGetExtensionsStringEXT = reinterpret_cast<const char* (WINAPI*)()>(
+        wglGetProcAddress("wglGetExtensionsStringEXT"));
+    CheckWithLastError(wglGetExtensionsStringEXT != nullptr,
+        "Error in wglGetProcAddress(\"wglGetExtensionsStringEXT\"): ");
+    const char *extensions = wglGetExtensionsStringEXT();
+    if (strstr(extensions, "WGL_EXT_swap_control") == nullptr) {
+        return false;
+    }
+    return true;
+}
+
+bool SetVSync(bool is_enable) {
+    if (!IsVSyncSupported()) {
+        return false;
+    }
+    bool (APIENTRY *wglSwapIntervalEXT)(int);
+    wglSwapIntervalEXT = reinterpret_cast<bool (APIENTRY *)(int)>(
+        wglGetProcAddress("wglSwapIntervalEXT"));
+    CheckWithLastError(wglSwapIntervalEXT != nullptr,
+        "Error in wglGetProcAddress(\"wglSwapIntervalEXT\"): ");
+    bool is_ok = wglSwapIntervalEXT(is_enable ? 1 : 0);
+    CheckWithLastError(is_ok, "Error in SetVSync: ");
+    return is_ok;
 }
 
 void ProcessUserInput() {
@@ -362,14 +400,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     UNREFERENCED_PARAMETER(prev_instance_handle);
     UNREFERENCED_PARAMETER(command_line);
 
-    BOOL is_ok = SetProcessDPIAware();
-    arctic::Check(is_ok != FALSE, "Error from SetProessDPIAware! Code: WIN06.");
+    BOOL is_ok_w = SetProcessDPIAware();
+    arctic::Check(is_ok_w != FALSE,
+        "Error from SetProessDPIAware! Code: WIN06.");
 
-    if (!arctic::CreateMainWindow(instance_handle, cmd_show,
-            arctic::easy::GetEngine())) {
-        arctic::Fatal("Can't create the Main Window! Code: WIN07.");
-        return FALSE;
-    }
+    bool is_ok = arctic::CreateMainWindow(instance_handle, cmd_show,
+        arctic::easy::GetEngine());
+    arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
 
     arctic::ProcessUserInput();
     EasyMain();

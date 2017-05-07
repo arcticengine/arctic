@@ -31,6 +31,8 @@ void Engine::Init(Si32 width, Si32 height) {
     width_ = width;
     height_ = height;
 
+    SetVSync(true);
+
     backbuffer_texture_.Create(width, height);
 
     glEnable(GL_TEXTURE);

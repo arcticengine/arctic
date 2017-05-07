@@ -31,6 +31,8 @@ void Check(bool condition, const char *error_message);
 void Fatal(const char *error_message);
 void Draw();
 void Swap();
+bool IsVSyncSupported();
+bool SetVSync(bool is_enable);
 void ProcessUserInput();
 
 }  // namespace arctic
