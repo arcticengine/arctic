@@ -39,49 +39,10 @@ Vec2Si32 g_hero_pos(1, 1);
 void Init() {
     ResizeScreen(320, 200);
 
-    g_wall.Load("wall.tif");
-    g_hero.Load("hero.tif");
-    g_floor.Load("floor.tif");
-    g_step.Load("step.wav");
-
-    // TODO(Huldra): Remove the following block:
-    {
-        g_wall.Create(20, 20);
-        g_hero.Create(20, 20);
-        g_floor.Create(20, 20);
-        for (Si32 y = 0; y < g_wall.height(); ++y) {
-            for (Si32 x = 0; x < g_wall.width(); ++x) {
-                Rgba *p = g_wall.RgbaData()
-                    + y * g_wall.width()
-                    + x;
-                p->r = 255;
-                p->a = 255;
-            }
-        }
-        for (Si32 y = 0; y < g_hero.height(); ++y) {
-            for (Si32 x = 0; x < g_hero.width(); ++x) {
-                Rgba *p = g_hero.RgbaData()
-                    + y * g_hero.width()
-                    + x;
-                Si32 cx = x - g_hero.width() / 2;
-                Si32 cy = y - g_hero.height() / 2;
-                if (cx * cx + cy * cy < g_hero.width() * g_hero.width() / 4) {
-                    p->g = 255;
-                    p->r = 255;
-                    p->a = 255;
-                }
-            }
-        }
-        for (Si32 y = 0; y < g_floor.height(); ++y) {
-            for (Si32 x = 0; x < g_floor.width(); ++x) {
-                Rgba *p = g_floor.RgbaData()
-                    + y * g_floor.width()
-                    + x;
-                p->b = 50;
-                p->a = 255;
-            }
-        }
-    }
+    g_wall.Load("data/wall1.tga");
+    g_hero.Load("data/hero1.tga");
+    g_floor.Load("data/floor1.tga");
+    g_step.Load("data/step.wav");
 
     for (Si32 x = 0; x < 16; ++x) {
         for (Si32 y = 0; y < 10; ++y) {
@@ -121,14 +82,14 @@ void Update() {
 
 void Render() {
     for (Si32 x = 0; x < 16; ++x) {
-        for (Si32 y = 0; y < 10; ++y) {
+        for (Si32 y = 9; y >= 0; --y) {
             if (g_maze[x][y] == 0) {
                 g_wall.Draw(x * 20, y * 20);
             } else {
                 g_floor.Draw(x * 20, y * 20);
             }
             if (x == g_hero_pos.x && y == g_hero_pos.y) {
-                g_hero.Draw(x * 20, y * 20);
+                g_hero.Draw(x * 20 + 2, y * 20 + 10);
             }
         }
     }

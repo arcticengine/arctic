@@ -94,8 +94,13 @@ void ResizeScreen(const Si32 width, const Si32 height) {
 double Time();
 void Sleep(double duration_seconds);
 
-std::vector<Ui8> ReadFile(const char *file_name);
-void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
+std::vector<Ui8> ReadFile(const char *file_name) {
+    return ReadWholeFile(file_name);
+}
+
+void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
+    WriteWholeFile(file_name, data, data_size);
+}
 
 Engine *GetEngine() {
     if (!g_engine) {

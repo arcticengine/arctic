@@ -23,6 +23,7 @@
 #ifndef ENGINE_EASY_SPRITE_INSTANCE_H_
 #define ENGINE_EASY_SPRITE_INSTANCE_H_
 
+#include <memory>
 #include "engine/arctic_types.h"
 #include "engine/byte_array.h"
 
@@ -52,6 +53,10 @@ class SpriteInstance {
 };
 
 }  // namespace easy
+
+std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
+    const Si64 size);
+
 }  // namespace arctic
 
 #endif  // ENGINE_EASY_SPRITE_INSTANCE_H_

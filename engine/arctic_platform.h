@@ -23,6 +23,7 @@
 #ifndef ENGINE_ARCTIC_PLATFORM_H_
 #define ENGINE_ARCTIC_PLATFORM_H_
 
+#include <vector>
 #include "engine/arctic_types.h"
 
 namespace arctic {
@@ -34,6 +35,9 @@ void Swap();
 bool IsVSyncSupported();
 bool SetVSync(bool is_enable);
 void ProcessUserInput();
+std::vector<Ui8> ReadWholeFile(const char *file_name);
+void WriteWholeFile(const char *file_name, const Ui8 *data,
+    const Ui64 data_size);
 
 }  // namespace arctic
 

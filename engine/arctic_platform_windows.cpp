@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <vector>
 
 #include "engine/engine.h"
 #include "engine/easy.h"
@@ -390,6 +391,39 @@ void ProcessUserInput() {
         exit(0);
     }
 }
+
+std::vector<Ui8> ReadWholeFile(const char *file_name) {
+    HANDLE file_handle = CreateFile(file_name, GENERIC_READ,
+        FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    CheckWithLastError(file_handle != INVALID_HANDLE_VALUE,
+        "Error in ReadWholeFile. CreateFile: ");
+    LARGE_INTEGER file_size;
+    file_size.QuadPart = 0ull;
+    BOOL is_ok = GetFileSizeEx(file_handle, &file_size);
+    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. GetFileSizeEx: ");
+    std::vector<Ui8> data;
+    if (file_size.QuadPart != 0ull) {
+        Check(file_size.HighPart == 0,
+            "Error in ReadWholeFile, file is too large.");
+        data.resize(static_cast<size_t>(file_size.QuadPart));
+        DWORD bytes_read = 0ul;
+        is_ok = ReadFile(file_handle, data.data(), file_size.LowPart,
+            &bytes_read, NULL);
+        CheckWithLastError(!!is_ok, "Error in ReadWholeFile. ReadFile: ");
+        Check(bytes_read == file_size.LowPart,
+            "Error in ReadWholeFile. Read size mismatch.");
+    }
+    is_ok = CloseHandle(file_handle);
+    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. CloseHandle: ");
+    return data;
+}
+
+void WriteWholeFile(const char *file_name, const Ui8 *data,
+        const Ui64 data_size) {
+    // TODO(Huldra): Implement this
+}
+
+
 
 }  // namespace arctic
 

@@ -22,6 +22,7 @@
 
 #include "engine/easy_sprite.h"
 
+#include <vector>
 #include "engine/easy.h"
 #include "engine/rgba.h"
 
@@ -29,7 +30,15 @@ namespace arctic {
 namespace easy {
 
 void Sprite::Load(const char *file_name) {
-    // TODO(Huldra): Implement this
+    Check(!!file_name, "Error in Sprite::Load, file_name is nullptr.");
+    const char *last_dot = strchr(file_name, '.');
+    Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
+    if (strcmp(last_dot, ".tga") == 0) {
+        std::vector<Ui8> data = ReadFile(file_name);
+        sprite_instance_ = LoadTga(data.data(), data.size());
+    } else {
+        Fatal("Error in Sprite::Load, unknown file extension.");
+    }
 }
 
 void Sprite::Load(const std::string &file_name) {
@@ -108,12 +117,17 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
         + from_x;
     for (Si32 to_y_disp = 0; to_y_disp < to_height; ++to_y_disp) {
         for (Si32 to_x_disp = 0; to_x_disp < to_width; ++to_x_disp) {
-            Rgba *to_rgba = to + to_y_disp * to_sprite.width() + to_x_disp;
-            Si32 from_x_disp = (from_width * to_x_disp) / to_width;
-            Si32 from_y_disp = (from_height * to_y_disp) / to_height;
-            Rgba *from_rgba = from + from_y_disp * width() + from_x_disp;
-            if (from_rgba->a) {
-                *to_rgba = *from_rgba;
+            if ((to_x + to_x_disp >= 0)
+                    && (to_x + to_x_disp < to_sprite.width())
+                    && (to_y + to_y_disp >= 0)
+                    && (to_y + to_y_disp < to_sprite.height())) {
+                Rgba *to_rgba = to + to_y_disp * to_sprite.width() + to_x_disp;
+                Si32 from_x_disp = (from_width * to_x_disp) / to_width;
+                Si32 from_y_disp = (from_height * to_y_disp) / to_height;
+                Rgba *from_rgba = from + from_y_disp * width() + from_x_disp;
+                if (from_rgba->a) {
+                    *to_rgba = *from_rgba;
+                }
             }
         }
     }
