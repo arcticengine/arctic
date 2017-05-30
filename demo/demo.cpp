@@ -24,6 +24,7 @@
 #include "demo/demo.h"
 
 #include <time.h>
+#include <deque>
 #include "engine/easy.h"
 
 using namespace arctic;
@@ -58,6 +59,63 @@ void StepMazeGeneration(Vec2Si32 from, Vec2Si32 size) {
     }
 }
 
+bool IsDeadEnd(Si32 x, Si32 y) {
+    Vec2Si32 dir[4] = {Vec2Si32(-1, 0)
+        , Vec2Si32(1, 0)
+        , Vec2Si32(0, -1)
+        , Vec2Si32(0, 1)};
+    if (g_maze[x][y] == 1) {
+        Si32 exits = 0;
+        for (Si32 idx = 0; idx < 4; ++idx) {
+            if (g_maze[x + dir[idx].x][y + dir[idx].y] == 1) {
+                exits++;
+            }
+        }
+        if (exits == 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::deque<Vec2Si32> FindDeadEnds(Vec2Si32 size) {
+    std::deque<Vec2Si32> res;
+    Vec2Si32 max(size.x - 1, size.y - 1);
+    for (Si32 x = 1; x < max.x; ++x) {
+        for (Si32 y = 1; y < max.y; ++y) {
+            if (IsDeadEnd(x, y)) {
+                res.emplace_back(x, y);
+            }
+        }
+    }
+    return res;
+}
+
+void EliminateDeadEnd(Vec2Si32 pos) {
+    Vec2Si32 dir[4] = {Vec2Si32(-1, 0)
+        , Vec2Si32(1, 0)
+        , Vec2Si32(0, -1)
+        , Vec2Si32(0, 1)};
+    while (true) {
+        if (g_maze[pos.x][pos.y] != 1) {
+            return;
+        }
+        Si32 exits = 0;
+        Vec2Si32 exit;
+        for (Si32 idx = 0; idx < 4; ++idx) {
+            if (g_maze[pos.x + dir[idx].x][pos.y + dir[idx].y] == 1) {
+                exits++;
+                exit = Vec2Si32(pos.x + dir[idx].x, pos.y + dir[idx].y);
+            }
+        }
+        if (exits != 1) {
+            return;
+        }
+        g_maze[pos.x][pos.y] = 0;
+        pos = exit;
+    }
+}
+
 void Init() {
     ResizeScreen(800, 500);
 
@@ -76,6 +134,14 @@ void Init() {
     g_hero_pos = Vec2Si32(1, 1);
     srand(static_cast<unsigned int>(time(nullptr)));
     StepMazeGeneration(g_hero_pos, maze_size);
+    std::deque<Vec2Si32> dead_ends = FindDeadEnds(maze_size);
+    Si32 to_eliminate = dead_ends.size() / 2;
+    for (Si32 idx = 0; idx < to_eliminate; ++idx) {
+        Si32 rnd = rand() % dead_ends.size();
+        EliminateDeadEnd(dead_ends[rnd]);
+        dead_ends[rnd] = dead_ends.back();
+        dead_ends.pop_back();
+    }
 }
 
 void Update() {
