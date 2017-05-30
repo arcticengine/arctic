@@ -63,6 +63,7 @@ class Sprite {
         Sprite to_sprite);
     Si32 width() const;
     Si32 height() const;
+    Vec2Si32 Size() const;
     Ui8* RawData();
     Rgba* RgbaData();
 };

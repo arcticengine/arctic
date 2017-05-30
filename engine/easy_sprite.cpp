@@ -141,6 +141,10 @@ Si32 Sprite::height() const {
     return sprite_instance_->height();
 }
 
+Vec2Si32 Sprite::Size() const {
+    return Vec2Si32(sprite_instance_->width(), sprite_instance_->height());
+}
+
 Ui8* Sprite::RawData() {
     return sprite_instance_->RawData();
 }

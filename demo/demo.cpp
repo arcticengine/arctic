@@ -30,6 +30,8 @@
 using namespace arctic;
 using namespace arctic::easy;
 
+Sprite g_intro_pyramids;
+Sprite g_intro_airplane;
 Sprite g_wall;
 Sprite g_hero;
 Sprite g_floor;
@@ -116,14 +118,49 @@ void EliminateDeadEnd(Vec2Si32 pos) {
     }
 }
 
-void Init() {
-    ResizeScreen(800, 500);
+void PlayIntro() {
+    ResizeScreen(320, 200);
+    Vec2Si32 pyramids_pos(0, 10);
 
+    Vec2Si32 airplane_pos_begin(ScreenSize().x,
+        ScreenSize().y - g_intro_airplane.height() / 2);
+    Vec2Si32 airplane_pos_end(-g_intro_airplane.width(), 0);
+    Si32 duration1 = 380;
+    Si32 duration2 = 500;
+    Si32 duration3 = 560;
+    Si32 frame = 0;
+    while (true) {
+        if (IsKey(kKeyEscape) || IsKey(kKeySpace) || IsKey(kKeyEnter)) {
+            return;
+        }
+        frame++;
+        if (frame > duration3) {
+            break;
+        }
+        if (frame > duration1 && frame < duration2) {
+            pyramids_pos = Vec2Si32(rand() % 3 - 1, 10 + rand() % 3 - 1);
+        }
+        g_intro_pyramids.Draw(pyramids_pos);
+        if (frame < duration1) {
+            Vec2Si32 airplane_pos = airplane_pos_begin +
+                (airplane_pos_end - airplane_pos_begin) * frame / duration1;
+            g_intro_airplane.Draw(airplane_pos);
+        }
+        ShowFrame();
+    }
+}
+
+void Init() {
+    g_intro_pyramids.Load("data/pyramids1.tga");
+    g_intro_airplane.Load("data/airplane1.tga");
     g_wall.Load("data/wall1.tga");
     g_hero.Load("data/hero1.tga");
     g_floor.Load("data/floor1.tga");
     g_step.Load("data/step.wav");
 
+    PlayIntro();
+
+    ResizeScreen(800, 500);
     Vec2Si32 maze_size(32, 20);
     for (Si32 x = 0; x < maze_size.x; ++x) {
         for (Si32 y = 0; y < maze_size.y; ++y) {

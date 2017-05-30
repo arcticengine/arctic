@@ -84,7 +84,9 @@ bool IsKey(const std::string &keys) {
 Vec2Si32 MousePos();
 Vec2Si32 MouseMove();
 
-Vec2Si32 ScreenSize();
+Vec2Si32 ScreenSize() {
+    return GetEngine()->GetBackbuffer().Size();
+}
 
 void ResizeScreen(const Si32 width, const Si32 height) {
     GetEngine()->ResizeBackbuffer(width, height);
