@@ -120,6 +120,17 @@ void EliminateDeadEnd(Vec2Si32 pos) {
 
 void PlayIntro() {
     ResizeScreen(320, 200);
+    Ui8 snow[2][320 * 200];
+    for (Si32 i = 0; i < 320 * 200; ++i) {
+        if (rand() % 16 == 0) {
+            snow[0][i] = rand() % 256;
+        } else {
+            snow[0][i] = 0;
+        }
+    }
+    Ui8 *cur_snow = snow[0];
+    Ui8 *next_snow = snow[1];
+
     Vec2Si32 pyramids_pos(0, 10);
 
     Vec2Si32 airplane_pos_begin(ScreenSize().x,
@@ -146,6 +157,36 @@ void PlayIntro() {
                 (airplane_pos_end - airplane_pos_begin) * frame / duration1;
             g_intro_airplane.Draw(airplane_pos);
         }
+
+        Rgba *back_buffer = GetEngine()->GetBackbuffer().RgbaData();
+        memset(next_snow, 0, 320 * 200);
+        for (Si32 y = 0; y < 200; ++y) {
+            for (Si32 x = 0; x < 320; ++x) {
+                Si32 z = cur_snow[x + y * 320];
+                if (z) {
+                    Si32 next_x = x + 8 - z/42;
+                    Si32 next_y = y - 1;
+                    if (next_x >= 320) {
+                        next_x -= 320;
+                    }
+                    if (next_y < 0) {
+                        next_y = 199;
+                    }
+                    if (next_snow[next_x + next_y * 320] == 0
+                        || next_snow[next_x + next_y * 320] > z) {
+                        next_snow[next_x + next_y * 320] = z;
+                    }
+                    if (rand() % 16 == 0) {
+                        Si32 z2 = rand() % 256;
+                        if (z2 > z) {
+                            next_snow[x + y * 320] = z2;
+                        }
+                    }
+                    back_buffer[x + y * 320] = Rgba(255 - z/8, 255 - z/8, 255 - z/8);
+                }
+            }
+        }
+        std::swap(cur_snow, next_snow);
         ShowFrame();
     }
 }
