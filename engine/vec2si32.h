@@ -148,6 +148,9 @@ inline Vec2Si32 operator/(Si32 const &s, Vec2Si32  const &v) {
 inline Vec2Si32 operator/(Vec2Si32 const &a, Vec2Si32 const &b) {
   return Vec2Si32(a.x / b.x, a.y / b.y);
 }
+inline bool operator==(Vec2Si32 const &a, Vec2Si32 const &b) {
+    return (a.x == b.x && a.y == b.y);
+}
 
 
 inline Vec2Si32 Max(const Vec2Si32 &a, const Vec2Si32 &b) {
