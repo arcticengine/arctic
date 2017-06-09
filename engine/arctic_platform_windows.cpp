@@ -289,7 +289,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
         // Try To Set Selected Mode And Get Results.
         // NOTE: CDS_FULLSCREEN Gets Rid Of Start Bar.
         if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN)
-            != DISP_CHANGE_SUCCESSFUL) {
+                != DISP_CHANGE_SUCCESSFUL) {
             // If The Mode Fails, Offer Two Options.  Quit Or Run In A Window.
             MessageBox(NULL, "The requested fullscreen mode is not" \
                 " supported by\nthe video card. Setting windowed mode.",

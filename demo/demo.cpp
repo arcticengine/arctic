@@ -72,9 +72,17 @@ struct Cell {
     bool is_visible = false;
 };
 
+bool g_is_first_level = true;
+CellKind g_upper_cell_kind = kCellStairsDownLeft;
 Vec2Si32 g_maze_size(32, 20);
 Cell g_maze[32][20];
+
 Vec2Si32 g_hero_pos(1, 1);
+Vec2Si32 g_hero_next_pos(1, 1);
+double g_hero_move_start_at = 0.0;
+double g_hero_move_part = 0.0;
+bool g_is_hero_moving = false;
+
 Si32 g_hero_idx = 0;
 std::independent_bits_engine<std::mt19937_64, 8, Ui64> g_rnd;
 
@@ -107,7 +115,7 @@ bool IsDeadEnd(Si32 x, Si32 y) {
     if (g_maze[x][y].kind == kCellFloor) {
         Si32 exits = 0;
         for (Si32 idx = 0; idx < 4; ++idx) {
-            if (g_maze[x + dir[idx].x][y + dir[idx].y].kind == kCellFloor) {
+            if (g_maze[x + dir[idx].x][y + dir[idx].y].kind != kCellWall) {
                 exits++;
             }
         }
@@ -146,8 +154,8 @@ void EliminateDeadEnd(Vec2Si32 pos) {
         Si32 exits = 0;
         Vec2Si32 exit;
         for (Si32 idx = 0; idx < 4; ++idx) {
-            if (g_maze[pos.x + dir[idx].x][pos.y + dir[idx].y].kind ==
-                    kCellFloor) {
+            if (g_maze[pos.x + dir[idx].x][pos.y + dir[idx].y].kind !=
+                    kCellWall) {
                 exits++;
                 exit = Vec2Si32(pos.x + dir[idx].x, pos.y + dir[idx].y);
             }
@@ -224,7 +232,7 @@ void PlayIntro() {
                             next_snow[x + y * 320] = z2;
                         }
                     }
-                    back_buffer[x + y * 320] = 
+                    back_buffer[x + y * 320] =
                         Rgba(255 - z/8, 255 - z/8, 255 - z/8);
                 }
             }
@@ -246,8 +254,16 @@ void GenerateMaze() {
     }
 
     StepMazeGeneration(g_hero_pos, g_maze_size);
-    std::deque<Vec2Si32> dead_ends = FindDeadEnds(g_maze_size);
 
+    if (!g_is_first_level) {
+        if (g_upper_cell_kind == kCellStairsDownRight) {
+            g_maze[g_hero_pos.x][g_hero_pos.y].kind = kCellStairsUpRight;
+        } else {
+            g_maze[g_hero_pos.x][g_hero_pos.y].kind = kCellStairsUpLeft;
+        }
+    }
+
+    std::deque<Vec2Si32> dead_ends = FindDeadEnds(g_maze_size);
     int attempt = 0;
     while (true) {
         attempt++;
@@ -297,7 +313,7 @@ void Init() {
     g_monster[0].Load("data/monster_0.tga");
     g_monster[1].Load("data/monster_1.tga");
     g_monster[2].Load("data/monster_2.tga");
-   
+
     g_stairs_down_left.Load("data/stairs_down_left_1.tga");
     g_stairs_down_left_dark.Load("data/stairs_down_left_1_dark.tga");
     g_stairs_down_right.Load("data/stairs_down_right_1.tga");
@@ -322,7 +338,37 @@ void Init() {
     GenerateMaze();
 }
 
+void LookAround() {
+    Vec2Si32 pos;
+    for (pos.x = 0; pos.x < g_maze_size.x; ++pos.x) {
+        for (pos.y = 0; pos.y < g_maze_size.y; ++pos.y) {
+            g_maze[pos.x][pos.y].is_visible = false;
+        }
+    }
+
+    Si32 radius = 10;
+    Vec2Si32 min(std::max(0, g_hero_pos.x - radius),
+        std::max(0, g_hero_pos.y - radius));
+    Vec2Si32 max(std::min(g_maze_size.x - 1, g_hero_pos.x + radius),
+        std::min(g_maze_size.y - 1, g_hero_pos.y + radius));
+    for (pos.x = min.x; pos.x <= max.x + 1; ++pos.x) {
+        for (pos.y = min.y - 1; pos.y <= max.y + 1; ++pos.y) {
+            Vec2Si32 hero_to_pos = pos - g_hero_pos;
+            Si32 maxStep = radius * 2;
+            for (Si32 step = 0; step <= maxStep; ++step) {
+                Vec2Si32 s = g_hero_pos + ((hero_to_pos * step) / maxStep);
+                g_maze[s.x][s.y].is_in_fog_of_war = false;
+                g_maze[s.x][s.y].is_visible = true;
+                if (g_maze[s.x][s.y].kind == kCellWall) {
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void Update() {
+    double time = Time();
     Vec2Si32 step(0, 0);
     if (IsKey(kKeyUp) || IsKey("w")) {
         step.y = 1;
@@ -353,58 +399,114 @@ void Update() {
     }
     // End of cheats
 
-    Cell &cell = g_maze[g_hero_pos.x + step.x][g_hero_pos.y + step.y];
-    if (cell.kind != kCellWall) {
-        if (cell.kind == kCellFloor) {
-            g_step.Play();
-            g_hero_pos += step;
-        } else if (cell.kind == kCellStairsDownLeft 
-                || cell.kind == kCellStairsDownRight) {
-            g_hero_pos += step;
-            GenerateMaze();
-            easy::GetEngine()->GetBackbuffer().Clear();
+    const double kMoveDuration = 0.1;
+    g_hero_move_part = 0.0;
+    if (g_is_hero_moving) {
+        double duration = time - g_hero_move_start_at;
+        if (duration > kMoveDuration) {
+            g_hero_pos = g_hero_next_pos;
+            g_is_hero_moving = false;
+        } else {
+            g_hero_move_part = duration / kMoveDuration;
         }
     }
 
-    Vec2Si32 pos;
-    for (pos.x = g_hero_pos.x - 1; pos.x <= g_hero_pos.x + 1; ++pos.x) {
-        for (pos.y = g_hero_pos.y - 1; pos.y <= g_hero_pos.y + 1; ++pos.y) {
-            g_maze[pos.x][pos.y].is_in_fog_of_war = false;
+    if (!g_is_hero_moving) {
+        if (!(step == Vec2Si32(0, 0))) {
+            Cell &cell = g_maze[g_hero_pos.x + step.x][g_hero_pos.y + step.y];
+            if (cell.kind != kCellWall) {
+                if (cell.kind == kCellFloor) {
+                    g_step.Play();
+
+                    g_is_hero_moving = true;
+                    g_hero_next_pos = g_hero_pos + step;
+                    g_hero_move_start_at = time;
+                } else if (cell.kind == kCellStairsDownLeft
+                    || cell.kind == kCellStairsDownRight) {
+                    g_hero_pos += step;
+                    g_is_first_level = false;
+                    g_upper_cell_kind = cell.kind;
+                    GenerateMaze();
+                    easy::GetEngine()->GetBackbuffer().Clear();
+                }
+            }
         }
     }
+
+    LookAround();
 }
 
 void Render() {
-    for (Si32 x = 0; x < 32; ++x) {
-        for (Si32 y = 19; y >= 0; --y) {
+    for (Si32 y = 19; y >= 0; --y) {
+        for (Si32 x = 0; x < 32; ++x) {
             if (!g_maze[x][y].is_in_fog_of_war) {
                 Vec2Si32 pos(x * 25, y * 25);
-                switch(g_maze[x][y].kind) {
-                case kCellWall:
-                    g_wall.Draw(pos);
-                    break;
+                bool is_visible = g_maze[x][y].is_visible;
+                switch (g_maze[x][y].kind) {
                 case kCellFloor:
-                    g_floor.Draw(pos);
+                    if (is_visible) {
+                        g_floor.Draw(pos);
+                    } else {
+                        g_floor_dark.Draw(pos);
+                    }
                     break;
                 case kCellStairsDownLeft:
-                    g_stairs_down_left.Draw(pos);
+                    if (is_visible) {
+                        g_stairs_down_left.Draw(pos);
+                    } else {
+                        g_stairs_down_left_dark.Draw(pos);
+                    }
                     break;
                 case kCellStairsDownRight:
-                    g_stairs_down_right.Draw(pos);
+                    if (is_visible) {
+                        g_stairs_down_right.Draw(pos);
+                    } else {
+                        g_stairs_down_right_dark.Draw(pos);
+                    }
                     break;
                 case kCellStairsUpLeft:
-                    g_stairs_up_left.Draw(pos);
+                    if (is_visible) {
+                        g_stairs_up_left.Draw(pos);
+                    } else {
+                        g_stairs_up_left_dark.Draw(pos);
+                    }
                     break;
                 case kCellStairsUpRight:
-                    g_stairs_up_right.Draw(pos);
+                    if (is_visible) {
+                        g_stairs_up_right.Draw(pos);
+                    } else {
+                        g_stairs_up_right_dark.Draw(pos);
+                    }
                     break;
                 }
             }
-            if (x == g_hero_pos.x && y == g_hero_pos.y) {
-                g_hero[g_hero_idx].Draw(x * 25, y * 25);
-            }
         }
     }
+    for (Si32 y = 19; y >= 0; --y) {
+        for (Si32 x = 0; x < 32; ++x) {
+            if (!g_maze[x][y].is_in_fog_of_war) {
+                Vec2Si32 pos(x * 25, y * 25);
+                bool is_visible = g_maze[x][y].is_visible;
+                switch (g_maze[x][y].kind) {
+                case kCellWall:
+                    if (is_visible) {
+                        g_wall.Draw(pos);
+                    } else {
+                        g_wall_dark.Draw(pos);
+                    }
+                    break;
+                }
+            }
+        }
+        if (y == g_hero_pos.y) {
+            Vec2Si32 drawPos = g_hero_pos * 25 +
+                static_cast<Si32>(g_hero_move_part * 25.0) *
+                (g_hero_next_pos - g_hero_pos);
+            g_hero[g_hero_idx].Draw(drawPos);
+        }
+    }
+
+    ShowFrame();
 }
 
 void EasyMain() {
@@ -412,6 +514,5 @@ void EasyMain() {
     while (!IsKey(kKeyEscape)) {
         Update();
         Render();
-        ShowFrame();
     }
 }

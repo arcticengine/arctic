@@ -51,6 +51,10 @@ void Engine::Init(Si32 width, Si32 height) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width_, height_, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
     // send the texture data
+
+    start_time_ = clock_.now();
+    time_correction_ = 0.0;
+    last_time_ = 0.0;
 }
 
 void Engine::Draw2d() {
@@ -154,6 +158,24 @@ void Engine::Draw2d() {
 
 void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
     Init(width, height);
+}
+
+double Engine::GetTime() {
+    auto now = clock_.now();
+    if (now > start_time_) {
+        double duration =
+            std::chrono::duration<double>(now - start_time_).count();
+        double time = duration + time_correction_;
+        if (time >= last_time_) {
+            last_time_ = time;
+            return time;
+        }
+        time_correction_ = last_time_ - duration;
+        return last_time_;
+    }
+    start_time_ = now;
+    time_correction_ = last_time_;
+    return last_time_;
 }
 
 }  // namespace arctic

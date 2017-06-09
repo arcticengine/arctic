@@ -23,6 +23,8 @@
 #ifndef ENGINE_ENGINE_H_
 #define ENGINE_ENGINE_H_
 
+#include <chrono>
+
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
 
@@ -45,6 +47,11 @@ class Engine {
     Si32 tex_ = 0;
     Si32 indices_ = 0;
 
+    std::chrono::high_resolution_clock clock_;
+    std::chrono::high_resolution_clock::time_point start_time_;
+    double time_correction_;
+    double last_time_;
+
  public:
     void Init(Si32 width, Si32 height);
     void Draw2d();
@@ -52,6 +59,7 @@ class Engine {
         return backbuffer_texture_;
     }
     void ResizeBackbuffer(const Si32 width, const Si32 height);
+    double GetTime();
 };
 
 }  // namespace arctic

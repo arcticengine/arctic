@@ -93,7 +93,10 @@ void ResizeScreen(const Si32 width, const Si32 height) {
     return;
 }
 
-double Time();
+double Time() {
+    return GetEngine()->GetTime();
+}
+
 void Sleep(double duration_seconds);
 
 std::vector<Ui8> ReadFile(const char *file_name) {
