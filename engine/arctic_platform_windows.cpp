@@ -33,6 +33,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "engine/engine.h"
@@ -104,6 +105,12 @@ static const PIXELFORMATDESCRIPTOR pfd = {
     0,              // aux
     PFD_MAIN_PLANE,
     0, 0, 0, 0
+};
+
+struct SystemInfo {
+    HWND window_handle;
+    Si32 screen_width;
+    Si32 screen_height;
 };
 
 KeyCode TranslateKeyCode(WPARAM word_param) {
@@ -259,7 +266,8 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
 //
 // Creates main window.
 //
-bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
+bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
+        SystemInfo *system_info) {
     // WCHAR title_bar_text[MAX_LOADSTRING];
     // WCHAR window_class_name[MAX_LOADSTRING];
 
@@ -329,9 +337,17 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
     ShowWindow(window_handle, cmd_show);
     UpdateWindow(window_handle);
 
+    Check(!!system_info, "Error, system_info: nullptr in CreateMainWindow");
+    system_info->window_handle = window_handle;
+    system_info->screen_width = screen_width;
+    system_info->screen_height = screen_height;
+    return true;
+}
+
+void EngineThreadFunction(SystemInfo system_info) {
     //  Init opengl start
 
-    HDC hdc = GetDC(window_handle);
+    HDC hdc = GetDC(system_info.window_handle);
     Check(hdc != nullptr, "Can't get the Device Context. Code: WIN01.");
 
     unsigned int pixel_format = ChoosePixelFormat(hdc, &pfd);
@@ -346,11 +362,15 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
     is_ok = wglMakeCurrent(hdc, hrc);
     Check(!!is_ok, "Can't make the GL Context current. Code: WIN05.");
 
-    ae->Init(screen_width, screen_height);
+    arctic::easy::GetEngine()->Init(system_info.screen_width,
+        system_info.screen_height);
     //  Init opengl end
 
-    return true;
+    EasyMain();
+
+    ExitProcess(0);
 }
+
 
 void Swap() {
     HDC hdc = wglGetCurrentDC();
@@ -385,13 +405,18 @@ bool SetVSync(bool is_enable) {
 }
 
 void ProcessUserInput() {
-    MSG msg;
-    while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE | PM_NOYIELD) > 0) {
-        if (msg.message == WM_QUIT) {
-            exit(0);
+    while (true) {
+        MSG msg;
+        BOOL ret = GetMessage(&msg, NULL, 0, 0);
+        if (ret == 0) {
+            return;
+        } else if (ret == -1) {
+            // handle the error and possibly exit
+            return;
+        } else {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
     }
 }
 
@@ -430,6 +455,7 @@ void WriteWholeFile(const char *file_name, const Ui8 *data,
 
 }  // namespace arctic
 
+
 int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
         _In_opt_ HINSTANCE prev_instance_handle,
         _In_ LPWSTR command_line,
@@ -443,12 +469,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
     DisableProcessWindowsGhosting();
 
+    arctic::SystemInfo system_info;
     bool is_ok = arctic::CreateMainWindow(instance_handle, cmd_show,
-        arctic::easy::GetEngine());
+        &system_info);
     arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
 
+    arctic::easy::GetEngine();
+
+    std::thread engine_thread(arctic::EngineThreadFunction, system_info);
     arctic::ProcessUserInput();
-    EasyMain();
+    ExitProcess(0);
+//    engine_thread.join();  
     return 0;
 }
 

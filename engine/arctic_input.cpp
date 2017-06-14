@@ -24,15 +24,20 @@
 #include "engine/arctic_input.h"
 
 #include <deque>
+#include <mutex>
 
 #include "engine/arctic_platform.h"
 
 namespace arctic {
 
+static std::mutex g_input_mutex;
 static std::deque<InputMessage> g_input;
 
 bool PopInputMessage(InputMessage *out_message) {
     Check(out_message != nullptr, "Unexpected nullptr in out_message!");
+
+    std::lock_guard<std::mutex> lock(g_input_mutex);
+
     auto it = g_input.begin();
     if (it == g_input.end()) {
         return false;
@@ -43,6 +48,7 @@ bool PopInputMessage(InputMessage *out_message) {
 }
 
 void PushInputMessage(const InputMessage &message) {
+    std::lock_guard<std::mutex> lock(g_input_mutex);
     g_input.push_back(message);
 }
 

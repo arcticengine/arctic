@@ -523,6 +523,8 @@ void Render() {
                         g_stairs_up_right_dark.Draw(pos);
                     }
                     break;
+                default:
+                    break;
                 }
             }
         }

@@ -24,6 +24,9 @@
 
 #include "engine/arctic_platform.h"
 
+#include <chrono>
+#include <thread>
+
 namespace arctic {
 namespace easy {
 
@@ -38,7 +41,6 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
 void ShowFrame() {
     GetEngine()->Draw2d();
-    ProcessUserInput();
 
     InputMessage message;
     while (PopInputMessage(&message)) {
@@ -105,7 +107,17 @@ double Time() {
     return GetEngine()->GetTime();
 }
 
-void Sleep(double duration_seconds);
+void Sleep(double duration_seconds) {
+    if (duration_seconds <= 0.0) {
+        return;
+    }
+    double usec = duration_seconds * 1000000.0;
+    double limit = nexttoward(std::numeric_limits<Si64>::max(), 0ll);
+    Check(usec < limit, "Sleep duration is too long");
+    Si64 usec_int = static_cast<Si64>(usec);
+    std::chrono::duration<Si64, std::micro> dur(usec_int);
+    std::this_thread::sleep_for(dur);
+}
 
 std::vector<Ui8> ReadFile(const char *file_name) {
     return ReadWholeFile(file_name);
