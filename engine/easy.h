@@ -56,6 +56,9 @@ Vec2Si32 MouseMove();
 Vec2Si32 ScreenSize();
 void ResizeScreen(const Si32 width, const Si32 height);
 
+void Clear();
+void Clear(Rgba color);
+
 double Time();
 void Sleep(double duration_seconds);
 

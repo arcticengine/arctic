@@ -230,7 +230,8 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
 //  Processes messages for the main window.
 //
 LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
-    WPARAM word_param, LPARAM long_param) {
+        WPARAM word_param, LPARAM long_param) {
+    
     switch (message) {
     case WM_PAINT:
     {
@@ -238,6 +239,7 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         HDC hdc = BeginPaint(window_handle, &ps);
         // TODO(Huldra): Add any drawing code that uses hdc here...
         EndPaint(window_handle, &ps);
+        break;
     }
     case WM_KEYUP:
         arctic::OnKey(word_param, long_param, false);
@@ -300,7 +302,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
     WNDCLASSEXW wcex;
     memset(&wcex, 0, sizeof(wcex));
     wcex.cbSize = sizeof(WNDCLASSEX);
-    wcex.style = CS_HREDRAW | CS_VREDRAW;
+    wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
     wcex.lpfnWndProc = arctic::WndProc;
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
@@ -317,12 +319,15 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
 
     HWND window_handle = CreateWindowExW(WS_EX_APPWINDOW,
         window_class_name, title_bar_text,
-        WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN/*WS_OVERLAPPEDWINDOW*/,
+        WS_POPUP /*| WS_CLIPSIBLINGS | WS_CLIPCHILDREN/*WS_OVERLAPPEDWINDOW*/,
         0, 0, screen_width, screen_height, nullptr, nullptr,
         instance_handle, nullptr);
     if (!window_handle) {
         return false;
     }
+
+    ShowWindow(window_handle, cmd_show);
+    UpdateWindow(window_handle);
 
     //  Init opengl start
 
@@ -344,14 +349,12 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show, Engine *ae) {
     ae->Init(screen_width, screen_height);
     //  Init opengl end
 
-    ShowWindow(window_handle, cmd_show);
-    UpdateWindow(window_handle);
     return true;
 }
 
 void Swap() {
     HDC hdc = wglGetCurrentDC();
-    wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+    SwapBuffers(hdc);
 }
 
 bool IsVSyncSupported() {
@@ -384,11 +387,11 @@ bool SetVSync(bool is_enable) {
 void ProcessUserInput() {
     MSG msg;
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE | PM_NOYIELD) > 0) {
+        if (msg.message == WM_QUIT) {
+            exit(0);
+        }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-    }
-    if (msg.message == WM_QUIT) {
-        exit(0);
     }
 }
 
@@ -437,6 +440,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     BOOL is_ok_w = SetProcessDPIAware();
     arctic::Check(is_ok_w != FALSE,
         "Error from SetProessDPIAware! Code: WIN06.");
+
+    DisableProcessWindowsGhosting();
 
     bool is_ok = arctic::CreateMainWindow(instance_handle, cmd_show,
         arctic::easy::GetEngine());

@@ -45,6 +45,7 @@ class Sprite {
     void Reference(Sprite from, const Si32 from_x, const Si32 from_y,
         const Si32 from_width, const Si32 from_height);
     void Clear();
+    void Clear(Rgba color);
     void Draw(const Si32 to_x, const Si32 to_y);
     void Draw(const Si32 to_x, const Si32 to_y,
         const Si32 to_width, const Si32 to_height);

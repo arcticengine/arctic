@@ -51,7 +51,7 @@ Sprite g_stairs_up_left_dark;
 Sprite g_stairs_up_right;
 Sprite g_stairs_up_right_dark;
 Sprite g_stick;
-Sprite g_stpne;
+Sprite g_stone;
 Sprite g_wall;
 Sprite g_wall_dark;
 
@@ -66,10 +66,22 @@ enum CellKind {
     kCellStairsUpRight,
 };
 
+enum ItemKind {
+    kItemNone = 0,
+    kItemStone,
+    kItemStick,
+    kItemKindCount
+};
+
+struct Item {
+    ItemKind kind = kItemNone;
+};
+
 struct Cell {
     CellKind kind = kCellWall;
     bool is_in_fog_of_war = true;
     bool is_visible = false;
+    std::vector<Item> items;
 };
 
 bool g_is_first_level = true;
@@ -82,6 +94,7 @@ Vec2Si32 g_hero_next_pos(1, 1);
 double g_hero_move_start_at = 0.0;
 double g_hero_move_part = 0.0;
 bool g_is_hero_moving = false;
+std::vector<Si32> g_hero_items;
 
 Si32 g_hero_idx = 0;
 std::independent_bits_engine<std::mt19937_64, 8, Ui64> g_rnd;
@@ -191,6 +204,7 @@ void PlayIntro() {
     Si32 duration3 = 560;
     Si32 frame = 0;
     while (true) {
+        Clear();
         if (IsKey(kKeyEscape) || IsKey(kKeySpace) || IsKey(kKeyEnter)) {
             return;
         }
@@ -210,7 +224,7 @@ void PlayIntro() {
 
         Rgba *back_buffer = GetEngine()->GetBackbuffer().RgbaData();
         memset(next_snow, 0, 320 * 200);
-        for (Si32 y = 0; y < 200; ++y) {
+        for (Si32 y = 10; y < 190; ++y) {
             for (Si32 x = 0; x < 320; ++x) {
                 Si32 z = cur_snow[x + y * 320];
                 if (z) {
@@ -219,8 +233,8 @@ void PlayIntro() {
                     if (next_x >= 320) {
                         next_x -= 320;
                     }
-                    if (next_y < 0) {
-                        next_y = 199;
+                    if (next_y < 10) {
+                        next_y = 189;
                     }
                     if (next_snow[next_x + next_y * 320] == 0
                         || next_snow[next_x + next_y * 320] > z) {
@@ -292,6 +306,24 @@ void GenerateMaze() {
         dead_ends[rnd] = dead_ends.back();
         dead_ends.pop_back();
     }
+    for (Ui32 idx = 0; idx < dead_ends.size(); ++idx) {
+        if (g_hero_pos == dead_ends[idx]) {
+            continue;
+        }
+        Cell &cell = g_maze[dead_ends[idx].x][dead_ends[idx].y];
+        Item item;
+        Ui64 rnd = g_rnd();
+        if (rnd < 32) {
+            item.kind = kItemStick;
+        } else if (rnd < 128) {
+            item.kind = kItemStone;
+        } else {
+            item.kind = kItemNone;
+        }
+        if (item.kind != kItemNone) {
+            cell.items.push_back(item);
+        }
+    }
 }
 
 void Init() {
@@ -323,7 +355,7 @@ void Init() {
     g_stairs_up_right.Load("data/stairs_up_right_1.tga");
     g_stairs_up_right_dark.Load("data/stairs_up_right_1_dark.tga");
     g_stick.Load("data/stick_1.tga");
-    g_stpne.Load("data/stone_1.tga");
+    g_stone.Load("data/stone_1.tga");
     g_wall.Load("data/wall_1.tga");
     g_wall_dark.Load("data/wall_1_dark.tga");
 
@@ -335,6 +367,10 @@ void Init() {
 
     g_hero_idx = g_rnd() % 2;
     g_hero_pos = Vec2Si32(1, 1);
+    g_hero_items.resize(kItemKindCount);
+    for (Ui32 idx = 0; idx < g_hero_items.size(); ++idx) {
+        g_hero_items[idx] = 0;
+    }
     GenerateMaze();
 }
 
@@ -412,6 +448,13 @@ void Update() {
     }
 
     if (!g_is_hero_moving) {
+        Cell &cur = g_maze[g_hero_pos.x][g_hero_pos.y];
+        if (!cur.items.empty()) {
+            for (Ui32 idx = 0; idx < cur.items.size(); ++idx) {
+                g_hero_items[cur.items[idx].kind]++;
+            }
+            cur.items.clear();
+        }
         if (!(step == Vec2Si32(0, 0))) {
             Cell &cell = g_maze[g_hero_pos.x + step.x][g_hero_pos.y + step.y];
             if (cell.kind != kCellWall) {
@@ -437,6 +480,8 @@ void Update() {
 }
 
 void Render() {
+    Clear();
+
     for (Si32 y = 19; y >= 0; --y) {
         for (Si32 x = 0; x < 32; ++x) {
             if (!g_maze[x][y].is_in_fog_of_war) {
@@ -484,10 +529,11 @@ void Render() {
     }
     for (Si32 y = 19; y >= 0; --y) {
         for (Si32 x = 0; x < 32; ++x) {
-            if (!g_maze[x][y].is_in_fog_of_war) {
+            Cell &cell = g_maze[x][y];
+            if (!cell.is_in_fog_of_war) {
                 Vec2Si32 pos(x * 25, y * 25);
-                bool is_visible = g_maze[x][y].is_visible;
-                switch (g_maze[x][y].kind) {
+                bool is_visible = cell.is_visible;
+                switch (cell.kind) {
                 case kCellWall:
                     if (is_visible) {
                         g_wall.Draw(pos);
@@ -496,6 +542,21 @@ void Render() {
                     }
                     break;
                 }
+                for (size_t idx = 0; idx < cell.items.size(); idx++) {
+                    Item &item = cell.items[idx];
+                    switch (item.kind) {
+                    case kItemStone:
+                        if (is_visible) {
+                            g_stone.Draw(pos);
+                        }
+                        break;
+                    case kItemStick:
+                        if (is_visible) {
+                            g_stick.Draw(pos);
+                        }
+                        break;
+                    }
+                }
             }
         }
         if (y == g_hero_pos.y) {
@@ -503,6 +564,24 @@ void Render() {
                 static_cast<Si32>(g_hero_move_part * 25.0) *
                 (g_hero_next_pos - g_hero_pos);
             g_hero[g_hero_idx].Draw(drawPos);
+        }
+    }
+
+    Si32 item_x = 25;
+    for (Si32 kind = kItemNone; kind < kItemKindCount; ++kind) {
+        for (Si32 idx = 0; idx < g_hero_items[kind]; ++idx) {
+            switch (kind) {
+            case kItemStone:
+                g_stone.Draw(item_x, 0);
+                break;
+            case kItemStick:
+                g_stick.Draw(item_x, 0);
+                break;
+            }
+            item_x += 5;
+        }
+        if (g_hero_items[kind]) {
+            item_x += 30;
         }
     }
 

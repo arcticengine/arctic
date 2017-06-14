@@ -93,6 +93,14 @@ void ResizeScreen(const Si32 width, const Si32 height) {
     return;
 }
 
+void Clear() {
+    GetEngine()->GetBackbuffer().Clear();
+}
+
+void Clear(Rgba color) {
+    GetEngine()->GetBackbuffer().Clear(color);
+}
+
 double Time() {
     return GetEngine()->GetTime();
 }
