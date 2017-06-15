@@ -181,6 +181,30 @@ void EliminateDeadEnd(Vec2Si32 pos) {
     }
 }
 
+void CycleDeadEnd(Vec2Si32 pos) {
+    Vec2Si32 dir[4] = {Vec2Si32(-1, 0)
+        , Vec2Si32(1, 0)
+        , Vec2Si32(0, -1)
+        , Vec2Si32(0, 1)};
+
+    if (g_maze[pos.x][pos.y].kind != kCellFloor) {
+        return;
+    }
+    Si32 rnd_dir = g_rnd() % 4;
+    for (Si32 i = 0; i < 4; ++i) {
+        Si32 idx = (i + rnd_dir) % 4;
+        Vec2Si32 p = pos + dir[idx];
+        if (p.x > 0 && p.x < g_maze_size.x - 1 &&
+                p.y > 0 && p.y < g_maze_size.y) {
+            Cell &cell = g_maze[p.x][p.y];
+            if (cell.kind == kCellWall) {
+                cell.kind = kCellFloor;
+                return;
+            }
+        }
+    }
+}
+
 void PlayIntro() {
     ResizeScreen(320, 200);
     Ui8 snow[2][320 * 200];
@@ -303,6 +327,13 @@ void GenerateMaze() {
     for (Si32 idx = 0; idx < to_eliminate; ++idx) {
         Si32 rnd = g_rnd() % dead_ends.size();
         EliminateDeadEnd(dead_ends[rnd]);
+        dead_ends[rnd] = dead_ends.back();
+        dead_ends.pop_back();
+    }
+    Si32 to_cycle = dead_ends.size() / 2;
+    for (Si32 idx = 0; idx < to_cycle; ++idx) {
+        Si32 rnd = g_rnd() % dead_ends.size();
+        CycleDeadEnd(dead_ends[rnd]);
         dead_ends[rnd] = dead_ends.back();
         dead_ends.pop_back();
     }
