@@ -53,7 +53,7 @@ extern void EasyMain();
 
 namespace arctic {
 
-void Check(bool condition, const char *error_message) {
+inline void Check(bool condition, const char *error_message) {
     if (condition) {
         return;
     }

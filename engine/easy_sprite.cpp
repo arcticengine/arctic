@@ -122,38 +122,41 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
         const Si32 from_x, const Si32 from_y,
         const Si32 from_width, const Si32 from_height,
         Sprite to_sprite) {
+    const Si32 from_sprite_width = width();
+    const Si32 to_sprite_width = to_sprite.width();
+
     Rgba *to = to_sprite.RgbaData()
-        + to_y * to_sprite.width()
+        + to_y * to_sprite_width
         + to_x;
-    Rgba *from = RgbaData()
-        + from_y * width()
+    const Rgba *from = RgbaData()
+        + from_y * from_sprite_width
         + from_x;
 
-    Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
-    Si32 to_y_d_max = to_sprite.height() - to_y;
-    Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
+    const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
+    const Si32 to_y_d_max = to_sprite.height() - to_y;
+    const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
 
-    Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
-    Si32 to_x_d_max = to_sprite.width() - to_x;
-    Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
+    const Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
+    const Si32 to_x_d_max = to_sprite_width - to_x;
+    const Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
 
     for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
-        Si32 from_y_disp = (from_height * to_y_disp) / to_height;
+        const Si32 from_y_disp = (from_height * to_y_disp) / to_height;
         
-        Si32 from_x_b = (from_width * to_x_db) / to_width;
-        Si32 from_x_step_16 = 65536 * from_width / to_width;
+        const Si32 from_x_b = (from_width * to_x_db) / to_width;
+        const Si32 from_x_step_16 = 65536 * from_width / to_width;
         Si32 from_x_acc_16 = 0;
 
-        Rgba *from_line = from + from_y_disp * width();
-        Rgba *to_line = to + to_y_disp * to_sprite.width();
+        const Rgba *from_line = from + from_y_disp * from_sprite_width;
+        Rgba *to_line = to + to_y_disp * to_sprite_width;
         
         for (Si32 to_x_disp = to_x_db; to_x_disp < to_x_de; ++to_x_disp) {
             Rgba *to_rgba = to_line + to_x_disp;
-            Si32 from_x_disp = from_x_b + (from_x_acc_16 / 65536);
+            const Si32 from_x_disp = from_x_b + (from_x_acc_16 / 65536);
             from_x_acc_16 += from_x_step_16;
-            Rgba *from_rgba = from_line + from_x_disp;
+            const Rgba *from_rgba = from_line + from_x_disp;
             if (from_rgba->a) {
-                *to_rgba = *from_rgba;
+                to_rgba->rgba = from_rgba->rgba;
             }
         }
     }
