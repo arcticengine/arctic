@@ -159,16 +159,11 @@ enum KeyCode {
   // [128, 244]
   kKeySectionSign = 245,  // ASCII Section sign
   // [246, 255]
-  kKeyCount = 256  // Key count, not a code
-};
-
-enum MouseKeyCode {
-  kMouseNone = 0,
-  kMouseUnknown = 1,
-  kMouseLeft = 2,
-  kMouseRight = 3,
-  kMouseWheel = 4,
-  kMouseCount = 5  // Mouse key count, not a code
+  kKeyMouseUnknown = 256,
+  kKeyMouseLeft = 257,
+  kKeyMouseRight = 258,
+  kKeyMouseWheel = 259,
+  kKeyCount = 260  // Key count, not a code
 };
 
 struct InputMessage {
@@ -184,11 +179,7 @@ struct InputMessage {
     Ui32 queueLen;
   };
   struct Mouse {
-    Vec2Si32 pos;
-    Vec2Si32 prev_pos;
-    Vec2Si32 move;
-    Ui32 state[kMouseCount];
-    Ui32 key[kMouseCount];
+    Vec2F pos;
   };
   Kind kind;
   Keyboard keyboard;

@@ -27,6 +27,7 @@
 #define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
 #define NOMINMAX
 #include <windows.h>
+#include <windowsx.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 
@@ -224,6 +225,24 @@ KeyCode TranslateKeyCode(WPARAM word_param) {
     return kKeyUnknown;
 }
 
+static Si32 window_width = 0;
+static Si32 window_height = 0;
+
+void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
+    Check(window_width != 0, "Could not obtain window width in OnMouse");
+    Check(window_height != 0, "Could not obtain window height in OnMouse");
+    Si32 x = GET_X_LPARAM(long_param);
+    Si32 y = window_height - GET_Y_LPARAM(long_param);
+    Vec2F pos(static_cast<float>(x) / static_cast<float>(window_width - 1),
+        static_cast<float>(y) / static_cast<float>(window_height - 1));
+    InputMessage msg;
+    msg.kind = InputMessage::kMouse;
+    msg.keyboard.key = key;
+    msg.keyboard.key_state = (is_down ? 1 : 2);
+    msg.mouse.pos = pos;
+    PushInputMessage(msg);
+}
+
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
     KeyCode key = TranslateKeyCode(word_param);
     InputMessage msg;
@@ -232,6 +251,7 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
     msg.keyboard.key_state = (is_down ? 1 : 2);
     PushInputMessage(msg);
 }
+
 
 //
 //  Processes messages for the main window.
@@ -253,6 +273,27 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         break;
     case WM_KEYDOWN:
         arctic::OnKey(word_param, long_param, true);
+        break;
+    case WM_LBUTTONUP:
+        arctic::OnMouse(kKeyMouseLeft, word_param, long_param, false);
+        break;
+    case WM_LBUTTONDOWN:
+        arctic::OnMouse(kKeyMouseLeft, word_param, long_param, true);
+        break;
+    case WM_RBUTTONUP:
+        arctic::OnMouse(kKeyMouseRight, word_param, long_param, false);
+        break;
+    case WM_RBUTTONDOWN:
+        arctic::OnMouse(kKeyMouseRight, word_param, long_param, true);
+        break;
+    case WM_MBUTTONUP:
+        arctic::OnMouse(kKeyMouseWheel, word_param, long_param, false);
+        break;
+    case WM_MBUTTONDOWN:
+        arctic::OnMouse(kKeyMouseWheel, word_param, long_param, true);
+        break;
+    case WM_MOUSEMOVE:
+        arctic::OnMouse(kKeyCount, word_param, long_param, false);
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -324,6 +365,9 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
     //      MAKEINTRESOURCE(IDI_SMALL_APP_ICON));
 
     ATOM register_class_result = RegisterClassExW(&wcex);
+
+    window_width = screen_width;
+    window_height = screen_height;
 
     HWND window_handle = CreateWindowExW(WS_EX_APPWINDOW,
         window_class_name, title_bar_text,

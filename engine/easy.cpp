@@ -32,6 +32,9 @@ namespace easy {
 
 static Ui32 g_key_state[kKeyCount] = {0};
 static Engine *g_engine = nullptr;
+static Vec2Si32 g_mouse_pos_prev = Vec2Si32(0, 0);
+static Vec2Si32 g_mouse_pos = Vec2Si32(0, 0);
+static Vec2Si32 g_mouse_move = Vec2Si32(0, 0);
 
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color);
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b);
@@ -42,12 +45,26 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 void ShowFrame() {
     GetEngine()->Draw2d();
 
+    Vec2Si32 size = GetEngine()->GetBackbuffer().Size();
+    Vec2F scale(static_cast<float>(size.x - 1),
+        static_cast<float>(size.y - 1));
     InputMessage message;
+    g_mouse_pos_prev = g_mouse_pos;
     while (PopInputMessage(&message)) {
         if (message.kind == InputMessage::kKeyboard) {
             g_key_state[message.keyboard.key] = message.keyboard.key_state;
+        } else if (message.kind == InputMessage::kMouse) {
+            Vec2F float_pos(scale.x * message.mouse.pos.x,
+                scale.y * message.mouse.pos.y);
+            Vec2Si32 pos(static_cast<Si32>(float_pos.x),
+                static_cast<Si32>(float_pos.y));
+            g_mouse_pos = pos;
+            if (message.keyboard.key != kKeyCount) {
+                g_key_state[message.keyboard.key] = message.keyboard.key_state;
+            }
         }
     }
+    g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
 }
 
 bool IsKeyImpl(Ui32 key_code) {
@@ -83,8 +100,13 @@ bool IsKey(const std::string &keys) {
     return IsKey(keys.c_str());
 }
 
-Vec2Si32 MousePos();
-Vec2Si32 MouseMove();
+Vec2Si32 MousePos() {
+    return g_mouse_pos;
+}
+
+Vec2Si32 MouseMove() {
+    return g_mouse_move;
+}
 
 Vec2Si32 ScreenSize() {
     return GetEngine()->GetBackbuffer().Size();
