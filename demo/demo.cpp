@@ -28,10 +28,11 @@
 #include <deque>
 #include <random>
 #include <utility>
+#include <vector>
 #include "engine/easy.h"
 
-using namespace arctic;
-using namespace arctic::easy;
+using namespace arctic;  // NOLINT
+using namespace arctic::easy;  // NOLINT
 
 Sprite g_blood[7];
 Sprite g_floor;
@@ -704,7 +705,6 @@ void Render() {
             item_x += 30;
         }
     }
-
     ShowFrame();
 }
 

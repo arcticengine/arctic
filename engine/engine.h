@@ -23,10 +23,11 @@
 #ifndef ENGINE_ENGINE_H_
 #define ENGINE_ENGINE_H_
 
-#include <chrono>
+#include <chrono>  // NOLINT
 
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
+#include "engine/vec2f.h"
 
 namespace arctic {
 
@@ -60,6 +61,8 @@ class Engine {
     }
     void ResizeBackbuffer(const Si32 width, const Si32 height);
     double GetTime();
+    Vec2Si32 MouseToBackBuffer(Vec2F pos) const;
+    Vec2Si32 ScreenSize() const;
 };
 
 }  // namespace arctic

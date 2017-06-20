@@ -29,8 +29,12 @@
 
 namespace arctic {
 
-inline Si32 Clamp(const Si32 v, Si32 mi, Si32 ma) {
+inline Si32 Clamp(const Si32 v, const Si32 mi, const Si32 ma) {
   return (v < mi) ? mi : ((v > ma) ? ma : v);
+}
+
+inline float Clamp(const float v, const float mi, const float ma) {
+    return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
 }  // namespace arctic

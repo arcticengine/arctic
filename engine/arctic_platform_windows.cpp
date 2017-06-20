@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
-#include <thread>
+#include <thread>  // NOLINT
 #include <vector>
 
 #include "engine/engine.h"
@@ -258,7 +258,6 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
 //
 LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         WPARAM word_param, LPARAM long_param) {
-    
     switch (message) {
     case WM_PAINT:
     {
@@ -423,7 +422,7 @@ void Swap() {
 
 bool IsVSyncSupported() {
     const char* (WINAPI *wglGetExtensionsStringEXT)();
-    wglGetExtensionsStringEXT = reinterpret_cast<const char* (WINAPI*)()>(
+    wglGetExtensionsStringEXT = reinterpret_cast<const char* (WINAPI*)()>(  // NOLINT
         wglGetProcAddress("wglGetExtensionsStringEXT"));
     CheckWithLastError(wglGetExtensionsStringEXT != nullptr,
         "Error in wglGetProcAddress(\"wglGetExtensionsStringEXT\"): ");
@@ -439,7 +438,7 @@ bool SetVSync(bool is_enable) {
         return false;
     }
     bool (APIENTRY *wglSwapIntervalEXT)(int);
-    wglSwapIntervalEXT = reinterpret_cast<bool (APIENTRY *)(int)>(
+    wglSwapIntervalEXT = reinterpret_cast<bool (APIENTRY *)(int)>(  // NOLINT
         wglGetProcAddress("wglSwapIntervalEXT"));
     CheckWithLastError(wglSwapIntervalEXT != nullptr,
         "Error in wglGetProcAddress(\"wglSwapIntervalEXT\"): ");
@@ -523,7 +522,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     std::thread engine_thread(arctic::EngineThreadFunction, system_info);
     arctic::ProcessUserInput();
     ExitProcess(0);
-//    engine_thread.join();  
+//    engine_thread.join();
     return 0;
 }
 

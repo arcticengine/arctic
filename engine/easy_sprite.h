@@ -37,6 +37,9 @@ namespace easy {
 class Sprite {
  private:
     std::shared_ptr<SpriteInstance> sprite_instance_;
+    Vec2Si32 ref_pos_;
+    Vec2Si32 ref_size_;
+    Vec2Si32 pivot_;
 
  public:
     void Load(const char *file_name);
@@ -46,6 +49,8 @@ class Sprite {
         const Si32 from_width, const Si32 from_height);
     void Clear();
     void Clear(Rgba color);
+    void SetPivot(Vec2Si32 pivot);
+    Vec2Si32 Pivot() const;
     void Draw(const Si32 to_x, const Si32 to_y);
     void Draw(const Si32 to_x, const Si32 to_y,
         const Si32 to_width, const Si32 to_height);
@@ -65,6 +70,8 @@ class Sprite {
     Si32 width() const;
     Si32 height() const;
     Vec2Si32 Size() const;
+    Si32 StrideBytes() const;
+    Si32 StridePixels() const;
     Ui8* RawData();
     Rgba* RgbaData();
 };

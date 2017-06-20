@@ -24,7 +24,7 @@
 #include "engine/arctic_input.h"
 
 #include <deque>
-#include <mutex>
+#include <mutex>  // NOLINT
 
 #include "engine/arctic_platform.h"
 

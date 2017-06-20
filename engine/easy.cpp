@@ -22,10 +22,11 @@
 
 #include "engine/easy.h"
 
-#include "engine/arctic_platform.h"
+#include <chrono>  // NOLINT
+#include <limits>
+#include <thread>  // NOLINT
 
-#include <chrono>
-#include <thread>
+#include "engine/arctic_platform.h"
 
 namespace arctic {
 namespace easy {
@@ -45,19 +46,13 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 void ShowFrame() {
     GetEngine()->Draw2d();
 
-    Vec2Si32 size = GetEngine()->GetBackbuffer().Size();
-    Vec2F scale(static_cast<float>(size.x - 1),
-        static_cast<float>(size.y - 1));
     InputMessage message;
     g_mouse_pos_prev = g_mouse_pos;
     while (PopInputMessage(&message)) {
         if (message.kind == InputMessage::kKeyboard) {
             g_key_state[message.keyboard.key] = message.keyboard.key_state;
         } else if (message.kind == InputMessage::kMouse) {
-            Vec2F float_pos(scale.x * message.mouse.pos.x,
-                scale.y * message.mouse.pos.y);
-            Vec2Si32 pos(static_cast<Si32>(float_pos.x),
-                static_cast<Si32>(float_pos.y));
+            Vec2Si32 pos = GetEngine()->MouseToBackBuffer(message.mouse.pos);
             g_mouse_pos = pos;
             if (message.keyboard.key != kKeyCount) {
                 g_key_state[message.keyboard.key] = message.keyboard.key_state;
