@@ -28,6 +28,7 @@
 #define NOMINMAX
 #include <windows.h>
 #include <windowsx.h>
+#include <Mmsystem.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 
@@ -45,6 +46,7 @@
 #include "engine/rgb.h"
 #include "engine/vec3f.h"
 
+#pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "OpenGL32.lib")
 #pragma comment(lib, "glu32.lib")
 
@@ -54,21 +56,29 @@ extern void EasyMain();
 
 namespace arctic {
 
-inline void Check(bool condition, const char *error_message) {
+inline void Check(bool condition, const char *error_message, const char *error_message_postfix) {
     if (condition) {
         return;
     }
-    Fatal(error_message);
+    Fatal(error_message, error_message_postfix);
 }
 
-void Fatal(const char *message) {
-    MessageBox(NULL, message, "Arctic Engine", MB_OK | MB_ICONERROR);
+void Fatal(const char *message, const char *message_postfix) {
+	size_t size = 1 +
+		strlen(message) +
+		(message_postfix ? strlen(message_postfix) : 0);
+	char *full_message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
+	sprintf_s(full_message, size, "%s%s", message,
+		(message_postfix ? message_postfix : ""));	
+    MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
     ExitProcess(1);
 }
 
-static void FatalWithLastError(const char* message_prefix) {
+static void FatalWithLastError(const char* message_prefix,
+	    const char* message_infix = nullptr,
+	    const char* message_postfix = nullptr) {
     DWORD dw = GetLastError();
-    char *message_postfix = "";
+    char *message_info = "";
     char *message = "";
     FormatMessage(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -77,20 +87,28 @@ static void FatalWithLastError(const char* message_prefix) {
         NULL,
         dw,
         MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR)&message_postfix,
+        (LPTSTR)&message_info,
         0, NULL);
 
-    size_t size = strlen(message_prefix) + strlen(message_postfix) + 1;
+    size_t size = 1 +
+		strlen(message_prefix) +
+		strlen(message_info) +
+		(message_infix ? strlen(message_infix) : 0) +
+		(message_postfix ? strlen(message_postfix) : 0);
     message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
-    sprintf_s(message, size, "%s%s", message_prefix, message_postfix);
+    sprintf_s(message, size, "%s%s%s%s", message_prefix, message_info,
+		(message_infix ? message_infix : ""),
+		(message_postfix ? message_postfix : ""));
     Fatal(message);
 }
 
-static void CheckWithLastError(bool condition, const char *message_prefix) {
+static void CheckWithLastError(bool condition, const char *message_prefix,
+	    const char *message_infix = nullptr,
+	    const char *message_suffix = nullptr) {
     if (condition) {
         return;
     }
-    FatalWithLastError(message_prefix);
+    FatalWithLastError(message_prefix, message_infix, message_suffix);
 }
 
 static const PIXELFORMATDESCRIPTOR pfd = {
@@ -322,7 +340,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
     Si32 screen_width = GetSystemMetrics(SM_CXSCREEN);
     Si32 screen_height = GetSystemMetrics(SM_CYSCREEN);
 
-    {
+    /*{
         DEVMODE dmScreenSettings;                   // Device Mode
         memset(&dmScreenSettings, 0, sizeof(dmScreenSettings));
         // Makes Sure Memory's Cleared
@@ -345,7 +363,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
                 " supported by\nthe video card. Setting windowed mode.",
                 "Arctic Engine", MB_OK | MB_ICONEXCLAMATION);
         }
-    }
+    }*/
 
     WNDCLASSEXW wcex;
     memset(&wcex, 0, sizeof(wcex));
@@ -417,16 +435,20 @@ void EngineThreadFunction(SystemInfo system_info) {
 
 void Swap() {
     HDC hdc = wglGetCurrentDC();
-    SwapBuffers(hdc);
+    BOOL res = SwapBuffers(hdc);
+	CheckWithLastError(res != FALSE, "SwapBuffers error in Swap.");
 }
 
 bool IsVSyncSupported() {
     const char* (WINAPI *wglGetExtensionsStringEXT)();
     wglGetExtensionsStringEXT = reinterpret_cast<const char* (WINAPI*)()>(  // NOLINT
         wglGetProcAddress("wglGetExtensionsStringEXT"));
-    CheckWithLastError(wglGetExtensionsStringEXT != nullptr,
-        "Error in wglGetProcAddress(\"wglGetExtensionsStringEXT\"): ");
-    const char *extensions = wglGetExtensionsStringEXT();
+	if (wglGetExtensionsStringEXT == nullptr) {
+		return false;
+	}
+    //CheckWithLastError(wglGetExtensionsStringEXT != nullptr,
+        //"Error in wglGetProcAddress(\"wglGetExtensionsStringEXT\"): ");
+    const char *extensions = (const char *)(const void*)glGetString(GL_EXTENSIONS);
     if (strstr(extensions, "WGL_EXT_swap_control") == nullptr) {
         return false;
     }
@@ -467,25 +489,25 @@ std::vector<Ui8> ReadWholeFile(const char *file_name) {
     HANDLE file_handle = CreateFile(file_name, GENERIC_READ,
         FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     CheckWithLastError(file_handle != INVALID_HANDLE_VALUE,
-        "Error in ReadWholeFile. CreateFile: ");
+        "Error in ReadWholeFile. CreateFile: ", " file_name: ", file_name);
     LARGE_INTEGER file_size;
     file_size.QuadPart = 0ull;
     BOOL is_ok = GetFileSizeEx(file_handle, &file_size);
-    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. GetFileSizeEx: ");
+    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. GetFileSizeEx: ", " file_name: ", file_name);
     std::vector<Ui8> data;
     if (file_size.QuadPart != 0ull) {
         Check(file_size.HighPart == 0,
-            "Error in ReadWholeFile, file is too large.");
+            "Error in ReadWholeFile, file is too large. file_name: ", file_name);
         data.resize(static_cast<size_t>(file_size.QuadPart));
         DWORD bytes_read = 0ul;
         is_ok = ReadFile(file_handle, data.data(), file_size.LowPart,
             &bytes_read, NULL);
-        CheckWithLastError(!!is_ok, "Error in ReadWholeFile. ReadFile: ");
+        CheckWithLastError(!!is_ok, "Error in ReadWholeFile. ReadFile: ", " file_name: ", file_name);
         Check(bytes_read == file_size.LowPart,
-            "Error in ReadWholeFile. Read size mismatch.");
+            "Error in ReadWholeFile. Read size mismatch. file_name: ", file_name);
     }
     is_ok = CloseHandle(file_handle);
-    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. CloseHandle: ");
+    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. CloseHandle: ", " file_name: ", file_name);
     return data;
 }
 
@@ -494,6 +516,17 @@ void WriteWholeFile(const char *file_name, const Ui8 *data,
     // TODO(Huldra): Implement this
 }
 
+void SleepSeconds(double duration) {
+	timeBeginPeriod(1);
+	double end = easy::GetEngine()->GetTime() + duration;
+	if (duration > 0.001) {
+		::Sleep(static_cast<DWORD>((duration - 0.001) * 1000.0));
+	}
+	timeEndPeriod(1);
+	while (easy::GetEngine()->GetTime() < end) {
+		::Sleep(0);
+	}
+}
 
 
 }  // namespace arctic

@@ -28,8 +28,8 @@
 
 namespace arctic {
 
-void Check(bool condition, const char *error_message);
-void Fatal(const char *error_message);
+void Check(bool condition, const char *error_message, const char *error_message_postfix = nullptr);
+void Fatal(const char *error_message, const char *message_postfix = nullptr);
 void Draw();
 void Swap();
 bool IsVSyncSupported();
@@ -38,6 +38,7 @@ void ProcessUserInput();
 std::vector<Ui8> ReadWholeFile(const char *file_name);
 void WriteWholeFile(const char *file_name, const Ui8 *data,
     const Ui64 data_size);
+void SleepSeconds(double duration);
 
 }  // namespace arctic
 

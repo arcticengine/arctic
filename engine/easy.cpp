@@ -125,7 +125,8 @@ double Time() {
 }
 
 void Sleep(double duration_seconds) {
-    if (duration_seconds <= 0.0) {
+	SleepSeconds(duration_seconds);
+/*    if (duration_seconds <= 0.0) {
         return;
     }
     double usec = duration_seconds * 1000000.0;
@@ -133,7 +134,7 @@ void Sleep(double duration_seconds) {
     Check(usec < limit, "Sleep duration is too long");
     Si64 usec_int = static_cast<Si64>(usec);
     std::chrono::duration<Si64, std::micro> dur(usec_int);
-    std::this_thread::sleep_for(dur);
+    std::this_thread::sleep_for(dur);*/
 }
 
 std::vector<Ui8> ReadFile(const char *file_name) {

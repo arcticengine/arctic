@@ -221,7 +221,7 @@ std::independent_bits_engine<std::mt19937_64, 8, Ui64> g_rnd;
 void InitCreatures() {
     g_creatures.clear();
     Creature hero;
-    g_hero_idx = g_creatures.size();
+    g_hero_idx = static_cast<Si32>(g_creatures.size());
     g_creatures.push_back(hero);
 }
 
@@ -345,6 +345,9 @@ void CycleDeadEnd(Vec2Si32 pos) {
 }
 
 void PlayIntro() {
+	double prev_time = Time();
+	double time = Time();
+	double dt = time - prev_time;
     ResizeScreen(320, 200);
     Ui8 snow[2][320 * 200];
     for (Si32 i = 0; i < 320 * 200; ++i) {
@@ -415,6 +418,13 @@ void PlayIntro() {
             }
         }
         std::swap(cur_snow, next_snow);
+
+		prev_time = time;
+		double deadline = prev_time + 1.0 / 60.0;
+		SleepSeconds(deadline - Time());
+		time = Time();
+		dt = time - prev_time;
+
         ShowFrame();
     }
 }
@@ -445,7 +455,7 @@ void GenerateMaze() {
     int attempt = 0;
     while (true) {
         attempt++;
-        Si32 rnd = g_rnd() % dead_ends.size();
+        Si32 rnd = static_cast<Si32>(g_rnd() % dead_ends.size());
         Vec2Si32 pos = dead_ends[rnd];
         bool is_ok = false;
         if (Maze(pos + Vec2Si32(-1, 0)).kind == kCellFloor) {
@@ -463,16 +473,16 @@ void GenerateMaze() {
         }
     }
 
-    Si32 to_eliminate = dead_ends.size() / 2;
+    Si32 to_eliminate = static_cast<Si32>(dead_ends.size() / 2);
     for (Si32 idx = 0; idx < to_eliminate; ++idx) {
-        Si32 rnd = g_rnd() % dead_ends.size();
+        Si32 rnd = static_cast<Si32>(g_rnd() % dead_ends.size());
         EliminateDeadEnd(dead_ends[rnd]);
         dead_ends[rnd] = dead_ends.back();
         dead_ends.pop_back();
     }
-    Si32 to_cycle = dead_ends.size() / 2;
+    Si32 to_cycle = static_cast<Si32>(dead_ends.size() / 2);
     for (Si32 idx = 0; idx < to_cycle; ++idx) {
-        Si32 rnd = g_rnd() % dead_ends.size();
+        Si32 rnd = static_cast<Si32>(g_rnd() % dead_ends.size());
         CycleDeadEnd(dead_ends[rnd]);
         dead_ends[rnd] = dead_ends.back();
         dead_ends.pop_back();

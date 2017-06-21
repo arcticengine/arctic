@@ -60,6 +60,7 @@ void Engine::Draw2d() {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
 
+	glClearColor(0.f, 0.f, 0.f, 0.f);
     glClear(GL_COLOR_BUFFER_BIT);
     // draw quad
 
@@ -163,7 +164,7 @@ void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
     // send the texture data
