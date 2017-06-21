@@ -27,6 +27,11 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 Arctic Engine follows Google C++ Style Guide ([https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html))
 
+## Continuous Integration
+
+* AppVeyor
+https://ci.appveyor.com/project/FrostyMorning/arctic
+
 ## Tools used
 
 ### UML Editor
