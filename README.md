@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
 # Arctic Engine
 
 ### Designed to give you control and not take anything away.
