@@ -16,6 +16,9 @@ Main discussion (in Russian): [http://www.gamedev.ru/flame/forum/?id=217041](htt
 
 Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
+Arctic Engine follows Google C++ Style Guide: [https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html)
+
+
 ## License
 Licensed under the MIT license, see License.txt for details.
 
@@ -23,33 +26,29 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 ## Credits
 
-### Arctic Engine code:
+#### Arctic Engine code:
 
 * Huldra aka FrostyMorning
 
-### Third-party components:
+#### Third-party components:
 
 * piLibs C++ (14/06/2016) by Íñigo Quílez ([http://www.iquilezles.org/code/piLibs/piLibs.htm](http://www.iquilezles.org/code/piLibs/piLibs.htm))
 
-## Code style
-
-Arctic Engine follows Google C++ Style Guide ([https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html))
-
 ## Tools used
 
-### UML Editor
+#### UML Editor
 
 * Visual Paradigm Community Edition ([https://www.visual-paradigm.com/download/community.jsp](https://www.visual-paradigm.com/download/community.jsp))
 
-### IDE
+#### IDE
 
 * Visual Studio Community 2017
 ([https://www.visualstudio.com/](https://www.visualstudio.com/))
 
-### Python
+#### Python
 
 * Python 2.7 ([https://www.python.org/downloads/](https://www.python.org/downloads/))
 
-### Documentation generator
+#### Documentation generator
 
 * Doxygen 1.8.13 ([http://www.doxygen.org](http://www.doxygen.org))
