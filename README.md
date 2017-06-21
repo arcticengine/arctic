@@ -6,6 +6,8 @@ Arctic Engine is an open-source free game engine released under the MIT license.
 
 Main discussion (in Russian): [http://www.gamedev.ru/flame/forum/?id=217041](http://www.gamedev.ru/flame/forum/?id=217041)
 
+Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
 ## License
 Licensed under the MIT license, see License.txt for details.
 
