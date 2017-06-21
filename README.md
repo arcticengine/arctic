@@ -1,4 +1,7 @@
 [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
+
+[![Build status](https://ci.appveyor.com/api/projects/status/jm2ahfwc8py7cwpl?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+
 # Arctic Engine
 
 ### Designed to give you control and not take anything away.
@@ -33,11 +36,6 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 ## Code style
 
 Arctic Engine follows Google C++ Style Guide ([https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html))
-
-## Continuous Integration
-
-* AppVeyor
-https://ci.appveyor.com/project/FrostyMorning/arctic
 
 ## Tools used
 
