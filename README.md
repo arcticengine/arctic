@@ -10,7 +10,7 @@ In the 80's and 90's it was possible for a programmer to make a game alone and i
 
 Arctic Engine returns the power to the C++ programmer and makes game development fun again.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/jm2ahfwc8py7cwpl?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)  [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
+[![Build status](https://ci.appveyor.com/api/projects/status/jm2ahfwc8py7cwpl?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic) [![Coverity Scan Build Status](https://scan.coverity.com/projects/12997/badge.svg)](https://scan.coverity.com/projects/frostymorning-arctic) [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
 
 Main discussion (in Russian): [http://www.gamedev.ru/flame/forum/?id=217041](http://www.gamedev.ru/flame/forum/?id=217041)
 
