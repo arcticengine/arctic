@@ -61,8 +61,136 @@ struct Vec4Si32 {
   const Si32 &operator[](Si32 i) const {
     return element[i];
   }
+
+  Vec4Si32 &operator =(const Vec4Si32 &v) {
+      x = v.x;
+      y = v.y;
+      z = v.z;
+      w = v.w;
+      return *this;
+  }
+  Vec4Si32 &operator+=(const Si32 &s) {
+      x += s;
+      y += s;
+      z += s;
+      w += s;
+      return *this;
+  }
+  Vec4Si32 &operator+=(const Vec4Si32 &v) {
+      x += v.x;
+      y += v.y;
+      z += v.z;
+      w += v.w;
+      return *this;
+  }
+  Vec4Si32 &operator-=(const Si32 &s) {
+      x -= s;
+      y -= s;
+      z -= s;
+      w -= s;
+      return *this;
+  }
+  Vec4Si32 &operator-=(const Vec4Si32 &v) {
+      x -= v.x;
+      y -= v.y;
+      z -= v.z;
+      w -= v.w;
+      return *this;
+  }
+  Vec4Si32 &operator*=(const Si32 &s) {
+      x *= s;
+      y *= s;
+      z *= s;
+      w *= s;
+      return *this;
+  }
+  Vec4Si32 &operator*=(const Vec4Si32 &v) {
+      x *= v.x;
+      y *= v.y;
+      z *= v.z;
+      w *= v.w;
+      return *this;
+  }
+  Vec4Si32 &operator/=(const Si32 &s) {
+      x /= s;
+      y /= s;
+      z /= s;
+      w /= s;
+      return *this;
+  }
+  Vec4Si32 &operator/=(const Vec4Si32 &v) {
+      x /= v.x;
+      y /= v.y;
+      z /= v.z;
+      w /= v.w;
+      return *this;
+  }
+
+  const bool operator== (const Vec4Si32 &v) const {
+      return x == v.x && y == v.y && z == v.z && w == v.w;
+  }
+  const bool operator!= (const Vec4Si32 &v) const {
+      return x != v.x || y != v.y || z != v.z || w != v.w;
+  }
 };
 
+inline Vec4Si32 operator+(Vec4Si32 const &v, Si32 const &s) {
+    return Vec4Si32(v.x + s, v.y + s, v.z + s, v.w + s);
+}
+inline Vec4Si32 operator+(Si32 const &s, Vec4Si32 const &v) {
+    return Vec4Si32(s + v.x, s + v.y, s + v.z, s + v.w);
+}
+inline Vec4Si32 operator+(Vec4Si32 const &a, Vec4Si32 const &b) {
+    return Vec4Si32(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
+}
+inline Vec4Si32 operator-(Vec4Si32 const &v, Si32 const &s) {
+    return Vec4Si32(v.x - s, v.y - s, v.z - s, v.w - s);
+}
+inline Vec4Si32 operator-(Si32 const &s, Vec4Si32 const &v) {
+    return Vec4Si32(s - v.x, s - v.y, s - v.z, s - v.w);
+}
+inline Vec4Si32 operator-(Vec4Si32 const &a, Vec4Si32 const &b) {
+    return Vec4Si32(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
+}
+inline Vec4Si32 operator*(Vec4Si32 const &v, Si32 const &s) {
+    return Vec4Si32(v.x * s, v.y * s, v.z * s, v.w * s);
+}
+inline Vec4Si32 operator*(Si32 const &s, Vec4Si32 const &v) {
+    return Vec4Si32(s * v.x, s * v.y, s * v.z, s * v.w);
+}
+inline Vec4Si32 operator*(Vec4Si32 const &a, Vec4Si32 const &b) {
+    return Vec4Si32(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
+}
+inline Vec4Si32 operator/(Vec4Si32 const &v, Si32 const &s) {
+    return Vec4Si32(v.x / s, v.y / s, v.z / s, v.w / s);
+}
+inline Vec4Si32 operator/(Si32 const &s, Vec4Si32 const &v) {
+    return Vec4Si32(s / v.x, s / v.y, s / v.z, s / v.w);
+}
+inline Vec4Si32 operator/(Vec4Si32 const &a, Vec4Si32 const &b) {
+    return Vec4Si32(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
+}
+
+inline Vec4Si32 Min(const Vec4Si32 &v, Si32 mi) {
+    return Vec4Si32((v.x > mi) ? mi : v.x,
+        (v.y > mi) ? mi : v.y,
+        (v.z > mi) ? mi : v.z,
+        (v.w > mi) ? mi : v.w);
+}
+
+inline Vec4Si32 Max(const Vec4Si32 &v, Si32 ma) {  // NOLINT
+    return Vec4Si32((v.x < ma) ? ma : v.x,
+        (v.y < ma) ? ma : v.y,
+        (v.z < ma) ? ma : v.z,
+        (v.w < ma) ? ma : v.w);
+}
+
+inline Vec4Si32 Clamp(const Vec4Si32 &v, Si32 mi, Si32 ma) {
+    return Vec4Si32((v.x < mi) ? mi : ((v.x > ma) ? ma : v.x),
+        (v.y < mi) ? mi : ((v.y > ma) ? ma : v.y),
+        (v.z < mi) ? mi : ((v.z > ma) ? ma : v.z),
+        (v.w < mi) ? mi : ((v.w > ma) ? ma : v.w));
+}
 
 }  // namespace arctic
 
