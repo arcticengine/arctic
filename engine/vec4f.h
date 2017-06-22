@@ -90,7 +90,7 @@ struct Vec4F {
     return element[i];
   }
 
-  Vec4F &operator =(Vec4F  const &v) {
+  Vec4F &operator =(Vec4F const &v) {
     x = v.x;
     y = v.y;
     z = v.z;
@@ -104,7 +104,7 @@ struct Vec4F {
     w += s;
     return *this;
   }
-  Vec4F &operator+=(Vec4F  const &v) {
+  Vec4F &operator+=(Vec4F const &v) {
     x += v.x;
     y += v.y;
     z += v.z;
@@ -118,7 +118,7 @@ struct Vec4F {
     w -= s;
     return *this;
   }
-  Vec4F &operator-=(Vec4F  const &v) {
+  Vec4F &operator-=(Vec4F const &v) {
     x -= v.x;
     y -= v.y;
     z -= v.z;
@@ -132,7 +132,7 @@ struct Vec4F {
     w *= s;
     return *this;
   }
-  Vec4F &operator*=(Vec4F  const &v) {
+  Vec4F &operator*=(Vec4F const &v) {
     x *= v.x;
     y *= v.y;
     z *= v.z;
@@ -146,7 +146,7 @@ struct Vec4F {
     w /= s;
     return *this;
   }
-  Vec4F &operator/=(Vec4F  const &v) {
+  Vec4F &operator/=(Vec4F const &v) {
     x /= v.x;
     y /= v.y;
     z /= v.z;
@@ -295,40 +295,40 @@ struct Vec4F {
   }
 };
 
-inline Vec4F operator+(Vec4F  const &v, float const &s) {
+inline Vec4F operator+(Vec4F const &v, float const &s) {
   return Vec4F(v.x + s, v.y + s, v.z + s, v.w + s);
 }
-inline Vec4F operator+(float const &s, Vec4F  const &v) {
+inline Vec4F operator+(float const &s, Vec4F const &v) {
   return Vec4F(s + v.x, s + v.y, s + v.z, s + v.w);
 }
-inline Vec4F operator+(Vec4F  const &a, Vec4F  const &b) {
+inline Vec4F operator+(Vec4F const &a, Vec4F const &b) {
   return Vec4F(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
-inline Vec4F operator-(Vec4F  const &v, float const &s) {
+inline Vec4F operator-(Vec4F const &v, float const &s) {
   return Vec4F(v.x - s, v.y - s, v.z - s, v.w - s);
 }
-inline Vec4F operator-(float const &s, Vec4F  const &v) {
+inline Vec4F operator-(float const &s, Vec4F const &v) {
   return Vec4F(s - v.x, s - v.y, s - v.z, s - v.w);
 }
-inline Vec4F operator-(Vec4F  const &a, Vec4F  const &b) {
+inline Vec4F operator-(Vec4F const &a, Vec4F const &b) {
   return Vec4F(a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w);
 }
-inline Vec4F operator*(Vec4F  const &v, float const &s) {
+inline Vec4F operator*(Vec4F const &v, float const &s) {
   return Vec4F(v.x * s, v.y * s, v.z * s, v.w * s);
 }
-inline Vec4F operator*(float const &s, Vec4F  const &v) {
+inline Vec4F operator*(float const &s, Vec4F const &v) {
   return Vec4F(s * v.x, s * v.y, s * v.z, s * v.w);
 }
-inline Vec4F operator*(Vec4F  const &a, Vec4F  const &b) {
+inline Vec4F operator*(Vec4F const &a, Vec4F const &b) {
   return Vec4F(a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w);
 }
-inline Vec4F operator/(Vec4F  const &v, float const &s) {
+inline Vec4F operator/(Vec4F const &v, float const &s) {
   return Vec4F(v.x / s, v.y / s, v.z / s, v.w / s);
 }
-inline Vec4F operator/(float const &s, Vec4F  const &v) {
+inline Vec4F operator/(float const &s, Vec4F const &v) {
   return Vec4F(s / v.x, s / v.y, s / v.z, s / v.w);
 }
-inline Vec4F operator/(Vec4F  const &a, Vec4F  const &b) {
+inline Vec4F operator/(Vec4F const &a, Vec4F const &b) {
   return Vec4F(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
 
