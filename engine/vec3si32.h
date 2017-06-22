@@ -73,41 +73,49 @@ struct Vec3Si32 {
   Vec3Si32 &operator+=(const Si32 &s) {
     x += s;
     y += s;
+    z += s;
     return *this;
   }
   Vec3Si32 &operator+=(const Vec3Si32 &v) {
     x += v.x;
     y += v.y;
+    z += v.z;
     return *this;
   }
   Vec3Si32 &operator-=(const Si32 &s) {
     x -= s;
     y -= s;
+    z -= s;
     return *this;
   }
   Vec3Si32 &operator-=(const Vec3Si32 &v) {
     x -= v.x;
     y -= v.y;
+    z -= v.z;
     return *this;
   }
   Vec3Si32 &operator*=(const Si32 &s) {
     x *= s;
     y *= s;
+    z *= s;
     return *this;
   }
   Vec3Si32 &operator*=(const Vec3Si32 &v) {
     x *= v.x;
     y *= v.y;
+    z *= v.z;
     return *this;
   }
   Vec3Si32 &operator/=(const Si32 &s) {
     x /= s;
     y /= s;
+    z /= s;
     return *this;
   }
   Vec3Si32 &operator/=(const Vec3Si32 &v) {
     x /= v.x;
     y /= v.y;
+    z /= v.z;
     return *this;
   }
 
