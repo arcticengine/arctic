@@ -42,6 +42,8 @@ struct Vec4Si32 {
 
   Vec4Si32() {}
 
+  explicit Vec4Si32(struct Vec4F &s);
+
   explicit Vec4Si32(Si32 a, Si32 b, Si32 c, Si32 d) {
     x = a;
     y = b;
