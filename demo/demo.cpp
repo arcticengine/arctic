@@ -715,6 +715,24 @@ void Render() {
             item_x += 30;
         }
     }
+ /*
+    static std::deque<Vec2Si32> history;
+    history.push_back(MousePos() * 2 - ScreenSize() / 2);
+    if (history.size() >= 2) {
+        Vec2Si32 a = history[history.size() - 2];
+        Vec2Si32 b = history[history.size() - 1];
+        Vec2Si32 ab = b - a;
+        if (ab.x * ab.x + ab.y * ab.y < 1) {
+            history.pop_back();
+        }
+    }
+    if (history.size() > 1000) {
+        history.pop_front();
+    }
+    for (size_t idx = 1; idx < history.size(); ++idx) {
+        DrawTriangle(history[idx - 1], history[idx], ScreenSize() / 2,
+            Rgba(0, 0, 255, 255), Rgba(255, 0, 0, 255), Rgba(0, 255, 0, 255));
+    }*/
     ShowFrame();
 }
 

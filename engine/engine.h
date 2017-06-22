@@ -61,7 +61,7 @@ class Engine {
     }
     void ResizeBackbuffer(const Si32 width, const Si32 height);
     double GetTime();
-    Vec2Si32 MouseToBackBuffer(Vec2F pos) const;
+    Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
     Vec2Si32 ScreenSize() const;
 };
 

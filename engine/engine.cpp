@@ -188,7 +188,7 @@ double Engine::GetTime() {
     return last_time_;
 }
 
-Vec2Si32 Engine::MouseToBackBuffer(Vec2F pos) const {
+Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
     Vec2F rel_pos = pos - Vec2F(0.5f, 0.5f);
     float aspect = static_cast<float>(width_) / static_cast<float>(height_);
     float back_aspect = static_cast<float>(backbuffer_texture_.width()) /
