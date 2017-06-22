@@ -12,6 +12,8 @@ Make sure the demo project compiles and runs ok.
 
 Make your change. Make sure it compiles and works as intended (write tests, use it in the demo, etc.).
 
+Check for codestyle violations with `lint.bat` before committing.
+
 Push to your fork and [submit a pull request][pr].
 
 [pr]: https://github.com/FrostyMorning/arctic/compare/
