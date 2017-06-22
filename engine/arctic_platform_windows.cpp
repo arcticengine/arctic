@@ -448,7 +448,7 @@ bool IsVSyncSupported() {
 	}
     //CheckWithLastError(wglGetExtensionsStringEXT != nullptr,
         //"Error in wglGetProcAddress(\"wglGetExtensionsStringEXT\"): ");
-    const char *extensions = (const char *)(const void*)glGetString(GL_EXTENSIONS);
+    const char *extensions = wglGetExtensionsStringEXT();
     if (strstr(extensions, "WGL_EXT_swap_control") == nullptr) {
         return false;
     }
