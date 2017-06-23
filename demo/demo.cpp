@@ -345,9 +345,9 @@ void CycleDeadEnd(Vec2Si32 pos) {
 }
 
 void PlayIntro() {
-	double prev_time = Time();
-	double time = Time();
-	double dt = time - prev_time;
+    double prev_time = Time();
+    double time = Time();
+    double dt = time - prev_time;
     ResizeScreen(320, 200);
     Ui8 snow[2][320 * 200];
     for (Si32 i = 0; i < 320 * 200; ++i) {
@@ -419,11 +419,11 @@ void PlayIntro() {
         }
         std::swap(cur_snow, next_snow);
 
-		prev_time = time;
-		double deadline = prev_time + 1.0 / 60.0;
-		SleepSeconds(deadline - Time());
-		time = Time();
-		dt = time - prev_time;
+        prev_time = time;
+        double deadline = prev_time + 1.0 / 60.0;
+        SleepSeconds(deadline - Time());
+        time = Time();
+        dt = time - prev_time;
 
         ShowFrame();
     }

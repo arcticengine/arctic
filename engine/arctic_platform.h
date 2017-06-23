@@ -28,7 +28,8 @@
 
 namespace arctic {
 
-void Check(bool condition, const char *error_message, const char *error_message_postfix = nullptr);
+void Check(bool condition, const char *error_message,
+    const char *error_message_postfix = nullptr);
 void Fatal(const char *error_message, const char *message_postfix = nullptr);
 void Draw();
 void Swap();

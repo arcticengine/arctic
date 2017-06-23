@@ -56,7 +56,8 @@ extern void EasyMain();
 
 namespace arctic {
 
-inline void Check(bool condition, const char *error_message, const char *error_message_postfix) {
+inline void Check(bool condition, const char *error_message,
+    const char *error_message_postfix) {
     if (condition) {
         return;
     }
@@ -64,19 +65,19 @@ inline void Check(bool condition, const char *error_message, const char *error_m
 }
 
 void Fatal(const char *message, const char *message_postfix) {
-	size_t size = 1 +
-		strlen(message) +
-		(message_postfix ? strlen(message_postfix) : 0);
-	char *full_message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
-	sprintf_s(full_message, size, "%s%s", message,
-		(message_postfix ? message_postfix : ""));	
+    size_t size = 1 +
+        strlen(message) +
+        (message_postfix ? strlen(message_postfix) : 0);
+    char *full_message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
+    sprintf_s(full_message, size, "%s%s", message,
+        (message_postfix ? message_postfix : ""));
     MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
     ExitProcess(1);
 }
 
 static void FatalWithLastError(const char* message_prefix,
-	    const char* message_infix = nullptr,
-	    const char* message_postfix = nullptr) {
+        const char* message_infix = nullptr,
+        const char* message_postfix = nullptr) {
     DWORD dw = GetLastError();
     char *message_info = "";
     char *message = "";
@@ -91,20 +92,20 @@ static void FatalWithLastError(const char* message_prefix,
         0, NULL);
 
     size_t size = 1 +
-		strlen(message_prefix) +
-		strlen(message_info) +
-		(message_infix ? strlen(message_infix) : 0) +
-		(message_postfix ? strlen(message_postfix) : 0);
+        strlen(message_prefix) +
+        strlen(message_info) +
+        (message_infix ? strlen(message_infix) : 0) +
+        (message_postfix ? strlen(message_postfix) : 0);
     message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
     sprintf_s(message, size, "%s%s%s%s", message_prefix, message_info,
-		(message_infix ? message_infix : ""),
-		(message_postfix ? message_postfix : ""));
+        (message_infix ? message_infix : ""),
+        (message_postfix ? message_postfix : ""));
     Fatal(message);
 }
 
 static void CheckWithLastError(bool condition, const char *message_prefix,
-	    const char *message_infix = nullptr,
-	    const char *message_suffix = nullptr) {
+        const char *message_infix = nullptr,
+        const char *message_suffix = nullptr) {
     if (condition) {
         return;
     }
@@ -436,18 +437,18 @@ void EngineThreadFunction(SystemInfo system_info) {
 void Swap() {
     HDC hdc = wglGetCurrentDC();
     BOOL res = SwapBuffers(hdc);
-	CheckWithLastError(res != FALSE, "SwapBuffers error in Swap.");
+    CheckWithLastError(res != FALSE, "SwapBuffers error in Swap.");
 }
 
 bool IsVSyncSupported() {
     const char* (WINAPI *wglGetExtensionsStringEXT)();
     wglGetExtensionsStringEXT = reinterpret_cast<const char* (WINAPI*)()>(  // NOLINT
         wglGetProcAddress("wglGetExtensionsStringEXT"));
-	if (wglGetExtensionsStringEXT == nullptr) {
-		return false;
-	}
-    //CheckWithLastError(wglGetExtensionsStringEXT != nullptr,
-        //"Error in wglGetProcAddress(\"wglGetExtensionsStringEXT\"): ");
+    if (wglGetExtensionsStringEXT == nullptr) {
+        return false;
+    }
+    // CheckWithLastError(wglGetExtensionsStringEXT != nullptr,
+        // "Error in wglGetProcAddress(\"wglGetExtensionsStringEXT\"): ");
     const char *extensions = wglGetExtensionsStringEXT();
     if (strstr(extensions, "WGL_EXT_swap_control") == nullptr) {
         return false;
@@ -493,21 +494,26 @@ std::vector<Ui8> ReadWholeFile(const char *file_name) {
     LARGE_INTEGER file_size;
     file_size.QuadPart = 0ull;
     BOOL is_ok = GetFileSizeEx(file_handle, &file_size);
-    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. GetFileSizeEx: ", " file_name: ", file_name);
+    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. GetFileSizeEx: ",
+        " file_name: ", file_name);
     std::vector<Ui8> data;
     if (file_size.QuadPart != 0ull) {
         Check(file_size.HighPart == 0,
-            "Error in ReadWholeFile, file is too large. file_name: ", file_name);
+            "Error in ReadWholeFile, file is too large. file_name: ",
+            file_name);
         data.resize(static_cast<size_t>(file_size.QuadPart));
         DWORD bytes_read = 0ul;
         is_ok = ReadFile(file_handle, data.data(), file_size.LowPart,
             &bytes_read, NULL);
-        CheckWithLastError(!!is_ok, "Error in ReadWholeFile. ReadFile: ", " file_name: ", file_name);
+        CheckWithLastError(!!is_ok, "Error in ReadWholeFile. ReadFile: ",
+            " file_name: ", file_name);
         Check(bytes_read == file_size.LowPart,
-            "Error in ReadWholeFile. Read size mismatch. file_name: ", file_name);
+            "Error in ReadWholeFile. Read size mismatch. file_name: ",
+            file_name);
     }
     is_ok = CloseHandle(file_handle);
-    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. CloseHandle: ", " file_name: ", file_name);
+    CheckWithLastError(!!is_ok, "Error in ReadWholeFile. CloseHandle: ",
+        " file_name: ", file_name);
     return data;
 }
 
@@ -517,15 +523,15 @@ void WriteWholeFile(const char *file_name, const Ui8 *data,
 }
 
 void SleepSeconds(double duration) {
-	timeBeginPeriod(1);
-	double end = easy::GetEngine()->GetTime() + duration;
-	if (duration > 0.001) {
-		::Sleep(static_cast<DWORD>((duration - 0.001) * 1000.0));
-	}
-	timeEndPeriod(1);
-	while (easy::GetEngine()->GetTime() < end) {
-		::Sleep(0);
-	}
+    timeBeginPeriod(1);
+    double end = easy::GetEngine()->GetTime() + duration;
+    if (duration > 0.001) {
+        ::Sleep(static_cast<DWORD>((duration - 0.001) * 1000.0));
+    }
+    timeEndPeriod(1);
+    while (easy::GetEngine()->GetTime() < end) {
+        ::Sleep(0);
+    }
 }
 
 

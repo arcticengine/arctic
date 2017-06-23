@@ -60,7 +60,7 @@ void Engine::Draw2d() {
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
 
-	glClearColor(0.f, 0.f, 0.f, 0.f);
+    glClearColor(0.f, 0.f, 0.f, 0.f);
     glClear(GL_COLOR_BUFFER_BIT);
     // draw quad
 
