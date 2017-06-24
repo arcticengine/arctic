@@ -192,7 +192,7 @@ inline float Distance(Vec2F const &a, Vec2F const &b) {
   return Length(a - b);
 }
 
-inline Vec2F perpendicular(Vec2F const &v) {
+inline Vec2F Perpendicular(Vec2F const &v) {
   return Vec2F(v.y, -v.x);
 }
 

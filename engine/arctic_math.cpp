@@ -24,6 +24,11 @@
 
 namespace arctic {
 
+Vec2Si32::Vec2Si32(const struct Vec2F &s) {
+    x = static_cast<Si32>(s.x);
+    y = static_cast<Si32>(s.y);
+}
+
 Vec4Si32::Vec4Si32(const struct Vec4F &s) {
     x = static_cast<Si32>(s.x);
     y = static_cast<Si32>(s.y);
