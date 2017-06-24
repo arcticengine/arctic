@@ -38,6 +38,7 @@ static Engine *g_engine = nullptr;
 static Vec2Si32 g_mouse_pos_prev = Vec2Si32(0, 0);
 static Vec2Si32 g_mouse_pos = Vec2Si32(0, 0);
 static Vec2Si32 g_mouse_move = Vec2Si32(0, 0);
+static Si32 g_mouse_wheel_delta = 0;
 
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color) {
     DrawLine(a, b, color, color);
@@ -420,12 +421,14 @@ void ShowFrame() {
 
     InputMessage message;
     g_mouse_pos_prev = g_mouse_pos;
+    g_mouse_wheel_delta = 0;
     while (PopInputMessage(&message)) {
         if (message.kind == InputMessage::kKeyboard) {
             g_key_state[message.keyboard.key] = message.keyboard.key_state;
         } else if (message.kind == InputMessage::kMouse) {
             Vec2Si32 pos = GetEngine()->MouseToBackbuffer(message.mouse.pos);
             g_mouse_pos = pos;
+            g_mouse_wheel_delta += message.mouse.wheel_delta;
             if (message.keyboard.key != kKeyCount) {
                 g_key_state[message.keyboard.key] = message.keyboard.key_state;
             }
@@ -473,6 +476,10 @@ Vec2Si32 MousePos() {
 
 Vec2Si32 MouseMove() {
     return g_mouse_move;
+}
+
+Si32 MouseWheelDelta() {
+    return g_mouse_wheel_delta;
 }
 
 Vec2Si32 ScreenSize() {

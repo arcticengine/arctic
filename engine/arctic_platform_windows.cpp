@@ -259,6 +259,29 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
     msg.keyboard.key = key;
     msg.keyboard.key_state = (is_down ? 1 : 2);
     msg.mouse.pos = pos;
+    msg.mouse.wheel_delta = 0;
+    PushInputMessage(msg);
+}
+
+void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
+    Check(window_width != 0, "Could not obtain window width in OnMouseWheel");
+    Check(window_height != 0,
+        "Could not obtain window height in OnMouseWheel");
+
+    Si32 fw_keys = GET_KEYSTATE_WPARAM(word_param);
+    Si32 z_delta = GET_WHEEL_DELTA_WPARAM(word_param);
+
+    Si32 x = GET_X_LPARAM(long_param);
+    Si32 y = window_height - GET_Y_LPARAM(long_param);
+
+    Vec2F pos(static_cast<float>(x) / static_cast<float>(window_width - 1),
+        static_cast<float>(y) / static_cast<float>(window_height - 1));
+    InputMessage msg;
+    msg.kind = InputMessage::kMouse;
+    msg.keyboard.key = kKeyCount;
+    msg.keyboard.key_state = false;
+    msg.mouse.pos = pos;
+    msg.mouse.wheel_delta = z_delta;
     PushInputMessage(msg);
 }
 
@@ -312,6 +335,9 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         break;
     case WM_MOUSEMOVE:
         arctic::OnMouse(kKeyCount, word_param, long_param, false);
+        break;
+    case WM_MOUSEWHEEL:
+        arctic::OnMouseWheel(word_param, long_param);
         break;
     case WM_DESTROY:
         PostQuitMessage(0);

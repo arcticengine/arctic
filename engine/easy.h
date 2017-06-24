@@ -52,6 +52,7 @@ bool IsKey(const std::string &keys);
 
 Vec2Si32 MousePos();
 Vec2Si32 MouseMove();
+Si32 MouseWheelDelta();
 
 Vec2Si32 ScreenSize();
 void ResizeScreen(const Si32 width, const Si32 height);

@@ -180,6 +180,7 @@ struct InputMessage {
   };
   struct Mouse {
     Vec2F pos;
+    Si32 wheel_delta;
   };
   Kind kind;
   Keyboard keyboard;
