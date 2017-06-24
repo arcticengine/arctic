@@ -67,6 +67,15 @@ class Sprite {
         const Si32 from_x, const Si32 from_y,
         const Si32 from_width, const Si32 from_height,
         Sprite to_sprite);
+
+    void Sprite::Draw(const Vec2Si32 to, float angle_radians);
+    void Sprite::Draw(const Si32 to_x, const Si32 to_y, float angle_radians);
+    void Sprite::Draw(const Vec2Si32 to, float angle_radians, float zoom);
+    void Sprite::Draw(const Si32 to_x, const Si32 to_y,
+        float angle_radians, float zoom);
+    void Sprite::Draw(const Si32 to_x, const Si32 to_y,
+        float angle_radians, float zoom, Sprite to_sprite);
+
     Si32 width() const;
     Si32 height() const;
     Vec2Si32 Size() const;

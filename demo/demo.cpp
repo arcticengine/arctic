@@ -536,7 +536,9 @@ void Init() {
     g_stairs_up_right.Load("data/stairs_up_right_1.tga");
     g_stairs_up_right_dark.Load("data/stairs_up_right_1_dark.tga");
     g_stick.Load("data/stick_1.tga");
+    g_stick.SetPivot(Vec2Si32(12, 12));
     g_stone.Load("data/stone_1.tga");
+    g_stone.SetPivot(Vec2Si32(12, 12));
     g_wall.Load("data/wall_1.tga");
     g_wall_dark.Load("data/wall_1_dark.tga");
 
@@ -691,7 +693,8 @@ void Render() {
                     if (cell.is_visible) {
                         Item &item = cell.items[idx];
                         Sprite &sprite = ItemSprite(item.kind);
-                        sprite.Draw(scr_pos);
+                        sprite.Draw(scr_pos + sprite.Pivot(),
+                            static_cast<float>(Time()));
                     }
                 }
             }
@@ -708,7 +711,8 @@ void Render() {
     for (Si32 kind = kItemNone; kind < kItemKindCount; ++kind) {
         Sprite &sprite = ItemSprite(static_cast<ItemKind>(kind));
         for (Si32 idx = 0; idx < Hero().items[kind]; ++idx) {
-            sprite.Draw(item_x, 0);
+            sprite.Draw(Vec2Si32(item_x, 0) + sprite.Pivot(),
+                static_cast<float>(Time()) + static_cast<float>(idx));
             item_x += 5;
         }
         if (Hero().items[kind]) {
