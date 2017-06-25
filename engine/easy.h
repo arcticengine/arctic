@@ -50,6 +50,9 @@ bool IsKey(const char *keys);
 bool IsKey(const char key);
 bool IsKey(const std::string &keys);
 
+void SetKey(const KeyCode key_code, bool pressed = true);
+void SetKey(const char key, bool pressed = true);
+
 Vec2Si32 MousePos();
 Vec2Si32 MouseMove();
 Si32 MouseWheelDelta();

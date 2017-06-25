@@ -470,6 +470,31 @@ bool IsKey(const std::string &keys) {
     return IsKey(keys.c_str());
 }
 
+void SetKeyImpl(Ui32 key_code, bool pressed) {
+	if (key_code < kKeyCount) {
+		auto& k = g_key_state[key_code];
+		if (pressed) {
+			k = k | 0x1;
+		}
+		else {
+			k = k & 0xfffffffe;
+		}
+	}
+}
+
+void SetKey(const KeyCode key_code, bool pressed) {
+	SetKeyImpl(static_cast<Ui32>(key_code), pressed);
+}
+
+void SetKey(const char key, bool pressed) {
+	if (key >= 'a' && key <= 'z') {
+		SetKeyImpl(static_cast<Ui32>(key)
+			+ static_cast<Ui32>('A')
+			- static_cast<Ui32>('a'), pressed);
+	}
+	return SetKeyImpl(static_cast<Ui32>(key), pressed);
+}
+
 Vec2Si32 MousePos() {
     return g_mouse_pos;
 }
