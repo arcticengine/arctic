@@ -54,7 +54,7 @@ void Sound::Load(const char *file_name, bool do_unpack) {
         if (do_unpack) {
             int error = 0;
             vorbis_codec_ = stb_vorbis_open_memory(data.data(),
-                data.size(), &error, nullptr);// &alloc_buffer);
+                static_cast<int>(data.size()), &error, nullptr);// &alloc_buffer);
             Si32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
             sound_instance_.reset(new SoundInstance(size));
             int res = stb_vorbis_get_samples_short_interleaved(
