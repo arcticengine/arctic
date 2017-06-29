@@ -470,10 +470,10 @@ bool IsKey(const std::string &keys) {
     return IsKey(keys.c_str());
 }
 
-void SetKeyImpl(Ui32 key_code, bool pressed) {
+void SetKeyImpl(Ui32 key_code, bool is_pressed) {
 	if (key_code < kKeyCount) {
 		auto& k = g_key_state[key_code];
-		if (pressed) {
+		if (is_pressed) {
 			k = k | 0x1;
 		}
 		else {
@@ -482,17 +482,17 @@ void SetKeyImpl(Ui32 key_code, bool pressed) {
 	}
 }
 
-void SetKey(const KeyCode key_code, bool pressed) {
-	SetKeyImpl(static_cast<Ui32>(key_code), pressed);
+void SetKey(const KeyCode key_code, bool is_pressed) {
+	SetKeyImpl(static_cast<Ui32>(key_code), is_pressed);
 }
 
-void SetKey(const char key, bool pressed) {
+void SetKey(const char key, bool is_pressed) {
 	if (key >= 'a' && key <= 'z') {
 		SetKeyImpl(static_cast<Ui32>(key)
 			+ static_cast<Ui32>('A')
-			- static_cast<Ui32>('a'), pressed);
+			- static_cast<Ui32>('a'), is_pressed);
 	}
-	return SetKeyImpl(static_cast<Ui32>(key), pressed);
+	return SetKeyImpl(static_cast<Ui32>(key), is_pressed);
 }
 
 Vec2Si32 MousePos() {
