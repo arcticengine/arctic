@@ -22,6 +22,9 @@
 // IN THE SOFTWARE.
 
 #include "engine/easy_sprite_instance.h"
+
+#include <memory>
+
 #include "engine/arctic_platform.h"
 #include "engine/rgb.h"
 #include "engine/rgba.h"

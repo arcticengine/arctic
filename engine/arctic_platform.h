@@ -25,6 +25,7 @@
 
 #include <vector>
 #include "engine/arctic_types.h"
+#include "engine/easy_sound.h"
 
 namespace arctic {
 
@@ -40,6 +41,16 @@ std::vector<Ui8> ReadWholeFile(const char *file_name);
 void WriteWholeFile(const char *file_name, const Ui8 *data,
     const Ui64 data_size);
 void SleepSeconds(double duration);
+void StartSoundBuffer(easy::Sound sound, float volume);
+
+Ui16 FromBe(Ui16 x);
+Si16 FromBe(Si16 x);
+Ui32 FromBe(Ui32 x);
+Si32 FtomBe(Si32 x);
+Ui16 ToBe(Ui16 x);
+Si16 ToBe(Si16 x);
+Ui32 ToBe(Ui32 x);
+Si32 ToBe(Si32 x);
 
 }  // namespace arctic
 

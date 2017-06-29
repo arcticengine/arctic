@@ -33,7 +33,7 @@ namespace easy {
 
 class Sound {
  private:
-    std::shared_ptr<SoundInstance> sound_instance;
+    std::shared_ptr<SoundInstance> sound_instance_;
 
  public:
     void Load(const char *file_name);
@@ -44,7 +44,9 @@ class Sound {
     void Play(float volume);
     void Stop();
     double duration() const;
-    float *RawData();
+    Si32 DurationSamples();
+    Si16 *RawData();
+    Si32 StreamOut(Si32 offset, Si32 size, Si16 *out_buffer, Si32 out_buffer_samples);
 };
 
 }  // namespace easy

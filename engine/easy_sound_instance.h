@@ -23,16 +23,33 @@
 #ifndef ENGINE_EASY_SOUND_INSTANCE_H_
 #define ENGINE_EASY_SOUND_INSTANCE_H_
 
+#include <memory>
+#include <vector>
+
 #include "engine/arctic_types.h"
 #include "engine/byte_array.h"
 
 namespace arctic {
 namespace easy {
 
+enum SoundDataFormat {
+    kSoundDataWav,
+    kSoundDataVorbis
+};
+
 class SoundInstance {
     double duration;
+    SoundDataFormat format;
     ByteArray data;
+public:
+    SoundInstance(Ui32 wav_samples);
+    SoundInstance(std::vector<Ui8> vorbis_file);
+    Si16* GetWavData();
+    Si32 GetDurationSamples();
 };
+
+std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
+    const Si64 size);
 
 }  // namespace easy
 }  // namespace arctic

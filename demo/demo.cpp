@@ -58,8 +58,6 @@ Sprite g_wall_dark;
 
 Sprite g_empty;
 
-Sound g_step;
-
 enum CellKind {
     kCellWall = 0,
     kCellFloor,
@@ -344,10 +342,13 @@ void CycleDeadEnd(Vec2Si32 pos) {
     }
 }
 
+
+Sound g_music;
+
 void PlayIntro() {
-    double prev_time = Time();
-    double time = Time();
-    double dt = time - prev_time;
+    // g_music.Load("data/snowflake_-_Living_Nightmare.wav");
+    // g_music.Play();
+ 
     ResizeScreen(320, 200);
     Ui8 snow[2][320 * 200];
     for (Si32 i = 0; i < 320 * 200; ++i) {
@@ -368,13 +369,15 @@ void PlayIntro() {
     Si32 duration1 = 380;
     Si32 duration2 = 500;
     Si32 duration3 = 560;
+    double start_time = Time(); 
     Si32 frame = 0;
     while (true) {
+        double time = Time();
+        frame = static_cast<Si32>((time - start_time) * 60.f);
         Clear();
         if (IsKey(kKeyEscape) || IsKey(kKeySpace) || IsKey(kKeyEnter)) {
             return;
         }
-        frame++;
         if (frame > duration3) {
             break;
         }
@@ -418,13 +421,6 @@ void PlayIntro() {
             }
         }
         std::swap(cur_snow, next_snow);
-
-        prev_time = time;
-        double deadline = prev_time + 1.0 / 60.0;
-        SleepSeconds(deadline - Time());
-        time = Time();
-        dt = time - prev_time;
-
         ShowFrame();
     }
 }
@@ -542,8 +538,6 @@ void Init() {
     g_wall.Load("data/wall_1.tga");
     g_wall_dark.Load("data/wall_1_dark.tga");
 
-    g_step.Load("data/step.wav");
-
     PlayIntro();
 
     ResizeScreen(800, 500);
@@ -645,8 +639,6 @@ void Update() {
             Cell &cell = Maze(Hero().pos + step);
             if (cell.kind != kCellWall) {
                 if (cell.kind == kCellFloor) {
-                    g_step.Play();
-
                     Hero().is_moving = true;
                     Hero().next_pos = Hero().pos + step;
                     Hero().move_start_at = time;
