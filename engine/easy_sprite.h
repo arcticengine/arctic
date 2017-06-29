@@ -76,8 +76,8 @@ class Sprite {
     void Sprite::Draw(const Si32 to_x, const Si32 to_y,
         float angle_radians, float zoom, Sprite to_sprite);
 
-    Si32 width() const;
-    Si32 height() const;
+    Si32 Width() const;
+    Si32 Height() const;
     Vec2Si32 Size() const;
     Si32 StrideBytes() const;
     Si32 StridePixels() const;

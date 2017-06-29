@@ -23,6 +23,7 @@
 #ifndef ENGINE_EASY_SOUND_INSTANCE_H_
 #define ENGINE_EASY_SOUND_INSTANCE_H_
 
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -38,14 +39,21 @@ enum SoundDataFormat {
 };
 
 class SoundInstance {
-    double duration;
-    SoundDataFormat format;
-    ByteArray data;
+    double duration_;
+    SoundDataFormat format_;
+    ByteArray data_;
+    std::atomic<Si32> playing_count_;
 public:
     SoundInstance(Ui32 wav_samples);
     SoundInstance(std::vector<Ui8> vorbis_file);
     Si16* GetWavData();
+    Ui8* GetVorbisData() const;
+    Si32 GetVorbisSize() const;
+    SoundDataFormat GetFormat() const;
     Si32 GetDurationSamples();
+    bool IsPlaying();
+    void IncPlaying();
+    void DecPlaying();
 };
 
 std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,

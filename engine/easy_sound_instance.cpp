@@ -64,27 +64,41 @@ struct WaveHeader {
 #pragma pack()
 
 SoundInstance::SoundInstance(Ui32 wav_samples) {
-    format = kSoundDataWav;
-    data.Resize(wav_samples * 2 * sizeof(Si16));
+    format_ = kSoundDataWav;
+    playing_count_ = 0;
+    data_.Resize(wav_samples * 2 * sizeof(Si16));
 }
 
 SoundInstance::SoundInstance(std::vector<Ui8> vorbis_file) {
-    format = kSoundDataVorbis;
-    data.Resize(vorbis_file.size());
-    memcpy(data.data(), vorbis_file.data(), vorbis_file.size());
+    format_ = kSoundDataVorbis;
+    playing_count_ = 0;
+    data_.Resize(vorbis_file.size());
+    memcpy(data_.data(), vorbis_file.data(), vorbis_file.size());
 }
 
 Si16* SoundInstance::GetWavData() {
-    if (format == kSoundDataWav) {
-        return static_cast<Si16*>(data.GetVoidData());
+    if (format_ == kSoundDataWav) {
+        return static_cast<Si16*>(data_.GetVoidData());
     } else {
         return nullptr;
     }
 }
 
+Ui8* SoundInstance::GetVorbisData() const {
+    return static_cast<Ui8*>(data_.GetVoidData());
+}
+
+Si32 SoundInstance::GetVorbisSize() const {
+    return static_cast<Ui32>(data_.size());
+}
+
+SoundDataFormat SoundInstance::GetFormat() const {
+    return format_;
+}
+
 Si32 SoundInstance::GetDurationSamples() {
-    if (format == kSoundDataWav) {
-        return static_cast<Si32>(data.size() / 4);
+    if (format_ == kSoundDataWav) {
+        return static_cast<Si32>(data_.size() / 4);
     } else {
         return 0;
     }
@@ -159,6 +173,18 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
     }
 
     return sound;
+}
+
+bool SoundInstance::IsPlaying() {
+    return (playing_count_.load() != 0);
+}
+
+void SoundInstance::IncPlaying() {
+    playing_count_.fetch_add(1);
+}
+
+void SoundInstance::DecPlaying() {
+    playing_count_.fetch_add(-1);
 }
 
 }  // namespace easy

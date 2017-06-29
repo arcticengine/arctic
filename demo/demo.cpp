@@ -346,8 +346,8 @@ void CycleDeadEnd(Vec2Si32 pos) {
 Sound g_music;
 
 void PlayIntro() {
-    // g_music.Load("data/snowflake_-_Living_Nightmare.wav");
-    // g_music.Play();
+    g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
+    g_music.Play();
  
     ResizeScreen(320, 200);
     Ui8 snow[2][320 * 200];
@@ -364,8 +364,8 @@ void PlayIntro() {
     Vec2Si32 pyramids_pos(0, 10);
 
     Vec2Si32 airplane_pos_begin(ScreenSize().x,
-        ScreenSize().y - g_intro_airplane.height() / 2);
-    Vec2Si32 airplane_pos_end(-g_intro_airplane.width(), 0);
+        ScreenSize().y - g_intro_airplane.Height() / 2);
+    Vec2Si32 airplane_pos_end(-g_intro_airplane.Width(), 0);
     Si32 duration1 = 380;
     Si32 duration2 = 500;
     Si32 duration3 = 560;
@@ -584,6 +584,11 @@ void LookAround() {
 
 void Update() {
     double time = Time();
+
+    if (!g_music.IsPlaying()) {
+        g_music.Play();
+    }
+
     Vec2Si32 step(0, 0);
     if (IsKey(kKeyUp) || IsKey("w")) {
         step.y = 1;
@@ -612,6 +617,12 @@ void Update() {
     if (IsKey("n")) {
         GenerateMaze();
         easy::GetEngine()->GetBackbuffer().Clear();
+    }
+    if (IsKey("=+")) {
+        SetMasterVolume(Clamp(GetMasterVolume() + 0.01f, 0.f, 1.f));
+    }
+    if (IsKey("-_")) {
+        SetMasterVolume(Clamp(GetMasterVolume() - 0.01f, 0.f, 1.f));
     }
     // End of cheats
 

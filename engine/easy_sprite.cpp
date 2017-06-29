@@ -130,8 +130,8 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     }
     Si32 stride = to_sprite.StridePixels();
     Rgba *dst = to_sprite.RgbaData();
-    Si32 width = to_sprite.width();
-    Si32 height = to_sprite.height();
+    Si32 width = to_sprite.Width();
+    Si32 height = to_sprite.Height();
 
     float dxdy_ac = static_cast<float>(c.x - a.x) /
         static_cast<float>(c.y - a.y);
@@ -339,8 +339,8 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
     float sin_a = sinf(angle_radians) * zoom;
     float cos_a = cosf(angle_radians) * zoom;
     Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x);
-    Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(width() - pivot_.x);
-    Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(height() - pivot_.y);
+    Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(Width() - pivot_.x);
+    Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - pivot_.y);
     Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y);
 
     // d c
@@ -401,7 +401,7 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
         const Si32 from_width, const Si32 from_height,
         Sprite to_sprite) {
     const Si32 from_stride_pixels = StridePixels();
-    const Si32 to_stride_pixels = to_sprite.width();
+    const Si32 to_stride_pixels = to_sprite.Width();
 
     const Si32 to_x = to_x_pivot - pivot_.x * to_width / from_width;
     const Si32 to_y = to_y_pivot - pivot_.y * to_height / from_height;
@@ -414,11 +414,11 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
         + from_x;
 
     const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
-    const Si32 to_y_d_max = to_sprite.height() - to_y;
+    const Si32 to_y_d_max = to_sprite.Height() - to_y;
     const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
 
     const Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
-    const Si32 to_x_d_max = to_sprite.width() - to_x;
+    const Si32 to_x_d_max = to_sprite.Width() - to_x;
     const Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
 
     for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
@@ -443,11 +443,11 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     }
 }
 
-Si32 Sprite::width() const {
+Si32 Sprite::Width() const {
     return ref_size_.x;
 }
 
-Si32 Sprite::height() const {
+Si32 Sprite::Height() const {
     return ref_size_.y;
 }
 

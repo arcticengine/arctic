@@ -468,6 +468,7 @@ struct SoundBuffer {
     Si32 next_position = 0;
 };
 struct SoundMixerState {
+    float master_volume = 0.7f;
     std::vector<SoundBuffer> buffers;
 };
 SoundMixerState g_sound_mixer_state;
@@ -477,8 +478,36 @@ void StartSoundBuffer(easy::Sound sound, float volume) {
     buffer.sound = sound;
     buffer.volume = volume;
     buffer.next_position = 0;
+    buffer.sound.GetInstance()->IncPlaying();
     std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
     g_sound_mixer_state.buffers.push_back(buffer);
+}
+
+void StopSoundBuffer(easy::Sound sound) {
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
+        SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
+        if (buffer.sound.GetInstance() == sound.GetInstance()) {
+            if (idx != g_sound_mixer_state.buffers.size() - 1) {
+                g_sound_mixer_state.buffers[idx] =
+                    g_sound_mixer_state.buffers[
+                        g_sound_mixer_state.buffers.size() - 1];
+            }
+            g_sound_mixer_state.buffers.pop_back();
+            buffer.sound.GetInstance()->DecPlaying();
+            idx--;
+        }
+    }
+}
+
+void SetMasterVolume(float volume) {
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    g_sound_mixer_state.master_volume = volume;
+}
+
+float GetMasterVolume() {
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    return g_sound_mixer_state.master_volume;
 }
 
 void SoundMixerThreadFunction() {
@@ -542,25 +571,27 @@ void SoundMixerThreadFunction() {
         waveOutPrepareHeader(wave_out_handle,
             &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
 
+        float master_volume = 1.0f;
         {
             memset(mix.data(), 0, 2 * buffer_bytes);
             std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+            master_volume = g_sound_mixer_state.master_volume;
             for (Ui32 idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
                 SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
-                if (sound.sound.RawData()) {
-                    Ui32 remaining = sound.sound.DurationSamples() - sound.next_position;
-                    Ui32 size = std::min(remaining, buffer_samples_per_channel);
-                    sound.sound.StreamOut(sound.next_position, size, tmp.data(), buffer_samples_total);
-                    Si16 *in_data = tmp.data();
-                    for (Ui32 i = 0; i < size; ++i) {
-                        mix[i * 2] += static_cast<Si32>(
-                            in_data[i * 2]);
-                        mix[i * 2 + 1] += static_cast<Si32>(
-                            in_data[i * 2 + 1]);
-                        ++sound.next_position;
-                    }
+
+                Ui32 size = buffer_samples_per_channel;
+                size = sound.sound.StreamOut(sound.next_position, size, tmp.data(), buffer_samples_total);
+                Si16 *in_data = tmp.data();
+                for (Ui32 i = 0; i < size; ++i) {
+                    mix[i * 2] += static_cast<Si32>(
+                        static_cast<float>(in_data[i * 2]) * sound.volume);
+                    mix[i * 2 + 1] += static_cast<Si32>(
+                        static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
+                    ++sound.next_position;
                 }
-                if (sound.next_position == sound.sound.DurationSamples()) {
+
+                if (sound.next_position == sound.sound.DurationSamples() || size == 0) {
+                    sound.sound.GetInstance()->DecPlaying();
                     g_sound_mixer_state.buffers[idx] =
                         g_sound_mixer_state.buffers[g_sound_mixer_state.buffers.size() - 1];
                     g_sound_mixer_state.buffers.pop_back();
@@ -568,9 +599,11 @@ void SoundMixerThreadFunction() {
                 }
             }
         }
+
         Si16* out_data = &(wave_buffers[cur_buffer_idx][0]);
         for (Ui32 i = 0; i < buffer_samples_total; ++i) {
-            out_data[i] = static_cast<Si16>(Clamp(mix[i], -32767, 32767));
+            out_data[i] = static_cast<Si16>(Clamp(
+                static_cast<float>(mix[i]) * master_volume, -32767.0, 32767.0));
         }
 
         waveOutWrite(wave_out_handle,

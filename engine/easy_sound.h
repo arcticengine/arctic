@@ -28,14 +28,18 @@
 
 #include "engine/easy_sound_instance.h"
 
+struct stb_vorbis;
+
 namespace arctic {
 namespace easy {
 
 class Sound {
  private:
     std::shared_ptr<SoundInstance> sound_instance_;
-
- public:
+    stb_vorbis *vorbis_codec_ = nullptr;
+public:
+    void Load(const std::string &file_name, bool do_unpack);
+    void Load(const char *file_name, bool do_unpack);
     void Load(const char *file_name);
     void Load(const std::string &file_name);
     void Create(double duration);
@@ -43,10 +47,12 @@ class Sound {
     void Play();
     void Play(float volume);
     void Stop();
-    double duration() const;
+    double Duration() const;
     Si32 DurationSamples();
     Si16 *RawData();
     Si32 StreamOut(Si32 offset, Si32 size, Si16 *out_buffer, Si32 out_buffer_samples);
+    std::shared_ptr<SoundInstance> GetInstance();
+    bool IsPlaying();
 };
 
 }  // namespace easy

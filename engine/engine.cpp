@@ -42,7 +42,7 @@ void Engine::Init(Si32 width, Si32 height) {
 
 void Engine::Draw2d() {
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-        backbuffer_texture_.width(), backbuffer_texture_.height(), GL_RGBA,
+        backbuffer_texture_.Width(), backbuffer_texture_.Height(), GL_RGBA,
          GL_UNSIGNED_BYTE, static_cast<GLvoid*>(backbuffer_texture_.RawData()));
 
     // render
@@ -80,8 +80,8 @@ void Engine::Draw2d() {
     Ui32 *index = static_cast<Ui32*>(visible_indices_.GetVoidData());
 
     float aspect = static_cast<float>(width_) / static_cast<float>(height_);
-    float back_aspect = static_cast<float>(backbuffer_texture_.width()) /
-        static_cast<float>(backbuffer_texture_.height());
+    float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
+        static_cast<float>(backbuffer_texture_.Height());
     float ratio = back_aspect / aspect;
     float x_aspect = aspect < back_aspect ? 1.f : ratio;
     float y_aspect = aspect < back_aspect ? 1.f / ratio : 1.f;
@@ -191,8 +191,8 @@ double Engine::GetTime() {
 Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
     Vec2F rel_pos = pos - Vec2F(0.5f, 0.5f);
     float aspect = static_cast<float>(width_) / static_cast<float>(height_);
-    float back_aspect = static_cast<float>(backbuffer_texture_.width()) /
-        static_cast<float>(backbuffer_texture_.height());
+    float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
+        static_cast<float>(backbuffer_texture_.Height());
     float ratio = back_aspect / aspect;
     float x_aspect = aspect < back_aspect ? 1.f : ratio;
     float y_aspect = aspect < back_aspect ? 1.f / ratio : 1.f;

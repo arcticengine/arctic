@@ -314,8 +314,8 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Sprite back = GetEngine()->GetBackbuffer();
     Si32 stride = back.StridePixels();
     Rgba *dst = back.RgbaData();
-    Si32 width = back.width();
-    Si32 height = back.height();
+    Si32 width = back.Width();
+    Si32 height = back.Height();
 
     float dxdy_ac = static_cast<float>(c.x - a.x) /
         static_cast<float>(c.y - a.y);

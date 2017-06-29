@@ -42,6 +42,10 @@ void WriteWholeFile(const char *file_name, const Ui8 *data,
     const Ui64 data_size);
 void SleepSeconds(double duration);
 void StartSoundBuffer(easy::Sound sound, float volume);
+void StopSoundBuffer(easy::Sound sound);
+
+void SetMasterVolume(float volume);
+float GetMasterVolume();
 
 Ui16 FromBe(Ui16 x);
 Si16 FromBe(Si16 x);
