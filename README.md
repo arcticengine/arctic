@@ -32,6 +32,11 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 #### Third-party components:
 
 * piLibs C++ (14/06/2016) by Íñigo Quílez ([http://www.iquilezles.org/code/piLibs/piLibs.htm](http://www.iquilezles.org/code/piLibs/piLibs.htm))
+* stb single-file public domain libraries for C/C++ (30/06/2017) Copyright (c) 2017 Sean Barrett ([https://github.com/nothings/stb](https://github.com/nothings/stb))
+
+#### Third-party data:
+
+* Living Nightmare by snowflake Ft: Blue Wave Theory dig.ccmixter.org/files/snowflake/54422 (c) copyright 2016 Licensed under a Creative Commons Attribution (3.0) license.
 
 ## Tools used
 
