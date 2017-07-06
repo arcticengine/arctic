@@ -12,8 +12,6 @@ Arctic Engine returns the power to the C++ programmer and makes game development
 
 [![Build status](https://ci.appveyor.com/api/projects/status/jm2ahfwc8py7cwpl?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic) [![Coverity Scan Build Status](https://scan.coverity.com/projects/12997/badge.svg)](https://scan.coverity.com/projects/frostymorning-arctic) [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
 
-Main discussion (in Russian): [http://www.gamedev.ru/flame/forum/?id=217041](http://www.gamedev.ru/flame/forum/?id=217041)
-
 Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 Arctic Engine follows Google C++ Style Guide: [https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html)
