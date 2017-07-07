@@ -13,10 +13,10 @@
 
 Принятые заявки:
 
-Madware - Jun 30, 2017 at 9:00 AM
-SuperInoy - Jun 30, 2017 at 9:37 AM
-bladez-fate - Jun 30, 2017 at 12:38 PM
-Гамедьев - Jul 1, 2017 at 12:59 AM
-.z. - Jul 3, 2017 at 5:37 AM
+* Madware - Jun 30, 2017 at 9:00 AM
+* SuperInoy - Jun 30, 2017 at 9:37 AM
+* bladez-fate - Jun 30, 2017 at 12:38 PM
+* Гамедьев - Jul 1, 2017 at 12:59 AM
+* .z. - Jul 3, 2017 at 5:37 AM
 
 Обсуждение в коментариях к коммитам этого файла.
