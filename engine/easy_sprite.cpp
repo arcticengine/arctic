@@ -71,9 +71,19 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
                 Si32 offset = static_cast<Si32>(tex_1c.x) +
                     static_cast<Si32>(tex_1c.y) * tex_stride;
                 Rgba color = tex_data[offset];
-                if (color.a) {
+                if (color.a == 255) {
                     Rgba *p = dst + x1c;
-                    p->rgba = color.rgba; tex_data[offset].rgba;
+                    p->rgba = color.rgba;
+                } else if (color.a) {
+                    Rgba *p = dst + x1c;
+                    Ui32 m = color.a;
+                    Ui32 rb = (p->rgba & 0x00ff00fful) * m;
+                    Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+                    Ui32 m2 = 255 - m;
+                    Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+                    Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+                    p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+                        ((g + g2) & 0x0000ff00ul);
                 }
             }
         } else {
@@ -95,8 +105,17 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
                 Si32 offset = (tex_16.x >> 16) +
                     (tex_16.y >> 16) * tex_stride;
                 Rgba color = tex_data[offset];
-                if (color.a) {
+                if (color.a == 255) {
                     p->rgba = color.rgba;
+                } else if (color.a) {
+                    Ui32 m = color.a;
+                    Ui32 rb = (p->rgba & 0x00ff00fful) * m;
+                    Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+                    Ui32 m2 = 255 - m;
+                    Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+                    Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+                    p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+                        ((g + g2) & 0x0000ff00ul);
                 }
                 p++;
                 tex_16 += tex_12_16_step;
@@ -305,12 +324,59 @@ Vec2Si32 Sprite::Pivot() const {
     return pivot_;
 }
 
-void Sprite::Draw(const Si32 to_x, const Si32 to_y) {
+void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot) {
     if (!sprite_instance_) {
         return;
     }
-    Draw(to_x, to_y, ref_size_.x, ref_size_.y,
-        0, 0, ref_size_.x, ref_size_.y);
+    Sprite to_sprite = GetEngine()->GetBackbuffer();
+
+    const Si32 from_stride_pixels = StridePixels();
+    const Si32 to_stride_pixels = to_sprite.Width();
+
+    const Si32 width = Width();
+    const Si32 height = Height();
+
+    const Si32 to_x = to_x_pivot - pivot_.x;
+    const Si32 to_y = to_y_pivot - pivot_.y;
+
+    Rgba *to = to_sprite.RgbaData()
+        + to_y * to_stride_pixels
+        + to_x;
+    const Rgba *from = RgbaData();
+
+    const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
+    const Si32 to_y_d_max = to_sprite.Height() - to_y;
+    const Si32 to_y_de = (height < to_y_d_max ? height : to_y_d_max);
+
+    const Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
+    const Si32 to_x_d_max = to_sprite.Width() - to_x;
+    const Si32 to_x_de = (width < to_x_d_max ? width : to_x_d_max);
+
+    for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
+        const Si32 from_y_disp = to_y_disp;
+
+        const Rgba *from_line = from + from_y_disp * from_stride_pixels;
+        Rgba *to_line = to + to_y_disp * to_stride_pixels;
+
+        for (Si32 to_x_disp = to_x_db; to_x_disp < to_x_de; ++to_x_disp) {
+            Rgba *to_rgba = to_line + to_x_disp;
+            const Rgba *from_rgba = from_line + to_x_disp;
+            Rgba color = *from_rgba;
+            if (color.a == 255) {
+                to_rgba->rgba = from_rgba->rgba;
+            } else if (color.a) {
+                Ui32 m = color.a;
+                Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
+                Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+                Ui32 m2 = 255 - m;
+                Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+                Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+                to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+                    ((g + g2) & 0x0000ff00ul);
+            }
+
+        }
+    }
 }
 
 void Sprite::Draw(const Vec2Si32 to, float angle_radians) {
@@ -379,9 +445,7 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos) {
-    Draw(to_pos.x, to_pos.y,
-        ref_size_.x, ref_size_.y,
-        0, 0, ref_size_.x, ref_size_.y);
+    Draw(to_pos.x, to_pos.y);
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size) {
@@ -436,9 +500,20 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
             const Si32 from_x_disp = from_x_b + (from_x_acc_16 / 65536);
             from_x_acc_16 += from_x_step_16;
             const Rgba *from_rgba = from_line + from_x_disp;
-            if (from_rgba->a) {
+            Rgba color = *from_rgba;
+            if (color.a == 255) {
                 to_rgba->rgba = from_rgba->rgba;
+            } else if (color.a) {
+                Ui32 m = color.a;
+                Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
+                Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+                Ui32 m2 = 255 - m;
+                Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+                Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+                to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+                    ((g + g2) & 0x0000ff00ul);
             }
+
         }
     }
 }
