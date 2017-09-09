@@ -43,9 +43,9 @@ class SoundInstance {
     SoundDataFormat format_;
     ByteArray data_;
     std::atomic<Si32> playing_count_;
-public:
-    SoundInstance(Ui32 wav_samples);
-    SoundInstance(std::vector<Ui8> vorbis_file);
+ public:
+    explicit SoundInstance(Ui32 wav_samples);
+    explicit SoundInstance(std::vector<Ui8> vorbis_file);
     Si16* GetWavData();
     Ui8* GetVorbisData() const;
     Si32 GetVorbisSize() const;

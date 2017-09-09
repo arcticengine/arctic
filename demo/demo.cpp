@@ -348,7 +348,7 @@ Sound g_music;
 void PlayIntro() {
     g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
     g_music.Play();
- 
+
     ResizeScreen(320, 200);
     Ui8 snow[2][320 * 200];
     for (Si32 i = 0; i < 320 * 200; ++i) {
@@ -369,7 +369,7 @@ void PlayIntro() {
     Si32 duration1 = 380;
     Si32 duration2 = 500;
     Si32 duration3 = 560;
-    double start_time = Time(); 
+    double start_time = Time();
     Si32 frame = 0;
     while (true) {
         double time = Time();

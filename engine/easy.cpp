@@ -472,28 +472,27 @@ bool IsKey(const std::string &keys) {
 }
 
 void SetKeyImpl(Ui32 key_code, bool is_pressed) {
-	if (key_code < kKeyCount) {
-		auto& k = g_key_state[key_code];
-		if (is_pressed) {
-			k = k | 0x1;
-		}
-		else {
-			k = k & 0xfffffffe;
-		}
-	}
+    if (key_code < kKeyCount) {
+        auto& k = g_key_state[key_code];
+        if (is_pressed) {
+            k = k | 0x1;
+        } else {
+            k = k & 0xfffffffe;
+        }
+    }
 }
 
 void SetKey(const KeyCode key_code, bool is_pressed) {
-	SetKeyImpl(static_cast<Ui32>(key_code), is_pressed);
+    SetKeyImpl(static_cast<Ui32>(key_code), is_pressed);
 }
 
 void SetKey(const char key, bool is_pressed) {
-	if (key >= 'a' && key <= 'z') {
-		SetKeyImpl(static_cast<Ui32>(key)
-			+ static_cast<Ui32>('A')
-			- static_cast<Ui32>('a'), is_pressed);
-	}
-	return SetKeyImpl(static_cast<Ui32>(key), is_pressed);
+    if (key >= 'a' && key <= 'z') {
+        SetKeyImpl(static_cast<Ui32>(key)
+            + static_cast<Ui32>('A')
+            - static_cast<Ui32>('a'), is_pressed);
+    }
+    return SetKeyImpl(static_cast<Ui32>(key), is_pressed);
 }
 
 Vec2Si32 MousePos() {
@@ -546,7 +545,8 @@ std::vector<Ui8> ReadFile(const char *file_name) {
         file_name);
     std::streampos pos = in.tellg();
     Check(pos != std::streampos(-1),
-        "Error in ReadWholeFile. Can't determine file size via tellg, file_name: ",
+        "Error in ReadWholeFile."
+        " Can't determine file size via tellg, file_name: ",
         file_name);
     in.seekg(0, std::ios_base::beg);
     Check(in.rdstate() != std::ios_base::failbit,
@@ -557,13 +557,16 @@ std::vector<Ui8> ReadFile(const char *file_name) {
         data.resize(static_cast<size_t>(pos));
         in.read(reinterpret_cast<char*>(data.data()), static_cast<Ui64>(pos));
         Check(in.rdstate() != (std::ios_base::failbit | std::ios_base::eofbit),
-            "Error in ReadWholeFile. Can't read the data, eofbit is set, file_name: ",
+            "Error in ReadWholeFile."
+            " Can't read the data, eofbit is set, file_name: ",
             file_name);
         Check(in.rdstate() != std::ios_base::badbit,
-            "Error in ReadWholeFile. Can't read the data, badbit is set, file_name: ",
+            "Error in ReadWholeFile."
+            " Can't read the data, badbit is set, file_name: ",
             file_name);
         Check(in.rdstate() == std::ios_base::goodbit,
-            "Error in ReadWholeFile. Can't read the data, non-goodbit, file_name: ",
+            "Error in ReadWholeFile."
+            " Can't read the data, non-goodbit, file_name: ",
             file_name);
     }
     in.close();

@@ -109,16 +109,26 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
     Check(size >= sizeof(WaveHeader), "Error in LoadWav, size is too small.");
     const WaveHeader *wav = static_cast<const WaveHeader*>(
         static_cast<const void*>(data));
-    Check(FromBe(wav->chunk_id.raw) == 0x52494646, "Error in LoadWav, chunk_id is not RIFF.");
-    Check(wav->chunk_size == size - 8, "Error in LoadWav, chunk_size is not 36.");
-    Check(FromBe(wav->format.raw) == 0x57415645, "Error in LoadWav, format is not WAVE.");
-    Check(FromBe(wav->subchunk_1_id.raw) == 0x666d7420, "Error in LoadWav, subchunk_1_id is not fmt.");
-    Check(wav->subchunk_1_size == 16, "Error in LoadWav, subchunk_1_size is not 16.");
-    Check(wav->audio_format == 1, "Error in LoadWav, audio_format is not 1 (PCM).");
-    Check(wav->channels > 0, "Error in LoadWav, channels <= 0.");
-    Check(wav->sample_rate == 44100, "Error in LoadWav, sample_rate is not 44100.");
-    Check(FromBe(wav->subchunk_2_id.raw) == 0x64617461, "Error in LoadWav, subchunk_2_id is not data.");
-    Check(wav->subchunk_2_size <= size + 44, "Error in LoadWav, subchunk_2_size is too small.");
+    Check(FromBe(wav->chunk_id.raw) == 0x52494646,
+        "Error in LoadWav, chunk_id is not RIFF.");
+    Check(wav->chunk_size == size - 8,
+        "Error in LoadWav, chunk_size is not 36.");
+    Check(FromBe(wav->format.raw) == 0x57415645,
+        "Error in LoadWav, format is not WAVE.");
+    Check(FromBe(wav->subchunk_1_id.raw) == 0x666d7420,
+        "Error in LoadWav, subchunk_1_id is not fmt.");
+    Check(wav->subchunk_1_size == 16,
+        "Error in LoadWav, subchunk_1_size is not 16.");
+    Check(wav->audio_format == 1,
+        "Error in LoadWav, audio_format is not 1 (PCM).");
+    Check(wav->channels > 0,
+        "Error in LoadWav, channels <= 0.");
+    Check(wav->sample_rate == 44100,
+        "Error in LoadWav, sample_rate is not 44100.");
+    Check(FromBe(wav->subchunk_2_id.raw) == 0x64617461,
+        "Error in LoadWav, subchunk_2_id is not data.");
+    Check(wav->subchunk_2_size <= size + 44,
+        "Error in LoadWav, subchunk_2_size is too small.");
 
     Check((wav->bits_per_sample == 8) || (wav->bits_per_sample == 16),
         "Error in LoadTga, unsupported bits_per_sample.");
@@ -152,7 +162,8 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
     } else if (wav->bits_per_sample == 16) {
         if (wav->channels == 1) {
             for (Ui32 idx = 0; idx < sample_count; ++idx) {
-                Si16 value = *static_cast<const Si16*>(static_cast<const void*>(in_data));
+                Si16 value = *static_cast<const Si16*>(
+                    static_cast<const void*>(in_data));
                 out_data[idx * 2] = value;
                 out_data[idx * 2 + 1] = value;
                 in_data += block_align;

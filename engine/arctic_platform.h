@@ -32,11 +32,9 @@ namespace arctic {
 void Check(bool condition, const char *error_message,
     const char *error_message_postfix = nullptr);
 void Fatal(const char *error_message, const char *message_postfix = nullptr);
-void Draw();
 void Swap();
 bool IsVSyncSupported();
 bool SetVSync(bool is_enable);
-void ProcessUserInput();
 void StartSoundBuffer(easy::Sound sound, float volume);
 void StopSoundBuffer(easy::Sound sound);
 
@@ -46,7 +44,7 @@ float GetMasterVolume();
 Ui16 FromBe(Ui16 x);
 Si16 FromBe(Si16 x);
 Ui32 FromBe(Ui32 x);
-Si32 FtomBe(Si32 x);
+Si32 FromBe(Si32 x);
 Ui16 ToBe(Ui16 x);
 Si16 ToBe(Si16 x);
 Ui32 ToBe(Ui32 x);

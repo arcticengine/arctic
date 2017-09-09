@@ -374,7 +374,6 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot) {
                 to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
                     ((g + g2) & 0x0000ff00ul);
             }
-
         }
     }
 }
@@ -513,7 +512,6 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
                 to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
                     ((g + g2) & 0x0000ff00ul);
             }
-
         }
     }
 }

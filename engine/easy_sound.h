@@ -37,7 +37,7 @@ class Sound {
  private:
     std::shared_ptr<SoundInstance> sound_instance_;
     stb_vorbis *vorbis_codec_ = nullptr;
-public:
+ public:
     void Load(const std::string &file_name, bool do_unpack);
     void Load(const char *file_name, bool do_unpack);
     void Load(const char *file_name);
@@ -50,7 +50,8 @@ public:
     double Duration() const;
     Si32 DurationSamples();
     Si16 *RawData();
-    Si32 StreamOut(Si32 offset, Si32 size, Si16 *out_buffer, Si32 out_buffer_samples);
+    Si32 StreamOut(Si32 offset, Si32 size,
+        Si16 *out_buffer, Si32 out_buffer_samples);
     std::shared_ptr<SoundInstance> GetInstance();
     bool IsPlaying();
 };
