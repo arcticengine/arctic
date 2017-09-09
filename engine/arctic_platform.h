@@ -37,10 +37,6 @@ void Swap();
 bool IsVSyncSupported();
 bool SetVSync(bool is_enable);
 void ProcessUserInput();
-std::vector<Ui8> ReadWholeFile(const char *file_name);
-void WriteWholeFile(const char *file_name, const Ui8 *data,
-    const Ui64 data_size);
-void SleepSeconds(double duration);
 void StartSoundBuffer(easy::Sound sound, float volume);
 void StopSoundBuffer(easy::Sound sound);
 
