@@ -30,3 +30,7 @@
 
 # Visual studio hidden stuff
 .vs
+
+# XCode
+xcuserdata
+DerivedData
