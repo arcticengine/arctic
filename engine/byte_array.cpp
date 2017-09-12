@@ -22,6 +22,7 @@
 
 #include "engine/byte_array.h"
 
+#include <stdlib.h>
 #include <memory>
 
 #include "engine/arctic_platform.h"

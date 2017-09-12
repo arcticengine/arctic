@@ -26,13 +26,16 @@
 #include "engine/arctic_platform_def.h"
 
 #ifdef ARCTIC_PLATFORM_WINDOWS
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-
 #endif  // ARCTIC_PLATFORM_WINDOWS
+
+#ifdef ARCTIC_PLATFORM_MACOSX
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#endif //ARCTIC_PLATFORM_MACOSX
 
 #endif  // ENGINE_OPENGL_H_

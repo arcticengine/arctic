@@ -59,6 +59,8 @@ void Sound::Load(const char *file_name, bool do_unpack) {
             sound_instance_.reset(new SoundInstance(size));
             int res = stb_vorbis_get_samples_short_interleaved(
                 vorbis_codec_, 2, sound_instance_->GetWavData(), size * 2);
+            if (res) {
+            }
             stb_vorbis_close(vorbis_codec_);
             vorbis_codec_ = nullptr;
         } else {

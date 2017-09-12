@@ -29,6 +29,10 @@
 #define ARCTIC_PLATFORM_WINDOWS
 #endif  // _WIN32
 
+#ifdef __APPLE__
+#define ARCTIC_PLATFORM_MACOSX
+#endif  // __APPLE__
+
 namespace arctic {
 
 }  // namespace arctic

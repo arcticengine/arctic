@@ -134,7 +134,7 @@ std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
             Check(p + l <= data + size,
                 "Error in LoadTga, unexpected end of file.");
             Ui8 *to_line = sprite->RawData();
-            Ui64 to_line_size = sprite->width() * sizeof(Rgba);
+            //Ui64 to_line_size = sprite->width() * sizeof(Rgba);
             Ui64 from_line_size = sprite->width() * sizeof(Rgb);
             for (Si64 y = 0; y < tga->yres; ++y) {
                 const Ui8 *from_line = p + y * from_line_size;
@@ -154,7 +154,7 @@ std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
             Check(p + l <= data + size,
                 "Error in LoadTga, unexpected end of file.");
             Ui8 *to_line = sprite->RawData();
-            Ui64 to_line_size = sprite->width() * sizeof(Rgba);
+            //Ui64 to_line_size = sprite->width() * sizeof(Rgba);
             Ui64 from_line_size = sprite->width() * sizeof(Rgba);
             for (Si64 y = 0; y < tga->yres; ++y) {
                 const Ui8 *from_line = p + y * from_line_size;

@@ -22,8 +22,6 @@
 
 #include "engine/arctic_platform_def.h"
 
-#include <fstream>
-
 #ifdef ARCTIC_PLATFORM_WINDOWS
 
 #define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
@@ -37,6 +35,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <memory>
 #include <mutex>  // NOLINT
 #include <thread>  // NOLINT
@@ -54,8 +53,6 @@
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "OpenGL32.lib")
 #pragma comment(lib, "glu32.lib")
-
-#define MAX_LOADSTRING 255
 
 extern void EasyMain();
 
@@ -87,7 +84,7 @@ Si32 ToBe(Si32 x) {
 }
 
 inline void Check(bool condition, const char *error_message,
-    const char *error_message_postfix) {
+        const char *error_message_postfix) {
     if (condition) {
         return;
     }
@@ -324,10 +321,6 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
     PushInputMessage(msg);
 }
 
-
-//
-//  Processes messages for the main window.
-//
 LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         WPARAM word_param, LPARAM long_param) {
     switch (message) {
@@ -378,9 +371,6 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
     return 0;
 }
 
-//
-// Creates main window.
-//
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
         SystemInfo *system_info) {
     WCHAR title_bar_text[] = {L"Arctic Engine"};

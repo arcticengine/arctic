@@ -1,0 +1,407 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		34436CFE1F642A66004DD16E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 34436CFD1F642A66004DD16E /* Assets.xcassets */; };
+		34436D0F1F6431CD004DD16E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34436D0E1F6431CD004DD16E /* Cocoa.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		34436D111F6431D3004DD16E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34436D101F6431D3004DD16E /* OpenGL.framework */; settings = {ATTRIBUTES = (Required, ); }; };
+		34CBFB381F65F7C70015BE00 /* arctic_platform_macosx.mm in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB371F65F7C70015BE00 /* arctic_platform_macosx.mm */; };
+		34CBFB611F65F7D70015BE00 /* arctic_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB391F65F7D70015BE00 /* arctic_input.cpp */; };
+		34CBFB621F65F7D70015BE00 /* arctic_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB3B1F65F7D70015BE00 /* arctic_math.cpp */; };
+		34CBFB641F65F7D70015BE00 /* arctic_platform_windows.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB3F1F65F7D70015BE00 /* arctic_platform_windows.cpp */; };
+		34CBFB651F65F7D70015BE00 /* byte_array.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB441F65F7D70015BE00 /* byte_array.cpp */; };
+		34CBFB661F65F7D70015BE00 /* easy_sound_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB461F65F7D70015BE00 /* easy_sound_instance.cpp */; };
+		34CBFB671F65F7D70015BE00 /* easy_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB481F65F7D70015BE00 /* easy_sound.cpp */; };
+		34CBFB681F65F7D70015BE00 /* easy_sprite_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB4A1F65F7D70015BE00 /* easy_sprite_instance.cpp */; };
+		34CBFB691F65F7D70015BE00 /* easy_sprite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB4C1F65F7D70015BE00 /* easy_sprite.cpp */; };
+		34CBFB6A1F65F7D70015BE00 /* easy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB4E1F65F7D70015BE00 /* easy.cpp */; };
+		34CBFB6B1F65F7D70015BE00 /* engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB501F65F7D70015BE00 /* engine.cpp */; };
+		34CBFB711F65F7FC0015BE00 /* demo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34CBFB6F1F65F7FC0015BE00 /* demo.cpp */; };
+		34CBFB721F6603E30015BE00 /* data in Resources */ = {isa = PBXBuildFile; fileRef = 34CBFB6D1F65F7EB0015BE00 /* data */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		34436CF11F642A66004DD16E /* ArcticEngine.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArcticEngine.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		34436CFD1F642A66004DD16E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		34436D021F642A66004DD16E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		34436D0E1F6431CD004DD16E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		34436D101F6431D3004DD16E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
+		34CBFB371F65F7C70015BE00 /* arctic_platform_macosx.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = arctic_platform_macosx.mm; path = engine/arctic_platform_macosx.mm; sourceTree = SOURCE_ROOT; };
+		34CBFB391F65F7D70015BE00 /* arctic_input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_input.cpp; path = engine/arctic_input.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB3A1F65F7D70015BE00 /* arctic_input.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_input.h; path = engine/arctic_input.h; sourceTree = SOURCE_ROOT; };
+		34CBFB3B1F65F7D70015BE00 /* arctic_math.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_math.cpp; path = engine/arctic_math.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB3C1F65F7D70015BE00 /* arctic_math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_math.h; path = engine/arctic_math.h; sourceTree = SOURCE_ROOT; };
+		34CBFB3D1F65F7D70015BE00 /* arctic_platform_def.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_def.h; path = ../engine/arctic_platform_def.h; sourceTree = "<group>"; };
+		34CBFB3F1F65F7D70015BE00 /* arctic_platform_windows.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_windows.cpp; path = engine/arctic_platform_windows.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB401F65F7D70015BE00 /* arctic_platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform.h; path = engine/arctic_platform.h; sourceTree = SOURCE_ROOT; };
+		34CBFB411F65F7D70015BE00 /* arctic_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_types.h; path = engine/arctic_types.h; sourceTree = SOURCE_ROOT; };
+		34CBFB421F65F7D70015BE00 /* bound2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bound2f.h; path = engine/bound2f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB431F65F7D70015BE00 /* bound3f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bound3f.h; path = engine/bound3f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB441F65F7D70015BE00 /* byte_array.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = byte_array.cpp; path = engine/byte_array.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB451F65F7D70015BE00 /* byte_array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = byte_array.h; path = engine/byte_array.h; sourceTree = SOURCE_ROOT; };
+		34CBFB461F65F7D70015BE00 /* easy_sound_instance.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy_sound_instance.cpp; path = engine/easy_sound_instance.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB471F65F7D70015BE00 /* easy_sound_instance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sound_instance.h; path = engine/easy_sound_instance.h; sourceTree = SOURCE_ROOT; };
+		34CBFB481F65F7D70015BE00 /* easy_sound.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy_sound.cpp; path = engine/easy_sound.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB491F65F7D70015BE00 /* easy_sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sound.h; path = engine/easy_sound.h; sourceTree = SOURCE_ROOT; };
+		34CBFB4A1F65F7D70015BE00 /* easy_sprite_instance.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy_sprite_instance.cpp; path = engine/easy_sprite_instance.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB4B1F65F7D70015BE00 /* easy_sprite_instance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sprite_instance.h; path = engine/easy_sprite_instance.h; sourceTree = SOURCE_ROOT; };
+		34CBFB4C1F65F7D70015BE00 /* easy_sprite.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy_sprite.cpp; path = engine/easy_sprite.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB4D1F65F7D70015BE00 /* easy_sprite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sprite.h; path = engine/easy_sprite.h; sourceTree = SOURCE_ROOT; };
+		34CBFB4E1F65F7D70015BE00 /* easy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy.cpp; path = engine/easy.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB4F1F65F7D70015BE00 /* easy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy.h; path = engine/easy.h; sourceTree = SOURCE_ROOT; };
+		34CBFB501F65F7D70015BE00 /* engine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = engine.cpp; path = engine/engine.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB511F65F7D70015BE00 /* engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = engine.h; path = engine/engine.h; sourceTree = SOURCE_ROOT; };
+		34CBFB521F65F7D70015BE00 /* frustum3f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = frustum3f.h; path = engine/frustum3f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB531F65F7D70015BE00 /* mat22f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mat22f.h; path = engine/mat22f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB541F65F7D70015BE00 /* mat33f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mat33f.h; path = engine/mat33f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB551F65F7D70015BE00 /* mat44f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mat44f.h; path = engine/mat44f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB561F65F7D70015BE00 /* opengl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = opengl.h; path = engine/opengl.h; sourceTree = SOURCE_ROOT; };
+		34CBFB571F65F7D70015BE00 /* rgb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rgb.h; path = engine/rgb.h; sourceTree = SOURCE_ROOT; };
+		34CBFB581F65F7D70015BE00 /* rgba.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rgba.h; path = engine/rgba.h; sourceTree = SOURCE_ROOT; };
+		34CBFB591F65F7D70015BE00 /* scalar_math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = scalar_math.h; path = engine/scalar_math.h; sourceTree = SOURCE_ROOT; };
+		34CBFB5A1F65F7D70015BE00 /* stb_vorbis.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; name = stb_vorbis.inc; path = engine/stb_vorbis.inc; sourceTree = SOURCE_ROOT; };
+		34CBFB5B1F65F7D70015BE00 /* vec2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vec2f.h; path = engine/vec2f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB5C1F65F7D70015BE00 /* vec2si32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vec2si32.h; path = engine/vec2si32.h; sourceTree = SOURCE_ROOT; };
+		34CBFB5D1F65F7D70015BE00 /* vec3f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vec3f.h; path = engine/vec3f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB5E1F65F7D70015BE00 /* vec3si32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vec3si32.h; path = engine/vec3si32.h; sourceTree = SOURCE_ROOT; };
+		34CBFB5F1F65F7D70015BE00 /* vec4f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vec4f.h; path = engine/vec4f.h; sourceTree = SOURCE_ROOT; };
+		34CBFB601F65F7D70015BE00 /* vec4si32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vec4si32.h; path = engine/vec4si32.h; sourceTree = SOURCE_ROOT; };
+		34CBFB6D1F65F7EB0015BE00 /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = data; path = demo/data; sourceTree = SOURCE_ROOT; };
+		34CBFB6F1F65F7FC0015BE00 /* demo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = demo.cpp; path = demo/demo.cpp; sourceTree = SOURCE_ROOT; };
+		34CBFB701F65F7FC0015BE00 /* demo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = demo.h; path = demo/demo.h; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		34436CEE1F642A66004DD16E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				34436D111F6431D3004DD16E /* OpenGL.framework in Frameworks */,
+				34436D0F1F6431CD004DD16E /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		34436CE81F642A66004DD16E = {
+			isa = PBXGroup;
+			children = (
+				34436CF31F642A66004DD16E /* ArcticEngine */,
+				34436CF21F642A66004DD16E /* Products */,
+				34436D0D1F6431CD004DD16E /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		34436CF21F642A66004DD16E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				34436CF11F642A66004DD16E /* ArcticEngine.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		34436CF31F642A66004DD16E /* ArcticEngine */ = {
+			isa = PBXGroup;
+			children = (
+				34CBFB371F65F7C70015BE00 /* arctic_platform_macosx.mm */,
+				34CBFB391F65F7D70015BE00 /* arctic_input.cpp */,
+				34CBFB3A1F65F7D70015BE00 /* arctic_input.h */,
+				34CBFB3B1F65F7D70015BE00 /* arctic_math.cpp */,
+				34CBFB3C1F65F7D70015BE00 /* arctic_math.h */,
+				34CBFB3D1F65F7D70015BE00 /* arctic_platform_def.h */,
+				34CBFB3F1F65F7D70015BE00 /* arctic_platform_windows.cpp */,
+				34CBFB401F65F7D70015BE00 /* arctic_platform.h */,
+				34CBFB411F65F7D70015BE00 /* arctic_types.h */,
+				34CBFB421F65F7D70015BE00 /* bound2f.h */,
+				34CBFB431F65F7D70015BE00 /* bound3f.h */,
+				34CBFB441F65F7D70015BE00 /* byte_array.cpp */,
+				34CBFB451F65F7D70015BE00 /* byte_array.h */,
+				34CBFB461F65F7D70015BE00 /* easy_sound_instance.cpp */,
+				34CBFB471F65F7D70015BE00 /* easy_sound_instance.h */,
+				34CBFB481F65F7D70015BE00 /* easy_sound.cpp */,
+				34CBFB491F65F7D70015BE00 /* easy_sound.h */,
+				34CBFB4A1F65F7D70015BE00 /* easy_sprite_instance.cpp */,
+				34CBFB4B1F65F7D70015BE00 /* easy_sprite_instance.h */,
+				34CBFB4C1F65F7D70015BE00 /* easy_sprite.cpp */,
+				34CBFB4D1F65F7D70015BE00 /* easy_sprite.h */,
+				34CBFB4E1F65F7D70015BE00 /* easy.cpp */,
+				34CBFB4F1F65F7D70015BE00 /* easy.h */,
+				34CBFB501F65F7D70015BE00 /* engine.cpp */,
+				34CBFB511F65F7D70015BE00 /* engine.h */,
+				34CBFB521F65F7D70015BE00 /* frustum3f.h */,
+				34CBFB531F65F7D70015BE00 /* mat22f.h */,
+				34CBFB541F65F7D70015BE00 /* mat33f.h */,
+				34CBFB551F65F7D70015BE00 /* mat44f.h */,
+				34CBFB561F65F7D70015BE00 /* opengl.h */,
+				34CBFB571F65F7D70015BE00 /* rgb.h */,
+				34CBFB581F65F7D70015BE00 /* rgba.h */,
+				34CBFB591F65F7D70015BE00 /* scalar_math.h */,
+				34CBFB5A1F65F7D70015BE00 /* stb_vorbis.inc */,
+				34CBFB5B1F65F7D70015BE00 /* vec2f.h */,
+				34CBFB5C1F65F7D70015BE00 /* vec2si32.h */,
+				34CBFB5D1F65F7D70015BE00 /* vec3f.h */,
+				34CBFB5E1F65F7D70015BE00 /* vec3si32.h */,
+				34CBFB5F1F65F7D70015BE00 /* vec4f.h */,
+				34CBFB601F65F7D70015BE00 /* vec4si32.h */,
+				34CBFB6F1F65F7FC0015BE00 /* demo.cpp */,
+				34CBFB701F65F7FC0015BE00 /* demo.h */,
+				34CBFB6D1F65F7EB0015BE00 /* data */,
+				34436CFD1F642A66004DD16E /* Assets.xcassets */,
+				34436D021F642A66004DD16E /* Info.plist */,
+				34436CF71F642A66004DD16E /* Supporting Files */,
+			);
+			path = ArcticEngine;
+			sourceTree = "<group>";
+		};
+		34436CF71F642A66004DD16E /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		34436D0D1F6431CD004DD16E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				34436D101F6431D3004DD16E /* OpenGL.framework */,
+				34436D0E1F6431CD004DD16E /* Cocoa.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		34436CF01F642A66004DD16E /* ArcticEngine */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 34436D051F642A66004DD16E /* Build configuration list for PBXNativeTarget "ArcticEngine" */;
+			buildPhases = (
+				34436CED1F642A66004DD16E /* Sources */,
+				34436CEE1F642A66004DD16E /* Frameworks */,
+				34436CEF1F642A66004DD16E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ArcticEngine;
+			productName = ArcticEngine;
+			productReference = 34436CF11F642A66004DD16E /* ArcticEngine.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		34436CE91F642A66004DD16E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = Arctic;
+				TargetAttributes = {
+					34436CF01F642A66004DD16E = {
+						CreatedOnToolsVersion = 8.3.3;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 34436CEC1F642A66004DD16E /* Build configuration list for PBXProject "ArcticEngine" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 34436CE81F642A66004DD16E;
+			productRefGroup = 34436CF21F642A66004DD16E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				34436CF01F642A66004DD16E /* ArcticEngine */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		34436CEF1F642A66004DD16E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				34CBFB721F6603E30015BE00 /* data in Resources */,
+				34436CFE1F642A66004DD16E /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		34436CED1F642A66004DD16E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				34CBFB6A1F65F7D70015BE00 /* easy.cpp in Sources */,
+				34CBFB6B1F65F7D70015BE00 /* engine.cpp in Sources */,
+				34CBFB611F65F7D70015BE00 /* arctic_input.cpp in Sources */,
+				34CBFB671F65F7D70015BE00 /* easy_sound.cpp in Sources */,
+				34CBFB691F65F7D70015BE00 /* easy_sprite.cpp in Sources */,
+				34CBFB711F65F7FC0015BE00 /* demo.cpp in Sources */,
+				34CBFB681F65F7D70015BE00 /* easy_sprite_instance.cpp in Sources */,
+				34CBFB661F65F7D70015BE00 /* easy_sound_instance.cpp in Sources */,
+				34CBFB621F65F7D70015BE00 /* arctic_math.cpp in Sources */,
+				34CBFB641F65F7D70015BE00 /* arctic_platform_windows.cpp in Sources */,
+				34CBFB381F65F7C70015BE00 /* arctic_platform_macosx.mm in Sources */,
+				34CBFB651F65F7D70015BE00 /* byte_array.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		34436D031F642A66004DD16E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				"HEADER_SEARCH_PATHS[arch=*]" = /Pet/arctic/;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		34436D041F642A66004DD16E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				"HEADER_SEARCH_PATHS[arch=*]" = /Pet/arctic/;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		34436D061F642A66004DD16E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = ArcticEngine/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = Arctic.ArcticEngine;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		34436D071F642A66004DD16E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = ArcticEngine/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = Arctic.ArcticEngine;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		34436CEC1F642A66004DD16E /* Build configuration list for PBXProject "ArcticEngine" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				34436D031F642A66004DD16E /* Debug */,
+				34436D041F642A66004DD16E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		34436D051F642A66004DD16E /* Build configuration list for PBXNativeTarget "ArcticEngine" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				34436D061F642A66004DD16E /* Debug */,
+				34436D071F642A66004DD16E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 34436CE91F642A66004DD16E /* Project object */;
+}
