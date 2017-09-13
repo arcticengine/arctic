@@ -336,7 +336,7 @@ Si32 ToBe(Si32 x) {
     return htonl(x);
 }
 
-inline void Check(bool condition, const char *error_message,
+void Check(bool condition, const char *error_message,
         const char *error_message_postfix) {
     if (condition) {
         return;
