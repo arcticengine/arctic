@@ -27,6 +27,8 @@
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/OpenGL.h>
 
+#include <AudioToolbox/AudioToolbox.h>
+
 #include <arpa/inet.h>
 
 #include <algorithm>
@@ -367,6 +369,25 @@ void Fatal(const char *message, const char *message_postfix) {
     [alert runModal];
     exit(1);
 }
+    
+void CheckStatus(OSStatus status, const char *message) {
+    if (status == noErr) {
+        return;
+    }
+    char code[20];
+    *(UInt32 *)(code + 1) = CFSwapInt32HostToBig(status);
+    if (isprint(code[1])
+            && isprint(code[2])
+            && isprint(code[3])
+            && isprint(code[4])) {
+        code[0] = '\'';
+        code[5] = '\'';
+        code[6] = '\0';
+    } else {
+        snprintf(code, 20, "%d", (int)status);
+    }
+    Fatal(message, code);
+}
 
 void PushInputKey(KeyCode key, bool is_down) {
     InputMessage msg;
@@ -610,18 +631,174 @@ void CreateMainWindow() {
         [NSApp activateIgnoringOtherApps: YES];
     }
 }
+  
+static std::mutex g_sound_mixer_mutex;
+struct SoundBuffer {
+    easy::Sound sound;
+    float volume = 1.0f;
+    Si32 next_position = 0;
+};
+struct SoundMixerState {
+    float master_volume = 0.7f;
+    std::vector<SoundBuffer> buffers;
+};
+SoundMixerState g_sound_mixer_state;
+    
+struct SoundMixer {
+    AudioUnit output_unit = {0};
+    std::vector<Si16> tmp;
+    double starting_frame_count = 0.0;
+    bool is_initialized = false;
+    
+    void Initialize();
+    void Deinitialize();
+    ~SoundMixer() {
+        Deinitialize();
+    }
+};
+
+OSStatus SoundRenderProc(void *inRefCon,
+                         AudioUnitRenderActionFlags *ioActionFlags,
+                         const AudioTimeStamp *inTimeStamp,
+                         UInt32 inBusNumber,
+                         UInt32 inNumberFrames,
+                         AudioBufferList *ioData);
+
+OSStatus SoundRenderProc(void *inRefCon,
+                         AudioUnitRenderActionFlags *ioActionFlags,
+                         const AudioTimeStamp *inTimeStamp,
+                         UInt32 inBusNumber,
+                         UInt32 inNumberFrames,
+                         AudioBufferList *ioData) {
+    SoundMixer *mixer = (SoundMixer*)inRefCon;
+    
+    Float32 *mixL = (Float32*)ioData->mBuffers[0].mData;
+    Float32 *mixR = (Float32*)ioData->mBuffers[1].mData;
+    memset(mixL, 0, inNumberFrames * sizeof(Float32));
+    memset(mixR, 0, inNumberFrames * sizeof(Float32));
+    
+    float master_volume = 1.0f;
+    {
+        std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+        master_volume = g_sound_mixer_state.master_volume / 32767.0;
+        for (Ui32 idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
+            SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
+            
+            Ui32 size = inNumberFrames;
+            size = sound.sound.StreamOut(sound.next_position, inNumberFrames,
+                 mixer->tmp.data(), inNumberFrames * 2);
+            Si16 *in_data = mixer->tmp.data();
+            for (Ui32 i = 0; i < size; ++i) {
+                mixL[i] += static_cast<Si32>(
+                    static_cast<float>(in_data[i * 2]) * sound.volume);
+                mixR[i] += static_cast<Si32>(
+                    static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
+                ++sound.next_position;
+            }
+     
+            if (sound.next_position == sound.sound.DurationSamples()
+                    || size == 0) {
+                sound.sound.GetInstance()->DecPlaying();
+                g_sound_mixer_state.buffers[idx] =
+                g_sound_mixer_state.buffers[
+                    g_sound_mixer_state.buffers.size() - 1];
+                g_sound_mixer_state.buffers.pop_back();
+                --idx;
+            }
+        }
+    }
+    
+    for (int frame = 0; frame < inNumberFrames; ++frame) {
+        mixL[frame] = Clamp(mixL[frame] * master_volume, -1.0, 1.0);
+        mixR[frame] = Clamp(mixR[frame] * master_volume, -1.0, 1.0);
+    }
+    return noErr;
+}
+
+void SoundMixer::Initialize() {
+    if (is_initialized) {
+        return;
+    }
+    tmp.resize(2 << 20);
+    
+    AudioComponentDescription outputcd = {0};
+    outputcd.componentType = kAudioUnitType_Output;
+    outputcd.componentSubType = kAudioUnitSubType_DefaultOutput;
+    outputcd.componentManufacturer = kAudioUnitManufacturer_Apple;
+    
+    AudioComponent comp = AudioComponentFindNext(NULL, &outputcd);
+    if (comp == NULL) {
+        printf("can't get output unit");
+        exit(-1);
+    }
+    OSStatus status = AudioComponentInstanceNew(comp, &output_unit);
+    CheckStatus(status, "Couldn't open component for output_unit");
+    
+    AURenderCallbackStruct render;
+    render.inputProc = SoundRenderProc;
+    render.inputProcRefCon = this;
+    status = AudioUnitSetProperty(output_unit,
+                                  kAudioUnitProperty_SetRenderCallback,
+                                  kAudioUnitScope_Input,
+                                  0,
+                                  &render,
+                                  sizeof(render));
+    CheckStatus(status, "AudioUnitSetProperty failed");
+    
+    status = AudioUnitInitialize(output_unit);
+    CheckStatus(status, "Couldn't initialize output unit");
+    
+    status = AudioOutputUnitStart(output_unit);
+    CheckStatus(status, "Couldn't start output unit");
+    
+    is_initialized = true;
+}
+
+void SoundMixer::Deinitialize() {
+    if (is_initialized) {
+        AudioOutputUnitStop(output_unit);
+        AudioUnitUninitialize(output_unit);
+        AudioComponentInstanceDispose(output_unit);
+        is_initialized = false;
+    }
+}
+
     
 void StartSoundBuffer(easy::Sound sound, float volume) {
+    SoundBuffer buffer;
+    buffer.sound = sound;
+    buffer.volume = volume;
+    buffer.next_position = 0;
+    buffer.sound.GetInstance()->IncPlaying();
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    g_sound_mixer_state.buffers.push_back(buffer);
 }
-    
+
 void StopSoundBuffer(easy::Sound sound) {
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
+        SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
+        if (buffer.sound.GetInstance() == sound.GetInstance()) {
+            if (idx != g_sound_mixer_state.buffers.size() - 1) {
+                g_sound_mixer_state.buffers[idx] =
+                g_sound_mixer_state.buffers[
+                                            g_sound_mixer_state.buffers.size() - 1];
+            }
+            g_sound_mixer_state.buffers.pop_back();
+            buffer.sound.GetInstance()->DecPlaying();
+            idx--;
+        }
+    }
 }
-    
+
 void SetMasterVolume(float volume) {
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    g_sound_mixer_state.master_volume = volume;
 }
-    
+
 float GetMasterVolume() {
-    return 0.f;
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    return g_sound_mixer_state.master_volume;
 }
     
 void PumpMessages() {
@@ -671,10 +848,16 @@ int main(int argc, char *argv[]) {
         [NSString stringWithFormat:@"%@/Contents/Resources",
             [[NSBundle mainBundle] bundlePath]]];
     
+    
+    
     arctic::CreateMainWindow();
     
     NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
     arctic::easy::GetEngine()->Init(rect.size.width, rect.size.height);
+    
+    arctic::SoundMixer mixer;
+    mixer.Initialize();
+    
     EasyMain();
     
     return 0;
