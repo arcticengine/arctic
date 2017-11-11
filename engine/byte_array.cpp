@@ -23,7 +23,7 @@
 #include "engine/byte_array.h"
 
 #include <stdlib.h>
-#include <memory>
+#include <cstring>
 
 #include "engine/arctic_platform.h"
 
@@ -66,7 +66,7 @@ void ByteArray::Resize(Ui64 size) {
     } else {
         Ui8 *data = static_cast<Ui8*>(malloc(static_cast<size_t>(size)));
         Check(data != nullptr, "Allocaton error.");
-        memcpy(data, data_, static_cast<size_t>(size_));
+        std::memcpy(data, data_, static_cast<size_t>(size_));
         free(data_);
         allocated_size_ = size;
         size_ = size;

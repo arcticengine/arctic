@@ -25,6 +25,7 @@
 
 #include <time.h>
 #include <algorithm>
+#include <cstring>
 #include <deque>
 #include <random>
 #include <utility>

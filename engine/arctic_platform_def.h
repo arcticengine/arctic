@@ -33,6 +33,10 @@
 #define ARCTIC_PLATFORM_MACOSX
 #endif  // __APPLE__
 
+#ifdef PLATFORM_RPI
+#define ARCTIC_PLATFORM_PI
+#endif  // PLATFORM_RPI
+
 namespace arctic {
 
 }  // namespace arctic

@@ -36,6 +36,11 @@
 #ifdef ARCTIC_PLATFORM_MACOSX
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
-#endif //ARCTIC_PLATFORM_MACOSX
+#endif  // ARCTIC_PLATFORM_MACOSX
+
+#ifdef ARCTIC_PLATFORM_PI
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif  // ARCTIC_PLATFORM_PI
 
 #endif  // ENGINE_OPENGL_H_

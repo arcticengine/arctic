@@ -22,7 +22,7 @@
 
 #include "engine/easy_sound_instance.h"
 
-#include <memory>
+#include <cstring>
 
 #include "engine/arctic_platform.h"
 
@@ -73,7 +73,7 @@ SoundInstance::SoundInstance(std::vector<Ui8> vorbis_file) {
     format_ = kSoundDataVorbis;
     playing_count_ = 0;
     data_.Resize(vorbis_file.size());
-    memcpy(data_.data(), vorbis_file.data(), vorbis_file.size());
+    std::memcpy(data_.data(), vorbis_file.data(), vorbis_file.size());
 }
 
 Si16* SoundInstance::GetWavData() {

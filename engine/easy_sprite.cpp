@@ -22,9 +22,12 @@
 
 #include "engine/easy_sprite.h"
 
+#include <string.h>
+
 #include <algorithm>
 #include <utility>
 #include <vector>
+
 #include "engine/easy.h"
 #include "engine/rgba.h"
 
