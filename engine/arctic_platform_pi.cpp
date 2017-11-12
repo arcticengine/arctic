@@ -645,50 +645,50 @@ static async_private_data g_data;
 void MixSound() {
     async_private_data *data = &g_data;
 
-	Si32 buffer_samples_total = data->period_size * 2;
-	Si32 buffer_bytes = data->period_size * 4;
+    Si32 buffer_samples_total = data->period_size * 2;
+    Si32 buffer_bytes = data->period_size * 4;
 
-	float master_volume = 1.0f;
-	{
-		memset(data->mix.data(), 0, 2 * buffer_bytes);
-		std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-		master_volume = g_sound_mixer_state.master_volume;
-		for (Ui32 idx = 0;
-				idx < g_sound_mixer_state.buffers.size(); ++idx) {
-			SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
+    float master_volume = 1.0f;
+    {
+        memset(data->mix.data(), 0, 2 * buffer_bytes);
+        std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+        master_volume = g_sound_mixer_state.master_volume;
+        for (Ui32 idx = 0;
+                idx < g_sound_mixer_state.buffers.size(); ++idx) {
+            SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
 
-			Ui32 size = data->period_size;
-			size = sound.sound.StreamOut(sound.next_position, size,
-					data->tmp.data(), buffer_samples_total);
-			Si16 *in_data = data->tmp.data();
-			for (Ui32 i = 0; i < size; ++i) {
-				data->mix[i * 2] += static_cast<Si32>(
-						static_cast<float>(in_data[i * 2]) * sound.volume);
-				data->mix[i * 2 + 1] += static_cast<Si32>(
-						static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
-				++sound.next_position;
-			}
+            Ui32 size = data->period_size;
+            size = sound.sound.StreamOut(sound.next_position, size,
+                    data->tmp.data(), buffer_samples_total);
+            Si16 *in_data = data->tmp.data();
+            for (Ui32 i = 0; i < size; ++i) {
+                data->mix[i * 2] += static_cast<Si32>(
+                        static_cast<float>(in_data[i * 2]) * sound.volume);
+                data->mix[i * 2 + 1] += static_cast<Si32>(
+                        static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
+                ++sound.next_position;
+            }
 
-			if (sound.next_position == sound.sound.DurationSamples()
-					|| size == 0) {
-				sound.sound.GetInstance()->DecPlaying();
-				g_sound_mixer_state.buffers[idx] =
-					g_sound_mixer_state.buffers[
-					g_sound_mixer_state.buffers.size() - 1];
-				g_sound_mixer_state.buffers.pop_back();
-				--idx;
-			}
-		}
-	}
+            if (sound.next_position == sound.sound.DurationSamples()
+                    || size == 0) {
+                sound.sound.GetInstance()->DecPlaying();
+                g_sound_mixer_state.buffers[idx] =
+                    g_sound_mixer_state.buffers[
+                    g_sound_mixer_state.buffers.size() - 1];
+                g_sound_mixer_state.buffers.pop_back();
+                --idx;
+            }
+        }
+    }
 
-	unsigned char *out_buffer = (unsigned char *)data->samples.data();
-	for (Ui32 i = 0; i < buffer_samples_total; ++i) {
-		Si16 res = static_cast<Si16>(Clamp(
-					static_cast<float>(data->mix[i]) * master_volume,
-					-32767.0, 32767.0));
-		out_buffer[i * 2 + 0] = res & 0xff;
-		out_buffer[i * 2 + 1] = (res >> 8) & 0xff;
-	}
+    unsigned char *out_buffer = (unsigned char *)data->samples.data();
+    for (Ui32 i = 0; i < buffer_samples_total; ++i) {
+        Si16 res = static_cast<Si16>(Clamp(
+                    static_cast<float>(data->mix[i]) * master_volume,
+                    -32767.0, 32767.0));
+        out_buffer[i * 2 + 0] = res & 0xff;
+        out_buffer[i * 2 + 1] = (res >> 8) & 0xff;
+    }
 }
 
 static void SoundMixerCallback(snd_async_handler_t *ahandler) {
@@ -702,7 +702,7 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
             return;
         }
 
-		MixSound();
+        MixSound();
 
         unsigned char *out_buffer = (unsigned char *)data->samples.data();
         int err = snd_pcm_writei(handle, out_buffer, data->period_size);
@@ -716,36 +716,36 @@ void SoundMixerThreadFunction() {
     while (true) {
         MixSound();
 
-		Si16 *out_buffer = g_data.samples.data();
-		Si32 size_left = g_data.period_size;
-		while (size_left > 0) {
-			int err = snd_pcm_writei(g_data.handle, out_buffer, size_left);
-			if (err == -EAGAIN) {
-				continue;
-			} else if (err == -EPIPE) {
-				err = snd_pcm_prepare(g_data.handle);
-				Check(err >= 0, "Can't recover sound from underrun: ",
-						snd_strerror(err));
-			} else if (err == -ESTRPIPE) {
-				while (true) {
-					err = snd_pcm_resume(g_data.handle);
-					if (err != -EAGAIN) {
-						break;
-					}
-					sleep(1);
-				}
-				if (err < 0) {
-					err = snd_pcm_prepare(g_data.handle);
-					Check(err >= 0, "Can't recover sound from suspend: ",
-							snd_strerror(err));
-				}
-			} else {
-				Check(err >= 0, "Can't write sound data: ",
-						snd_strerror(err));
-			}
-			out_buffer += err * 2;
-			size_left -= err;
-		}
+        Si16 *out_buffer = g_data.samples.data();
+        Si32 size_left = g_data.period_size;
+        while (size_left > 0) {
+            int err = snd_pcm_writei(g_data.handle, out_buffer, size_left);
+            if (err == -EAGAIN) {
+                continue;
+            } else if (err == -EPIPE) {
+                err = snd_pcm_prepare(g_data.handle);
+                Check(err >= 0, "Can't recover sound from underrun: ",
+                        snd_strerror(err));
+            } else if (err == -ESTRPIPE) {
+                while (true) {
+                    err = snd_pcm_resume(g_data.handle);
+                    if (err != -EAGAIN) {
+                        break;
+                    }
+                    sleep(1);
+                }
+                if (err < 0) {
+                    err = snd_pcm_prepare(g_data.handle);
+                    Check(err >= 0, "Can't recover sound from suspend: ",
+                            snd_strerror(err));
+                }
+            } else {
+                Check(err >= 0, "Can't write sound data: ",
+                        snd_strerror(err));
+            }
+            out_buffer += err * 2;
+            size_left -= err;
+        }
     }
 }
 
@@ -825,7 +825,8 @@ void StartSoundMixer() {
     if (err == -ENOSYS) {
         sound_thread = std::thread(arctic::SoundMixerThreadFunction);
     } else {
-        Check(err >= 0, "Can't register async pcm handler for sound:", snd_strerror(err));
+        Check(err >= 0, "Can't register async pcm handler for sound:",
+                snd_strerror(err));
         for (int count = 0; count < 3; count++) {
             err = snd_pcm_writei(g_data.handle, g_data.samples.data(),
                     g_data.period_size);
