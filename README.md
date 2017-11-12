@@ -76,7 +76,9 @@ cd demo
 Arctic Engine has been tested only on Raspberry Pi 3 model B so far.
 
 If you experience low sound quality on built-in audio output, un /boot/config.txt add the following line:
+```
 audio_pwm_mode=2
+```
 You might need to update your firmware in order for this to work.
 
 
