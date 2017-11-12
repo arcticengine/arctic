@@ -54,3 +54,27 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 #### Documentation generator
 
 * Doxygen 1.8.13 ([http://www.doxygen.org](http://www.doxygen.org))
+
+## Ubuntu and Raspbian linux build instruction
+
+Just execute the following commands in terminal line by line to install all the required libraries and tools, clone the repository to ~/arctic, build and run the demo project: 
+
+sudo apt get install git git-lfs cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+git lfs install
+cd ~
+git clone https://github.com/FrostyMorning/arctic.git
+cd ~/arctic
+cmake .
+make all
+cd demo
+./demo
+
+### Raspberry Pi notes
+
+Arctic Engine has been tested only on Raspberry Pi 3 model B so far.
+
+If you experience low sound quality on built-in audio output, un /boot/config.txt add the following line:
+audio_pwm_mode=2
+You might need to update your firmware in order for this to work.
+
+
