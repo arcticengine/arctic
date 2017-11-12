@@ -28,6 +28,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 project(${PROJECT_NAME} CXX)
 
+find_package(ALSA REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(X11 REQUIRED)
 find_package(Threads REQUIRED)
@@ -74,5 +75,6 @@ target_link_libraries(
     ${OPENGL_gl_LIBRARY}
     ${X11_LIBRARIES}
     Threads::Threads
+    ${ALSA_LIBRARY}
 )
 

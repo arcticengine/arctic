@@ -24,6 +24,7 @@
 
 #ifdef ARCTIC_PLATFORM_PI
 
+#include <alsa/asoundlib.h>
 #include <arpa/inet.h>
 #include <string.h>
 
@@ -177,8 +178,8 @@ KeyCode TranslateKeyCode(KeySym ks) {
 
         case XK_space:
             return kKeySpace;
- 
-        case '\'':
+
+        case XK_apostrophe:
             return kKeyApostrophe;
 
         case XK_comma:
@@ -210,15 +211,18 @@ KeyCode TranslateKeyCode(KeySym ks) {
         case XK_9:
             return kKey9;
 
-        case ';':
+        case XK_semicolon:
             return kKeySemicolon;
         case XK_Cancel:
             return kKeyPause;
-        case XK_plus:
+        case XK_equal:
             return kKeyEquals;
         case XK_Num_Lock:
             return kKeyNumLock;
-        // ScrollLoak, CaspLock
+        case XK_Scroll_Lock:
+            return kKeyScrollLock;
+        case XK_Caps_Lock:
+            return kKeyCapsLock;
         case XK_A:
             return kKeyA;
         case XK_B:
@@ -278,7 +282,8 @@ KeyCode TranslateKeyCode(KeySym ks) {
         case XK_bracketright:
             return kKeyRightSquareBracket;
 
-        // GraveAccent
+        case XK_dead_grave:
+            return kKeyGraveAccent;
         case XK_F1:
             return kKeyF1;
         case XK_F2:
@@ -334,14 +339,16 @@ KeyCode TranslateKeyCode(KeySym ks) {
             return kKeyNumpadPlus;
         case XK_KP_Decimal:
             return kKeyNumpadPeriod;
-        // PrintScreen
+        case XK_Print:
+            return kKeyPrintScreen;
         case XK_KP_Enter:
             return kKeyEnter;
         case XK_Insert:
             return kKeyInsert;
         case XK_Delete:
             return kKeyDelete;
-        // SectionSign
+        case XK_section:
+            return kKeySectionSign;
     }
     return kKeyUnknown;
 }
@@ -407,6 +414,7 @@ void PumpMessages() {
                 if (kcode != 0) {
                     ks = XkbKeycodeToKeysym(x_display, kcode, 0, 0);
                     key = TranslateKeyCode(ks);
+                    std::cerr << "ks: " << ks << " key: " << key << std::endl;
                 }
             }
             bool is_down = (ev.type == KeyPress);
@@ -465,8 +473,9 @@ void PumpMessages() {
         window_height = ev.xconfigure.height;
     }
 
-    if (True == XCheckTypedWindowEvent(x_display, x_window, DestroyNotify, &ev)) {
-        exit(1);
+    if (True == XCheckTypedWindowEvent(
+                x_display, x_window, DestroyNotify, &ev)) {
+        exit(0);
     }
 
     return;
@@ -480,7 +489,7 @@ void CreateMainWindow(SystemInfo *system_info) {
     Check(x_display != NULL, "Can't open display.");
 
     XWindowAttributes window_attributes;
-    Status is_good = XGetWindowAttributes(x_display, 
+    Status is_good = XGetWindowAttributes(x_display,
             RootWindow(x_display, DefaultScreen(x_display)),
             &window_attributes);
     Check(is_good != 0, "Can't get window attributes.");
@@ -588,124 +597,6 @@ float GetMasterVolume() {
     return g_sound_mixer_state.master_volume;
 }
 
-void SoundMixerThreadFunction() {
-/*    Si32 bytes_per_sample = 2;
-
-    WAVEFORMATEX format;
-    format.wFormatTag = WAVE_FORMAT_PCM;
-    format.nChannels = 2;
-    format.nSamplesPerSec = 44100;
-    format.nAvgBytesPerSec =
-        bytes_per_sample * format.nChannels * format.nSamplesPerSec;
-    format.nBlockAlign = bytes_per_sample * format.nChannels;
-    format.wBitsPerSample = 8 * bytes_per_sample;
-    format.cbSize = 0;
-
-    HWAVEOUT wave_out_handle;
-    MMRESULT result = waveOutOpen(&wave_out_handle, WAVE_MAPPER,
-        &format, 0, 0, WAVE_FORMAT_DIRECT);
-
-    Ui32 buffer_count = 10ull;
-    Ui64 buffer_duration_us = 10000ull;
-    Ui32 buffer_samples_per_channel =
-        static_cast<Ui32>(
-            static_cast<Ui64>(format.nSamplesPerSec) *
-            buffer_duration_us / 1000000ull);
-    Ui32 buffer_samples_total = format.nChannels * buffer_samples_per_channel;
-    Ui32 buffer_bytes = bytes_per_sample * buffer_samples_total;
-
-    std::vector<WAVEHDR> wave_headers(buffer_count);
-    std::vector<std::vector<Si16>> wave_buffers(buffer_count);
-    std::vector<Si16> tmp(buffer_samples_total);
-    std::vector<Si32> mix(buffer_samples_total);
-    memset(&(mix[0]), 0, 2 * buffer_bytes);
-    for (Ui32 i = 0; i < wave_headers.size(); ++i) {
-        wave_buffers[i].resize(buffer_samples_total);
-        memset(&(wave_buffers[i][0]), 0, buffer_bytes);
-
-        memset(&wave_headers[i], 0, sizeof(WAVEHDR));
-        wave_headers[i].dwBufferLength = buffer_bytes;
-        wave_headers[i].lpData = reinterpret_cast<char*>(&(wave_buffers[i][0]));
-        waveOutPrepareHeader(wave_out_handle,
-            &wave_headers[i], sizeof(WAVEHDR));
-        wave_headers[i].dwFlags = WHDR_DONE;
-    }
-    Check(result == MMSYSERR_NOERROR, "Error in SoundMixerThreadFunction");
-
-    int cur_buffer_idx = 0;
-    bool do_continue = true;
-    timeBeginPeriod(1);
-    while (do_continue) {
-        while (!(wave_headers[cur_buffer_idx].dwFlags & WHDR_DONE)) {
-            Sleep(0);
-        }
-        do {
-            result = waveOutUnprepareHeader(wave_out_handle,
-                &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
-            if (result == WAVERR_STILLPLAYING) {
-                Sleep(0);
-            }
-        } while (result == WAVERR_STILLPLAYING);
-
-        wave_headers[cur_buffer_idx].dwFlags = 0;
-        waveOutPrepareHeader(wave_out_handle,
-            &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
-
-        float master_volume = 1.0f;
-        {
-            memset(mix.data(), 0, 2 * buffer_bytes);
-            std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-            master_volume = g_sound_mixer_state.master_volume;
-            for (Ui32 idx = 0;
-                    idx < g_sound_mixer_state.buffers.size(); ++idx) {
-                SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
-
-                Ui32 size = buffer_samples_per_channel;
-                size = sound.sound.StreamOut(sound.next_position, size,
-                    tmp.data(), buffer_samples_total);
-                Si16 *in_data = tmp.data();
-                for (Ui32 i = 0; i < size; ++i) {
-                    mix[i * 2] += static_cast<Si32>(
-                        static_cast<float>(in_data[i * 2]) * sound.volume);
-                    mix[i * 2 + 1] += static_cast<Si32>(
-                        static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
-                    ++sound.next_position;
-                }
-
-                if (sound.next_position == sound.sound.DurationSamples()
-                        || size == 0) {
-                    sound.sound.GetInstance()->DecPlaying();
-                    g_sound_mixer_state.buffers[idx] =
-                        g_sound_mixer_state.buffers[
-                            g_sound_mixer_state.buffers.size() - 1];
-                    g_sound_mixer_state.buffers.pop_back();
-                    --idx;
-                }
-            }
-        }
-
-        Si16* out_data = &(wave_buffers[cur_buffer_idx][0]);
-        for (Ui32 i = 0; i < buffer_samples_total; ++i) {
-            out_data[i] = static_cast<Si16>(Clamp(
-                static_cast<float>(mix[i]) * master_volume, -32767.0, 32767.0));
-        }
-
-        waveOutWrite(wave_out_handle,
-            &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
-        cur_buffer_idx = (cur_buffer_idx + 1) % wave_headers.size();
-    }
-    timeEndPeriod(1);
-
-    for (Ui32 i = 0; i < wave_headers.size(); ++i) {
-        do {
-            result = waveOutUnprepareHeader(wave_out_handle,
-                &wave_headers[i], sizeof(WAVEHDR));
-        } while (result == WAVERR_STILLPLAYING);
-    }
-    waveOutClose(wave_out_handle);
-    */
-    return;
-}
 
 void Swap() {
     glFlush();
@@ -735,20 +626,192 @@ bool SetVSync(bool is_enable) {
     return false;
 }
 
+static unsigned int g_buffer_time_us = 50000;
+static unsigned int g_period_time_us = 10000;
+
+struct async_private_data {
+    std::vector<Si16> samples;
+    std::vector<Si32> mix;
+    std::vector<Si16> tmp;
+    snd_async_handler_t *ahandler;
+    snd_pcm_t *handle;
+    snd_output_t *output = NULL;
+    snd_pcm_sframes_t buffer_size;
+    snd_pcm_sframes_t period_size;
+};
+
+static async_private_data g_data;
+
+static void SoundMixerCallback(snd_async_handler_t *ahandler) {
+    snd_pcm_t *handle = snd_async_handler_get_pcm(ahandler);
+    async_private_data *data = static_cast<async_private_data*>(
+            snd_async_handler_get_callback_private(ahandler));
+
+    while (true) {
+        snd_pcm_sframes_t avail = snd_pcm_avail_update(handle);
+        if (avail < data->period_size) {
+            return;
+        }
+        Si32 buffer_samples_total = data->period_size * 2;
+        Si32 buffer_bytes = data->period_size * 4;
+
+        float master_volume = 1.0f;
+        {
+            memset(data->mix.data(), 0, 2 * buffer_bytes);
+            std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+            master_volume = g_sound_mixer_state.master_volume;
+            for (Ui32 idx = 0;
+                    idx < g_sound_mixer_state.buffers.size(); ++idx) {
+                SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
+
+                Ui32 size = data->period_size;
+                size = sound.sound.StreamOut(sound.next_position, size,
+                    data->tmp.data(), buffer_samples_total);
+                Si16 *in_data = data->tmp.data();
+                for (Ui32 i = 0; i < size; ++i) {
+                    data->mix[i * 2] += static_cast<Si32>(
+                        static_cast<float>(in_data[i * 2]) * sound.volume);
+                    data->mix[i * 2 + 1] += static_cast<Si32>(
+                        static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
+                    ++sound.next_position;
+                }
+
+                if (sound.next_position == sound.sound.DurationSamples()
+                        || size == 0) {
+                    sound.sound.GetInstance()->DecPlaying();
+                    g_sound_mixer_state.buffers[idx] =
+                        g_sound_mixer_state.buffers[
+                            g_sound_mixer_state.buffers.size() - 1];
+                    g_sound_mixer_state.buffers.pop_back();
+                    --idx;
+                }
+            }
+        }
+
+        unsigned char *out_buffer = (unsigned char *)data->samples.data();
+        for (Ui32 i = 0; i < buffer_samples_total; ++i) {
+            Si16 res = static_cast<Si16>(Clamp(
+                static_cast<float>(data->mix[i]) * master_volume,
+                -32767.0, 32767.0));
+            out_buffer[i * 2 + 0] = res & 0xff;
+            out_buffer[i * 2 + 1] = (res >> 8) & 0xff;
+        }
+
+        int err = snd_pcm_writei(handle, out_buffer, data->period_size);
+        Check(err >= 0, "Sound write error: ", snd_strerror(err));
+        Check(err == data->period_size,
+                "Sound write error: written != expected.");
+    }
+}
+
+
+void StartSoundMixer() {
+    snd_pcm_hw_params_t *hwparams;
+    snd_pcm_hw_params_alloca(&hwparams);
+    snd_pcm_sw_params_t *swparams;
+    snd_pcm_sw_params_alloca(&swparams);
+    int err = snd_output_stdio_attach(&g_data.output, stdout, 0);
+    Check(err >= 0, "Sound error output setup failed: ", snd_strerror(err));
+
+    err = snd_pcm_open(&g_data.handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
+    if (err == -ENOENT) {
+        err = snd_pcm_open(&g_data.handle, "plughw:0,0",
+                SND_PCM_STREAM_PLAYBACK, 0);
+        Check(err >= 0, "Can't open 'plughw:0,0' sound device: ",
+                snd_strerror(err));
+    } else {
+        Check(err >= 0, "Can't open 'default' sound device: ",
+                snd_strerror(err));
+    }
+
+    err = snd_pcm_hw_params_any(g_data.handle, hwparams);
+    Check(err >= 0, "Can't get sound configuration space: ", snd_strerror(err));
+    err = snd_pcm_hw_params_set_rate_resample(g_data.handle, hwparams, 1);
+    Check(err >= 0, "Can't set sound resampling: ", snd_strerror(err));
+    err = snd_pcm_hw_params_set_access(g_data.handle, hwparams,
+            SND_PCM_ACCESS_RW_INTERLEAVED);
+    Check(err >= 0, "Can't set access type for sound: ", snd_strerror(err));
+    err = snd_pcm_hw_params_set_format(g_data.handle, hwparams,
+            SND_PCM_FORMAT_S16);
+    Check(err >= 0, "Can't set sample format for sound: ", snd_strerror(err));
+    err = snd_pcm_hw_params_set_channels(g_data.handle, hwparams, 2);
+    Check(err >= 0, "Can't set 2 channels for sound: ", snd_strerror(err));
+    unsigned int rate = 44100;
+    err = snd_pcm_hw_params_set_rate_near(g_data.handle, hwparams, &rate, 0);
+    Check(err >= 0, "Can't set 44100 Hz rate for sound: ", snd_strerror(err));
+    Check(rate == 44100, "Sound output rate doesn't match requested 44100 Hz.");
+    int dir;
+    err = snd_pcm_hw_params_set_buffer_time_near(g_data.handle, hwparams,
+            &g_buffer_time_us, &dir);
+    Check(err >= 0, "Can't set buffer time for sound: ", snd_strerror(err));
+    snd_pcm_uframes_t size;
+    err = snd_pcm_hw_params_get_buffer_size(hwparams, &size);
+    Check(err >= 0, "Can't get buffer size for sound: ", snd_strerror(err));
+    g_data.buffer_size = size;
+    err = snd_pcm_hw_params_set_period_time_near(g_data.handle, hwparams,
+            &g_period_time_us, &dir);
+    Check(err >= 0, "Can't set period time for sound: ", snd_strerror(err));
+    err = snd_pcm_hw_params_get_period_size(hwparams, &size, &dir);
+    Check(err >= 0, "Can't get period size for sound: ", snd_strerror(err));
+    g_data.period_size = size;
+    err = snd_pcm_hw_params(g_data.handle, hwparams);
+    Check(err >= 0, "Can't set hw params for sound: ", snd_strerror(err));
+
+    err = snd_pcm_sw_params_current(g_data.handle, swparams);
+    Check(err >= 0, "Can't determine current sw params for sound: ",
+            snd_strerror(err));
+    err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams,
+            (g_data.buffer_size / g_data.period_size) * g_data.period_size);
+    Check(err >= 0, "Can't set start threshold mode for sound: ",
+            snd_strerror(err));
+    err = snd_pcm_sw_params_set_avail_min(g_data.handle, swparams,
+            g_data.period_size);
+    Check(err >= 0, "Can't set avail min for sound: ", snd_strerror(err));
+    err = snd_pcm_sw_params(g_data.handle, swparams);
+    Check(err >= 0, "Can't set sw params for sound: ", snd_strerror(err));
+
+    // start sound
+    g_data.samples.resize(g_data.period_size * 2, 0);
+    g_data.mix.resize(g_data.period_size * 2, 0);
+    g_data.tmp.resize(g_data.period_size * 2, 0);
+    err = snd_async_add_pcm_handler(&g_data.ahandler, g_data.handle,
+            SoundMixerCallback, &g_data);
+    Check(err >= 0, "Can't register async pcm handler for sound");
+    for (int count = 0; count < 3; count++) {
+        err = snd_pcm_writei(g_data.handle, g_data.samples.data(),
+                g_data.period_size);
+        Check(err >= 0, "Sound pcm write error: ", snd_strerror(err));
+        Check(err == g_data.period_size,
+                "Sound pcm write error: written != expected");
+    }
+    if (snd_pcm_state(g_data.handle) == SND_PCM_STATE_PREPARED) {
+        err = snd_pcm_start(g_data.handle);
+        Check(err >= 0, "Sound pcm start error: ", snd_strerror(err));
+    }
+}
+
+void StopSoundMixer() {
+    int err = snd_async_del_handler(g_data.ahandler);
+    Check(err >= 0, "Can't delete async sound handler", snd_strerror(err));
+    snd_pcm_close(g_data.handle);
+}
+
 }  // namespace arctic
+
 
 int main() {
     arctic::SystemInfo system_info;
 
+    arctic::StartSoundMixer();
     CreateMainWindow(&system_info);
     arctic::easy::GetEngine();
-    std::thread sound_thread(arctic::SoundMixerThreadFunction);
     arctic::easy::GetEngine()->Init(system_info.screen_width,
-        system_info.screen_height);
+            system_info.screen_height);
 
     EasyMain();
 
     XCloseDisplay(arctic::x_display);
+    arctic::StopSoundMixer();
 
     return 0;
 }
