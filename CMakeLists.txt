@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 # Change if you want modify path or other values. #
 ###################################################
 
+
 # Define Release by default.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -27,6 +28,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 ##############################################
 
 project(${PROJECT_NAME} CXX)
+ENABLE_LANGUAGE(C)
 
 find_package(ALSA REQUIRED)
 find_package(OpenGL REQUIRED)
