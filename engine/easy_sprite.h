@@ -42,6 +42,7 @@ class Sprite {
     Vec2Si32 pivot_;
 
  public:
+    Sprite();
     void Load(const char *file_name);
     void Load(const std::string &file_name);
     void Create(const Si32 width, const Si32 height);
