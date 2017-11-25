@@ -6,7 +6,7 @@ compiler:
 os:
 - linux
 before_install:
-- sudo apt get install cmake libasound2-dev libglu1-mesa-dev freeglut3-dev
+- sudo apt-get install cmake libasound2-dev libglu1-mesa-dev freeglut3-dev
 script: 
 - cmake .
 - make all
