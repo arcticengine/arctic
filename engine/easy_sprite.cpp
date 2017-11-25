@@ -250,6 +250,12 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     }
 }
 
+Sprite::Sprite() {
+    ref_pos_ = Vec2Si32(0, 0);
+    ref_size_ = Vec2Si32(0, 0);
+    pivot_ = Vec2Si32(0, 0);
+}
+
 void Sprite::Load(const char *file_name) {
     Check(!!file_name, "Error in Sprite::Load, file_name is nullptr.");
     const char *last_dot = strchr(file_name, '.');
@@ -260,6 +266,7 @@ void Sprite::Load(const char *file_name) {
         ref_pos_ = Vec2Si32(0, 0);
         ref_size_ = Vec2Si32(sprite_instance_->width(),
             sprite_instance_->height());
+        pivot_ = Vec2Si32(0, 0);
     } else {
         Fatal("Error in Sprite::Load, unknown file extension.");
     }
@@ -273,6 +280,7 @@ void Sprite::Create(const Si32 width, const Si32 height) {
     sprite_instance_.reset(new SpriteInstance(width, height));
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = Vec2Si32(width, height);
+    pivot_ = Vec2Si32(0, 0);
     Clear();
 }
 
@@ -285,6 +293,7 @@ void Sprite::Reference(Sprite from, const Si32 from_x, const Si32 from_y,
     ref_size_ = Vec2Si32(
         std::min(from_width, max_size.x),
         std::min(from_height, max_size.y));
+    pivot_ = Vec2Si32(0, 0);
     sprite_instance_ = from.sprite_instance_;
 }
 
