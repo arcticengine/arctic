@@ -11,7 +11,11 @@ Arctic Engine returns the power to the C++ programmer and makes game development
 
 Main discussion forum (in Russian): http://arcticengine.com/
 
-[![Build status](https://ci.appveyor.com/api/projects/status/jm2ahfwc8py7cwpl?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic) [![Coverity Scan Build Status](https://scan.coverity.com/projects/12997/badge.svg)](https://scan.coverity.com/projects/frostymorning-arctic) [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
+Windows: [![Windows build status](https://ci.appveyor.com/api/projects/status/jm2ahfwc8py7cwpl?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+
+Linux: [![Linux build status](https://travis-ci.org/FrostyMorning/arctic.svg?branch=master)](https://travis-ci.org/FrostyMorning/arctic)
+
+Scrum: [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
 
 Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
