@@ -30,19 +30,31 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 project(${PROJECT_NAME} CXX)
 ENABLE_LANGUAGE(C)
 
-find_package(ALSA REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(X11 REQUIRED)
-find_package(Threads REQUIRED)
+IF (APPLE)
+  FIND_LIBRARY(AUDIOTOOLBOX_LIBRARY AudioToolbox)
+  #ADD_FRAMEWORK(AudioToolbox ${PROJECT_NAME})
+  #ADD_FRAMEWORK(OpenGL ${PROJECT_NAME})
+  #ADD_FRAMEWORK(Cocoa ${PROJECT_NAME})
+  #FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
+  #FIND_LIBRARY(COREFOUNDATION_LIBRARY CoreFoundation )
+ELSE (APPLE)
+  find_package(ALSA REQUIRED)
+  find_package(OpenGL REQUIRED)
+  find_package(X11 REQUIRED)
+  find_package(Threads REQUIRED)
+ENDIF (APPLE)
 
 
 # Definition of Macros
 
 #-D_DEBUG 
+IF (APPLE)
+ELSE (APPLE)
 add_definitions(
    -DGLX
    -DPLATFORM_RPI 
 )
+ENDIF (APPLE)
 
 include_directories(${CMAKE_SOURCE_DIR})
 
@@ -59,12 +71,22 @@ endif()
 #   --   Add files to project.   --   #
 #######################################
 
+IF (APPLE)
+file(GLOB SRC_FILES
+    ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.mm
+    ${CPP_DIR_2}/*.cpp
+    ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_2}/*.h
+)
+ELSE (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
     ${CPP_DIR_2}/*.cpp
     ${HEADER_DIR_1}/*.h
     ${HEADER_DIR_2}/*.h
 )
+ENDIF (APPLE)
 
 
 # Add executable to build.
@@ -72,6 +94,11 @@ add_executable(${PROJECT_NAME}
    ${SRC_FILES}
 )
 
+IF (APPLE)
+target_link_libraries(
+    ${PROJECT_NAME}
+)
+ELSE (APPLE)
 target_link_libraries(
     ${PROJECT_NAME}
     ${OPENGL_gl_LIBRARY}
@@ -79,4 +106,5 @@ target_link_libraries(
     Threads::Threads
     ${ALSA_LIBRARY}
 )
+ENDIF (APPLE)
 
