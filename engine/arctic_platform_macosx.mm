@@ -779,13 +779,13 @@ void StopSoundBuffer(easy::Sound sound) {
     for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
         SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
         if (buffer.sound.GetInstance() == sound.GetInstance()) {
+            buffer.sound.GetInstance()->DecPlaying();
             if (idx != g_sound_mixer_state.buffers.size() - 1) {
                 g_sound_mixer_state.buffers[idx] =
                 g_sound_mixer_state.buffers[
                                             g_sound_mixer_state.buffers.size() - 1];
             }
             g_sound_mixer_state.buffers.pop_back();
-            buffer.sound.GetInstance()->DecPlaying();
             idx--;
         }
     }
