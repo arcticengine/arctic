@@ -822,6 +822,10 @@ void PumpMessages() {
 void Swap() {
     [[g_main_view openGLContext] flushBuffer];
     PumpMessages();
+ 
+    NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+    arctic::easy::GetEngine()->OnWindowResize(
+        rect.size.width, rect.size.height);
 }
 
 

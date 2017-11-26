@@ -32,6 +32,8 @@
 #include <vector>
 #include "engine/easy.h"
 
+#include <iostream>
+
 using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
@@ -587,7 +589,7 @@ void Update() {
     double time = Time();
 
     if (!g_music.IsPlaying()) {
-        g_music.Play();
+    //    g_music.Play();
     }
 
     Vec2Si32 step(0, 0);
@@ -604,6 +606,31 @@ void Update() {
     if (IsKey(kKeyRight) || IsKey("d")) {
         step.x = 1;
         step.y = 0;
+    }
+    
+    std::cerr << "window size x: " << WindowSize().x
+        << " y: " << WindowSize().y << std::endl;
+    
+
+    static bool g_musicDisabled = false;
+    
+    if (!g_musicDisabled) {
+        // switch background music tracks
+        if (!g_music.IsPlaying()) {
+            std::cerr << "play" << std::endl;
+            g_music.Play();
+        }
+    }
+    else {
+        if (g_music.IsPlaying()) {
+            std::cerr << "stop" << std::endl;
+            g_music.Stop();
+        }
+    }
+    
+    if (IsKey("5")) {
+        std::cerr << "toggle" << std::endl;
+        g_musicDisabled = !g_musicDisabled;
     }
 
     // Cheats
