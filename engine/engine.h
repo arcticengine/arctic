@@ -62,7 +62,8 @@ class Engine {
     void ResizeBackbuffer(const Si32 width, const Si32 height);
     double GetTime();
     Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
-    Vec2Si32 ScreenSize() const;
+    void OnWindowResize(Si32 width, Si32 height);
+    Vec2Si32 GetWindowSize() const;
 };
 
 }  // namespace arctic

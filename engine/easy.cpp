@@ -507,10 +507,17 @@ Si32 MouseWheelDelta() {
     return g_mouse_wheel_delta;
 }
 
+// Size depends on OS window parameters and/or hardware
+Vec2Si32 WindowSize() {
+    return GetEngine()->GetWindowSize();
+}
+
+// Virtual screen size, previously set by the game developer
 Vec2Si32 ScreenSize() {
     return GetEngine()->GetBackbuffer().Size();
 }
 
+// Sets virtual screen size
 void ResizeScreen(const Si32 width, const Si32 height) {
     GetEngine()->ResizeBackbuffer(width, height);
     return;

@@ -207,7 +207,12 @@ Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
         static_cast<Si32>(back_pos.y));
 }
 
-Vec2Si32 Engine::ScreenSize() const {
+void Engine::OnWindowResize(Si32 width, Si32 height) {
+    width_ = width;
+    height_ = height;
+}
+
+Vec2Si32 Engine::GetWindowSize() const {
     return Vec2Si32(width_, height_);
 }
 
