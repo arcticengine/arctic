@@ -160,6 +160,9 @@ struct SystemInfo {
     Si32 screen_height;
 };
 
+SystemInfo g_system_info;
+
+
 KeyCode TranslateKeyCode(WPARAM word_param) {
     if (word_param >= 'A' && word_param <= 'Z') {
         return static_cast<KeyCode>(word_param - 'A' + kKeyA);
@@ -312,6 +315,23 @@ void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
     PushInputMessage(msg);
 }
 
+void ToggleFullscreen() {
+    LONG lStyle = GetWindowLong(g_system_info.window_handle, GWL_STYLE);
+    if ((lStyle & WS_POPUP) == WS_POPUP) {
+        lStyle = lStyle ^ WS_POPUP ^ WS_OVERLAPPEDWINDOW;
+        SetWindowLong(g_system_info.window_handle, GWL_STYLE, lStyle);
+        SetWindowPos(g_system_info.window_handle, 0, 0, 0, 0, 0,
+            SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOZORDER);
+    } else if ((lStyle & WS_OVERLAPPEDWINDOW) == WS_OVERLAPPEDWINDOW) {
+        lStyle = lStyle ^ WS_POPUP ^ WS_OVERLAPPEDWINDOW;
+        SetWindowLong(g_system_info.window_handle, GWL_STYLE, lStyle);
+        ShowWindow(g_system_info.window_handle, SW_RESTORE);
+        SetWindowPos(g_system_info.window_handle, HWND_TOP, 0, 0, 0, 0,
+            SWP_FRAMECHANGED | SWP_NOSIZE);
+        ShowWindow(g_system_info.window_handle, SW_SHOWMAXIMIZED);
+    }
+}
+
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
     KeyCode key = TranslateKeyCode(word_param);
     InputMessage msg;
@@ -337,6 +357,11 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         break;
     case WM_KEYDOWN:
         arctic::OnKey(word_param, long_param, true);
+        break;
+    case WM_SYSKEYDOWN:
+        if (word_param == VK_RETURN && (HIWORD(long_param) & KF_ALTDOWN)) {
+            ToggleFullscreen();
+        }
         break;
     case WM_LBUTTONUP:
         arctic::OnMouse(kKeyMouseLeft, word_param, long_param, false);
@@ -427,7 +452,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
 
     HWND window_handle = CreateWindowExW(WS_EX_APPWINDOW,
         window_class_name, title_bar_text,
-        WS_POPUP /*| WS_CLIPSIBLINGS | WS_CLIPCHILDREN/*WS_OVERLAPPEDWINDOW*/,
+        WS_POPUP,
         0, 0, screen_width, screen_height, nullptr, nullptr,
         instance_handle, nullptr);
     if (!window_handle) {
@@ -642,6 +667,11 @@ void Swap() {
     HDC hdc = wglGetCurrentDC();
     BOOL res = SwapBuffers(hdc);
     CheckWithLastError(res != FALSE, "SwapBuffers error in Swap.");
+
+
+    RECT rect;
+    res = GetClientRect(g_system_info.window_handle, &rect);
+    arctic::easy::GetEngine()->OnWindowResize(rect.right, rect.bottom);
 }
 
 bool IsVSyncSupported() {
@@ -689,15 +719,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
     DisableProcessWindowsGhosting();
 
-    arctic::SystemInfo system_info;
     bool is_ok = arctic::CreateMainWindow(instance_handle, cmd_show,
-        &system_info);
+        &arctic::g_system_info);
     arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
 
     arctic::easy::GetEngine();
 
     std::thread sound_thread(arctic::SoundMixerThreadFunction);
-    std::thread engine_thread(arctic::EngineThreadFunction, system_info);
+    std::thread engine_thread(arctic::EngineThreadFunction, arctic::g_system_info);
     while (true) {
         MSG msg;
         BOOL ret = GetMessage(&msg, NULL, 0, 0);

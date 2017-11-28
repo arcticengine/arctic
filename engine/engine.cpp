@@ -136,6 +136,13 @@ void Engine::Draw2d() {
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glViewport(0, 0, width_, height_);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glOrtho(-1, 1, -1, 1, 1, -1);
+    
     glVertexPointer(3, GL_FLOAT, 0, visible_verts_.GetVoidData());
     glNormalPointer(GL_FLOAT, 0, visible_normals_.GetVoidData());
     glTexCoordPointer(2, GL_FLOAT, 0, tex_coords_.GetVoidData());
