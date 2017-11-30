@@ -34,7 +34,46 @@
 namespace arctic {
 namespace easy {
 
-static Ui32 g_key_state[kKeyCount] = {0};
+
+struct KeyState {
+  bool current_state_is_down = false;
+  bool previous_state_is_down = false;
+  bool was_pressed_this_frame = false;
+  bool was_released_this_frame = false;
+
+  void Init() {
+    current_state_is_down = false;
+    previous_state_is_down = false;
+    was_pressed_this_frame = false;
+    was_released_this_frame = false;
+  }
+
+  void OnShowFrame() {
+    previous_state_is_down = current_state_is_down;
+    was_pressed_this_frame = false;
+    was_released_this_frame = false;
+  }
+
+  void OnStateChange(bool is_down) {
+    if (is_down) {
+      was_pressed_this_frame = true;
+    } else {
+      was_released_this_frame = true;
+    }
+    current_state_is_down = is_down;
+  }
+
+  bool IsDown() const {
+    return current_state_is_down;
+  }
+
+  bool WasPressed() const {
+    return was_pressed_this_frame;
+  }
+};
+
+static KeyState g_key_state[kKeyCount];
+
 static Engine *g_engine = nullptr;
 static Vec2Si32 g_mouse_pos_prev = Vec2Si32(0, 0);
 static Vec2Si32 g_mouse_pos = Vec2Si32(0, 0);
@@ -420,29 +459,68 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 void ShowFrame() {
     GetEngine()->Draw2d();
 
+    for (Si32 i = 0; i < kKeyCount; ++i) {
+      g_key_state[i].OnShowFrame();
+    }
     InputMessage message;
     g_mouse_pos_prev = g_mouse_pos;
     g_mouse_wheel_delta = 0;
     while (PopInputMessage(&message)) {
         if (message.kind == InputMessage::kKeyboard) {
-            g_key_state[message.keyboard.key] = message.keyboard.key_state;
+            g_key_state[message.keyboard.key].OnStateChange(
+                message.keyboard.key_state == 1);
         } else if (message.kind == InputMessage::kMouse) {
             Vec2Si32 pos = GetEngine()->MouseToBackbuffer(message.mouse.pos);
             g_mouse_pos = pos;
             g_mouse_wheel_delta += message.mouse.wheel_delta;
             if (message.keyboard.key != kKeyCount) {
-                g_key_state[message.keyboard.key] = message.keyboard.key_state;
+                g_key_state[message.keyboard.key].OnStateChange(
+                    message.keyboard.key_state == 1);
             }
         }
     }
     g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
 }
 
+bool WasKeyPressedImpl(Ui32 key_code) {
+  if (key_code >= kKeyCount) {
+    return false;
+  }
+  return g_key_state[key_code].WasPressed();
+}
+
+bool WasKeyPressed(const KeyCode key_code) {
+    return WasKeyPressedImpl(static_cast<Ui32>(key_code));
+}
+
+bool WasKeyPressed(const char *keys) {
+    for (const char *key = keys; *key != 0; ++key) {
+        if (WasKeyPressed(*key)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool WasKeyPressed(const char key) {
+    if (key >= 'a' && key <= 'z') {
+        return WasKeyPressedImpl(static_cast<Ui32>(key)
+            + static_cast<Ui32>('A')
+            - static_cast<Ui32>('a'));
+    }
+    return WasKeyPressedImpl(static_cast<Ui32>(key));
+}
+
+bool WasKeyPressed(const std::string &keys) {
+    return WasKeyPressed(keys.c_str());
+}
+
+
 bool IsKeyImpl(Ui32 key_code) {
     if (key_code >= kKeyCount) {
         return false;
     }
-    return ((g_key_state[key_code] & 1) != 0);
+    return g_key_state[key_code].IsDown();
 }
 
 bool IsKey(const KeyCode key_code) {
@@ -471,15 +549,11 @@ bool IsKey(const std::string &keys) {
     return IsKey(keys.c_str());
 }
 
-void SetKeyImpl(Ui32 key_code, bool is_pressed) {
-    if (key_code < kKeyCount) {
-        auto& k = g_key_state[key_code];
-        if (is_pressed) {
-            k = k | 0x1;
-        } else {
-            k = k & 0xfffffffe;
-        }
-    }
+
+void SetKeyImpl(Ui32 key_code, bool is_down) {
+  if (key_code < kKeyCount) {
+    g_key_state[key_code].OnStateChange(is_down);
+  }
 }
 
 void SetKey(const KeyCode key_code, bool is_pressed) {
@@ -601,10 +675,13 @@ void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
 }
 
 Engine *GetEngine() {
-    if (!g_engine) {
-        g_engine = new Engine();
+  if (!g_engine) {
+    for (Si32 i = 0; i < kKeyCount; ++i) {
+      g_key_state[i].Init();
     }
-    return g_engine;
+    g_engine = new Engine();
+  }
+  return g_engine;
 }
 
 }  // namespace easy

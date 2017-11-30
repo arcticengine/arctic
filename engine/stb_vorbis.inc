@@ -3069,9 +3069,10 @@ static int do_floor(vorb *f, Mapping *map, int i, int n, float *target, YTYPE *f
             int hy = finalY[j] * g->floor1_multiplier;
             int hx = g->Xlist[j];
             if (lx != hx)
-               draw_line(target, lx,ly, hx,hy, n2);
+               draw_line(target, lx, ly, hx, hy, n2);
             CHECK(f);
-            lx = hx, ly = hy;
+            lx = hx;
+            ly = hy;
          }
       }
       if (lx < n2) {
@@ -3310,15 +3311,22 @@ static int vorbis_decode_packet_rest(vorb *f, int *len, Mode *m, int left_start,
       for (j=0; j < n2; ++j) {
          float a2,m2;
          if (m[j] > 0)
-            if (a[j] > 0)
-               m2 = m[j], a2 = m[j] - a[j];
-            else
-               a2 = m[j], m2 = m[j] + a[j];
+             if (a[j] > 0) {
+                m2 = m[j];
+                a2 = m[j] - a[j];
+             }
+             else{
+                 a2 = m[j];
+                 m2 = m[j] + a[j];
+             }
          else
-            if (a[j] > 0)
-               m2 = m[j], a2 = m[j] + a[j];
-            else
-               a2 = m[j], m2 = m[j] - a[j];
+             if (a[j] > 0) {
+                 m2 = m[j];
+                 a2 = m[j] + a[j];
+             } else {
+                 a2 = m[j];
+                 m2 = m[j] - a[j];
+             }
          m[j] = m2;
          a[j] = a2;
       }
