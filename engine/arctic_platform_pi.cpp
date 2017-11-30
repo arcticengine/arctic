@@ -602,6 +602,7 @@ void Swap() {
     glFlush();
     glXSwapBuffers(x_display, x_window);
     PumpMessages();
+    arctic::easy::GetEngine()->OnWindowResize(window_width, window_height);
 }
 
 bool IsVSyncSupported() {

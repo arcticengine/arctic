@@ -607,10 +607,6 @@ void Update() {
         step.x = 1;
         step.y = 0;
     }
-    
-    std::cerr << "window size x: " << WindowSize().x
-        << " y: " << WindowSize().y << std::endl;
-    
 
     static bool g_musicDisabled = false;
     
