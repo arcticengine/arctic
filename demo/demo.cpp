@@ -624,13 +624,12 @@ void Update() {
         }
     }
     
-    if (IsKey("5")) {
-        std::cerr << "toggle" << std::endl;
+    if (WasKeyPressed("5")) {
         g_musicDisabled = !g_musicDisabled;
     }
 
     // Cheats
-    if (IsKey("v")) {
+    if (WasKeyPressed("v")) {
         Vec2Si32 pos;
         for (pos.x = 0; pos.x < g_maze_size.x; ++pos.x) {
             for (pos.y = 0; pos.y < g_maze_size.y; ++pos.y) {
@@ -638,7 +637,7 @@ void Update() {
             }
         }
     }
-    if (IsKey("n")) {
+    if (WasKeyPressed("n")) {
         GenerateMaze();
         easy::GetEngine()->GetBackbuffer().Clear();
     }

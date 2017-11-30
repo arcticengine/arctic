@@ -45,6 +45,11 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
 void ShowFrame();
 
+bool WasKeyPressed(const KeyCode key_code);
+bool WasKeyPressed(const char *keys);
+bool WasKeyPressed(const char key);
+bool WasKeyPressed(const std::string &keys);
+
 bool IsKey(const KeyCode key_code);
 bool IsKey(const char *keys);
 bool IsKey(const char key);
