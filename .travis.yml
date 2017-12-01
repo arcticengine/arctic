@@ -3,25 +3,26 @@ sudo: required
 dist: trusty
 compiler:
 - clang
-os:
-- linux
-  before_install:
-  - sudo apt-get install cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
-  script: 
-  - cmake .
-  - make all
-  branches:
-    only:
-    - master
-- osx
-  before_install:
-  - brew install git-lfs
-  before_script:
-  - git lfs pull
-  script: 
-  - cmake .
-  - make all
-  branches:
-    only:
-    - master
+matrix:
+  include:
+    - os: linux
+      before_install:
+      - sudo apt-get install cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+      script: 
+      - cmake .
+      - make all
+      branches:
+        only:
+        - master
+    - osx: osx
+      before_install:
+      - brew install git-lfs
+      before_script:
+      - git lfs pull
+      script: 
+      - cmake .
+      - make all
+      branches:
+        only:
+        - master
 
