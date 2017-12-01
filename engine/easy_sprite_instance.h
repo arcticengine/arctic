@@ -32,24 +32,24 @@ namespace easy {
 
 class SpriteInstance {
  private:
-    Si32 width_;
-    Si32 height_;
-    ByteArray data_;
+  Si32 width_;
+  Si32 height_;
+  ByteArray data_;
 
  public:
-    SpriteInstance(Si32 width, Si32 height);
+  SpriteInstance(Si32 width, Si32 height);
 
-    Si32 width() const {
-        return width_;
-    }
+  Si32 width() const {
+    return width_;
+  }
 
-    Si32 height() const {
-        return height_;
-    }
+  Si32 height() const {
+    return height_;
+  }
 
-    Ui8 *RawData() {
-        return data_.data();
-    }
+  Ui8 *RawData() {
+    return data_.data();
+  }
 };
 
 }  // namespace easy

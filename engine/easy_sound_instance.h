@@ -34,26 +34,26 @@ namespace arctic {
 namespace easy {
 
 enum SoundDataFormat {
-    kSoundDataWav,
-    kSoundDataVorbis
+  kSoundDataWav,
+  kSoundDataVorbis
 };
 
 class SoundInstance {
-    double duration_;
-    SoundDataFormat format_;
-    ByteArray data_;
-    std::atomic<Si32> playing_count_;
+  double duration_;
+  SoundDataFormat format_;
+  ByteArray data_;
+  std::atomic<Si32> playing_count_;
  public:
-    explicit SoundInstance(Ui32 wav_samples);
-    explicit SoundInstance(std::vector<Ui8> vorbis_file);
-    Si16* GetWavData();
-    Ui8* GetVorbisData() const;
-    Si32 GetVorbisSize() const;
-    SoundDataFormat GetFormat() const;
-    Si32 GetDurationSamples();
-    bool IsPlaying();
-    void IncPlaying();
-    void DecPlaying();
+  explicit SoundInstance(Ui32 wav_samples);
+  explicit SoundInstance(std::vector<Ui8> vorbis_file);
+  Si16* GetWavData();
+  Ui8* GetVorbisData() const;
+  Si32 GetVorbisSize() const;
+  SoundDataFormat GetFormat() const;
+  Si32 GetDurationSamples();
+  bool IsPlaying();
+  void IncPlaying();
+  void DecPlaying();
 };
 
 std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,

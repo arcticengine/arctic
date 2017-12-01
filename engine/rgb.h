@@ -28,52 +28,52 @@
 namespace arctic {
 
 struct Rgb {
-    union {
-        struct {
-            Ui8 r;
-            Ui8 g;
-            Ui8 b;
-        };
-        Ui8 element[3];
+  union {
+    struct {
+      Ui8 r;
+      Ui8 g;
+      Ui8 b;
     };
+    Ui8 element[3];
+  };
 
-    Rgb() {}
+  Rgb() {}
 
-    explicit Rgb(Ui8 r_in, Ui8 g_in, Ui8 b_in) {
-        r = r_in;
-        g = g_in;
-        b = b_in;
-    }
-    explicit Rgb(Ui8 s) {
-        r = s;
-        g = s;
-        b = s;
-    }
-    explicit Rgb(Ui32 rgb_in) {
-        r = rgb_in & 0xff;
-        g = (rgb_in >> 8) & 0xff;
-        b = (rgb_in >> 16) & 0xff;
-    }
-    Ui8 &operator[](Si32 i) {
-        return element[i];
-    }
-    const Ui8 &operator[](Si32 i) const {
-        return element[i];
-    }
+  explicit Rgb(Ui8 r_in, Ui8 g_in, Ui8 b_in) {
+    r = r_in;
+    g = g_in;
+    b = b_in;
+  }
+  explicit Rgb(Ui8 s) {
+    r = s;
+    g = s;
+    b = s;
+  }
+  explicit Rgb(Ui32 rgb_in) {
+    r = rgb_in & 0xff;
+    g = (rgb_in >> 8) & 0xff;
+    b = (rgb_in >> 16) & 0xff;
+  }
+  Ui8 &operator[](Si32 i) {
+    return element[i];
+  }
+  const Ui8 &operator[](Si32 i) const {
+    return element[i];
+  }
 
-    Rgb &operator =(const Rgb &v) {
-        r = v.r;
-        g = v.g;
-        b = v.b;
-        return *this;
-    }
+  Rgb &operator =(const Rgb &v) {
+    r = v.r;
+    g = v.g;
+    b = v.b;
+    return *this;
+  }
 
-    const bool operator== (const Rgb &v) const {
-        return r == v.r && g == v.g && b == v.b;
-    }
-    const bool operator!= (const Rgb &v) const {
-        return r != v.r || g != v.g || b != v.b;
-    }
+  const bool operator== (const Rgb &v) const {
+    return r == v.r && g == v.g && b == v.b;
+  }
+  const bool operator!= (const Rgb &v) const {
+    return r != v.r || g != v.g || b != v.b;
+  }
 };
 
 }  // namespace arctic
