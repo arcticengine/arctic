@@ -28,58 +28,58 @@
 namespace arctic {
 
 struct Rgba {
-    union {
-        struct {
-            Ui8 r;
-            Ui8 g;
-            Ui8 b;
-            Ui8 a;
-        };
-        Ui32 rgba;
-        Ui8 element[4];
+  union {
+    struct {
+      Ui8 r;
+      Ui8 g;
+      Ui8 b;
+      Ui8 a;
     };
+    Ui32 rgba;
+    Ui8 element[4];
+  };
 
-    Rgba() {}
+  Rgba() {}
 
-    explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in) {
-        r = r_in;
-        g = g_in;
-        b = b_in;
-        a = 255;
-    }
-    explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in, Ui8 a_in) {
-        r = r_in;
-        g = g_in;
-        b = b_in;
-        a = a_in;
-    }
-    explicit Rgba(Ui8 s) {
-        r = s;
-        g = s;
-        b = s;
-        a = 255;
-    }
-    explicit Rgba(Ui32 rgba_in) {
-        rgba = rgba_in;
-    }
-    Ui8 &operator[](Si32 i) {
-        return element[i];
-    }
-    const Ui8 &operator[](Si32 i) const {
-        return element[i];
-    }
+  explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in) {
+    r = r_in;
+    g = g_in;
+    b = b_in;
+    a = 255;
+  }
+  explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in, Ui8 a_in) {
+    r = r_in;
+    g = g_in;
+    b = b_in;
+    a = a_in;
+  }
+  explicit Rgba(Ui8 s) {
+    r = s;
+    g = s;
+    b = s;
+    a = 255;
+  }
+  explicit Rgba(Ui32 rgba_in) {
+    rgba = rgba_in;
+  }
+  Ui8 &operator[](Si32 i) {
+    return element[i];
+  }
+  const Ui8 &operator[](Si32 i) const {
+    return element[i];
+  }
 
-    Rgba &operator =(const Rgba &v) {
-        rgba = v.rgba;
-        return *this;
-    }
+  Rgba &operator =(const Rgba &v) {
+    rgba = v.rgba;
+    return *this;
+  }
 
-    const bool operator== (const Rgba &v) const {
-        return rgba == v.rgba;
-    }
-    const bool operator!= (const Rgba &v) const {
-        return rgba != v.rgba;
-    }
+  const bool operator== (const Rgba &v) const {
+    return rgba == v.rgba;
+  }
+  const bool operator!= (const Rgba &v) const {
+    return rgba != v.rgba;
+  }
 };
 
 }  // namespace arctic

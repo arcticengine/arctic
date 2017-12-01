@@ -30,56 +30,56 @@
 namespace arctic {
 
 ByteArray::ByteArray() {
-    allocated_size_ = 128;
-    size_ = 0;
-    data_ = static_cast<Ui8*>(malloc(static_cast<size_t>(allocated_size_)));
+  allocated_size_ = 128;
+  size_ = 0;
+  data_ = static_cast<Ui8*>(malloc(static_cast<size_t>(allocated_size_)));
 }
 
 ByteArray::ByteArray(Ui64 size) {
-    allocated_size_ = size;
-    size_ = 0;
-    data_ = static_cast<Ui8*>(malloc(static_cast<size_t>(allocated_size_)));
+  allocated_size_ = size;
+  size_ = 0;
+  data_ = static_cast<Ui8*>(malloc(static_cast<size_t>(allocated_size_)));
 }
 
 ByteArray::~ByteArray() {
-    allocated_size_ = 0;
-    size_ = 0;
-    free(data_);
-    data_ = nullptr;
+  allocated_size_ = 0;
+  size_ = 0;
+  free(data_);
+  data_ = nullptr;
 }
 
 void* ByteArray::GetVoidData() const {
-    return static_cast<void*>(data_);
+  return static_cast<void*>(data_);
 }
 
 Ui8* ByteArray::data() const {
-    return data_;
+  return data_;
 }
 
 Ui64 ByteArray::size() const {
-    return size_;
+  return size_;
 }
 
 void ByteArray::Resize(Ui64 size) {
-    if (size <= allocated_size_) {
-        size_ = size;
-    } else {
-        Ui8 *data = static_cast<Ui8*>(malloc(static_cast<size_t>(size)));
-        Check(data != nullptr, "Allocaton error.");
-        std::memcpy(data, data_, static_cast<size_t>(size_));
-        free(data_);
-        allocated_size_ = size;
-        size_ = size;
-        data_ = data;
-    }
+  if (size <= allocated_size_) {
+    size_ = size;
+  } else {
+    Ui8 *data = static_cast<Ui8*>(malloc(static_cast<size_t>(size)));
+    Check(data != nullptr, "Allocaton error.");
+    std::memcpy(data, data_, static_cast<size_t>(size_));
+    free(data_);
+    allocated_size_ = size;
+    size_ = size;
+    data_ = data;
+  }
 }
 
 void ByteArray::Reserve(Ui64 size) {
-    if (size > size_) {
-        Ui64 oldSize = size_;
-        Resize(size);
-        Resize(oldSize);
-    }
+  if (size > size_) {
+    Ui64 oldSize = size_;
+    Resize(size);
+    Resize(oldSize);
+  }
 }
 
 }  // namespace arctic

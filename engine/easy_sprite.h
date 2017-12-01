@@ -36,54 +36,54 @@ namespace easy {
 
 class Sprite {
  private:
-    std::shared_ptr<SpriteInstance> sprite_instance_;
-    Vec2Si32 ref_pos_;
-    Vec2Si32 ref_size_;
-    Vec2Si32 pivot_;
+  std::shared_ptr<SpriteInstance> sprite_instance_;
+  Vec2Si32 ref_pos_;
+  Vec2Si32 ref_size_;
+  Vec2Si32 pivot_;
 
  public:
-    Sprite();
-    void Load(const char *file_name);
-    void Load(const std::string &file_name);
-    void Create(const Si32 width, const Si32 height);
-    void Reference(Sprite from, const Si32 from_x, const Si32 from_y,
-        const Si32 from_width, const Si32 from_height);
-    void Clear();
-    void Clear(Rgba color);
-    void SetPivot(Vec2Si32 pivot);
-    Vec2Si32 Pivot() const;
-    void Draw(const Si32 to_x, const Si32 to_y);
-    void Draw(const Si32 to_x, const Si32 to_y,
-        const Si32 to_width, const Si32 to_height);
-    void Draw(const Si32 to_x, const Si32 to_y,
-        const Si32 to_width, const Si32 to_height,
-        const Si32 from_x, const Si32 from_y,
-        const Si32 from_width, const Si32 from_height);
-    void Draw(const Vec2Si32 to_pos);
-    void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size);
-    void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
-        const Vec2Si32 from_pos, const Vec2Si32 from_size);
-    void Draw(const Si32 to_x, const Si32 to_y,
-        const Si32 to_width, const Si32 to_height,
-        const Si32 from_x, const Si32 from_y,
-        const Si32 from_width, const Si32 from_height,
-        Sprite to_sprite);
+  Sprite();
+  void Load(const char *file_name);
+  void Load(const std::string &file_name);
+  void Create(const Si32 width, const Si32 height);
+  void Reference(Sprite from, const Si32 from_x, const Si32 from_y,
+      const Si32 from_width, const Si32 from_height);
+  void Clear();
+  void Clear(Rgba color);
+  void SetPivot(Vec2Si32 pivot);
+  Vec2Si32 Pivot() const;
+  void Draw(const Si32 to_x, const Si32 to_y);
+  void Draw(const Si32 to_x, const Si32 to_y,
+      const Si32 to_width, const Si32 to_height);
+  void Draw(const Si32 to_x, const Si32 to_y,
+      const Si32 to_width, const Si32 to_height,
+      const Si32 from_x, const Si32 from_y,
+      const Si32 from_width, const Si32 from_height);
+  void Draw(const Vec2Si32 to_pos);
+  void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size);
+  void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
+      const Vec2Si32 from_pos, const Vec2Si32 from_size);
+  void Draw(const Si32 to_x, const Si32 to_y,
+      const Si32 to_width, const Si32 to_height,
+      const Si32 from_x, const Si32 from_y,
+      const Si32 from_width, const Si32 from_height,
+      Sprite to_sprite);
 
-    void Draw(const Vec2Si32 to, float angle_radians);
-    void Draw(const Si32 to_x, const Si32 to_y, float angle_radians);
-    void Draw(const Vec2Si32 to, float angle_radians, float zoom);
-    void Draw(const Si32 to_x, const Si32 to_y,
-        float angle_radians, float zoom);
-    void Draw(const Si32 to_x, const Si32 to_y,
-        float angle_radians, float zoom, Sprite to_sprite);
+  void Draw(const Vec2Si32 to, float angle_radians);
+  void Draw(const Si32 to_x, const Si32 to_y, float angle_radians);
+  void Draw(const Vec2Si32 to, float angle_radians, float zoom);
+  void Draw(const Si32 to_x, const Si32 to_y,
+      float angle_radians, float zoom);
+  void Draw(const Si32 to_x, const Si32 to_y,
+      float angle_radians, float zoom, Sprite to_sprite);
 
-    Si32 Width() const;
-    Si32 Height() const;
-    Vec2Si32 Size() const;
-    Si32 StrideBytes() const;
-    Si32 StridePixels() const;
-    Ui8* RawData();
-    Rgba* RgbaData();
+  Si32 Width() const;
+  Si32 Height() const;
+  Vec2Si32 Size() const;
+  Si32 StrideBytes() const;
+  Si32 StridePixels() const;
+  Ui8* RawData();
+  Rgba* RgbaData();
 };
 
 }  // namespace easy

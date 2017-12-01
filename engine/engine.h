@@ -33,37 +33,37 @@ namespace arctic {
 
 class Engine {
  private:
-    Si32 width_ = 0;
-    Si32 height_ = 0;
-    Ui32 backbuffer_texture_name_ = 0;
-    easy::Sprite backbuffer_texture_;
+  Si32 width_ = 0;
+  Si32 height_ = 0;
+  Ui32 backbuffer_texture_name_ = 0;
+  easy::Sprite backbuffer_texture_;
 
-    ByteArray visible_verts_;
-    ByteArray visible_normals_;
-    ByteArray tex_coords_;
-    ByteArray visible_indices_;
+  ByteArray visible_verts_;
+  ByteArray visible_normals_;
+  ByteArray tex_coords_;
+  ByteArray visible_indices_;
 
-    Si32 verts_ = 0;
-    Si32 normals_ = 0;
-    Si32 tex_ = 0;
-    Si32 indices_ = 0;
+  Si32 verts_ = 0;
+  Si32 normals_ = 0;
+  Si32 tex_ = 0;
+  Si32 indices_ = 0;
 
-    std::chrono::high_resolution_clock clock_;
-    std::chrono::high_resolution_clock::time_point start_time_;
-    double time_correction_;
-    double last_time_;
+  std::chrono::high_resolution_clock clock_;
+  std::chrono::high_resolution_clock::time_point start_time_;
+  double time_correction_;
+  double last_time_;
 
  public:
-    void Init(Si32 width, Si32 height);
-    void Draw2d();
-    easy::Sprite GetBackbuffer() {
-        return backbuffer_texture_;
-    }
-    void ResizeBackbuffer(const Si32 width, const Si32 height);
-    double GetTime();
-    Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
-    void OnWindowResize(Si32 width, Si32 height);
-    Vec2Si32 GetWindowSize() const;
+  void Init(Si32 width, Si32 height);
+  void Draw2d();
+  easy::Sprite GetBackbuffer() {
+    return backbuffer_texture_;
+  }
+  void ResizeBackbuffer(const Si32 width, const Si32 height);
+  double GetTime();
+  Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
+  void OnWindowResize(Si32 width, Si32 height);
+  Vec2Si32 GetWindowSize() const;
 };
 
 }  // namespace arctic
