@@ -3,26 +3,23 @@ sudo: required
 dist: trusty
 compiler:
 - clang
-matrix:
-  include:
-    - os: linux
-      before_install:
-      - sudo apt-get install cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
-      script: 
-      - cmake .
-      - make all
-      branches:
-        only:
-        - master
-    - osx: osx
-      before_install:
-      - brew install git-lfs
-      before_script:
-      - git lfs pull
-      script: 
-      - cmake .
-      - make all
-      branches:
-        only:
-        - master
+os:
+- linux
+- osx
+before_install:
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install git-fls; fi
+script: 
+- cmake .
+- make all
+before_install:
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then - brew install git-lfs; $
+before_script:
+- git lfs pull
+script: 
+- cmake .
+- make all
+branches:
+  only:
+  - master
 
