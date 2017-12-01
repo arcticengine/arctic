@@ -597,6 +597,10 @@ void ResizeScreen(const Si32 width, const Si32 height) {
     return;
 }
 
+void SetInverseY(bool is_inverse) {
+  GetEngine()->SetInverseY(is_inverse);
+}
+
 void Clear() {
     GetEngine()->GetBackbuffer().Clear();
 }

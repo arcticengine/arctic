@@ -627,6 +627,12 @@ void Update() {
   if (WasKeyPressed("5")) {
     g_musicDisabled = !g_musicDisabled;
   }
+  if (WasKeyPressed("6")) {
+      SetInverseY(true);
+  }
+  if (WasKeyPressed("7")) {
+      SetInverseY(false);
+  }
 
   // Cheats
   if (WasKeyPressed("v")) {
