@@ -8,7 +8,7 @@ os:
 - osx
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install git-fls; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install git-lfs; fi
 before_script:
 - git lfs pull
 script: 
