@@ -65,6 +65,7 @@ Si32 MouseWheelDelta();
 Vec2Si32 WindowSize();
 Vec2Si32 ScreenSize();
 void ResizeScreen(const Si32 width, const Si32 height);
+void SetInverseY(bool is_inverse);
 
 void Clear();
 void Clear(Rgba color);

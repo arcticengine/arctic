@@ -53,6 +53,8 @@ class Engine {
   double time_correction_;
   double last_time_;
 
+  bool is_inverse_y_ = false;
+
  public:
   void Init(Si32 width, Si32 height);
   void Draw2d();
@@ -64,6 +66,7 @@ class Engine {
   Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
   void OnWindowResize(Si32 width, Si32 height);
   Vec2Si32 GetWindowSize() const;
+  void SetInverseY(bool is_inverse);
 };
 
 }  // namespace arctic

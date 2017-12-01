@@ -110,13 +110,13 @@ void Engine::Draw2d() {
   normal[normals_] = n;
   ++normals_;
 
-  tex[tex_] = Vec2F(0.0f, 0.0f);
+  tex[tex_] = Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f);
   ++tex_;
-  tex[tex_] = Vec2F(1.0f, 0.0f);
+  tex[tex_] = Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f);
   ++tex_;
-  tex[tex_] = Vec2F(1.0f, 1.0f);
+  tex[tex_] = Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f);
   ++tex_;
-  tex[tex_] = Vec2F(0.0f, 1.0f);
+  tex[tex_] = Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f);
   ++tex_;
 
   index[indices_] = idx;
@@ -221,6 +221,10 @@ void Engine::OnWindowResize(Si32 width, Si32 height) {
 
 Vec2Si32 Engine::GetWindowSize() const {
   return Vec2Si32(width_, height_);
+}
+
+void Engine::SetInverseY(bool is_inverse) {
+  is_inverse_y_ = is_inverse;
 }
 
 }  // namespace arctic
