@@ -13,7 +13,7 @@ script:
 - cmake .
 - make all
 before_install:
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then - brew install git-lfs; $
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install git-lfs; fi
 before_script:
 - git lfs pull
 script: 
