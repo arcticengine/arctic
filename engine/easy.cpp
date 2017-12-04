@@ -621,42 +621,42 @@ void Sleep(double duration_seconds) {
 std::vector<Ui8> ReadFile(const char *file_name) {
     std::ifstream in(file_name, std::ios_base::in | std::ios_base::binary);
     Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadWholeFile. Can't open the file, file_name: ",
+        "Error in ReadFile. Can't open the file, file_name: ",
         file_name);
     in.exceptions(std::ios_base::goodbit);
     in.seekg(0, std::ios_base::end);
     Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadWholeFile. Can't seek to the end, file_name: ",
+        "Error in ReadFile. Can't seek to the end, file_name: ",
         file_name);
     std::streampos pos = in.tellg();
     Check(pos != std::streampos(-1),
-        "Error in ReadWholeFile."
+        "Error in ReadFile."
         " Can't determine file size via tellg, file_name: ",
         file_name);
     in.seekg(0, std::ios_base::beg);
     Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadWholeFile. Can't seek to the beg, file_name: ",
+        "Error in ReadFile. Can't seek to the beg, file_name: ",
         file_name);
     std::vector<Ui8> data;
     if (static_cast<Ui64>(pos) > 0ull) {
         data.resize(static_cast<size_t>(pos));
         in.read(reinterpret_cast<char*>(data.data()), static_cast<Ui64>(pos));
         Check(in.rdstate() != (std::ios_base::failbit | std::ios_base::eofbit),
-            "Error in ReadWholeFile."
+            "Error in ReadFile."
             " Can't read the data, eofbit is set, file_name: ",
             file_name);
         Check(in.rdstate() != std::ios_base::badbit,
-            "Error in ReadWholeFile."
+            "Error in ReadFile."
             " Can't read the data, badbit is set, file_name: ",
             file_name);
         Check(in.rdstate() == std::ios_base::goodbit,
-            "Error in ReadWholeFile."
+            "Error in ReadFile."
             " Can't read the data, non-goodbit, file_name: ",
             file_name);
     }
     in.close();
     Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadWholeFile. Can't close the file, file_name: ",
+        "Error in ReadFile. Can't close the file, file_name: ",
         file_name);
     return data;
 }
@@ -665,16 +665,16 @@ void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
     std::ofstream out(file_name,
         std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
     Check(out.rdstate() != std::ios_base::failbit,
-        "Error in WriteWholeFile. Can't create/open the file, file_name: ",
+        "Error in WriteFile. Can't create/open the file, file_name: ",
         file_name);
     out.exceptions(std::ios_base::goodbit);
     out.write(reinterpret_cast<const char*>(data), data_size);
     Check(!!(out.rdstate() & std::ios_base::badbit),
-        "Error in WriteWholeFile. Can't create/open the file, file_name: ",
+        "Error in WriteFile. Can't create/open the file, file_name: ",
         file_name);
     out.close();
     Check(!!(out.rdstate() & std::ios_base::failbit),
-        "Error in WriteWholeFile. Can't close the file, file_name: ",
+        "Error in WriteFile. Can't close the file, file_name: ",
         file_name);
 }
 
