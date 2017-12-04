@@ -13,7 +13,7 @@ Main discussion forum (in Russian): http://arcticengine.com/
 
 Windows: [![Windows build status](https://ci.appveyor.com/api/projects/status/jm2ahfwc8py7cwpl?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 
-Linux: [![Linux build status](https://travis-ci.org/FrostyMorning/arctic.svg?branch=master)](https://travis-ci.org/FrostyMorning/arctic)
+MacOS X & Linux: [![Linux build status](https://travis-ci.org/FrostyMorning/arctic.svg?branch=master)](https://travis-ci.org/FrostyMorning/arctic)
 
 Scrum: [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
 
