@@ -25,6 +25,7 @@
 		34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD81F68AD73005ACF7B /* arctic_math.cpp */; };
 		34A37FE91F68ADA1005ACF7B /* demo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FE81F68ADA1005ACF7B /* demo.cpp */; };
 		34A37FEE1F68AE08005ACF7B /* data in Resources */ = {isa = PBXBuildFile; fileRef = 34A37FED1F68AE08005ACF7B /* data */; };
+		34C5F3131FD4E22300A03FA2 /* arctic_platform_pi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -79,6 +80,8 @@
 		34A37FEB1F68ADCB005ACF7B /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = resource.h; path = demo/resource.h; sourceTree = SOURCE_ROOT; };
 		34A37FEC1F68ADCB005ACF7B /* targetver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = targetver.h; path = demo/targetver.h; sourceTree = SOURCE_ROOT; };
 		34A37FED1F68AE08005ACF7B /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; name = data; path = demo/data; sourceTree = SOURCE_ROOT; };
+		34C5F3111FD4E22300A03FA2 /* font.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = font.h; path = engine/font.h; sourceTree = SOURCE_ROOT; };
+		34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi.cpp; path = engine/arctic_platform_pi.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +147,8 @@
 		34A37FB21F68AD4E005ACF7B /* engine */ = {
 			isa = PBXGroup;
 			children = (
+				34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */,
+				34C5F3111FD4E22300A03FA2 /* font.h */,
 				34A37FD21F68AD73005ACF7B /* arctic_input.cpp */,
 				34A37FC51F68AD73005ACF7B /* arctic_input.h */,
 				34A37FD81F68AD73005ACF7B /* arctic_math.cpp */,
@@ -277,6 +282,7 @@
 				34A37FE01F68AD73005ACF7B /* easy_sprite_instance.cpp in Sources */,
 				34A37FE41F68AD73005ACF7B /* byte_array.cpp in Sources */,
 				34A37FDB1F68AD73005ACF7B /* stb_vorbis.inc in Sources */,
+				34C5F3131FD4E22300A03FA2 /* arctic_platform_pi.cpp in Sources */,
 				34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */,
 				34A37FE21F68AD73005ACF7B /* easy_sound_instance.cpp in Sources */,
 				34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */,
