@@ -40,6 +40,7 @@
 #include <X11/Xatom.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -557,6 +558,7 @@ struct SoundBuffer {
 struct SoundMixerState {
   float master_volume = 0.7f;
   std::vector<SoundBuffer> buffers;
+  std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);
 };
 SoundMixerState g_sound_mixer_state;
 
@@ -634,9 +636,9 @@ struct async_private_data {
   std::vector<Si16> samples;
   std::vector<Si32> mix;
   std::vector<Si16> tmp;
-  snd_async_handler_t *ahandler;
-  snd_pcm_t *handle;
-  snd_output_t *output = NULL;
+  snd_async_handler_t *ahandler = nullptr;
+  snd_pcm_t *handle = nullptr;
+  snd_output_t *output = nullptr;
   snd_pcm_sframes_t buffer_size;
   snd_pcm_sframes_t period_size;
 };
@@ -714,7 +716,7 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
 }
 
 void SoundMixerThreadFunction() {
-  while (true) {
+  while (!g_sound_mixer_state.do_quit) {
     MixSound();
 
     Si16 *out_buffer = g_data.samples.data();
@@ -843,8 +845,13 @@ void StartSoundMixer() {
 }
 
 void StopSoundMixer() {
-  int err = snd_async_del_handler(g_data.ahandler);
-  Check(err >= 0, "Can't delete async sound handler", snd_strerror(err));
+  g_sound_mixer_state.do_quit = true;
+  sound_thread.join();
+  
+  if (g_data.ahandler) {
+    int err = snd_async_del_handler(g_data.ahandler);
+    Check(err >= 0, "Can't delete async sound handler", snd_strerror(err));
+  }
   snd_pcm_close(g_data.handle);
 }
 
