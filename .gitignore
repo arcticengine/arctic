@@ -34,3 +34,9 @@
 # XCode
 xcuserdata
 DerivedData
+
+# Visual studio build folder
+build
+
+# Visual studio intermediate folder
+intermediate
