@@ -1,7 +1,7 @@
 // The MIT License(MIT)
 //
 // Copyright 2015 - 2016 Inigo Quilez
-// Copyright 2016 Huldra
+// Copyright 2016 - 2017 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -99,6 +99,12 @@ struct Vec2Si32 {
     y /= v.y;
     return *this;
   }
+  const bool operator== (const Vec2Si32 &v) const {
+    return x == v.x && y == v.y;
+  }
+  const bool operator!= (const Vec2Si32 &v) const {
+    return x != v.x || y != v.y;
+  }
 
   Vec2Si32 xx() const {
     return Vec2Si32(x, x);
@@ -149,9 +155,6 @@ inline Vec2Si32 operator/(Si32 const &s, Vec2Si32  const &v) {
 }
 inline Vec2Si32 operator/(Vec2Si32 const &a, Vec2Si32 const &b) {
   return Vec2Si32(a.x / b.x, a.y / b.y);
-}
-inline bool operator==(Vec2Si32 const &a, Vec2Si32 const &b) {
-    return (a.x == b.x && a.y == b.y);
 }
 
 

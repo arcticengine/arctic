@@ -1,7 +1,7 @@
 // The MIT License(MIT)
 //
 // Copyright 2015 - 2016 Inigo Quilez
-// Copyright 2016 Huldra
+// Copyright 2016 - 2017 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -124,6 +124,116 @@ struct Vec3Si32 {
   }
   const bool operator!= (const Vec3Si32 &v) const {
     return x != v.x || y != v.y || z != v.z;
+  }
+  
+  Vec2Si32 xx() const {
+    return Vec2Si32(x, x);
+  }
+  Vec2Si32 xy() const {
+    return Vec2Si32(x, y);
+  }
+  Vec2Si32 yx() const {
+    return Vec2Si32(y, x);
+  }
+  Vec2Si32 yy() const {
+    return Vec2Si32(y, y);
+  }
+  Vec2Si32 xz() const {
+    return Vec2Si32(x, z);
+  }
+  Vec2Si32 yz() const {
+    return Vec2Si32(y, z);
+  }
+  Vec2Si32 zx() const {
+    return Vec2Si32(z, x);
+  }
+  Vec2Si32 zy() const {
+    return Vec2Si32(z, y);
+  }
+  Vec2Si32 zz() const {
+    return Vec2Si32(z, z);
+  }
+  
+  Vec3Si32 xxx() const {
+    return Vec3Si32(x, x, x);
+  }
+  Vec3Si32 xxy() const {
+    return Vec3Si32(x, x, y);
+  }
+  Vec3Si32 xxz() const {
+    return Vec3Si32(x, x, z);
+  }
+  Vec3Si32 xyx() const {
+    return Vec3Si32(x, y, x);
+  }
+  Vec3Si32 xyy() const {
+    return Vec3Si32(x, y, y);
+  }
+  Vec3Si32 xyz() const {
+    return Vec3Si32(x, y, z);
+  }
+  Vec3Si32 xzx() const {
+    return Vec3Si32(x, z, x);
+  }
+  Vec3Si32 xzy() const {
+    return Vec3Si32(x, z, y);
+  }
+  Vec3Si32 xzz() const {
+    return Vec3Si32(x, z, z);
+  }
+  Vec3Si32 yxx() const {
+    return Vec3Si32(y, x, x);
+  }
+  Vec3Si32 yxy() const {
+    return Vec3Si32(y, x, y);
+  }
+  Vec3Si32 yxz() const {
+    return Vec3Si32(y, x, z);
+  }
+  Vec3Si32 yyx() const {
+    return Vec3Si32(y, y, x);
+  }
+  Vec3Si32 yyy() const {
+    return Vec3Si32(y, y, y);
+  }
+  Vec3Si32 yyz() const {
+    return Vec3Si32(y, y, z);
+  }
+  Vec3Si32 yzx() const {
+    return Vec3Si32(y, z, x);
+  }
+  Vec3Si32 yzy() const {
+    return Vec3Si32(y, z, y);
+  }
+  Vec3Si32 yzz() const {
+    return Vec3Si32(y, z, z);
+  }
+  Vec3Si32 zxx() const {
+    return Vec3Si32(z, x, x);
+  }
+  Vec3Si32 zxy() const {
+    return Vec3Si32(z, x, y);
+  }
+  Vec3Si32 zxz() const {
+    return Vec3Si32(z, x, z);
+  }
+  Vec3Si32 zyx() const {
+    return Vec3Si32(z, y, x);
+  }
+  Vec3Si32 zyy() const {
+    return Vec3Si32(z, y, y);
+  }
+  Vec3Si32 zyz() const {
+    return Vec3Si32(z, y, z);
+  }
+  Vec3Si32 zzx() const {
+    return Vec3Si32(z, z, x);
+  }
+  Vec3Si32 zzy() const {
+    return Vec3Si32(z, z, y);
+  }
+  Vec3Si32 zzz() const {
+    return Vec3Si32(z, z, z);
   }
 };
 
