@@ -79,10 +79,10 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
           p->rgba = color.rgba;
         } else if (color.a) {
           Rgba *p = dst + x1c;
-          Ui32 m = color.a;
+          Ui32 m = 255 - color.a;
           Ui32 rb = (p->rgba & 0x00ff00fful) * m;
           Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
-          Ui32 m2 = 255 - m;
+          Ui32 m2 = color.a;
           Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
           Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
           p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
@@ -111,10 +111,10 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
         if (color.a == 255) {
           p->rgba = color.rgba;
         } else if (color.a) {
-          Ui32 m = color.a;
+          Ui32 m = 255 - color.a;
           Ui32 rb = (p->rgba & 0x00ff00fful) * m;
           Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
-          Ui32 m2 = 255 - m;
+          Ui32 m2 = color.a;
           Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
           Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
           p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
@@ -377,10 +377,10 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot) {
       if (color.a == 255) {
         to_rgba->rgba = from_rgba->rgba;
       } else if (color.a) {
-        Ui32 m = color.a;
+        Ui32 m = 255 - color.a;
         Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
         Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
-        Ui32 m2 = 255 - m;
+        Ui32 m2 = color.a;
         Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
         Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
         to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
@@ -515,10 +515,10 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
       if (color.a == 255) {
         to_rgba->rgba = from_rgba->rgba;
       } else if (color.a) {
-        Ui32 m = color.a;
+        Ui32 m = 255 - color.a;
         Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
         Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
-        Ui32 m2 = 255 - m;
+        Ui32 m2 = color.a;
         Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
         Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
         to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
