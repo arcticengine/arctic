@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 #include "engine/easy.h"
+#include "engine/font.h"
 
 #include <iostream>
 
@@ -353,6 +354,17 @@ void PlayIntro() {
   g_music.Play();
 
   ResizeScreen(320, 200);
+  
+  Sprite sp;
+  sp.Create(320, 200);
+  Rgba *rgba = sp.RgbaData();
+  for (Si32 y = 0; y < 200; ++y) {
+    for (Si32 x = 0; x < 320; x++) {
+      Si32 a = Clamp(x - 35, 0, 255);
+      rgba[x + y * 320] = Rgba(255, 0, 255, a);
+    }
+  }
+  
   Ui8 snow[2][320 * 200];
   for (Si32 i = 0; i < 320 * 200; ++i) {
     if (g_rnd() % 16 == 0) {
@@ -378,7 +390,8 @@ void PlayIntro() {
     double time = Time();
     frame = static_cast<Si32>((time - start_time) * 60.f);
     Clear();
-    if (IsKey(kKeyEscape) || IsKey(kKeySpace) || IsKey(kKeyEnter)) {
+    if (IsKeyDown(kKeyEscape) || IsKeyDown(kKeySpace)
+        || IsKeyDown(kKeyEnter)) {
       return;
     }
     if (frame > duration3) {
@@ -424,6 +437,7 @@ void PlayIntro() {
       }
     }
     std::swap(cur_snow, next_snow);
+    sp.Draw(0, 0);
     ShowFrame();
   }
 }
@@ -593,17 +607,17 @@ void Update() {
   }
 
   Vec2Si32 step(0, 0);
-  if (IsKey(kKeyUp) || IsKey("w")) {
+  if (IsKeyDown(kKeyUp) || IsKeyDown("w")) {
     step.y = 1;
   }
-  if (IsKey(kKeyDown) || IsKey("s")) {
+  if (IsKeyDown(kKeyDown) || IsKeyDown("s")) {
     step.y = -1;
   }
-  if (IsKey(kKeyLeft) || IsKey("a")) {
+  if (IsKeyDown(kKeyLeft) || IsKeyDown("a")) {
     step.x = -1;
     step.y = 0;
   }
-  if (IsKey(kKeyRight) || IsKey("d")) {
+  if (IsKeyDown(kKeyRight) || IsKeyDown("d")) {
     step.x = 1;
     step.y = 0;
   }
@@ -624,18 +638,18 @@ void Update() {
     }
   }
 
-  if (WasKeyPressed("5")) {
+  if (IsKeyDownward("5")) {
     g_musicDisabled = !g_musicDisabled;
   }
-  if (WasKeyPressed("6")) {
+  if (IsKeyDownward("6")) {
       SetInverseY(true);
   }
-  if (WasKeyPressed("7")) {
+  if (IsKeyDownward("7")) {
       SetInverseY(false);
   }
 
   // Cheats
-  if (WasKeyPressed("v")) {
+  if (IsKeyDownward("v")) {
     Vec2Si32 pos;
     for (pos.x = 0; pos.x < g_maze_size.x; ++pos.x) {
       for (pos.y = 0; pos.y < g_maze_size.y; ++pos.y) {
@@ -643,14 +657,14 @@ void Update() {
       }
     }
   }
-  if (WasKeyPressed("n")) {
+  if (IsKeyDownward("n")) {
     GenerateMaze();
     easy::GetEngine()->GetBackbuffer().Clear();
   }
-  if (IsKey("=+")) {
+  if (IsKeyDownward("=+")) {
     SetMasterVolume(Clamp(GetMasterVolume() + 0.01f, 0.f, 1.f));
   }
-  if (IsKey("-_")) {
+  if (IsKeyDownward("-_")) {
     SetMasterVolume(Clamp(GetMasterVolume() - 0.01f, 0.f, 1.f));
   }
   // End of cheats
@@ -773,8 +787,10 @@ void Render() {
 }
 
 void EasyMain() {
+  Font font;
+  font.Load("data/font_1.bin");
   Init();
-  while (!IsKey(kKeyEscape)) {
+  while (!IsKeyDownward(kKeyEscape)) {
     Update();
     Render();
   }
