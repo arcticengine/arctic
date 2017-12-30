@@ -40,3 +40,12 @@ build
 
 # Visual studio intermediate folder
 intermediate
+
+# cmake build results
+demo/demo
+
+# cmake intermediate files and folders
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
