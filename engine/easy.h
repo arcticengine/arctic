@@ -45,24 +45,6 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
 void ShowFrame();
 
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const KeyCode key_code);
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const char *keys);
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const char key);
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const std::string &keys);
-
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
-bool IsKey(const KeyCode key_code);
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
-bool IsKey(const char *keys);
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
-bool IsKey(const char key);
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
-bool IsKey(const std::string &keys);
-
 // true if key transitioned from up to down state last frame
 bool IsKeyDownward(const KeyCode key_code);
 bool IsKeyDownward(const char *keys);
@@ -111,6 +93,24 @@ std::vector<Ui8> ReadFile(const char *file_name);
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
 
 Engine* GetEngine();
+
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
+bool WasKeyPressed(const KeyCode key_code);
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
+bool WasKeyPressed(const char *keys);
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
+bool WasKeyPressed(const char key);
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
+bool WasKeyPressed(const std::string &keys);
+
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
+bool IsKey(const KeyCode key_code);
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
+bool IsKey(const char *keys);
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
+bool IsKey(const char key);
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
+bool IsKey(const std::string &keys);
 
 }  // namespace easy
 }  // namespace arctic

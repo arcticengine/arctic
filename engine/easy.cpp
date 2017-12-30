@@ -70,6 +70,10 @@ struct KeyState {
   bool WasPressed() const {
     return was_pressed_this_frame;
   }
+  
+  bool WasReleased() const {
+    return was_released_this_frame;
+  }
 };
 
 static KeyState g_key_state[kKeyCount];
@@ -482,41 +486,39 @@ void ShowFrame() {
     g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
 }
 
-bool WasKeyPressedImpl(Ui32 key_code) {
+bool IsKeyDownwardImpl(Ui32 key_code) {
   if (key_code >= kKeyCount) {
     return false;
   }
   return g_key_state[key_code].WasPressed();
 }
+  
+bool IsKeyUpwardImpl(Ui32 key_code) {
+  if (key_code >= kKeyCount) {
+    return false;
+  }
+  return g_key_state[key_code].WasReleased();
+}
+
 
 bool WasKeyPressed(const KeyCode key_code) {
-    return WasKeyPressedImpl(static_cast<Ui32>(key_code));
+  return IsKeyDownward(key_code);
 }
 
 bool WasKeyPressed(const char *keys) {
-    for (const char *key = keys; *key != 0; ++key) {
-        if (WasKeyPressed(*key)) {
-            return true;
-        }
-    }
-    return false;
+  return IsKeyDownward(keys);
 }
 
 bool WasKeyPressed(const char key) {
-    if (key >= 'a' && key <= 'z') {
-        return WasKeyPressedImpl(static_cast<Ui32>(key)
-            + static_cast<Ui32>('A')
-            - static_cast<Ui32>('a'));
-    }
-    return WasKeyPressedImpl(static_cast<Ui32>(key));
+  return IsKeyDownward(key);
 }
 
 bool WasKeyPressed(const std::string &keys) {
-    return WasKeyPressed(keys.c_str());
+  return IsKeyDownward(keys);
 }
 
 bool IsKeyDownward(const KeyCode key_code) {
-  return WasKeyPressedImpl(static_cast<Ui32>(key_code));
+  return IsKeyDownwardImpl(static_cast<Ui32>(key_code));
 }
 
 bool IsKeyDownward(const char *keys) {
@@ -530,19 +532,45 @@ bool IsKeyDownward(const char *keys) {
 
 bool IsKeyDownward(const char key) {
   if (key >= 'a' && key <= 'z') {
-    return WasKeyPressedImpl(static_cast<Ui32>(key)
+    return IsKeyDownwardImpl(static_cast<Ui32>(key)
                              + static_cast<Ui32>('A')
                              - static_cast<Ui32>('a'));
   }
-  return WasKeyPressedImpl(static_cast<Ui32>(key));
+  return IsKeyDownwardImpl(static_cast<Ui32>(key));
 }
 
 bool IsKeyDownward(const std::string &keys) {
   return IsKeyDownward(keys.c_str());
 }
+  
+bool IsKeyUpward(const KeyCode key_code) {
+  return IsKeyUpwardImpl(static_cast<Ui32>(key_code));
+}
+
+bool IsKeyUpward(const char *keys) {
+  for (const char *key = keys; *key != 0; ++key) {
+    if (IsKeyUpward(*key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IsKeyUpward(const char key) {
+  if (key >= 'a' && key <= 'z') {
+    return IsKeyUpwardImpl(static_cast<Ui32>(key)
+                             + static_cast<Ui32>('A')
+                             - static_cast<Ui32>('a'));
+  }
+  return IsKeyUpwardImpl(static_cast<Ui32>(key));
+}
+
+bool IsKeyUpward(const std::string &keys) {
+  return IsKeyUpward(keys.c_str());
+}
 
 
-bool IsKeyImpl(Ui32 key_code) {
+bool IsKeyDownImpl(Ui32 key_code) {
     if (key_code >= kKeyCount) {
         return false;
     }
@@ -550,33 +578,23 @@ bool IsKeyImpl(Ui32 key_code) {
 }
 
 bool IsKey(const KeyCode key_code) {
-    return IsKeyImpl(static_cast<Ui32>(key_code));
+  return IsKeyDown(key_code);
 }
 
 bool IsKey(const char *keys) {
-    for (const char *key = keys; *key != 0; ++key) {
-        if (IsKey(*key)) {
-            return true;
-        }
-    }
-    return false;
+  return IsKeyDown(keys);
 }
 
 bool IsKey(const char key) {
-    if (key >= 'a' && key <= 'z') {
-        return IsKeyImpl(static_cast<Ui32>(key)
-            + static_cast<Ui32>('A')
-            - static_cast<Ui32>('a'));
-    }
-    return IsKeyImpl(static_cast<Ui32>(key));
+  return IsKeyDown(key);
 }
 
 bool IsKey(const std::string &keys) {
-    return IsKey(keys.c_str());
+  return IsKeyDown(keys);
 }
   
 bool IsKeyDown(const KeyCode key_code) {
-  return IsKeyImpl(static_cast<Ui32>(key_code));
+  return IsKeyDownImpl(static_cast<Ui32>(key_code));
 }
 
 bool IsKeyDown(const char *keys) {
@@ -590,11 +608,11 @@ bool IsKeyDown(const char *keys) {
 
 bool IsKeyDown(const char key) {
   if (key >= 'a' && key <= 'z') {
-    return IsKeyImpl(static_cast<Ui32>(key)
+    return IsKeyDownImpl(static_cast<Ui32>(key)
                      + static_cast<Ui32>('A')
                      - static_cast<Ui32>('a'));
   }
-  return IsKeyImpl(static_cast<Ui32>(key));
+  return IsKeyDownImpl(static_cast<Ui32>(key));
 }
 
 bool IsKeyDown(const std::string &keys) {
