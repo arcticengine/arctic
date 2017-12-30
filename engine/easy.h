@@ -45,18 +45,52 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
 void ShowFrame();
 
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
 bool WasKeyPressed(const KeyCode key_code);
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
 bool WasKeyPressed(const char *keys);
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
 bool WasKeyPressed(const char key);
+[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
 bool WasKeyPressed(const std::string &keys);
 
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const KeyCode key_code);
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const char *keys);
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const char key);
+[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const std::string &keys);
 
-void SetKey(const KeyCode key_code, bool is_pressed);
-void SetKey(const char key, bool is_pressed);
+// true if key transitioned from up to down state last frame
+bool IsKeyDownward(const KeyCode key_code);
+bool IsKeyDownward(const char *keys);
+bool IsKeyDownward(const char key);
+bool IsKeyDownward(const std::string &keys);
+// true is key is currently down
+bool IsKeyDown(const KeyCode key_code);
+bool IsKeyDown(const char *keys);
+bool IsKeyDown(const char key);
+bool IsKeyDown(const std::string &keys);
+
+// true if key transitioned from down to up since last frame
+bool IsKeyUpward(const KeyCode key_code);
+bool IsKeyUpward(const char *keys);
+bool IsKeyUpward(const char key);
+bool IsKeyUpward(const std::string &keys);
+
+
+// true if key transitioned from up to down state last frame
+bool IsAnyKeyDownward();
+// true is key is currently down
+bool IsAnyKeyDown();
+// true if key transitioned from down to up since last frame
+bool IsAnyKeyUpward();
+
+void SetKey(const KeyCode key_code, bool is_set_down);
+void SetKey(const char key, bool is_set_down);
+  
 
 Vec2Si32 MousePos();
 Vec2Si32 MouseMove();
