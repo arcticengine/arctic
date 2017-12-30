@@ -515,6 +515,32 @@ bool WasKeyPressed(const std::string &keys) {
     return WasKeyPressed(keys.c_str());
 }
 
+bool IsKeyDownward(const KeyCode key_code) {
+  return WasKeyPressedImpl(static_cast<Ui32>(key_code));
+}
+
+bool IsKeyDownward(const char *keys) {
+  for (const char *key = keys; *key != 0; ++key) {
+    if (IsKeyDownward(*key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IsKeyDownward(const char key) {
+  if (key >= 'a' && key <= 'z') {
+    return WasKeyPressedImpl(static_cast<Ui32>(key)
+                             + static_cast<Ui32>('A')
+                             - static_cast<Ui32>('a'));
+  }
+  return WasKeyPressedImpl(static_cast<Ui32>(key));
+}
+
+bool IsKeyDownward(const std::string &keys) {
+  return IsKeyDownward(keys.c_str());
+}
+
 
 bool IsKeyImpl(Ui32 key_code) {
     if (key_code >= kKeyCount) {
@@ -547,6 +573,58 @@ bool IsKey(const char key) {
 
 bool IsKey(const std::string &keys) {
     return IsKey(keys.c_str());
+}
+  
+bool IsKeyDown(const KeyCode key_code) {
+  return IsKeyImpl(static_cast<Ui32>(key_code));
+}
+
+bool IsKeyDown(const char *keys) {
+  for (const char *key = keys; *key != 0; ++key) {
+    if (IsKeyDown(*key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IsKeyDown(const char key) {
+  if (key >= 'a' && key <= 'z') {
+    return IsKeyImpl(static_cast<Ui32>(key)
+                     + static_cast<Ui32>('A')
+                     - static_cast<Ui32>('a'));
+  }
+  return IsKeyImpl(static_cast<Ui32>(key));
+}
+
+bool IsKeyDown(const std::string &keys) {
+  return IsKeyDown(keys.c_str());
+}
+
+bool IsAnyKeyDownward() {
+  for (Si32 key = 0; key < kKeyCount; ++key) {
+    if (key == kKeyMouseLeft || key == kKeyMouseRight
+        || key == kKeyMouseWheel) {
+      continue;
+    }
+    if (g_key_state[key].WasPressed()) {
+      return true;
+    }
+  }
+  return false;
+}
+// true is key is currently down
+bool IsAnyKeyDown() {
+  for (Si32 key = 0; key < kKeyCount; ++key) {
+    if (key == kKeyMouseLeft || key == kKeyMouseRight
+        || key == kKeyMouseWheel) {
+      continue;
+    }
+    if (g_key_state[key].IsDown()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 
