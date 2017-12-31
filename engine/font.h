@@ -251,7 +251,7 @@ struct Font {
       BmFontBinPages page;
       page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
       page.Log(id);
-      inner_pos += std::strlen(page.page_name) + 1;
+      inner_pos += static_cast<Si32>(std::strlen(page.page_name)) + 1;
     }
     pos += block_size;
     
