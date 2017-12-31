@@ -75,7 +75,7 @@ struct BmFontBinInfo {
 	Ui8 spacing_horiz;
 	Ui8 spacing_vert;
 	Ui8 outline;
-	Si8 font_name[0];	// n+1	string	14	null terminated string with length n
+	char *font_name;	// n+1	string	14	null terminated string with length n
 	// This structure gives the layout of the fields.
   // Remember that there should be no padding between members.
   // Allocate the size of the block using the blockSize,
@@ -138,7 +138,7 @@ struct BmFontBinCommon {
 };
 
 struct BmFontBinPages {
-	char page_name[0];	 // p*(n+1)	strings	0	p null terminated strings,
+	char *page_name;	 // p*(n+1)	strings	0	p null terminated strings,
                          // each with length n
     // This block gives the name of each texture file with the image data
     // for the characters. The string pageNames holds the names separated
@@ -209,7 +209,7 @@ struct BmFontBinKerningPair {
 struct Font {
   void Load(const char *file_name) {
     std::vector<Ui8> file = easy::ReadFile(file_name);
-    Ui64 pos = 0;
+    Si32 pos = 0;
     BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
     header->Log();
     pos += sizeof(BmFontBinHeader);
@@ -219,9 +219,15 @@ struct Font {
     Si32 block_size = *reinterpret_cast<Si32*>(&file[pos]);
     pos += sizeof(Si32);
     Check(block_type == kBlockInfo, "Unexpected block type");
-    Check(block_size >= sizeof(BmFontBinInfo), "Info block is too small");
-    BmFontBinInfo *info = reinterpret_cast<BmFontBinInfo*>(&file[pos]);
-    info->Log();
+  
+    Check(block_size >=
+        sizeof(BmFontBinInfo) - sizeof(BmFontBinInfo::font_name),
+        "Info block is too small");
+    BmFontBinInfo info;
+    memcpy(&info, &file[pos], sizeof(info) - sizeof(info.font_name));
+    info.font_name = reinterpret_cast<char*>(
+        &file[pos + sizeof(info) - sizeof(info.font_name)]);
+    info.Log();
     pos += block_size;
     
     block_type = file[pos];
@@ -239,12 +245,13 @@ struct Font {
     block_size = *reinterpret_cast<Si32*>(&file[pos]);
     pos += sizeof(Si32);
     Check(block_type == kBlockPages, "Unexpected block type");
-    Check(block_size >= sizeof(BmFontBinPages), "Pages block is too small");
-    Si64 inner_pos = pos;
+    Check(block_size >= 1, "Pages block is too small");
+    Si32 inner_pos = pos;
     for (Si32 id = 0; id < common->pages; ++id) {
-      BmFontBinPages *page = reinterpret_cast<BmFontBinPages*>(&file[inner_pos]);
-      page->Log(id);
-      inner_pos += std::strlen(page->page_name) + 1;
+      BmFontBinPages page;
+      page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
+      page.Log(id);
+      inner_pos += std::strlen(page.page_name) + 1;
     }
     pos += block_size;
     
