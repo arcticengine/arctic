@@ -350,6 +350,13 @@ void CycleDeadEnd(Vec2Si32 pos) {
 Sound g_music;
 
 void PlayIntro() {
+  char data[10] = "123456789";
+  WriteFile("data/test.data", reinterpret_cast<Ui8*>(data), 10);
+  auto data2 = ReadFile("data/test.data");
+  Check(data2.size() == 10, "string size mismatch");
+  Check(strncmp(data, reinterpret_cast<char*>(data2.data()), 10) == 0,
+      "strings do not match");
+  
   g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
   g_music.Play();
 
