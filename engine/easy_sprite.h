@@ -33,6 +33,11 @@
 
 namespace arctic {
 namespace easy {
+  
+enum DrawBlendingMode {
+  kCopyRgba,
+  kAlphaBlend
+};
 
 class Sprite {
  private:
@@ -50,6 +55,7 @@ class Sprite {
       const Si32 from_width, const Si32 from_height);
   void Clear();
   void Clear(Rgba color);
+  void Clone(Sprite from);
   void SetPivot(Vec2Si32 pivot);
   Vec2Si32 Pivot() const;
   void Draw(const Si32 to_x, const Si32 to_y);
@@ -67,7 +73,7 @@ class Sprite {
       const Si32 to_width, const Si32 to_height,
       const Si32 from_x, const Si32 from_y,
       const Si32 from_width, const Si32 from_height,
-      Sprite to_sprite);
+      Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend);
 
   void Draw(const Vec2Si32 to, float angle_radians);
   void Draw(const Si32 to_x, const Si32 to_y, float angle_radians);

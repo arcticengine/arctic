@@ -250,6 +250,86 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
   }
 }
 
+template<DrawBlendingMode kBlendingMode>
+void DrawSprite(
+    const Si32 to_x_pivot, const Si32 to_y_pivot,
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    Sprite to_sprite, Sprite from_sprite) {
+  const Si32 from_stride_pixels = from_sprite.StridePixels();
+  const Si32 to_stride_pixels = to_sprite.Width();
+  
+  const Si32 to_x = to_x_pivot - from_sprite.Pivot().x * to_width / from_width;
+  const Si32 to_y = to_y_pivot - from_sprite.Pivot().y * to_height / from_height;
+  
+  Rgba *to = to_sprite.RgbaData()
+  + to_y * to_stride_pixels
+  + to_x;
+  const Rgba *from = from_sprite.RgbaData()
+  + from_y * from_stride_pixels
+  + from_x;
+  
+  const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
+  const Si32 to_y_d_max = to_sprite.Height() - to_y;
+  const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
+  
+  const Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
+  const Si32 to_x_d_max = to_sprite.Width() - to_x;
+  const Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
+  
+  for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
+    const Si32 from_y_disp = (from_height * to_y_disp) / to_height;
+    
+    const Si32 from_x_b = (from_width * to_x_db) / to_width;
+    const Si32 from_x_step_16 = 65536 * from_width / to_width;
+    Si32 from_x_acc_16 = 0;
+    
+    const Rgba *from_line = from + from_y_disp * from_stride_pixels;
+    Rgba *to_line = to + to_y_disp * to_stride_pixels;
+    
+    for (Si32 to_x_disp = to_x_db; to_x_disp < to_x_de; ++to_x_disp) {
+      Rgba *to_rgba = to_line + to_x_disp;
+      const Si32 from_x_disp = from_x_b + (from_x_acc_16 / 65536);
+      from_x_acc_16 += from_x_step_16;
+      const Rgba *from_rgba = from_line + from_x_disp;
+      Rgba color = *from_rgba;
+      if (kBlendingMode == kCopyRgba) {
+        to_rgba->rgba = from_rgba->rgba;
+      } else if (kBlendingMode == kAlphaBlend) {
+        if (color.a == 255) {
+          to_rgba->rgba = from_rgba->rgba;
+        } else if (color.a) {
+          Ui32 m = 255 - color.a;
+          Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
+          Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+          Ui32 m2 = color.a;
+          Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+          Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+          to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+          ((g + g2) & 0x0000ff00ul);
+        }
+      } else {  // Unknown blending mode!
+        to_rgba->rgba = from_rgba->rgba;
+      }
+    }
+  }
+}
+  
+template void DrawSprite<kCopyRgba>(
+    const Si32 to_x_pivot, const Si32 to_y_pivot,
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    Sprite to_sprite, Sprite from_sprite);
+template void DrawSprite<kAlphaBlend>(
+    const Si32 to_x_pivot, const Si32 to_y_pivot,
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    Sprite to_sprite, Sprite from_sprite);
+
+
 Sprite::Sprite() {
   ref_pos_ = Vec2Si32(0, 0);
   ref_size_ = Vec2Si32(0, 0);
@@ -326,6 +406,13 @@ void Sprite::Clear(Rgba color) {
     begin += stride;
     end += stride;
   }
+}
+  
+void Sprite::Clone(Sprite from) {
+  Create(from.Width(), from.Height());
+  from.Draw(0, 0, from.Width(), from.Height(),
+    0, 0, from.Width(), from.Height(), *this, kCopyRgba);
+  SetPivot(from.Pivot());
 }
 
 void Sprite::SetPivot(Vec2Si32 pivot) {
@@ -470,64 +557,28 @@ void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
       from_pos.x, from_pos.y, from_size.x, from_size.y);
 }
 
+
 void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    Sprite to_sprite) {
-  const Si32 from_stride_pixels = StridePixels();
-  const Si32 to_stride_pixels = to_sprite.Width();
-
-  const Si32 to_x = to_x_pivot - pivot_.x * to_width / from_width;
-  const Si32 to_y = to_y_pivot - pivot_.y * to_height / from_height;
-
-  Rgba *to = to_sprite.RgbaData()
-    + to_y * to_stride_pixels
-    + to_x;
-  const Rgba *from = RgbaData()
-    + from_y * from_stride_pixels
-    + from_x;
-
-  const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
-  const Si32 to_y_d_max = to_sprite.Height() - to_y;
-  const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
-
-  const Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
-  const Si32 to_x_d_max = to_sprite.Width() - to_x;
-  const Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
-
-  for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
-    const Si32 from_y_disp = (from_height * to_y_disp) / to_height;
-
-    const Si32 from_x_b = (from_width * to_x_db) / to_width;
-    const Si32 from_x_step_16 = 65536 * from_width / to_width;
-    Si32 from_x_acc_16 = 0;
-
-    const Rgba *from_line = from + from_y_disp * from_stride_pixels;
-    Rgba *to_line = to + to_y_disp * to_stride_pixels;
-
-    for (Si32 to_x_disp = to_x_db; to_x_disp < to_x_de; ++to_x_disp) {
-      Rgba *to_rgba = to_line + to_x_disp;
-      const Si32 from_x_disp = from_x_b + (from_x_acc_16 / 65536);
-      from_x_acc_16 += from_x_step_16;
-      const Rgba *from_rgba = from_line + from_x_disp;
-      Rgba color = *from_rgba;
-      if (color.a == 255) {
-        to_rgba->rgba = from_rgba->rgba;
-      } else if (color.a) {
-        Ui32 m = 255 - color.a;
-        Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
-        Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
-        Ui32 m2 = color.a;
-        Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-        Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-        to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
-          ((g + g2) & 0x0000ff00ul);
-      }
-    }
+    Sprite to_sprite, DrawBlendingMode blending_mode) {
+  switch (blending_mode) {
+    default:
+    case kCopyRgba:
+      DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, to_width, to_height,
+          from_x, from_y, from_width, from_height,
+          to_sprite, *this);
+      break;
+    case kAlphaBlend:
+      DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, to_width, to_height,
+          from_x, from_y, from_width, from_height,
+          to_sprite, *this);
+      break;
   }
+  return;
 }
-
+  
 Si32 Sprite::Width() const {
   return ref_size_.x;
 }

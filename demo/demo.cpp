@@ -355,15 +355,18 @@ void PlayIntro() {
 
   ResizeScreen(320, 200);
   
-  Sprite sp;
-  sp.Create(320, 200);
-  Rgba *rgba = sp.RgbaData();
+  Sprite sp0;
+  sp0.Create(320, 200);
+  Rgba *rgba = sp0.RgbaData();
   for (Si32 y = 0; y < 200; ++y) {
     for (Si32 x = 0; x < 320; x++) {
       Si32 a = Clamp(x - 35, 0, 255);
       rgba[x + y * 320] = Rgba(255, 0, 255, a);
     }
   }
+  Sprite sp;
+  sp.Clone(sp0);
+  sp0.Clear(Rgba(128, 128, 128, 128));
   
   Ui8 snow[2][320 * 200];
   for (Si32 i = 0; i < 320 * 200; ++i) {
