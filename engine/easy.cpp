@@ -765,11 +765,11 @@ void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
         file_name);
     out.exceptions(std::ios_base::goodbit);
     out.write(reinterpret_cast<const char*>(data), data_size);
-    Check(!!(out.rdstate() & std::ios_base::badbit),
-        "Error in WriteFile. Can't create/open the file, file_name: ",
+    Check(!(out.rdstate() & std::ios_base::badbit),
+        "Error in WriteFile. Can't write the file, file_name: ",
         file_name);
     out.close();
-    Check(!!(out.rdstate() & std::ios_base::failbit),
+    Check(!(out.rdstate() & std::ios_base::failbit),
         "Error in WriteFile. Can't close the file, file_name: ",
         file_name);
 }
