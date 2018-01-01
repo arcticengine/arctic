@@ -350,6 +350,19 @@ void CycleDeadEnd(Vec2Si32 pos) {
 Sound g_music;
 
 void PlayIntro() {
+  ResizeScreen(320, 200);
+  Sprite sp0;
+  sp0.Create(320, 200);
+  while (!IsAnyKeyDownward()) {
+    Si32 x = MousePos().x;
+    Si32 y = MousePos().y;
+    x = Clamp(x, 0, 319);
+    y = Clamp(y, 0, 199);
+    sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 255, 255, 255).rgba;
+    sp0.Draw(0, 0);
+    ShowFrame();
+  }
+
   char data[10] = "123456789";
   WriteFile("data/test.data", reinterpret_cast<Ui8*>(data), 10);
   auto data2 = ReadFile("data/test.data");
@@ -360,10 +373,6 @@ void PlayIntro() {
   g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
   g_music.Play();
 
-  ResizeScreen(320, 200);
-  
-  Sprite sp0;
-  sp0.Create(320, 200);
   Rgba *rgba = sp0.RgbaData();
   for (Si32 y = 0; y < 200; ++y) {
     for (Si32 x = 0; x < 320; x++) {

@@ -452,7 +452,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
 
   HWND window_handle = CreateWindowExW(WS_EX_APPWINDOW,
       window_class_name, title_bar_text,
-      WS_POPUP,
+      WS_OVERLAPPEDWINDOW,
       0, 0, screen_width, screen_height, nullptr, nullptr,
       instance_handle, nullptr);
   if (!window_handle) {
@@ -671,6 +671,8 @@ void Swap() {
 
   RECT rect;
   res = GetClientRect(g_system_info.window_handle, &rect);
+  window_width = rect.right;
+  window_height = rect.bottom;
   arctic::easy::GetEngine()->OnWindowResize(rect.right, rect.bottom);
 }
 
