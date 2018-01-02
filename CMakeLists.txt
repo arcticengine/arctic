@@ -21,7 +21,7 @@ set(HEADER_DIR_1 ./engine)
 set(HEADER_DIR_2 ./demo)
 
 SET(CMAKE_CXX_COMPILER             "/usr/bin/clang++")
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 ############## Define Project. ###############
 # ---- This the main options of project ---- #
@@ -61,7 +61,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 # Defines Flags for Windows and Linux. #
 ########################################
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O2")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
