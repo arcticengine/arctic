@@ -161,6 +161,9 @@ struct SystemInfo {
 };
 
 SystemInfo g_system_info;
+static bool g_is_full_screen = false;
+static Si32 g_window_width = 0;
+static Si32 g_window_height = 0;
 
 
 KeyCode TranslateKeyCode(WPARAM word_param) {
@@ -274,16 +277,13 @@ KeyCode TranslateKeyCode(WPARAM word_param) {
   return kKeyUnknown;
 }
 
-static Si32 window_width = 0;
-static Si32 window_height = 0;
-
 void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
-  Check(window_width != 0, "Could not obtain window width in OnMouse");
-  Check(window_height != 0, "Could not obtain window height in OnMouse");
+  Check(g_window_width != 0, "Could not obtain window width in OnMouse");
+  Check(g_window_height != 0, "Could not obtain window height in OnMouse");
   Si32 x = GET_X_LPARAM(long_param);
-  Si32 y = window_height - GET_Y_LPARAM(long_param);
-  Vec2F pos(static_cast<float>(x) / static_cast<float>(window_width - 1),
-      static_cast<float>(y) / static_cast<float>(window_height - 1));
+  Si32 y = g_window_height - GET_Y_LPARAM(long_param);
+  Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
+      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = key;
@@ -294,18 +294,18 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
 }
 
 void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
-  Check(window_width != 0, "Could not obtain window width in OnMouseWheel");
-  Check(window_height != 0,
+  Check(g_window_width != 0, "Could not obtain window width in OnMouseWheel");
+  Check(g_window_height != 0,
       "Could not obtain window height in OnMouseWheel");
 
   Si32 fw_keys = GET_KEYSTATE_WPARAM(word_param);
   Si32 z_delta = GET_WHEEL_DELTA_WPARAM(word_param);
 
   Si32 x = GET_X_LPARAM(long_param);
-  Si32 y = window_height - GET_Y_LPARAM(long_param);
+  Si32 y = g_window_height - GET_Y_LPARAM(long_param);
 
-  Vec2F pos(static_cast<float>(x) / static_cast<float>(window_width - 1),
-      static_cast<float>(y) / static_cast<float>(window_height - 1));
+  Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
+      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = kKeyCount;
@@ -316,20 +316,29 @@ void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
 }
 
 void ToggleFullscreen() {
-  LONG lStyle = GetWindowLong(g_system_info.window_handle, GWL_STYLE);
-  if ((lStyle & WS_POPUP) == WS_POPUP) {
-    lStyle = lStyle ^ WS_POPUP ^ WS_OVERLAPPEDWINDOW;
-    SetWindowLong(g_system_info.window_handle, GWL_STYLE, lStyle);
-    SetWindowPos(g_system_info.window_handle, 0, 0, 0, 0, 0,
-        SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOZORDER);
-  } else if ((lStyle & WS_OVERLAPPEDWINDOW) == WS_OVERLAPPEDWINDOW) {
-    lStyle = lStyle ^ WS_POPUP ^ WS_OVERLAPPEDWINDOW;
-    SetWindowLong(g_system_info.window_handle, GWL_STYLE, lStyle);
-    ShowWindow(g_system_info.window_handle, SW_RESTORE);
-    SetWindowPos(g_system_info.window_handle, HWND_TOP, 0, 0, 0, 0,
-        SWP_FRAMECHANGED | SWP_NOSIZE);
-    ShowWindow(g_system_info.window_handle, SW_SHOWMAXIMIZED);
-  }
+  SetFullScreen(!g_is_full_screen);
+}
+
+bool IsFullScreen() {
+	return g_is_full_screen;
+}
+
+void SetFullScreen(bool is_enable) {
+	if (is_enable == g_is_full_screen) {
+		return;
+	}
+	g_is_full_screen = is_enable;
+	if (g_is_full_screen) {
+	  SetWindowLong(g_system_info.window_handle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
+	  ShowWindow(g_system_info.window_handle, SW_RESTORE);
+		SetWindowPos(g_system_info.window_handle, HWND_TOP, 0, 0, 0, 0,
+			SWP_FRAMECHANGED | SWP_NOSIZE);
+		ShowWindow(g_system_info.window_handle, SW_SHOWMAXIMIZED);
+	} else {
+		SetWindowLong(g_system_info.window_handle, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+		SetWindowPos(g_system_info.window_handle, 0, 0, 0, 0, 0,
+			SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOZORDER);		
+	}
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
@@ -447,8 +456,8 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
 
   ATOM register_class_result = RegisterClassExW(&wcex);
 
-  window_width = screen_width;
-  window_height = screen_height;
+  g_window_width = screen_width;
+  g_window_height = screen_height;
 
   HWND window_handle = CreateWindowExW(WS_EX_APPWINDOW,
       window_class_name, title_bar_text,
@@ -671,8 +680,8 @@ void Swap() {
 
   RECT rect;
   res = GetClientRect(g_system_info.window_handle, &rect);
-  window_width = rect.right;
-  window_height = rect.bottom;
+  g_window_width = rect.right;
+  g_window_height = rect.bottom;
   arctic::easy::GetEngine()->OnWindowResize(rect.right, rect.bottom);
 }
 
