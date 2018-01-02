@@ -350,18 +350,20 @@ void CycleDeadEnd(Vec2Si32 pos) {
 Sound g_music;
 
 void PlayIntro() {
-  ResizeScreen(320, 200);
+  ResizeScreen(10, 10);
   Sprite sp0;
-  sp0.Create(320, 200);
+  sp0.Create(ScreenSize().x, ScreenSize().y);
   while (!IsAnyKeyDownward()) {
     Si32 x = MousePos().x;
     Si32 y = MousePos().y;
-    x = Clamp(x, 0, 319);
-    y = Clamp(y, 0, 199);
+    x = Clamp(x, 0, sp0.Width() - 1);
+    y = Clamp(y, 0, sp0.Height() - 1);
     sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 255, 255, 255).rgba;
     sp0.Draw(0, 0);
     ShowFrame();
   }
+  ResizeScreen(320, 200);
+  sp0.Create(320, 200);
 
   char data[10] = "123456789";
   WriteFile("data/test.data", reinterpret_cast<Ui8*>(data), 10);
