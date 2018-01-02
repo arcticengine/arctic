@@ -35,6 +35,8 @@ void Fatal(const char *error_message, const char *message_postfix = nullptr);
 void Swap();
 bool IsVSyncSupported();
 bool SetVSync(bool is_enable);
+bool IsFullScreen();
+void SetFullScreen(bool is_enable);
 void StartSoundBuffer(easy::Sound sound, float volume);
 void StopSoundBuffer(easy::Sound sound);
 
