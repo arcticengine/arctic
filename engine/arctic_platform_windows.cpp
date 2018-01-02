@@ -156,6 +156,7 @@ static const PIXELFORMATDESCRIPTOR pfd = {
 
 struct SystemInfo {
   HWND window_handle;
+  HWND inner_window_handle;
   Si32 screen_width;
   Si32 screen_height;
 };
@@ -339,6 +340,13 @@ void SetFullScreen(bool is_enable) {
 		SetWindowPos(g_system_info.window_handle, 0, 0, 0, 0, 0,
 			SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOZORDER);		
 	}
+  RECT client_rect;
+  GetClientRect(g_system_info.window_handle, &client_rect);
+  SetWindowPos(g_system_info.inner_window_handle, 0, 0, 0,
+    client_rect.right - client_rect.left,
+    client_rect.bottom - client_rect.top,
+    SWP_NOZORDER);
+
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
@@ -353,6 +361,8 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
 LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
     WPARAM word_param, LPARAM long_param) {
   switch (message) {
+    case WM_ERASEBKGND:
+      return 1;
     case WM_PAINT:
       {
         PAINTSTRUCT ps;
@@ -372,30 +382,6 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
         ToggleFullscreen();
       }
       break;
-    case WM_LBUTTONUP:
-      arctic::OnMouse(kKeyMouseLeft, word_param, long_param, false);
-      break;
-    case WM_LBUTTONDOWN:
-      arctic::OnMouse(kKeyMouseLeft, word_param, long_param, true);
-      break;
-    case WM_RBUTTONUP:
-      arctic::OnMouse(kKeyMouseRight, word_param, long_param, false);
-      break;
-    case WM_RBUTTONDOWN:
-      arctic::OnMouse(kKeyMouseRight, word_param, long_param, true);
-      break;
-    case WM_MBUTTONUP:
-      arctic::OnMouse(kKeyMouseWheel, word_param, long_param, false);
-      break;
-    case WM_MBUTTONDOWN:
-      arctic::OnMouse(kKeyMouseWheel, word_param, long_param, true);
-      break;
-    case WM_MOUSEMOVE:
-      arctic::OnMouse(kKeyCount, word_param, long_param, false);
-      break;
-    case WM_MOUSEWHEEL:
-      arctic::OnMouseWheel(word_param, long_param);
-      break;
     case WM_DESTROY:
       PostQuitMessage(0);
       break;
@@ -405,10 +391,55 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
   return 0;
 }
 
+LRESULT CALLBACK InnerWndProc(HWND inner_window_handle, UINT message,
+    WPARAM word_param, LPARAM long_param) {
+  switch (message) {
+      case WM_ERASEBKGND:
+        return 1;
+      case WM_PAINT:
+      {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(inner_window_handle, &ps);
+        // TODO(Huldra): Add any drawing code that uses hdc here...
+        EndPaint(inner_window_handle, &ps);
+        break;
+      }
+      case WM_LBUTTONUP:
+        arctic::OnMouse(kKeyMouseLeft, word_param, long_param, false);
+        break;
+      case WM_LBUTTONDOWN:
+        arctic::OnMouse(kKeyMouseLeft, word_param, long_param, true);
+        break;
+      case WM_RBUTTONUP:
+        arctic::OnMouse(kKeyMouseRight, word_param, long_param, false);
+        break;
+      case WM_RBUTTONDOWN:
+        arctic::OnMouse(kKeyMouseRight, word_param, long_param, true);
+        break;
+      case WM_MBUTTONUP:
+        arctic::OnMouse(kKeyMouseWheel, word_param, long_param, false);
+        break;
+      case WM_MBUTTONDOWN:
+        arctic::OnMouse(kKeyMouseWheel, word_param, long_param, true);
+        break;
+      case WM_MOUSEMOVE:
+        arctic::OnMouse(kKeyCount, word_param, long_param, false);
+        break;
+      case WM_MOUSEWHEEL:
+        arctic::OnMouseWheel(word_param, long_param);
+        break;
+      default:
+        return DefWindowProc(inner_window_handle, message, word_param, long_param);
+  }
+  return 0;
+}
+
+
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
     SystemInfo *system_info) {
-  WCHAR title_bar_text[] = {L"Arctic Engine"};
-  WCHAR window_class_name[] = {L"ArcticEngineWindowClass"};
+  char title_bar_text[] = {"Arctic Engine"};
+  char window_class_name[] = {"ArcticEngineWindowClass"};
+  char inner_window_class_name[] = {"ArcticEngineInnterWindowClass"};
 
   Si32 screen_width = GetSystemMetrics(SM_CXSCREEN);
   Si32 screen_height = GetSystemMetrics(SM_CYSCREEN);
@@ -438,10 +469,10 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   }
   }*/
 
-  WNDCLASSEXW wcex;
+  WNDCLASSEX wcex;
   memset(&wcex, 0, sizeof(wcex));
-  wcex.cbSize = sizeof(WNDCLASSEX);
-  wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+  wcex.cbSize = sizeof(wcex);
+  wcex.style = CS_HREDRAW | CS_VREDRAW;
   wcex.lpfnWndProc = arctic::WndProc;
   wcex.cbClsExtra = 0;
   wcex.cbWndExtra = 0;
@@ -454,17 +485,39 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   // wcex.hIconSm = LoadIcon(wcex.hInstance,
   //      MAKEINTRESOURCE(IDI_SMALL_APP_ICON));
 
-  ATOM register_class_result = RegisterClassExW(&wcex);
+  ATOM register_class_result = RegisterClassEx(&wcex);
 
   g_window_width = screen_width;
   g_window_height = screen_height;
 
-  HWND window_handle = CreateWindowExW(WS_EX_APPWINDOW,
-      window_class_name, title_bar_text,
-      WS_OVERLAPPEDWINDOW,
-      0, 0, screen_width, screen_height, nullptr, nullptr,
-      instance_handle, nullptr);
+  HWND window_handle = CreateWindowExA(WS_EX_APPWINDOW,
+    window_class_name, title_bar_text,
+    WS_OVERLAPPEDWINDOW,
+    0, 0, screen_width, screen_height, nullptr, nullptr,
+    instance_handle, nullptr);
   if (!window_handle) {
+    return false;
+  }
+
+  memset(&wcex, 0, sizeof(wcex));
+  wcex.cbSize = sizeof(wcex);
+  wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+  wcex.lpfnWndProc = arctic::InnerWndProc;
+  wcex.hInstance = instance_handle;
+  wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+  wcex.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+  wcex.lpszClassName = inner_window_class_name;
+
+  ATOM register_inner_class_result = RegisterClassEx(&wcex);
+
+  RECT client_rect;
+  GetClientRect(window_handle, &client_rect);
+  HWND inner_window_handle = CreateWindowExA(0,
+    inner_window_class_name, "", WS_CHILD | WS_VISIBLE, 0, 0, 
+    client_rect.right - client_rect.left,
+    client_rect.bottom - client_rect.top,
+    window_handle, 0, instance_handle, 0);
+  if (!inner_window_handle) {
     return false;
   }
 
@@ -473,6 +526,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
 
   Check(!!system_info, "Error, system_info: nullptr in CreateMainWindow");
   system_info->window_handle = window_handle;
+  system_info->inner_window_handle = inner_window_handle;
   system_info->screen_width = screen_width;
   system_info->screen_height = screen_height;
   return true;
@@ -648,7 +702,7 @@ void SoundMixerThreadFunction() {
 void EngineThreadFunction(SystemInfo system_info) {
   //  Init opengl start
 
-  HDC hdc = GetDC(system_info.window_handle);
+  HDC hdc = GetDC(system_info.inner_window_handle);
   Check(hdc != nullptr, "Can't get the Device Context. Code: WIN01.");
 
   unsigned int pixel_format = ChoosePixelFormat(hdc, &pfd);
@@ -677,12 +731,20 @@ void Swap() {
   BOOL res = SwapBuffers(hdc);
   CheckWithLastError(res != FALSE, "SwapBuffers error in Swap.");
 
+  RECT client_rect;
+  GetClientRect(g_system_info.window_handle, &client_rect);
 
-  RECT rect;
-  res = GetClientRect(g_system_info.window_handle, &rect);
-  g_window_width = rect.right;
-  g_window_height = rect.bottom;
-  arctic::easy::GetEngine()->OnWindowResize(rect.right, rect.bottom);
+  Si32 wid = client_rect.right - client_rect.left;
+  Si32 hei = client_rect.bottom - client_rect.top;
+  if (g_window_width != wid || g_window_height != hei) {
+    SetWindowPos(g_system_info.inner_window_handle, 0, 0, 0,
+      wid, hei, SWP_NOZORDER);
+    RECT rect;
+    res = GetClientRect(g_system_info.inner_window_handle, &rect);
+    g_window_width = wid;
+    g_window_height = hei;
+    arctic::easy::GetEngine()->OnWindowResize(rect.right, rect.bottom);
+  }
 }
 
 bool IsVSyncSupported() {

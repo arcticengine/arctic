@@ -358,7 +358,11 @@ void PlayIntro() {
     Si32 y = MousePos().y;
     x = Clamp(x, 0, sp0.Width() - 1);
     y = Clamp(y, 0, sp0.Height() - 1);
-    sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 255, 255, 255).rgba;
+    if (IsKeyDown(kKeyMouseLeft)) {
+      sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 0, 0, 255).rgba;
+    } else {
+      sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 255, 255, 255).rgba;
+    }
     sp0.Draw(0, 0);
     ShowFrame();
   }
