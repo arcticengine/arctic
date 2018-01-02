@@ -122,6 +122,10 @@ static bool g_is_full_screen = false;
   }
   [g_main_window makeFirstResponder: g_main_view];
   g_is_full_screen = !g_is_full_screen;
+  
+  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+  arctic::easy::GetEngine()->OnWindowResize(
+      rect.size.width, rect.size.height);
 }
 @end
 
