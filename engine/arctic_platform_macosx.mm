@@ -844,6 +844,16 @@ bool SetVSync(bool is_enable) {
   return true;
 }
 
+bool IsFullScreen() {
+  return g_is_full_screen;
+}
+
+void SetFullScreen(bool is_enable) {
+  if (is_enable == g_is_full_screen) {
+    return;
+  }
+  [g_app_delegate fullScreenToggle: nil];
+}
 
 }  // namespace arctic
 
