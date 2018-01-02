@@ -120,18 +120,18 @@ struct SystemInfo {
   Si32 screen_height;
 };
 
-static Si32 window_width = 0;
-static Si32 window_height = 0;
-static Si32 last_mouse_x = 0;
-static Si32 last_mouse_y = 0;
-static Display *x_display;
-static Window x_window;
-static Colormap x_color_map;
-static XVisualInfo *glx_visual;
+static Si32 g_window_width = 0;
+static Si32 g_window_height = 0;
+static Si32 g_last_mouse_x = 0;
+static Si32 g_last_mouse_y = 0;
+static Display *g_x_display;
+static Window g_x_window;
+static Colormap g_x_color_map;
+static XVisualInfo *g_glx_visual;
 static const int kXEventMask = KeyPressMask | KeyReleaseMask | ButtonPressMask
   | ButtonReleaseMask | PointerMotionMask | ExposureMask
   | StructureNotifyMask;
-static GLXContext glx_context;
+static GLXContext g_glx_context;
 
 KeyCode TranslateKeyCode(KeySym ks) {
   if (ks >= XK_a && ks <= XK_z) {
@@ -356,14 +356,14 @@ KeyCode TranslateKeyCode(KeySym ks) {
 
 
 void OnMouse(KeyCode key, Si32 mouse_x, Si32 mouse_y, bool is_down) {
-  Check(window_width != 0, "Could not obtain window width in OnMouse");
-  Check(window_height != 0, "Could not obtain window height in OnMouse");
-  last_mouse_x = mouse_x;
-  last_mouse_y = mouse_y;
+  Check(g_window_width != 0, "Could not obtain window width in OnMouse");
+  Check(g_window_height != 0, "Could not obtain window height in OnMouse");
+  g_last_mouse_x = mouse_x;
+  g_last_mouse_y = mouse_y;
   Si32 x = mouse_x;
-  Si32 y = window_height - mouse_y;
-  Vec2F pos(static_cast<float>(x) / static_cast<float>(window_width - 1),
-      static_cast<float>(y) / static_cast<float>(window_height - 1));
+  Si32 y = g_window_height - mouse_y;
+  Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
+      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = key;
@@ -374,17 +374,17 @@ void OnMouse(KeyCode key, Si32 mouse_x, Si32 mouse_y, bool is_down) {
 }
 
 void OnMouseWheel(bool is_down) {
-  Check(window_width != 0, "Could not obtain window width in OnMouseWheel");
-  Check(window_height != 0,
+  Check(g_window_width != 0, "Could not obtain window width in OnMouseWheel");
+  Check(g_window_height != 0,
       "Could not obtain window height in OnMouseWheel");
 
   Si32 z_delta = is_down ? -1 : 1;
 
-  Si32 x = last_mouse_x;
-  Si32 y = window_height - last_mouse_y;
+  Si32 x = g_last_mouse_x;
+  Si32 y = g_window_height - g_last_mouse_y;
 
-  Vec2F pos(static_cast<float>(x) / static_cast<float>(window_width - 1),
-      static_cast<float>(y) / static_cast<float>(window_height - 1));
+  Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
+      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = kKeyCount;
@@ -405,15 +405,15 @@ void OnKey(KeyCode key, bool is_down) {
 
 void PumpMessages() {
   XEvent ev;
-  while (True == XCheckWindowEvent(x_display, x_window,
+  while (True == XCheckWindowEvent(g_x_display, g_x_window,
         KeyPressMask | KeyReleaseMask, &ev)) {
-    KeySym ks = XkbKeycodeToKeysym(x_display, ev.xkey.keycode, 0, 0);
+    KeySym ks = XkbKeycodeToKeysym(g_x_display, ev.xkey.keycode, 0, 0);
     if (ks) {
       arctic::KeyCode key = TranslateKeyCode(ks);
       if (key == kKeyUnknown) {
-        ::KeyCode kcode = XKeysymToKeycode(x_display, ks);
+        ::KeyCode kcode = XKeysymToKeycode(g_x_display, ks);
         if (kcode != 0) {
-          ks = XkbKeycodeToKeysym(x_display, kcode, 0, 0);
+          ks = XkbKeycodeToKeysym(g_x_display, kcode, 0, 0);
           key = TranslateKeyCode(ks);
           std::cerr << "ks: " << ks << " key: " << key << std::endl;
         }
@@ -423,7 +423,7 @@ void PumpMessages() {
     }
   }
 
-  while (True == XCheckWindowEvent(x_display, x_window,
+  while (True == XCheckWindowEvent(g_x_display, g_x_window,
         ButtonPressMask | ButtonReleaseMask | PointerMotionMask, &ev)) {
     if (ButtonPress == ev.type || ButtonRelease == ev.type) {
       if (ev.xbutton.button == Button4) {
@@ -469,13 +469,13 @@ void PumpMessages() {
   }
 
   if (True == XCheckTypedWindowEvent(
-        x_display, x_window, ConfigureNotify, &ev)) {
-    window_width = ev.xconfigure.width;
-    window_height = ev.xconfigure.height;
+        g_x_display, g_x_window, ConfigureNotify, &ev)) {
+    g_window_width = ev.xconfigure.width;
+    g_window_height = ev.xconfigure.height;
   }
 
   if (True == XCheckTypedWindowEvent(
-        x_display, x_window, DestroyNotify, &ev)) {
+        g_x_display, g_x_window, DestroyNotify, &ev)) {
     exit(0);
   }
 
@@ -486,62 +486,62 @@ void PumpMessages() {
 void CreateMainWindow(SystemInfo *system_info) {
   const char *title = "Arctic Engine";
 
-  x_display = XOpenDisplay(NULL);
-  Check(x_display != NULL, "Can't open display.");
+  g_x_display = XOpenDisplay(NULL);
+  Check(g_x_display != NULL, "Can't open display.");
 
   XWindowAttributes window_attributes;
-  Status is_good = XGetWindowAttributes(x_display,
-      RootWindow(x_display, DefaultScreen(x_display)),
+  Status is_good = XGetWindowAttributes(g_x_display,
+      RootWindow(g_x_display, DefaultScreen(g_x_display)),
       &window_attributes);
   Check(is_good != 0, "Can't get window attributes.");
-  window_width = window_attributes.width;
-  window_height = window_attributes.height;
+  g_window_width = window_attributes.width;
+  g_window_height = window_attributes.height;
 
-  Bool is_ok = glXQueryExtension(x_display, NULL, NULL);
+  Bool is_ok = glXQueryExtension(g_x_display, NULL, NULL);
   Check(is_ok, "Can't find OpenGL via glXQueryExtension.");
 
-  glx_visual = glXChooseVisual(x_display,
-      DefaultScreen(x_display), glx_config);
-  Check(glx_visual != NULL, "Can't choose visual via glXChooseVisual.");
+  g_glx_visual = glXChooseVisual(g_x_display,
+      DefaultScreen(g_x_display), glx_config);
+  Check(g_glx_visual != NULL, "Can't choose visual via glXChooseVisual.");
 
-  x_color_map = XCreateColormap(x_display,
-      RootWindow(x_display, glx_visual->screen),
-      glx_visual->visual,
+  g_x_color_map = XCreateColormap(g_x_display,
+      RootWindow(g_x_display, g_glx_visual->screen),
+      g_glx_visual->visual,
       AllocNone);
 
-  glx_context = glXCreateContext(
-      x_display, glx_visual, None, GL_TRUE);
-  Check(glx_context != NULL, "Can't create context via glXCreateContext.");
+  g_glx_context = glXCreateContext(
+      g_x_display, g_glx_visual, None, GL_TRUE);
+  Check(g_glx_context != NULL, "Can't create context via glXCreateContext.");
 
   XSetWindowAttributes swa;
-  swa.colormap = x_color_map;
+  swa.colormap = g_x_color_map;
   swa.border_pixel = 0;
   swa.event_mask = kXEventMask;
 
-  x_window = XCreateWindow(x_display,
-      RootWindow(x_display, glx_visual->screen),
-      0, 0, window_width, window_height,
+  g_x_window = XCreateWindow(g_x_display,
+      RootWindow(g_x_display, g_glx_visual->screen),
+      0, 0, g_window_width, g_window_height,
       1,
-      glx_visual->depth,
+      g_glx_visual->depth,
       InputOutput,
-      glx_visual->visual,
+      g_glx_visual->visual,
       CWEventMask | CWBorderPixel | CWColormap, &swa);
 
 
-  system_info->screen_width = window_width;
-  system_info->screen_height = window_height;
+  system_info->screen_width = g_window_width;
+  system_info->screen_height = g_window_height;
 
-  XStoreName(x_display, x_window, title);
+  XStoreName(g_x_display, g_x_window, title);
 
   XWMHints wmHints;
   wmHints.flags = 0;
   wmHints.initial_state = NormalState;
-  XSetWMHints(x_display, x_window, &wmHints);
+  XSetWMHints(g_x_display, g_x_window, &wmHints);
 
-  XSetIconName(x_display, x_window, title);
-  XMapWindow(x_display, x_window);
+  XSetIconName(g_x_display, g_x_window, title);
+  XMapWindow(g_x_display, g_x_window);
 
-  glXMakeCurrent(x_display, x_window, glx_context);
+  glXMakeCurrent(g_x_display, g_x_window, g_glx_context);
 
   glClearColor(1.0F, 1.0F, 1.0F, 0.0F);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -602,9 +602,9 @@ float GetMasterVolume() {
 
 void Swap() {
   glFlush();
-  glXSwapBuffers(x_display, x_window);
+  glXSwapBuffers(g_x_display, g_x_window);
   PumpMessages();
-  arctic::easy::GetEngine()->OnWindowResize(window_width, window_height);
+  arctic::easy::GetEngine()->OnWindowResize(g_window_width, g_window_height);
 }
 
 bool IsVSyncSupported() {
@@ -627,6 +627,14 @@ bool SetVSync(bool is_enable) {
     return true;
   }
   return false;
+}
+
+bool IsFullScreen() {
+  return false;
+}
+
+void SetFullScreen(bool/* is_enable*/) {
+  return;
 }
 
 static unsigned int g_buffer_time_us = 50000;
@@ -869,7 +877,7 @@ int main() {
 
   EasyMain();
 
-  XCloseDisplay(arctic::x_display);
+  XCloseDisplay(arctic::g_x_display);
   arctic::StopSoundMixer();
 
   return 0;
