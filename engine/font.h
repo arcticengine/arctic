@@ -346,7 +346,7 @@ struct Font {
       if (end != p) {
         memcpy(path, p, end - p);
       }
-      strcpy(path + (end - p), page.page_name);
+      strncpy(path + (end - p), page.page_name, sizeof(path) / 2);
       page_images[id].Load(path);
       
       inner_pos += static_cast<Si32>(std::strlen(page.page_name)) + 1;
@@ -376,7 +376,7 @@ struct Font {
     }
     pos += block_size;
     
-    if (file.size() > pos) {
+    if (static_cast<Si32>(file.size()) > pos) {
       block_type = file[pos];
       ++pos;
       block_size = *reinterpret_cast<Si32*>(&file[pos]);
