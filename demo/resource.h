@@ -2,7 +2,6 @@
 // Microsoft Visual C++ generated include file.
 // Used by demo.rc
 //
-#define IDS_APP_TITLE                   103
 #define IDI_APP_ICON                    107
 #define IDI_SMALL_APP_ICON              108
 #define IDC_DEMO                        109

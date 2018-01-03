@@ -28,12 +28,12 @@
 namespace arctic {
 
 class ByteArray {
-  private:
+ private:
     Ui64 allocated_size_;
     Ui64 size_;
     Ui8 *data_;
 
-  public:
+ public:
     ByteArray();
     explicit ByteArray(Ui64 size);
     ~ByteArray();

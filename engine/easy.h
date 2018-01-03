@@ -72,7 +72,6 @@ bool IsAnyKeyUpward();
 
 void SetKey(const KeyCode key_code, bool is_set_down);
 void SetKey(const char key, bool is_set_down);
-  
 
 Vec2Si32 MousePos();
 Vec2Si32 MouseMove();

@@ -125,7 +125,7 @@ struct Vec3Si32 {
   const bool operator!= (const Vec3Si32 &v) const {
     return x != v.x || y != v.y || z != v.z;
   }
-  
+
   Vec2Si32 xx() const {
     return Vec2Si32(x, x);
   }
@@ -153,7 +153,7 @@ struct Vec3Si32 {
   Vec2Si32 zz() const {
     return Vec2Si32(z, z);
   }
-  
+
   Vec3Si32 xxx() const {
     return Vec3Si32(x, x, x);
   }

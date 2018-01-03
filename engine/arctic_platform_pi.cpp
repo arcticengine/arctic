@@ -855,7 +855,7 @@ void StartSoundMixer() {
 void StopSoundMixer() {
   g_sound_mixer_state.do_quit = true;
   sound_thread.join();
-  
+
   if (g_data.ahandler) {
     int err = snd_async_del_handler(g_data.ahandler);
     Check(err >= 0, "Can't delete async sound handler", snd_strerror(err));
