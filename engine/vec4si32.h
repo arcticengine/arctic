@@ -134,7 +134,7 @@ struct Vec4Si32 {
   const bool operator!= (const Vec4Si32 &v) const {
       return x != v.x || y != v.y || z != v.z || w != v.w;
   }
-  
+
   Vec2Si32 xx() const {
     return Vec2Si32(x, x);
   }
@@ -165,7 +165,7 @@ struct Vec4Si32 {
   Vec2Si32 wz() const {
     return Vec2Si32(w, z);
   }
-  
+
   Vec3Si32 xxx() const {
     return Vec3Si32(x, x, x);
   }

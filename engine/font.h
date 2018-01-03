@@ -58,27 +58,28 @@ struct BmFontBinHeader {
 
 struct BmFontBinInfo {
   enum Bits {
-		kSmooth = 128,
-		kUnicode = 64,
-		kItalic = 32,
-		kBold = 16,
-		kFixedHeight = 8
-	};
-  
-	Si16 font_size;
+    kSmooth = 128,
+    kUnicode = 64,
+    kItalic = 32,
+    kBold = 16,
+    kFixedHeight = 8
+  };
+
+  Si16 font_size;
   Ui8 bits;
-	Ui8 char_set;
-	Ui16 stretch_h;
-	Ui8 aa;
-	Ui8 padding_up;
-	Ui8 padding_right;
-	Ui8 padding_down;
-	Ui8 padding_left;
-	Ui8 spacing_horiz;
-	Ui8 spacing_vert;
-	Ui8 outline;
-	char *font_name;	// n+1	string	14	null terminated string with length n
-	// This structure gives the layout of the fields.
+  Ui8 char_set;
+  Ui16 stretch_h;
+  Ui8 aa;
+  Ui8 padding_up;
+  Ui8 padding_right;
+  Ui8 padding_down;
+  Ui8 padding_left;
+  Ui8 spacing_horiz;
+  Ui8 spacing_vert;
+  Ui8 outline;
+  char *font_name;  // n+1 string
+  // 14 null terminated string with length n
+  // This structure gives the layout of the fields.
   // Remember that there should be no padding between members.
   // Allocate the size of the block using the blockSize,
   // as following the block comes the font name,
@@ -109,19 +110,19 @@ struct BmFontBinInfo {
 
 struct BmFontBinCommon {
   enum Bits {
-		kPacked = 1
-	};
+    kPacked = 1
+  };
 
-	Ui16 line_height;
-	Ui16 base;
-	Ui16 scale_w;
-	Ui16 scale_h;
-	Ui16 pages;
+  Ui16 line_height;
+  Ui16 base;
+  Ui16 scale_w;
+  Ui16 scale_h;
+  Ui16 pages;
   Ui8 bits;
-	Ui8 alpha_chnl;
-	Ui8 red_chnl;
-	Ui8 green_chnl;
-	Ui8 blue_chnl;
+  Ui8 alpha_chnl;
+  Ui8 red_chnl;
+  Ui8 green_chnl;
+  Ui8 blue_chnl;
   void Log() {
     // TODO(Huldra): Use log here
     std::cerr << "common";
@@ -140,10 +141,10 @@ struct BmFontBinCommon {
 };
 
 struct BmFontBinPages {
-	char *page_name;	 // p*(n+1)	strings	0	p null terminated strings,
-                         // each with length n
-    // This block gives the name of each texture file with the image data
-    // for the characters. The string pageNames holds the names separated
+  char *page_name;  // p*(n+1) strings 0 p null terminated strings,
+                    // each with length n
+  // This block gives the name of each texture file with the image data
+  // for the characters. The string pageNames holds the names separated
   // and terminated by null chars. Each filename has the same length,
   // so once you know the size of the first name, you can easily
   // determine the position of each of the names. The id of each page
@@ -158,18 +159,18 @@ struct BmFontBinPages {
 };
 
 struct BmFontBinChars {
-	Ui32 id;  // These fields are repeated until all characters have been
+  Ui32 id;  // These fields are repeated until all characters have been
               // described
-	Ui16 x;
-	Ui16 y;
-	Ui16 width;
-	Ui16 height;
-	Si16 xoffset;
-	Si16 yoffset;
-	Si16 xadvance;
-	Ui8 page;
-	Ui8 chnl;
-	// The number of characters in the file can be computed by taking the
+  Ui16 x;
+  Ui16 y;
+  Ui16 width;
+  Ui16 height;
+  Si16 xoffset;
+  Si16 yoffset;
+  Si16 xadvance;
+  Ui8 page;
+  Ui8 chnl;
+  // The number of characters in the file can be computed by taking the
   // size of the block and dividing with the size of the charInfo structure,
   // i.e.: numChars = charsBlock.blockSize/20.
   void Log() {
@@ -190,11 +191,11 @@ struct BmFontBinChars {
 };
 
 struct BmFontBinKerningPair {
-	// kerning pairs
-	Ui32 first;  // These fields are repeated until all kerning pairs have been
+  // kerning pairs
+  Ui32 first;  // These fields are repeated until all kerning pairs have been
                // described
-	Ui32 second;
-	Si16 amount;
+  Ui32 second;
+  Si16 amount;
   void Log() {
     // TODO(Huldra): Use log here
     std::cerr << "kerning";
@@ -205,20 +206,20 @@ struct BmFontBinKerningPair {
   }
 };
 #pragma pack(pop)
-  
+
 struct Utf32Reader {
   const Ui8 *begin = nullptr;
   const Ui8 *p = nullptr;
-  
+
   void Reset(const Ui8 *data) {
     begin = data;
     p = data;
   }
-  
+
   void Rewind() {
     p = begin;
   }
-  
+
   Ui32 ReadOne() {
     while (true) {
       Ui32 u = 0;
@@ -241,16 +242,16 @@ struct Utf32Reader {
         // 1110xxxx 10xxxxxx 10xxxxxx
         if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80) {
           u = (Ui32(p[0] & 0x0f) << 12) | (Ui32(p[1] & 0x3f) << 6) |
-              (Ui32(p[2] & 0x3f));
+            (Ui32(p[2] & 0x3f));
           p += 3;
           return u;
         }
       } else if ((p[0] & 0xf8) == 0xf0) {
         // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
         if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80 &&
-            (p[3] & 0xc0) == 0x80) {
+          (p[3] & 0xc0) == 0x80) {
           u = (Ui32(p[0] & 0x07) << 18) | (Ui32(p[1] & 0x3f) << 12) |
-              (Ui32(p[2] & 0x3f) << 6) | (Ui32(p[3] & 0x3f));
+            (Ui32(p[2] & 0x3f) << 6) | (Ui32(p[3] & 0x3f));
           p += 4;
           return u;
         }
@@ -264,46 +265,45 @@ struct Glyph {
   Ui32 codepoint;
   Si32 xadvance;
   easy::Sprite sprite;
-  
+
   Glyph(Ui32 in_codepoint, Si32 in_xadvance, easy::Sprite in_sprite)
     : codepoint(in_codepoint)
     , xadvance(in_xadvance)
-    , sprite(in_sprite)
-  {
+    , sprite(in_sprite) {
   }
 };
 
 struct Font {
   std::vector<Glyph*> codepoint;
   std::list<Glyph> glyph;
-  
+
   void Load(const char *file_name) {
     codepoint.clear();
     glyph.clear();
-    
-    
+
+
     std::vector<Ui8> file = easy::ReadFile(file_name);
     Si32 pos = 0;
     BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
     header->Log();
     pos += sizeof(BmFontBinHeader);
-    
+
     Si8 block_type = file[pos];
     ++pos;
     Si32 block_size = *reinterpret_cast<Si32*>(&file[pos]);
     pos += sizeof(Si32);
     Check(block_type == kBlockInfo, "Unexpected block type 1");
-  
+
     Check(block_size >=
-        sizeof(BmFontBinInfo) - sizeof(BmFontBinInfo::font_name),
-        "Info block is too small");
+      sizeof(BmFontBinInfo) - sizeof(BmFontBinInfo::font_name),
+      "Info block is too small");
     BmFontBinInfo info;
     memcpy(&info, &file[pos], sizeof(info) - sizeof(info.font_name));
     info.font_name = reinterpret_cast<char*>(
-        &file[pos + sizeof(info) - sizeof(info.font_name)]);
+      &file[pos + sizeof(info) - sizeof(info.font_name)]);
     info.Log();
     pos += block_size;
-    
+
     block_type = file[pos];
     ++pos;
     block_size = *reinterpret_cast<Si32*>(&file[pos]);
@@ -328,13 +328,13 @@ struct Font {
       BmFontBinPages page;
       page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
       page.Log(id);
-  
+
       char path[65536];
       const char *p = file_name;
       Check(strlen(file_name) < sizeof(path) / 2, "File name is too long: ",
-            file_name);
+        file_name);
       Check(strlen(page.page_name) < sizeof(path) / 2,
-            "File name is too long: ", page.page_name);
+        "File name is too long: ", page.page_name);
       const char *p2 = p;
       const char *end = p;
       while (*p2) {
@@ -348,7 +348,7 @@ struct Font {
       }
       strncpy(path + (end - p), page.page_name, sizeof(path) / 2);
       page_images[id].Load(path);
-      
+
       inner_pos += static_cast<Si32>(std::strlen(page.page_name)) + 1;
     }
     pos += block_size;
@@ -361,21 +361,21 @@ struct Font {
     inner_pos = pos;
     for (Si32 id = 0; id < block_size / 20; ++id) {
       BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(
-          &file[inner_pos]);
+        &file[inner_pos]);
       chars->Log();
-      
+
       easy::Sprite sprite;
       sprite.Reference(page_images[chars->page],
-          chars->x, page_images[chars->page].Height() - chars->y - chars->height,
-          chars->width, chars->height);
+        chars->x, page_images[chars->page].Height() - chars->y - chars->height,
+        chars->width, chars->height);
       sprite.SetPivot(arctic::Vec2Si32(
-          chars->xoffset, chars->height + chars->yoffset - common->base));
+        chars->xoffset, chars->height + chars->yoffset - common->base));
       glyph.emplace_back(chars->id, chars->xadvance, sprite);
-      
+
       inner_pos += 20;
     }
     pos += block_size;
-    
+
     if (static_cast<Si32>(file.size()) > pos) {
       block_type = file[pos];
       ++pos;
@@ -383,17 +383,17 @@ struct Font {
       pos += sizeof(Si32);
       Check(block_type == kBlockKerningPairs, "Unexpected block type 5");
       Check(block_size >= sizeof(BmFontBinKerningPair),
-            "KerningPair block is too small");
+        "KerningPair block is too small");
       inner_pos = pos;
       for (Si32 id = 0; id < block_size / 10; ++id) {
         BmFontBinKerningPair *kerning_pair =
-            reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
+          reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
         kerning_pair->Log();
         inner_pos += 10;
       }
       pos += block_size;
     }
-    ////////
+
     Ui32 end_codepoint = 0;
     for (auto it = glyph.begin(); it != glyph.end(); ++it) {
       if (it->codepoint >= end_codepoint) {
@@ -405,7 +405,7 @@ struct Font {
       codepoint[it->codepoint] = &(*it);
     }
   }
-  
+
   void Draw(const char *text, const Si32 x, const Si32 y) {
     Utf32Reader reader;
     reader.Reset(reinterpret_cast<const Ui8*>(text));
@@ -418,7 +418,6 @@ struct Font {
       if (code < codepoint.size() && codepoint[code]) {
         Glyph &glyph = *codepoint[code];
         glyph.sprite.Draw(next_x, y);
-        //next_x += glyph.sprite.Width();
         next_x += glyph.xadvance;
       }
     }

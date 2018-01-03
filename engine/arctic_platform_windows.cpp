@@ -84,7 +84,7 @@ Si32 ToBe(Si32 x) {
 }
 
 inline void Check(bool condition, const char *error_message,
-    const char *error_message_postfix) {
+  const char *error_message_postfix) {
   if (condition) {
     return;
   }
@@ -97,26 +97,26 @@ void Fatal(const char *message, const char *message_postfix) {
     (message_postfix ? strlen(message_postfix) : 0);
   char *full_message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
   sprintf_s(full_message, size, "%s%s", message,
-      (message_postfix ? message_postfix : ""));
+    (message_postfix ? message_postfix : ""));
   MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
   ExitProcess(1);
 }
 
 static void FatalWithLastError(const char* message_prefix,
-    const char* message_infix = nullptr,
-    const char* message_postfix = nullptr) {
+  const char* message_infix = nullptr,
+  const char* message_postfix = nullptr) {
   DWORD dw = GetLastError();
   char *message_info = "";
   char *message = "";
   FormatMessage(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER |
-      FORMAT_MESSAGE_FROM_SYSTEM |
-      FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL,
-      dw,
-      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      (LPTSTR)&message_info,
-      0, NULL);
+    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL,
+    dw,
+    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    (LPTSTR)&message_info,
+    0, NULL);
 
   size_t size = 1 +
     strlen(message_prefix) +
@@ -125,14 +125,14 @@ static void FatalWithLastError(const char* message_prefix,
     (message_postfix ? strlen(message_postfix) : 0);
   message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
   sprintf_s(message, size, "%s%s%s%s", message_prefix, message_info,
-      (message_infix ? message_infix : ""),
-      (message_postfix ? message_postfix : ""));
+    (message_infix ? message_infix : ""),
+    (message_postfix ? message_postfix : ""));
   Fatal(message);
 }
 
 static void CheckWithLastError(bool condition, const char *message_prefix,
-    const char *message_infix = nullptr,
-    const char *message_suffix = nullptr) {
+  const char *message_infix = nullptr,
+  const char *message_suffix = nullptr) {
   if (condition) {
     return;
   }
@@ -182,98 +182,98 @@ KeyCode TranslateKeyCode(WPARAM word_param) {
   }
 
   switch (word_param) {
-    case VK_LEFT:
-      return kKeyLeft;
-    case VK_RIGHT:
-      return kKeyRight;
-    case VK_UP:
-      return kKeyUp;
-    case VK_DOWN:
-      return kKeyDown;
-    case VK_BACK:
-      return kKeyBackspace;
-    case VK_TAB:
-      return kKeyTab;
-    case VK_RETURN:
-      return kKeyEnter;
-    case VK_HOME:
-      return kKeyHome;
-    case VK_END:
-      return kKeyEnd;
-    case VK_PRIOR:
-      return kKeyPageUp;
-    case VK_NEXT:
-      return kKeyPageDown;
-    case VK_SHIFT:
-      return kKeyShift;
-    case VK_LSHIFT:
-      return kKeyLeftShift;
-    case VK_RSHIFT:
-      return kKeyRightShift;
-    case VK_CONTROL:
-      return kKeyControl;
-    case VK_LCONTROL:
-      return kKeyLeftControl;
-    case VK_RCONTROL:
-      return kKeyRightControl;
-    case VK_MENU:
-      return kKeyAlt;
-    case VK_LMENU:
-      return kKeyLeftAlt;
-    case VK_RMENU:
-      return kKeyRightAlt;
-    case VK_ESCAPE:
-      return kKeyEscape;
-    case VK_SPACE:
-      return kKeySpace;
-    case VK_PAUSE:
-      return kKeyPause;
-    case VK_NUMLOCK:
-      return kKeyNumLock;
-    case VK_SCROLL:
-      return kKeyScrollLock;
-    case VK_CAPITAL:
-      return kKeyCapsLock;
-    case VK_SNAPSHOT:
-      return kKeyPrintScreen;
-    case VK_INSERT:
-      return kKeyInsert;
-    case VK_DELETE:
-      return kKeyDelete;
-    case VK_DIVIDE:
-      return kKeyNumpadSlash;
-    case VK_MULTIPLY:
-      return kKeyNumpadAsterisk;
-    case VK_SUBTRACT:
-      return kKeyNumpadMinus;
-    case VK_ADD:
-      return kKeyNumpadPlus;
-    case VK_DECIMAL:
-      return kKeyNumpadPeriod;
-    case VK_OEM_COMMA:
-      return kKeyComma;
-    case VK_OEM_PERIOD:
-      return kKeyPeriod;
-    case VK_OEM_MINUS:
-      return kKeyMinus;
-    case VK_OEM_PLUS:
-      return kKeyEquals;
-    case VK_OEM_1:
-      return kKeySemicolon;
-    case VK_OEM_2:
-      return kKeySlash;
-    case VK_OEM_3:
-      return kKeyGraveAccent;
-    case VK_OEM_4:
-      return kKeyLeftSquareBracket;
-    case VK_OEM_5:
-      return kKeyBackslash;
-    case VK_OEM_6:
-      return kKeyRightSquareBracket;
-    case VK_OEM_7:
-      return kKeyApostrophe;
-    case VK_OEM_8:
-      return kKeySectionSign;
+  case VK_LEFT:
+    return kKeyLeft;
+  case VK_RIGHT:
+    return kKeyRight;
+  case VK_UP:
+    return kKeyUp;
+  case VK_DOWN:
+    return kKeyDown;
+  case VK_BACK:
+    return kKeyBackspace;
+  case VK_TAB:
+    return kKeyTab;
+  case VK_RETURN:
+    return kKeyEnter;
+  case VK_HOME:
+    return kKeyHome;
+  case VK_END:
+    return kKeyEnd;
+  case VK_PRIOR:
+    return kKeyPageUp;
+  case VK_NEXT:
+    return kKeyPageDown;
+  case VK_SHIFT:
+    return kKeyShift;
+  case VK_LSHIFT:
+    return kKeyLeftShift;
+  case VK_RSHIFT:
+    return kKeyRightShift;
+  case VK_CONTROL:
+    return kKeyControl;
+  case VK_LCONTROL:
+    return kKeyLeftControl;
+  case VK_RCONTROL:
+    return kKeyRightControl;
+  case VK_MENU:
+    return kKeyAlt;
+  case VK_LMENU:
+    return kKeyLeftAlt;
+  case VK_RMENU:
+    return kKeyRightAlt;
+  case VK_ESCAPE:
+    return kKeyEscape;
+  case VK_SPACE:
+    return kKeySpace;
+  case VK_PAUSE:
+    return kKeyPause;
+  case VK_NUMLOCK:
+    return kKeyNumLock;
+  case VK_SCROLL:
+    return kKeyScrollLock;
+  case VK_CAPITAL:
+    return kKeyCapsLock;
+  case VK_SNAPSHOT:
+    return kKeyPrintScreen;
+  case VK_INSERT:
+    return kKeyInsert;
+  case VK_DELETE:
+    return kKeyDelete;
+  case VK_DIVIDE:
+    return kKeyNumpadSlash;
+  case VK_MULTIPLY:
+    return kKeyNumpadAsterisk;
+  case VK_SUBTRACT:
+    return kKeyNumpadMinus;
+  case VK_ADD:
+    return kKeyNumpadPlus;
+  case VK_DECIMAL:
+    return kKeyNumpadPeriod;
+  case VK_OEM_COMMA:
+    return kKeyComma;
+  case VK_OEM_PERIOD:
+    return kKeyPeriod;
+  case VK_OEM_MINUS:
+    return kKeyMinus;
+  case VK_OEM_PLUS:
+    return kKeyEquals;
+  case VK_OEM_1:
+    return kKeySemicolon;
+  case VK_OEM_2:
+    return kKeySlash;
+  case VK_OEM_3:
+    return kKeyGraveAccent;
+  case VK_OEM_4:
+    return kKeyLeftSquareBracket;
+  case VK_OEM_5:
+    return kKeyBackslash;
+  case VK_OEM_6:
+    return kKeyRightSquareBracket;
+  case VK_OEM_7:
+    return kKeyApostrophe;
+  case VK_OEM_8:
+    return kKeySectionSign;
   }
   return kKeyUnknown;
 }
@@ -284,7 +284,7 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
   Si32 x = GET_X_LPARAM(long_param);
   Si32 y = g_window_height - GET_Y_LPARAM(long_param);
   Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
-      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
+    static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = key;
@@ -297,7 +297,7 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
 void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
   Check(g_window_width != 0, "Could not obtain window width in OnMouseWheel");
   Check(g_window_height != 0,
-      "Could not obtain window height in OnMouseWheel");
+    "Could not obtain window height in OnMouseWheel");
 
   Si32 fw_keys = GET_KEYSTATE_WPARAM(word_param);
   Si32 z_delta = GET_WHEEL_DELTA_WPARAM(word_param);
@@ -306,7 +306,7 @@ void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
   Si32 y = g_window_height - GET_Y_LPARAM(long_param);
 
   Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
-      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
+    static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = kKeyCount;
@@ -321,32 +321,33 @@ void ToggleFullscreen() {
 }
 
 bool IsFullScreen() {
-	return g_is_full_screen;
+  return g_is_full_screen;
 }
 
 void SetFullScreen(bool is_enable) {
-	if (is_enable == g_is_full_screen) {
-		return;
-	}
-	g_is_full_screen = is_enable;
-	if (g_is_full_screen) {
-	  SetWindowLong(g_system_info.window_handle, GWL_STYLE, WS_POPUP | WS_VISIBLE);
-	  ShowWindow(g_system_info.window_handle, SW_RESTORE);
-		SetWindowPos(g_system_info.window_handle, HWND_TOP, 0, 0, 0, 0,
-			SWP_FRAMECHANGED | SWP_NOSIZE);
-		ShowWindow(g_system_info.window_handle, SW_SHOWMAXIMIZED);
-	} else {
-		SetWindowLong(g_system_info.window_handle, GWL_STYLE, WS_OVERLAPPEDWINDOW | WS_VISIBLE);
-		SetWindowPos(g_system_info.window_handle, 0, 0, 0, 0, 0,
-			SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOZORDER);		
-	}
+  if (is_enable == g_is_full_screen) {
+    return;
+  }
+  g_is_full_screen = is_enable;
+  if (g_is_full_screen) {
+    SetWindowLong(g_system_info.window_handle, GWL_STYLE,
+      WS_POPUP | WS_VISIBLE);
+    ShowWindow(g_system_info.window_handle, SW_RESTORE);
+    SetWindowPos(g_system_info.window_handle, HWND_TOP, 0, 0, 0, 0,
+      SWP_FRAMECHANGED | SWP_NOSIZE);
+    ShowWindow(g_system_info.window_handle, SW_SHOWMAXIMIZED);
+  } else {
+    SetWindowLong(g_system_info.window_handle, GWL_STYLE,
+      WS_OVERLAPPEDWINDOW | WS_VISIBLE);
+    SetWindowPos(g_system_info.window_handle, 0, 0, 0, 0, 0,
+      SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOZORDER);
+  }
   RECT client_rect;
   GetClientRect(g_system_info.window_handle, &client_rect);
   SetWindowPos(g_system_info.inner_window_handle, 0, 0, 0,
     client_rect.right - client_rect.left,
     client_rect.bottom - client_rect.top,
     SWP_NOZORDER);
-
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
@@ -359,84 +360,85 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
 }
 
 LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
-    WPARAM word_param, LPARAM long_param) {
+  WPARAM word_param, LPARAM long_param) {
   switch (message) {
-    case WM_ERASEBKGND:
-      return 1;
-    case WM_PAINT:
-      {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(window_handle, &ps);
-        // TODO(Huldra): Add any drawing code that uses hdc here...
-        EndPaint(window_handle, &ps);
-        break;
-      }
-    case WM_KEYUP:
-      arctic::OnKey(word_param, long_param, false);
-      break;
-    case WM_KEYDOWN:
-      arctic::OnKey(word_param, long_param, true);
-      break;
-    case WM_SYSKEYDOWN:
-      if (word_param == VK_RETURN && (HIWORD(long_param) & KF_ALTDOWN)) {
-        ToggleFullscreen();
-      }
-      break;
-    case WM_DESTROY:
-      PostQuitMessage(0);
-      break;
-    default:
-      return DefWindowProc(window_handle, message, word_param, long_param);
+  case WM_ERASEBKGND:
+    return 1;
+  case WM_PAINT:
+  {
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(window_handle, &ps);
+    // TODO(Huldra): Add any drawing code that uses hdc here...
+    EndPaint(window_handle, &ps);
+    break;
+  }
+  case WM_KEYUP:
+    arctic::OnKey(word_param, long_param, false);
+    break;
+  case WM_KEYDOWN:
+    arctic::OnKey(word_param, long_param, true);
+    break;
+  case WM_SYSKEYDOWN:
+    if (word_param == VK_RETURN && (HIWORD(long_param) & KF_ALTDOWN)) {
+      ToggleFullscreen();
+    }
+    break;
+  case WM_DESTROY:
+    PostQuitMessage(0);
+    break;
+  default:
+    return DefWindowProc(window_handle, message, word_param, long_param);
   }
   return 0;
 }
 
 LRESULT CALLBACK InnerWndProc(HWND inner_window_handle, UINT message,
-    WPARAM word_param, LPARAM long_param) {
+  WPARAM word_param, LPARAM long_param) {
   switch (message) {
-      case WM_ERASEBKGND:
-        return 1;
-      case WM_PAINT:
-      {
-        PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(inner_window_handle, &ps);
-        // TODO(Huldra): Add any drawing code that uses hdc here...
-        EndPaint(inner_window_handle, &ps);
-        break;
-      }
-      case WM_LBUTTONUP:
-        arctic::OnMouse(kKeyMouseLeft, word_param, long_param, false);
-        break;
-      case WM_LBUTTONDOWN:
-        arctic::OnMouse(kKeyMouseLeft, word_param, long_param, true);
-        break;
-      case WM_RBUTTONUP:
-        arctic::OnMouse(kKeyMouseRight, word_param, long_param, false);
-        break;
-      case WM_RBUTTONDOWN:
-        arctic::OnMouse(kKeyMouseRight, word_param, long_param, true);
-        break;
-      case WM_MBUTTONUP:
-        arctic::OnMouse(kKeyMouseWheel, word_param, long_param, false);
-        break;
-      case WM_MBUTTONDOWN:
-        arctic::OnMouse(kKeyMouseWheel, word_param, long_param, true);
-        break;
-      case WM_MOUSEMOVE:
-        arctic::OnMouse(kKeyCount, word_param, long_param, false);
-        break;
-      case WM_MOUSEWHEEL:
-        arctic::OnMouseWheel(word_param, long_param);
-        break;
-      default:
-        return DefWindowProc(inner_window_handle, message, word_param, long_param);
+  case WM_ERASEBKGND:
+    return 1;
+  case WM_PAINT:
+  {
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(inner_window_handle, &ps);
+    // TODO(Huldra): Add any drawing code that uses hdc here...
+    EndPaint(inner_window_handle, &ps);
+    break;
+  }
+  case WM_LBUTTONUP:
+    arctic::OnMouse(kKeyMouseLeft, word_param, long_param, false);
+    break;
+  case WM_LBUTTONDOWN:
+    arctic::OnMouse(kKeyMouseLeft, word_param, long_param, true);
+    break;
+  case WM_RBUTTONUP:
+    arctic::OnMouse(kKeyMouseRight, word_param, long_param, false);
+    break;
+  case WM_RBUTTONDOWN:
+    arctic::OnMouse(kKeyMouseRight, word_param, long_param, true);
+    break;
+  case WM_MBUTTONUP:
+    arctic::OnMouse(kKeyMouseWheel, word_param, long_param, false);
+    break;
+  case WM_MBUTTONDOWN:
+    arctic::OnMouse(kKeyMouseWheel, word_param, long_param, true);
+    break;
+  case WM_MOUSEMOVE:
+    arctic::OnMouse(kKeyCount, word_param, long_param, false);
+    break;
+  case WM_MOUSEWHEEL:
+    arctic::OnMouseWheel(word_param, long_param);
+    break;
+  default:
+    return DefWindowProc(inner_window_handle, message,
+      word_param, long_param);
   }
   return 0;
 }
 
 
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
-    SystemInfo *system_info) {
+  SystemInfo *system_info) {
   char title_bar_text[] = {"Arctic Engine"};
   char window_class_name[] = {"ArcticEngineWindowClass"};
   char inner_window_class_name[] = {"ArcticEngineInnterWindowClass"};
@@ -513,7 +515,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   RECT client_rect;
   GetClientRect(window_handle, &client_rect);
   HWND inner_window_handle = CreateWindowExA(0,
-    inner_window_class_name, "", WS_CHILD | WS_VISIBLE, 0, 0, 
+    inner_window_class_name, "", WS_CHILD | WS_VISIBLE, 0, 0,
     client_rect.right - client_rect.left,
     client_rect.bottom - client_rect.top,
     window_handle, 0, instance_handle, 0);
@@ -563,7 +565,7 @@ void StopSoundBuffer(easy::Sound sound) {
       if (idx != g_sound_mixer_state.buffers.size() - 1) {
         g_sound_mixer_state.buffers[idx] =
           g_sound_mixer_state.buffers[
-          g_sound_mixer_state.buffers.size() - 1];
+            g_sound_mixer_state.buffers.size() - 1];
       }
       g_sound_mixer_state.buffers.pop_back();
       idx--;
@@ -596,14 +598,14 @@ void SoundMixerThreadFunction() {
 
   HWAVEOUT wave_out_handle;
   MMRESULT result = waveOutOpen(&wave_out_handle, WAVE_MAPPER,
-      &format, 0, 0, WAVE_FORMAT_DIRECT);
+    &format, 0, 0, WAVE_FORMAT_DIRECT);
 
   Ui32 buffer_count = 10ull;
   Ui64 buffer_duration_us = 10000ull;
   Ui32 buffer_samples_per_channel =
     static_cast<Ui32>(
-        static_cast<Ui64>(format.nSamplesPerSec) *
-        buffer_duration_us / 1000000ull);
+      static_cast<Ui64>(format.nSamplesPerSec) *
+      buffer_duration_us / 1000000ull);
   Ui32 buffer_samples_total = format.nChannels * buffer_samples_per_channel;
   Ui32 buffer_bytes = bytes_per_sample * buffer_samples_total;
 
@@ -620,7 +622,7 @@ void SoundMixerThreadFunction() {
     wave_headers[i].dwBufferLength = buffer_bytes;
     wave_headers[i].lpData = reinterpret_cast<char*>(&(wave_buffers[i][0]));
     waveOutPrepareHeader(wave_out_handle,
-        &wave_headers[i], sizeof(WAVEHDR));
+      &wave_headers[i], sizeof(WAVEHDR));
     wave_headers[i].dwFlags = WHDR_DONE;
   }
   Check(result == MMSYSERR_NOERROR, "Error in SoundMixerThreadFunction");
@@ -634,7 +636,7 @@ void SoundMixerThreadFunction() {
     }
     do {
       result = waveOutUnprepareHeader(wave_out_handle,
-          &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
+        &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
       if (result == WAVERR_STILLPLAYING) {
         Sleep(0);
       }
@@ -642,7 +644,7 @@ void SoundMixerThreadFunction() {
 
     wave_headers[cur_buffer_idx].dwFlags = 0;
     waveOutPrepareHeader(wave_out_handle,
-        &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
+      &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
 
     float master_volume = 1.0f;
     {
@@ -650,27 +652,27 @@ void SoundMixerThreadFunction() {
       std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
       master_volume = g_sound_mixer_state.master_volume;
       for (Ui32 idx = 0;
-          idx < g_sound_mixer_state.buffers.size(); ++idx) {
+        idx < g_sound_mixer_state.buffers.size(); ++idx) {
         SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
 
         Ui32 size = buffer_samples_per_channel;
         size = sound.sound.StreamOut(sound.next_position, size,
-            tmp.data(), buffer_samples_total);
+          tmp.data(), buffer_samples_total);
         Si16 *in_data = tmp.data();
         for (Ui32 i = 0; i < size; ++i) {
           mix[i * 2] += static_cast<Si32>(
-              static_cast<float>(in_data[i * 2]) * sound.volume);
+            static_cast<float>(in_data[i * 2]) * sound.volume);
           mix[i * 2 + 1] += static_cast<Si32>(
-              static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
+            static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
           ++sound.next_position;
         }
 
         if (sound.next_position == sound.sound.DurationSamples()
-            || size == 0) {
+          || size == 0) {
           sound.sound.GetInstance()->DecPlaying();
           g_sound_mixer_state.buffers[idx] =
             g_sound_mixer_state.buffers[
-            g_sound_mixer_state.buffers.size() - 1];
+              g_sound_mixer_state.buffers.size() - 1];
           g_sound_mixer_state.buffers.pop_back();
           --idx;
         }
@@ -680,11 +682,11 @@ void SoundMixerThreadFunction() {
     Si16* out_data = &(wave_buffers[cur_buffer_idx][0]);
     for (Ui32 i = 0; i < buffer_samples_total; ++i) {
       out_data[i] = static_cast<Si16>(Clamp(
-            static_cast<float>(mix[i]) * master_volume, -32767.0, 32767.0));
+        static_cast<float>(mix[i]) * master_volume, -32767.0, 32767.0));
     }
 
     waveOutWrite(wave_out_handle,
-        &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
+      &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
     cur_buffer_idx = (cur_buffer_idx + 1) % wave_headers.size();
   }
   timeEndPeriod(1);
@@ -692,7 +694,7 @@ void SoundMixerThreadFunction() {
   for (Ui32 i = 0; i < wave_headers.size(); ++i) {
     do {
       result = waveOutUnprepareHeader(wave_out_handle,
-          &wave_headers[i], sizeof(WAVEHDR));
+        &wave_headers[i], sizeof(WAVEHDR));
     } while (result == WAVERR_STILLPLAYING);
   }
   waveOutClose(wave_out_handle);
@@ -718,7 +720,7 @@ void EngineThreadFunction(SystemInfo system_info) {
   Check(!!is_ok, "Can't make the GL Context current. Code: WIN05.");
 
   arctic::easy::GetEngine()->Init(system_info.screen_width,
-      system_info.screen_height);
+    system_info.screen_height);
   //  Init opengl end
 
   EasyMain();
@@ -750,7 +752,7 @@ void Swap() {
 bool IsVSyncSupported() {
   const char* (WINAPI *wglGetExtensionsStringEXT)();
   wglGetExtensionsStringEXT = reinterpret_cast<const char* (WINAPI*)()>(  // NOLINT
-      wglGetProcAddress("wglGetExtensionsStringEXT"));
+    wglGetProcAddress("wglGetExtensionsStringEXT"));
   if (wglGetExtensionsStringEXT == nullptr) {
     return false;
   }
@@ -769,9 +771,9 @@ bool SetVSync(bool is_enable) {
   }
   bool (APIENTRY *wglSwapIntervalEXT)(int);
   wglSwapIntervalEXT = reinterpret_cast<bool (APIENTRY *)(int)>(  // NOLINT
-      wglGetProcAddress("wglSwapIntervalEXT"));
+    wglGetProcAddress("wglSwapIntervalEXT"));
   CheckWithLastError(wglSwapIntervalEXT != nullptr,
-      "Error in wglGetProcAddress(\"wglSwapIntervalEXT\"): ");
+    "Error in wglGetProcAddress(\"wglSwapIntervalEXT\"): ");
   bool is_ok = wglSwapIntervalEXT(is_enable ? 1 : 0);
   CheckWithLastError(is_ok, "Error in SetVSync: ");
   return is_ok;
@@ -780,26 +782,27 @@ bool SetVSync(bool is_enable) {
 }  // namespace arctic
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
-    _In_opt_ HINSTANCE prev_instance_handle,
-    _In_ LPWSTR command_line,
-    _In_ int cmd_show) {
+  _In_opt_ HINSTANCE prev_instance_handle,
+  _In_ LPWSTR command_line,
+  _In_ int cmd_show) {
   UNREFERENCED_PARAMETER(prev_instance_handle);
   UNREFERENCED_PARAMETER(command_line);
 
   BOOL is_ok_w = SetProcessDPIAware();
   arctic::Check(is_ok_w != FALSE,
-      "Error from SetProessDPIAware! Code: WIN06.");
+    "Error from SetProessDPIAware! Code: WIN06.");
 
   DisableProcessWindowsGhosting();
 
   bool is_ok = arctic::CreateMainWindow(instance_handle, cmd_show,
-      &arctic::g_system_info);
+    &arctic::g_system_info);
   arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
 
   arctic::easy::GetEngine();
 
   std::thread sound_thread(arctic::SoundMixerThreadFunction);
-  std::thread engine_thread(arctic::EngineThreadFunction, arctic::g_system_info);
+  std::thread engine_thread(arctic::EngineThreadFunction,
+    arctic::g_system_info);
   while (true) {
     MSG msg;
     BOOL ret = GetMessage(&msg, NULL, 0, 0);

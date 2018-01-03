@@ -70,7 +70,7 @@ struct KeyState {
   bool WasPressed() const {
     return was_pressed_this_frame;
   }
-  
+
   bool WasReleased() const {
     return was_released_this_frame;
   }
@@ -492,7 +492,7 @@ bool IsKeyDownwardImpl(Ui32 key_code) {
   }
   return g_key_state[key_code].WasPressed();
 }
-  
+
 bool IsKeyUpwardImpl(Ui32 key_code) {
   if (key_code >= kKeyCount) {
     return false;
@@ -542,7 +542,7 @@ bool IsKeyDownward(const char key) {
 bool IsKeyDownward(const std::string &keys) {
   return IsKeyDownward(keys.c_str());
 }
-  
+
 bool IsKeyUpward(const KeyCode key_code) {
   return IsKeyUpwardImpl(static_cast<Ui32>(key_code));
 }
@@ -592,7 +592,7 @@ bool IsKey(const char key) {
 bool IsKey(const std::string &keys) {
   return IsKeyDown(keys);
 }
-  
+
 bool IsKeyDown(const KeyCode key_code) {
   return IsKeyDownImpl(static_cast<Ui32>(key_code));
 }

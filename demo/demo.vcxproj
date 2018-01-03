@@ -193,6 +193,7 @@
     <ClInclude Include="..\engine\easy_sprite.h" />
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\font.h" />
     <ClInclude Include="..\engine\frustum3f.h" />
     <ClInclude Include="..\engine\mat22f.h" />
     <ClInclude Include="..\engine\mat33f.h" />

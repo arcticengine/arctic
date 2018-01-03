@@ -33,7 +33,7 @@
 
 namespace arctic {
 namespace easy {
-  
+
 enum DrawBlendingMode {
   kCopyRgba,
   kAlphaBlend

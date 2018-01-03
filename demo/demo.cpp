@@ -33,8 +33,6 @@
 #include "engine/easy.h"
 #include "engine/font.h"
 
-#include <iostream>
-
 using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
@@ -83,45 +81,45 @@ bool IsHigh(CellKind kind) {
 
 Sprite& CellSprite(CellKind kind, bool is_visible) {
   switch (kind) {
-    case kCellFloor:
-      if (is_visible) {
-        return g_floor;
-      } else {
-        return g_floor_dark;
-      }
-    case kCellStairsDownLeft:
-      if (is_visible) {
-        return g_stairs_down_left;
-      } else {
-        return g_stairs_down_left_dark;
-      }
-    case kCellStairsDownRight:
-      if (is_visible) {
-        return g_stairs_down_right;
-      } else {
-        return g_stairs_down_right_dark;
-      }
-    case kCellStairsUpLeft:
-      if (is_visible) {
-        return g_stairs_up_left;
-      } else {
-        return g_stairs_up_left_dark;
-      }
-    case kCellStairsUpRight:
-      if (is_visible) {
-        return g_stairs_up_right;
-      } else {
-        return g_stairs_up_right_dark;
-      }
-    case kCellWall:
-      if (is_visible) {
-        return g_wall;
-      } else {
-        return g_wall_dark;
-      }
-    default:
-      Fatal("Unknown cell kind in CellSprite");
-      return g_empty;
+  case kCellFloor:
+    if (is_visible) {
+      return g_floor;
+    } else {
+      return g_floor_dark;
+    }
+  case kCellStairsDownLeft:
+    if (is_visible) {
+      return g_stairs_down_left;
+    } else {
+      return g_stairs_down_left_dark;
+    }
+  case kCellStairsDownRight:
+    if (is_visible) {
+      return g_stairs_down_right;
+    } else {
+      return g_stairs_down_right_dark;
+    }
+  case kCellStairsUpLeft:
+    if (is_visible) {
+      return g_stairs_up_left;
+    } else {
+      return g_stairs_up_left_dark;
+    }
+  case kCellStairsUpRight:
+    if (is_visible) {
+      return g_stairs_up_right;
+    } else {
+      return g_stairs_up_right_dark;
+    }
+  case kCellWall:
+    if (is_visible) {
+      return g_wall;
+    } else {
+      return g_wall_dark;
+    }
+  default:
+    Fatal("Unknown cell kind in CellSprite");
+    return g_empty;
   }
 }
 
@@ -134,15 +132,15 @@ enum ItemKind {
 
 Sprite& ItemSprite(ItemKind kind) {
   switch (kind) {
-    case kItemNone:
-      return g_empty;
-    case kItemStone:
-      return g_stone;
-    case kItemStick:
-      return g_stick;
-    default:
-      Fatal("Unknown item kind in ItemSprite");
-      return g_empty;
+  case kItemNone:
+    return g_empty;
+  case kItemStone:
+    return g_stone;
+  case kItemStick:
+    return g_stick;
+  default:
+    Fatal("Unknown item kind in ItemSprite");
+    return g_empty;
   }
 }
 
@@ -235,8 +233,8 @@ Creature& Hero() {
 
 Cell& Maze(Vec2Si32 pos) {
   Check(pos.x >= 0 && pos.y >= 0 &&
-      pos.x < g_maze_size.x && pos.y < g_maze_size.y,
-      "pos out of bounds in Maze");
+    pos.x < g_maze_size.x && pos.y < g_maze_size.y,
+    "pos out of bounds in Maze");
   return g_maze[pos.x][pos.y];
 }
 
@@ -338,7 +336,7 @@ void CycleDeadEnd(Vec2Si32 pos) {
     Si32 idx = (i + rnd_dir) % 4;
     Vec2Si32 p = pos + dir[idx];
     if (p.x > 0 && p.x < g_maze_size.x - 1 &&
-        p.y > 0 && p.y < g_maze_size.y) {
+      p.y > 0 && p.y < g_maze_size.y) {
       Cell &cell = Maze(p);
       if (cell.kind == kCellWall) {
         cell.kind = kCellFloor;
@@ -361,12 +359,14 @@ void PlayIntro() {
     x = Clamp(x, 0, sp0.Width() - 1);
     y = Clamp(y, 0, sp0.Height() - 1);
     if (IsKeyDown(kKeyMouseLeft)) {
-      sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 0, 0, 255).rgba;
+      sp0.RgbaData()[sp0.StridePixels() * y + x].rgba =
+        Rgba(255, 0, 0, 255).rgba;
     } else {
-      sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 255, 255, 255).rgba;
+      sp0.RgbaData()[sp0.StridePixels() * y + x].rgba =
+        Rgba(255, 255, 255, 255).rgba;
     }
     sp0.Draw(0, 0);
-    
+
     ShowFrame();
   }
   ResizeScreen(320, 200);
@@ -377,8 +377,8 @@ void PlayIntro() {
   auto data2 = ReadFile("data/test.data");
   Check(data2.size() == 10, "string size mismatch");
   Check(strncmp(data, reinterpret_cast<char*>(data2.data()), 10) == 0,
-      "strings do not match");
-  
+    "strings do not match");
+
   g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
   g_music.Play();
 
@@ -392,7 +392,7 @@ void PlayIntro() {
   Sprite sp;
   sp.Clone(sp0);
   sp0.Clear(Rgba(128, 128, 128, 128));
-  
+
   Ui8 snow[2][320 * 200];
   for (Si32 i = 0; i < 320 * 200; ++i) {
     if (g_rnd() % 16 == 0) {
@@ -407,7 +407,7 @@ void PlayIntro() {
   Vec2Si32 pyramids_pos(0, 10);
 
   Vec2Si32 airplane_pos_begin(ScreenSize().x,
-      ScreenSize().y - g_intro_airplane.Height() / 2);
+    ScreenSize().y - g_intro_airplane.Height() / 2);
   Vec2Si32 airplane_pos_end(-g_intro_airplane.Width(), 0);
   Si32 duration1 = 380;
   Si32 duration2 = 500;
@@ -419,7 +419,7 @@ void PlayIntro() {
     frame = static_cast<Si32>((time - start_time) * 60.f);
     Clear();
     if (IsKeyDown(kKeyEscape) || IsKeyDown(kKeySpace)
-        || IsKeyDown(kKeyEnter)) {
+      || IsKeyDown(kKeyEnter)) {
       return;
     }
     if (frame > duration3) {
@@ -441,7 +441,7 @@ void PlayIntro() {
       for (Si32 x = 0; x < 320; ++x) {
         Si32 z = cur_snow[x + y * 320];
         if (z) {
-          Si32 next_x = x + 8 - z/42;
+          Si32 next_x = x + 8 - z / 42;
           Si32 next_y = y - 1;
           if (next_x >= 320) {
             next_x -= 320;
@@ -450,7 +450,7 @@ void PlayIntro() {
             next_y = 189;
           }
           if (next_snow[next_x + next_y * 320] == 0
-              || next_snow[next_x + next_y * 320] > z) {
+            || next_snow[next_x + next_y * 320] > z) {
             next_snow[next_x + next_y * 320] = z;
           }
           if (g_rnd() % 16 == 0) {
@@ -460,7 +460,7 @@ void PlayIntro() {
             }
           }
           back_buffer[x + y * 320] =
-            Rgba(255 - z/8, 255 - z/8, 255 - z/8);
+            Rgba(255 - z / 8, 255 - z / 8, 255 - z / 8);
         }
       }
     }
@@ -503,7 +503,7 @@ void GenerateMaze() {
       is_ok = true;
       Maze(pos).kind = kCellStairsDownLeft;
     } else if (Maze(pos + Vec2Si32(1, 0)).kind == kCellFloor
-        || attempt > 10) {
+      || attempt > 10) {
       is_ok = true;
       Maze(pos).kind = kCellStairsDownRight;
     }
@@ -550,7 +550,7 @@ void GenerateMaze() {
 
 void Init() {
   g_font.Load("data/arctic_one_bmf.fnt");
-  
+
   g_blood[0].Load("data/blood_0.tga");
   g_blood[1].Load("data/blood_1.tga");
   g_blood[2].Load("data/blood_2.tga");
@@ -591,7 +591,7 @@ void Init() {
 
   InitCreatures();
   Hero().kind = static_cast<CreatureKind>(kCreatureHeroBegin +
-      g_rnd() % (kCreatureHeroEnd - kCreatureHeroBegin));
+    g_rnd() % (kCreatureHeroEnd - kCreatureHeroBegin));
   Hero().pos = Vec2Si32(1, 1);
   Hero().items.resize(kItemKindCount);
   for (Ui32 idx = 0; idx < Hero().items.size(); ++idx) {
@@ -610,9 +610,9 @@ void LookAround() {
 
   const Si32 radius = 10;
   Vec2Si32 min(std::max(0, Hero().pos.x - radius),
-      std::max(0, Hero().pos.y - radius));
+    std::max(0, Hero().pos.y - radius));
   Vec2Si32 max(std::min(g_maze_size.x - 1, Hero().pos.x + radius),
-      std::min(g_maze_size.y - 1, Hero().pos.y + radius));
+    std::min(g_maze_size.y - 1, Hero().pos.y + radius));
   for (pos.x = min.x; pos.x <= max.x; ++pos.x) {
     for (pos.y = min.y; pos.y <= max.y; ++pos.y) {
       Vec2Si32 hero_to_pos = pos - Hero().pos;
@@ -657,13 +657,10 @@ void Update() {
   if (!g_musicDisabled) {
     // switch background music tracks
     if (!g_music.IsPlaying()) {
-      std::cerr << "play" << std::endl;
       g_music.Play();
     }
-  }
-  else {
+  } else {
     if (g_music.IsPlaying()) {
-      std::cerr << "stop" << std::endl;
       g_music.Stop();
     }
   }
@@ -672,10 +669,10 @@ void Update() {
     g_musicDisabled = !g_musicDisabled;
   }
   if (IsKeyDownward("6")) {
-      SetInverseY(true);
+    SetInverseY(true);
   }
   if (IsKeyDownward("7")) {
-      SetInverseY(false);
+    SetInverseY(false);
   }
 
   // Cheats
@@ -727,7 +724,7 @@ void Update() {
           Hero().next_pos = Hero().pos + step;
           Hero().move_start_at = time;
         } else if (cell.kind == kCellStairsDownLeft
-            || cell.kind == kCellStairsDownRight) {
+          || cell.kind == kCellStairsDownRight) {
           Hero().pos += step;
           g_is_first_level = false;
           g_upper_cell_kind = cell.kind;
@@ -770,7 +767,7 @@ void Render() {
             Item &item = cell.items[idx];
             Sprite &sprite = ItemSprite(item.kind);
             sprite.Draw(scr_pos + sprite.Pivot(),
-                static_cast<float>(Time()));
+              static_cast<float>(Time()));
           }
         }
       }
@@ -788,7 +785,7 @@ void Render() {
     Sprite &sprite = ItemSprite(static_cast<ItemKind>(kind));
     for (Si32 idx = 0; idx < Hero().items[kind]; ++idx) {
       sprite.Draw(Vec2Si32(item_x, 0) + sprite.Pivot(),
-          static_cast<float>(Time()) + static_cast<float>(idx));
+        static_cast<float>(Time()) + static_cast<float>(idx));
       item_x += 5;
     }
     if (Hero().items[kind]) {
@@ -813,7 +810,7 @@ void Render() {
      DrawTriangle(history[idx - 1], history[idx], ScreenSize() / 2,
      Rgba(0, 0, 255, 255), Rgba(255, 0, 0, 255), Rgba(0, 255, 0, 255));
      }*/
-  
+
   static double prev_time = Time();
   static double smooth_fps = 0.0;
   double time = Time();
@@ -821,7 +818,7 @@ void Render() {
   smooth_fps = smooth_fps * 0.95 + 0.05 * fps;
   prev_time = time;
   char fps_text[128];
-  snprintf(fps_text, 128, u8"FPS: %.1F", smooth_fps);
+  snprintf(fps_text, sizeof(fps_text), u8"FPS: %.1F", smooth_fps);
   g_font.Draw(fps_text, 0, ScreenSize().y - 22);
   ShowFrame();
 }
