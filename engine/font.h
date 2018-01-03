@@ -25,6 +25,8 @@
 
 #include <cstring>
 #include <iostream>
+#include <vector>
+#include <list>
 
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
@@ -175,10 +177,10 @@ struct BmFontBinChars {
     std::cerr << "char";
     std::cerr << " id=" << id;
     std::cerr << "\tx=" << x;
-    std::cerr << "\ty=" << y;
-    std::cerr << "\twidth=" << width;
-    std::cerr << "\theight=" << height;
-    std::cerr << "\txoffset=" << xoffset;
+    std::cerr << "  \ty=" << y;
+    std::cerr << "  \twidth=" << width;
+    std::cerr << "  \theight=" << height;
+    std::cerr << "  \txoffset=" << xoffset;
     std::cerr << "\tyoffset=" << yoffset;
     std::cerr << "\txadvance=" << xadvance;
     std::cerr << "\tpage=" << static_cast<Si32>(page);
@@ -203,11 +205,83 @@ struct BmFontBinKerningPair {
   }
 };
 #pragma pack(pop)
+  
+struct Utf32Reader {
+  const Ui8 *begin = nullptr;
+  const Ui8 *p = nullptr;
+  
+  void Reset(const Ui8 *data) {
+    begin = data;
+    p = data;
+  }
+  
+  void Rewind() {
+    p = begin;
+  }
+  
+  Ui32 ReadOne() {
+    while (true) {
+      Ui32 u = 0;
+      if ((p[0] & 0x80) == 0) {
+        // 0xxxxxxx
+        u = Ui32(p[0]);
+        if (p[0] == 0) {
+          return 0;
+        }
+        p++;
+        return u;
+      } else if ((p[0] & 0xe0) == 0xc0) {
+        // 110xxxxx 10xxxxxx
+        if ((p[1] & 0xc0) == 0x80) {
+          u = (Ui32(p[0] & 0x1f) << 6) | (Ui32(p[1] & 0x3f));
+          p += 2;
+          return u;
+        }
+      } else if ((p[0] & 0xf0) == 0xe0) {
+        // 1110xxxx 10xxxxxx 10xxxxxx
+        if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80) {
+          u = (Ui32(p[0] & 0x0f) << 12) | (Ui32(p[1] & 0x3f) << 6) |
+              (Ui32(p[2] & 0x3f));
+          p += 3;
+          return u;
+        }
+      } else if ((p[0] & 0xf8) == 0xf0) {
+        // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80 &&
+            (p[3] & 0xc0) == 0x80) {
+          u = (Ui32(p[0] & 0x07) << 18) | (Ui32(p[1] & 0x3f) << 12) |
+              (Ui32(p[2] & 0x3f) << 6) | (Ui32(p[3] & 0x3f));
+          p += 4;
+          return u;
+        }
+      }
+      p++;
+    }
+  }
+};
 
-// This block is only in the file if there are any kerning pairs with amount
-// differing from 0.
+struct Glyph {
+  Ui32 codepoint;
+  Si32 xadvance;
+  easy::Sprite sprite;
+  
+  Glyph(Ui32 in_codepoint, Si32 in_xadvance, easy::Sprite in_sprite)
+    : codepoint(in_codepoint)
+    , xadvance(in_xadvance)
+    , sprite(in_sprite)
+  {
+  }
+};
+
 struct Font {
+  std::vector<Glyph*> codepoint;
+  std::list<Glyph> glyph;
+  
   void Load(const char *file_name) {
+    codepoint.clear();
+    glyph.clear();
+    
+    
     std::vector<Ui8> file = easy::ReadFile(file_name);
     Si32 pos = 0;
     BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
@@ -218,7 +292,7 @@ struct Font {
     ++pos;
     Si32 block_size = *reinterpret_cast<Si32*>(&file[pos]);
     pos += sizeof(Si32);
-    Check(block_type == kBlockInfo, "Unexpected block type");
+    Check(block_type == kBlockInfo, "Unexpected block type 1");
   
     Check(block_size >=
         sizeof(BmFontBinInfo) - sizeof(BmFontBinInfo::font_name),
@@ -234,7 +308,7 @@ struct Font {
     ++pos;
     block_size = *reinterpret_cast<Si32*>(&file[pos]);
     pos += sizeof(Si32);
-    Check(block_type == kBlockCommon, "Unexpected block type");
+    Check(block_type == kBlockCommon, "Unexpected block type 2");
     Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
     BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[pos]);
     common->Log();
@@ -244,46 +318,110 @@ struct Font {
     ++pos;
     block_size = *reinterpret_cast<Si32*>(&file[pos]);
     pos += sizeof(Si32);
-    Check(block_type == kBlockPages, "Unexpected block type");
+    Check(block_type == kBlockPages, "Unexpected block type 3");
     Check(block_size >= 1, "Pages block is too small");
     Si32 inner_pos = pos;
+    std::vector<easy::Sprite> page_images;
+    page_images.resize(common->pages);
+
     for (Si32 id = 0; id < common->pages; ++id) {
       BmFontBinPages page;
       page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
       page.Log(id);
+  
+      char path[65536];
+      const char *p = file_name;
+      Check(strlen(file_name) < sizeof(path) / 2, "File name is too long: ",
+            file_name);
+      Check(strlen(page.page_name) < sizeof(path) / 2,
+            "File name is too long: ", page.page_name);
+      const char *p2 = p;
+      const char *end = p;
+      while (*p2) {
+        if (*p2 == '\\' || *p2 == '/') {
+          end = p2 + 1;
+        }
+        ++p2;
+      }
+      if (end != p) {
+        memcpy(path, p, end - p);
+      }
+      strcpy(path + (end - p), page.page_name);
+      page_images[id].Load(path);
+      
       inner_pos += static_cast<Si32>(std::strlen(page.page_name)) + 1;
     }
     pos += block_size;
-    
     block_type = file[pos];
     ++pos;
     block_size = *reinterpret_cast<Si32*>(&file[pos]);
     pos += sizeof(Si32);
-    Check(block_type == kBlockChars, "Unexpected block type");
+    Check(block_type == kBlockChars, "Unexpected block type 4");
     Check(block_size >= sizeof(BmFontBinChars), "Pages block is too small");
     inner_pos = pos;
     for (Si32 id = 0; id < block_size / 20; ++id) {
-      BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(&file[inner_pos]);
+      BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(
+          &file[inner_pos]);
       chars->Log();
+      
+      easy::Sprite sprite;
+      sprite.Reference(page_images[chars->page],
+          chars->x, page_images[chars->page].Height() - chars->y - chars->height,
+          chars->width, chars->height);
+      sprite.SetPivot(arctic::Vec2Si32(
+          chars->xoffset, chars->height + chars->yoffset - common->base));
+      glyph.emplace_back(chars->id, chars->xadvance, sprite);
+      
       inner_pos += 20;
     }
     pos += block_size;
     
-    block_type = file[pos];
-    ++pos;
-    block_size = *reinterpret_cast<Si32*>(&file[pos]);
-    pos += sizeof(Si32);
-    Check(block_type == kBlockKerningPairs, "Unexpected block type");
-    Check(block_size >= sizeof(BmFontBinKerningPair),
-          "KerningPair block is too small");
-    inner_pos = pos;
-    for (Si32 id = 0; id < block_size / 10; ++id) {
-      BmFontBinKerningPair *kerning_pair = reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
-      kerning_pair->Log();
-      inner_pos += 10;
+    if (file.size() > pos) {
+      block_type = file[pos];
+      ++pos;
+      block_size = *reinterpret_cast<Si32*>(&file[pos]);
+      pos += sizeof(Si32);
+      Check(block_type == kBlockKerningPairs, "Unexpected block type 5");
+      Check(block_size >= sizeof(BmFontBinKerningPair),
+            "KerningPair block is too small");
+      inner_pos = pos;
+      for (Si32 id = 0; id < block_size / 10; ++id) {
+        BmFontBinKerningPair *kerning_pair =
+            reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
+        kerning_pair->Log();
+        inner_pos += 10;
+      }
+      pos += block_size;
     }
-    pos += block_size;
-
+    ////////
+    Ui32 end_codepoint = 0;
+    for (auto it = glyph.begin(); it != glyph.end(); ++it) {
+      if (it->codepoint >= end_codepoint) {
+        end_codepoint = it->codepoint + 1;
+      }
+    }
+    codepoint.resize(end_codepoint, nullptr);
+    for (auto it = glyph.begin(); it != glyph.end(); ++it) {
+      codepoint[it->codepoint] = &(*it);
+    }
+  }
+  
+  void Draw(const char *text, const Si32 x, const Si32 y) {
+    Utf32Reader reader;
+    reader.Reset(reinterpret_cast<const Ui8*>(text));
+    Si32 next_x = x;
+    while (true) {
+      Ui32 code = reader.ReadOne();
+      if (!code) {
+        return;
+      }
+      if (code < codepoint.size() && codepoint[code]) {
+        Glyph &glyph = *codepoint[code];
+        glyph.sprite.Draw(next_x, y);
+        //next_x += glyph.sprite.Width();
+        next_x += glyph.xadvance;
+      }
+    }
   }
 };
 

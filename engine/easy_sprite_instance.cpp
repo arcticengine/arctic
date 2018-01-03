@@ -126,6 +126,7 @@ std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
   Check((tga->bpp == 24) || (tga->bpp == 32) || (tga->bpp == 16)
       || (tga->bpp == 8), "Error in LoadTga, unsupported bpp.");
   const Ui8 *p = data + sizeof(TGAHEADER) + tga->IDFieldLength;
+  bool is_origin_upper_left = !!(tga->ImageDescriptor & (1 << 5));
   switch (tga->ImageType) {
     case 2:  // uncommpressed rgb
       if (tga->bpp == 24) {
@@ -134,15 +135,19 @@ std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
         Check(p + l <= data + size,
             "Error in LoadTga, unexpected end of file.");
         Ui8 *to_line = sprite->RawData();
-        Ui64 from_line_size = sprite->width() * sizeof(Rgb);
+        Si64 from_line_size = sprite->width() * sizeof(Rgb);
+        const Ui8 *from_line = p +
+          (is_origin_upper_left ? tga->yres - 1 : 0) * from_line_size;
+        const Si64 from_line_step =
+          (is_origin_upper_left ? -from_line_size : from_line_size);
         for (Si64 y = 0; y < tga->yres; ++y) {
-          const Ui8 *from_line = p + y * from_line_size;
+          const Ui8 *from = from_line + y * from_line_step;
           for (Si64 x = 0; x < tga->xres; ++x) {
-            *(to_line + 0) = *(from_line + 2);
-            *(to_line + 1) = *(from_line + 1);
-            *(to_line + 2) = *(from_line + 0);
+            *(to_line + 0) = *(from + 2);
+            *(to_line + 1) = *(from + 1);
+            *(to_line + 2) = *(from + 0);
             *(to_line + 3) = 255;
-            from_line += sizeof(Rgb);
+            from += sizeof(Rgb);
             to_line += sizeof(Rgba);
           }
         }
@@ -154,15 +159,19 @@ std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
             "Error in LoadTga, unexpected end of file.");
         Ui8 *to_line = sprite->RawData();
         Ui64 from_line_size = sprite->width() * sizeof(Rgba);
+        const Ui8 *from_line = p +
+          (is_origin_upper_left ? tga->yres - 1 : 0) * from_line_size;
+        const Si64 from_line_step =
+          (is_origin_upper_left ? -from_line_size : from_line_size);
         for (Si64 y = 0; y < tga->yres; ++y) {
-          const Ui8 *from_line = p + y * from_line_size;
+          const Ui8 *from = from_line + y * from_line_step;
           for (Si64 x = 0; x < tga->xres; ++x) {
-            *to_line = *from_line;
-            *(to_line + 0) = *(from_line + 2);
-            *(to_line + 1) = *(from_line + 1);
-            *(to_line + 2) = *(from_line + 0);
-            *(to_line + 3) = *(from_line + 3);
-            from_line += sizeof(Rgba);
+            *to_line = *from;
+            *(to_line + 0) = *(from + 2);
+            *(to_line + 1) = *(from + 1);
+            *(to_line + 2) = *(from + 0);
+            *(to_line + 3) = *(from + 3);
+            from += sizeof(Rgba);
             to_line += sizeof(Rgba);
           }
         }

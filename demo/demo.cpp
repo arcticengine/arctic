@@ -38,6 +38,8 @@
 using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
+Font g_font;
+
 Sprite g_blood[7];
 Sprite g_floor;
 Sprite g_floor_dark;
@@ -364,6 +366,7 @@ void PlayIntro() {
       sp0.RgbaData()[sp0.StridePixels() * y + x].rgba = Rgba(255, 255, 255, 255).rgba;
     }
     sp0.Draw(0, 0);
+    
     ShowFrame();
   }
   ResizeScreen(320, 200);
@@ -546,6 +549,8 @@ void GenerateMaze() {
 }
 
 void Init() {
+  g_font.Load("data/arctic_one_bmf.fnt");
+  
   g_blood[0].Load("data/blood_0.tga");
   g_blood[1].Load("data/blood_1.tga");
   g_blood[2].Load("data/blood_2.tga");
@@ -808,12 +813,20 @@ void Render() {
      DrawTriangle(history[idx - 1], history[idx], ScreenSize() / 2,
      Rgba(0, 0, 255, 255), Rgba(255, 0, 0, 255), Rgba(0, 255, 0, 255));
      }*/
+  
+  static double prev_time = Time();
+  static double smooth_fps = 0.0;
+  double time = Time();
+  double fps = 1.0 / std::max(time - prev_time, 0.001);
+  smooth_fps = smooth_fps * 0.95 + 0.05 * fps;
+  prev_time = time;
+  char fps_text[128];
+  snprintf(fps_text, 128, u8"FPS: %.1F", smooth_fps);
+  g_font.Draw(fps_text, 0, ScreenSize().y - 22);
   ShowFrame();
 }
 
 void EasyMain() {
-  Font font;
-  font.Load("data/font_1.bin");
   Init();
   while (!IsKeyDownward(kKeyEscape)) {
     Update();
