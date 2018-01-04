@@ -272,10 +272,19 @@ struct Glyph {
     , sprite(in_sprite) {
   }
 };
+  
+enum TextOrigin {
+  kTextOriginBottom = 0,
+  kTextOriginBase = 1,
+  kTextOriginTop = 2
+};
 
 struct Font {
   std::vector<Glyph*> codepoint;
   std::list<Glyph> glyph;
+  Si32 base_to_top = 0;
+  Si32 base_to_bottom = 0;
+  Si32 line_height = 0;
 
   void Load(const char *file_name) {
     codepoint.clear();
@@ -312,6 +321,11 @@ struct Font {
     Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
     BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[pos]);
     common->Log();
+    
+    base_to_top = common->base;
+    base_to_bottom = common->line_height - common->base;
+    line_height = common->line_height;
+    
     pos += block_size;
 
     block_type = file[pos];
@@ -405,11 +419,38 @@ struct Font {
       codepoint[it->codepoint] = &(*it);
     }
   }
+  
+  Si64 EvaluateWidth(const char *text, bool do_keep_xadvance = false) {
+    Si64 width = 0;
+    Utf32Reader reader;
+    reader.Reset(reinterpret_cast<const Ui8*>(text));
+    Glyph *glyph = nullptr;
+    while (true) {
+      Ui32 code = reader.ReadOne();
+      if (!code) {
+        if (glyph && !do_keep_xadvance) {
+          width += static_cast<Si64>(glyph->sprite.Width()) - glyph->xadvance;
+        }
+        return width;
+      }
+      if (code < codepoint.size() && codepoint[code]) {
+        glyph = codepoint[code];
+        width += glyph->xadvance;
+      }
+    }
+  }
 
-  void Draw(const char *text, const Si32 x, const Si32 y) {
+  void Draw(const char *text, const Si32 x, const Si32 y,
+      TextOrigin origin = kTextOriginBottom) {
     Utf32Reader reader;
     reader.Reset(reinterpret_cast<const Ui8*>(text));
     Si32 next_x = x;
+    Si32 next_y = y;
+    if (origin == kTextOriginBottom) {
+      next_y += base_to_bottom;
+    } else if (origin == kTextOriginTop) {
+      next_y -= base_to_top;
+    }
     while (true) {
       Ui32 code = reader.ReadOne();
       if (!code) {
@@ -417,7 +458,7 @@ struct Font {
       }
       if (code < codepoint.size() && codepoint[code]) {
         Glyph &glyph = *codepoint[code];
-        glyph.sprite.Draw(next_x, y);
+        glyph.sprite.Draw(next_x, next_y);
         next_x += glyph.xadvance;
       }
     }
