@@ -821,11 +821,24 @@ void Render() {
   snprintf(fps_text, sizeof(fps_text), u8"FPS: %.1F", smooth_fps);
   g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop);
   
-  const char *long_text = u8"Длинный текст на русском языке "
-    u8"+ some additional content for your convenience";
-  Si64 ltw = g_font.EvaluateWidth(long_text);
+  const char *long_text = u8"Длинный текст на русском языке по центру!\n"
+  u8"Second line !@#$%^&*()_+ with \\r at the end\r"
+  u8"Third line ,./<>?;'\\:\"| with \\n at the end\n"
+  u8"4th line []{}-=§±`~ with \\n\\r\\n\\r at the end\n\r\n\r"
+  u8"6 йцукенгшщзхъфывапролджэёячсмитьбю\n"
+  u8"7 ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЁЯЧСМИТЬБЮ\r"
+  u8"8th line ДDОOАA - – — with \\n\\r\\n\\r at the end\n\r\n\r";
+  Si64 ltw = g_font.EvaluateSize(long_text, false).x;
   Si64 ltoffset = (ScreenSize().x - ltw) / 2;
-  g_font.Draw(long_text, static_cast<Si32>(ltoffset), 0, kTextOriginBottom);
+  g_font.Draw(long_text, static_cast<Si32>(ltoffset),
+      ScreenSize().y, kTextOriginTop);
+  
+  g_font.Draw("first base at 0\ninvisible line 2",
+      0, 0, kTextOriginFirstBase);
+  g_font.Draw("line 1\nlast base at 0",
+      ScreenSize().x / 3, 0, kTextOriginLastBase);
+  g_font.Draw("line 1\nbottom at 0",
+      ScreenSize().x * 2 / 3, 0, kTextOriginBottom);
   ShowFrame();
 }
 
