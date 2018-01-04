@@ -819,7 +819,13 @@ void Render() {
   prev_time = time;
   char fps_text[128];
   snprintf(fps_text, sizeof(fps_text), u8"FPS: %.1F", smooth_fps);
-  g_font.Draw(fps_text, 0, ScreenSize().y - 22);
+  g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop);
+  
+  const char *long_text = u8"Длинный текст на русском языке "
+    u8"+ some additional content for your convenience";
+  Si64 ltw = g_font.EvaluateWidth(long_text);
+  Si64 ltoffset = (ScreenSize().x - ltw) / 2;
+  g_font.Draw(long_text, static_cast<Si32>(ltoffset), 0, kTextOriginBottom);
   ShowFrame();
 }
 
