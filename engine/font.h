@@ -275,8 +275,9 @@ struct Glyph {
   
 enum TextOrigin {
   kTextOriginBottom = 0,
-  kTextOriginBase = 1,
-  kTextOriginTop = 2
+  kTextOriginFirstBase = 1,
+  kTextOriginLastBase = 2,
+  kTextOriginTop = 3
 };
 
 struct Font {
@@ -420,8 +421,35 @@ struct Font {
     }
   }
   
-  Si64 EvaluateWidth(const char *text, bool do_keep_xadvance = false) {
-    Si64 width = 0;
+  void DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
+      Si32 x, Si32 y, TextOrigin origin, bool do_draw,
+      Vec2Si32 *out_size) {
+    Si32 next_x = x;
+    Si32 next_y = y;
+    if (do_draw) {
+      if (origin == kTextOriginTop) {
+        next_y = y - base_to_top + line_height;
+      } else if (origin == kTextOriginFirstBase) {
+        next_y = y + line_height;
+      } else {
+        Vec2Si32 size;
+        DrawEvaluateSizeImpl(text, do_keep_xadvance,
+            x, y, origin, false,
+            &size);
+        if (origin == kTextOriginBottom) {
+          next_y = y + size.y - base_to_top + line_height;
+        } else if (origin == kTextOriginLastBase) {
+          next_y = y + size.y;
+        }
+      }
+    }
+    
+    Si32 width = 0;
+    Si32 max_width = 0;
+    Si32 lines = 0;
+    Ui32 prev_code = 0;
+    bool is_newline = false;
+    Si32 newline_count = 1;
     Utf32Reader reader;
     reader.Reset(reinterpret_cast<const Ui8*>(text));
     Glyph *glyph = nullptr;
@@ -429,39 +457,67 @@ struct Font {
       Ui32 code = reader.ReadOne();
       if (!code) {
         if (glyph && !do_keep_xadvance) {
-          width += static_cast<Si64>(glyph->sprite.Width()) - glyph->xadvance;
+          width += glyph->sprite.Width() - glyph->xadvance;
         }
-        return width;
+        max_width = std::max(max_width, width);
+        if (out_size) {
+          *out_size = Vec2Si32(max_width, lines * line_height);
+        }
+        return;
       }
-      if (code < codepoint.size() && codepoint[code]) {
-        glyph = codepoint[code];
-        width += glyph->xadvance;
+      if (code == '\r' || code == '\n') {
+        if (is_newline) {
+          if (code == prev_code) {
+            newline_count++;
+          } else {
+            is_newline = false;
+          }
+        } else {
+          is_newline = true;
+          newline_count++;
+        }
+      } else {
+        is_newline = false;
+        if (code < codepoint.size() && codepoint[code]) {
+          if (newline_count) {
+            if (glyph && !do_keep_xadvance) {
+              width += glyph->sprite.Width() - glyph->xadvance;
+            }
+            max_width = std::max(max_width, width);
+            width = 0;
+            next_x = x;
+            lines += newline_count;
+            next_y -= newline_count * line_height;
+            newline_count = 0;
+          }
+          
+          glyph = codepoint[code];
+          width += glyph->xadvance;
+          if (do_draw) {
+            glyph->sprite.Draw(next_x, next_y);
+            next_x += glyph->xadvance;
+          }
+        }
       }
     }
   }
+  
+  Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance) {
+    Vec2Si32 size;
+    DrawEvaluateSizeImpl(text, do_keep_xadvance,
+        0, 0, kTextOriginFirstBase, false,
+        &size);
+    return size;
+  }
 
+  void Draw(const char *text, const Si32 x, const Si32 y) {
+    DrawEvaluateSizeImpl(text, false, x, y,
+        kTextOriginBottom, true, nullptr);
+  }
+  
   void Draw(const char *text, const Si32 x, const Si32 y,
-      TextOrigin origin = kTextOriginBottom) {
-    Utf32Reader reader;
-    reader.Reset(reinterpret_cast<const Ui8*>(text));
-    Si32 next_x = x;
-    Si32 next_y = y;
-    if (origin == kTextOriginBottom) {
-      next_y += base_to_bottom;
-    } else if (origin == kTextOriginTop) {
-      next_y -= base_to_top;
-    }
-    while (true) {
-      Ui32 code = reader.ReadOne();
-      if (!code) {
-        return;
-      }
-      if (code < codepoint.size() && codepoint[code]) {
-        Glyph &glyph = *codepoint[code];
-        glyph.sprite.Draw(next_x, next_y);
-        next_x += glyph.xadvance;
-      }
-    }
+      TextOrigin origin) {
+    DrawEvaluateSizeImpl(text, false, x, y, origin, true, nullptr);
   }
 };
 
