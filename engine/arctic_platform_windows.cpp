@@ -436,6 +436,7 @@ LRESULT CALLBACK InnerWndProc(HWND inner_window_handle, UINT message,
   return 0;
 }
 
+HBRUSH g_black_brush;
 
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   SystemInfo *system_info) {
@@ -471,6 +472,8 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   }
   }*/
 
+  g_black_brush = CreateSolidBrush(0);
+
   WNDCLASSEX wcex;
   memset(&wcex, 0, sizeof(wcex));
   wcex.cbSize = sizeof(wcex);
@@ -481,7 +484,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   wcex.hInstance = instance_handle;
   //  wcex.hIcon = LoadIcon(instance_handle, MAKEINTRESOURCE(IDI_APP_ICON));
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-  wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+  wcex.hbrBackground = g_black_brush;
   //  wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_DEMO);
   wcex.lpszClassName = window_class_name;
   // wcex.hIconSm = LoadIcon(wcex.hInstance,
@@ -507,7 +510,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   wcex.lpfnWndProc = arctic::InnerWndProc;
   wcex.hInstance = instance_handle;
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
-  wcex.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+  wcex.hbrBackground = g_black_brush;
   wcex.lpszClassName = inner_window_class_name;
 
   ATOM register_inner_class_result = RegisterClassEx(&wcex);
@@ -522,8 +525,9 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   if (!inner_window_handle) {
     return false;
   }
-
-  ShowWindow(window_handle, cmd_show);
+  //  ShowWindow(window_handle, cmd_show);
+  ShowWindow(window_handle, SW_MINIMIZE);
+  ShowWindow(window_handle, SW_MAXIMIZE);
   UpdateWindow(window_handle);
 
   Check(!!system_info, "Error, system_info: nullptr in CreateMainWindow");
