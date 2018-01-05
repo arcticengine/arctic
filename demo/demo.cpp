@@ -1,4 +1,4 @@
-// The MIT License(MIT)
+﻿// The MIT License(MIT)
 //
 // Copyright 2016-2017 Huldra
 //
