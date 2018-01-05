@@ -86,6 +86,8 @@ void Clear();
 void Clear(Rgba color);
 
 double Time();
+Si64 Random(Si64 min, Si64 max);
+Si32 Random32(Si32 min, Si32 max);
 void Sleep(double duration_seconds);
 
 std::vector<Ui8> ReadFile(const char *file_name);

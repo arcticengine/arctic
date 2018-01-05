@@ -24,6 +24,7 @@
 #define ENGINE_ENGINE_H_
 
 #include <chrono>  // NOLINT
+#include <random>
 
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
@@ -52,6 +53,12 @@ class Engine {
   std::chrono::high_resolution_clock::time_point start_time_;
   double time_correction_;
   double last_time_;
+  
+  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_64_;
+  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_32_;
+  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_16_;
+  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_8_;
+  
 
   bool is_inverse_y_ = false;
 
@@ -63,6 +70,7 @@ class Engine {
   }
   void ResizeBackbuffer(const Si32 width, const Si32 height);
   double GetTime();
+  Si64 GetRandom(Si64 min, Si64 max);
   Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
   void OnWindowResize(Si32 width, Si32 height);
   Vec2Si32 GetWindowSize() const;

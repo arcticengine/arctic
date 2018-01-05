@@ -1,4 +1,4 @@
-﻿// The MIT License(MIT)
+// The MIT License(MIT)
 //
 // Copyright 2016-2017 Huldra
 //
@@ -27,7 +27,6 @@
 #include <algorithm>
 #include <cstring>
 #include <deque>
-#include <random>
 #include <utility>
 #include <vector>
 #include "engine/easy.h"
@@ -218,8 +217,6 @@ Cell g_maze[32][20];
 std::vector<Creature> g_creatures;
 Si32 g_hero_idx = 0;
 
-std::independent_bits_engine<std::mt19937_64, 8, Ui64> g_rnd;
-
 void InitCreatures() {
   g_creatures.clear();
   Creature hero;
@@ -245,7 +242,7 @@ void StepMazeGeneration(Vec2Si32 from, Vec2Si32 size) {
       , Vec2Si32(0, -1)
       , Vec2Si32(0, 1)};
   for (Si32 variants = 4; variants > 0; --variants) {
-    Si32 idx = g_rnd() % variants;
+    Si32 idx = Random32(0, variants - 1);
     Vec2Si32 dir = direction[idx];
     Vec2Si32 path = from + dir;
     Vec2Si32 to = path + dir;
@@ -331,7 +328,7 @@ void CycleDeadEnd(Vec2Si32 pos) {
   if (Maze(pos).kind != kCellFloor) {
     return;
   }
-  Si32 rnd_dir = g_rnd() % 4;
+  Si64 rnd_dir = Random(0, 3);
   for (Si32 i = 0; i < 4; ++i) {
     Si32 idx = (i + rnd_dir) % 4;
     Vec2Si32 p = pos + dir[idx];
@@ -395,8 +392,8 @@ void PlayIntro() {
 
   Ui8 snow[2][320 * 200];
   for (Si32 i = 0; i < 320 * 200; ++i) {
-    if (g_rnd() % 16 == 0) {
-      snow[0][i] = g_rnd() % 256;
+    if (Random(0, 15) == 0) {
+      snow[0][i] = Random(0, 255);
     } else {
       snow[0][i] = 0;
     }
@@ -426,7 +423,7 @@ void PlayIntro() {
       break;
     }
     if (frame > duration1 && frame < duration2) {
-      pyramids_pos = Vec2Si32(g_rnd() % 3 - 1, 10 + g_rnd() % 3 - 1);
+      pyramids_pos = Vec2Si32(Random32(-1, 1), 10 + Random32(-1, 1));
     }
     g_intro_pyramids.Draw(pyramids_pos);
     if (frame < duration1) {
@@ -453,8 +450,8 @@ void PlayIntro() {
             || next_snow[next_x + next_y * 320] > z) {
             next_snow[next_x + next_y * 320] = z;
           }
-          if (g_rnd() % 16 == 0) {
-            Si32 z2 = g_rnd() % 256;
+          if (Random(0, 15) == 0) {
+            Si32 z2 = Random32(0, 255);
             if (z2 > z) {
               next_snow[x + y * 320] = z2;
             }
@@ -471,8 +468,6 @@ void PlayIntro() {
 }
 
 void GenerateMaze() {
-  g_rnd.seed(static_cast<unsigned int>(time(nullptr)));
-
   Vec2Si32 pos;
   for (pos.x = 0; pos.x < g_maze_size.x; ++pos.x) {
     for (pos.y = 0; pos.y < g_maze_size.y; ++pos.y) {
@@ -496,7 +491,7 @@ void GenerateMaze() {
   int attempt = 0;
   while (true) {
     attempt++;
-    Si32 rnd = static_cast<Si32>(g_rnd() % dead_ends.size());
+    Si32 rnd = Random32(0, static_cast<Si32>(dead_ends.size() - 1));
     Vec2Si32 pos = dead_ends[rnd];
     bool is_ok = false;
     if (Maze(pos + Vec2Si32(-1, 0)).kind == kCellFloor) {
@@ -516,14 +511,14 @@ void GenerateMaze() {
 
   Si32 to_eliminate = static_cast<Si32>(dead_ends.size() / 2);
   for (Si32 idx = 0; idx < to_eliminate; ++idx) {
-    Si32 rnd = static_cast<Si32>(g_rnd() % dead_ends.size());
+    Si32 rnd = Random32(0, static_cast<Si32>(dead_ends.size() - 1));
     EliminateDeadEnd(dead_ends[rnd]);
     dead_ends[rnd] = dead_ends.back();
     dead_ends.pop_back();
   }
   Si32 to_cycle = static_cast<Si32>(dead_ends.size() / 2);
   for (Si32 idx = 0; idx < to_cycle; ++idx) {
-    Si32 rnd = static_cast<Si32>(g_rnd() % dead_ends.size());
+    Si32 rnd = Random32(0, static_cast<Si32>(dead_ends.size() - 1));
     CycleDeadEnd(dead_ends[rnd]);
     dead_ends[rnd] = dead_ends.back();
     dead_ends.pop_back();
@@ -534,7 +529,7 @@ void GenerateMaze() {
     }
     Cell &cell = Maze(dead_ends[idx]);
     Item item;
-    Ui64 rnd = g_rnd();
+    Ui64 rnd = Random(0, 255);
     if (rnd < 32) {
       item.kind = kItemStick;
     } else if (rnd < 128) {
@@ -590,8 +585,8 @@ void Init() {
   ResizeScreen(800, 500);
 
   InitCreatures();
-  Hero().kind = static_cast<CreatureKind>(kCreatureHeroBegin +
-    g_rnd() % (kCreatureHeroEnd - kCreatureHeroBegin));
+  Hero().kind = static_cast<CreatureKind>(
+      Random(kCreatureHeroBegin, kCreatureHeroEnd - 1));
   Hero().pos = Vec2Si32(1, 1);
   Hero().items.resize(kItemKindCount);
   for (Ui32 idx = 0; idx < Hero().items.size(); ++idx) {

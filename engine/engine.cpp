@@ -38,6 +38,12 @@ void Engine::Init(Si32 width, Si32 height) {
   start_time_ = clock_.now();
   time_correction_ = 0.0;
   last_time_ = 0.0;
+  
+  Si64 ms = start_time_.time_since_epoch().count();
+  rnd_8_.seed(static_cast<Ui64>(ms));
+  rnd_16_.seed(static_cast<Ui64>(ms + 1));
+  rnd_32_.seed(static_cast<Ui64>(ms + 2));
+  rnd_64_.seed(static_cast<Ui64>(ms + 3));
 }
 
 void Engine::Draw2d() {
@@ -193,6 +199,24 @@ double Engine::GetTime() {
   start_time_ = now;
   time_correction_ = last_time_;
   return last_time_;
+}
+  
+Si64 Engine::GetRandom(Si64 min, Si64 max) {
+  Check(min <= max, "GetRandom min should be <= max");
+  Si64 range = max - min + 1;
+  if (range < 0x1000) {
+    if (range < 0x10) {
+      return min + rnd_8_() % range;
+    } else {
+      return min + rnd_16_() % range;
+    }
+  } else {
+    if (range < 0x1000000) {
+      return min + rnd_32_() % range;
+    } else {
+      return min + rnd_64_() % range;
+    }
+  }
 }
 
 Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {

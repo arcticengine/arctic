@@ -709,6 +709,14 @@ double Time() {
     return GetEngine()->GetTime();
 }
 
+Si64 Random(Si64 min, Si64 max) {
+  return GetEngine()->GetRandom(min, max);
+}
+  
+Si32 Random32(Si32 min, Si32 max) {
+  return static_cast<Si32>(GetEngine()->GetRandom(min, max));
+}
+
 void Sleep(double duration_seconds) {
     std::this_thread::sleep_for(
         std::chrono::duration<double>(duration_seconds));
