@@ -1,6 +1,6 @@
 // The MIT License(MIT)
 //
-// Copyright 2017 Huldra
+// Copyright 2017-2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -23,13 +23,11 @@
 #ifndef ENGINE_FONT_H_
 #define ENGINE_FONT_H_
 
-#include <cstring>
-#include <iostream>
 #include <vector>
 #include <list>
 
 #include "engine/arctic_types.h"
-#include "engine/easy.h"
+#include "engine/easy_sprite.h"
 
 namespace arctic {
 
@@ -47,13 +45,7 @@ struct BmFontBinHeader {
   Si8 m;
   Si8 f;
   Ui8 version;
-  void Log() {
-    // TODO(Huldra): Use log here
-    std::cerr << "header";
-    std::cerr << " bmf=" << ((b == 66 && m == 77 && f == 70) ? 1 : 0);
-    std::cerr << " version=" << static_cast<Si32>(version);
-    std::cerr << std::endl;
-  }
+  void Log();
 };
 
 struct BmFontBinInfo {
@@ -85,27 +77,7 @@ struct BmFontBinInfo {
   // as following the block comes the font name,
   // including the terminating null char.
   // Most of the time this block can simply be ignored.
-  void Log() {
-    // TODO(Huldra): Use log here
-    std::cerr << "info";
-    std::cerr << " face=\"" << font_name << "\"";
-    std::cerr << " size=" << font_size;
-    std::cerr << " bold=" << ((bits & kBold) ? 1 : 0);
-    std::cerr << " italic=" << ((bits & kItalic) ? 1 : 0);
-    std::cerr << " charset=" << static_cast<Si32>(char_set);
-    std::cerr << " unicode=" << ((bits & kUnicode) ? 1 : 0);
-    std::cerr << " stretchH=" << stretch_h;
-    std::cerr << " smooth=" << ((bits & kSmooth) ? 1 : 0);
-    std::cerr << " aa=" << static_cast<Si32>(aa);
-    std::cerr << " padding=" << static_cast<Si32>(padding_up);
-    std::cerr << "," << static_cast<Si32>(padding_right);
-    std::cerr << "," << static_cast<Si32>(padding_down);
-    std::cerr << "," << static_cast<Si32>(padding_left);
-    std::cerr << " spacing=" << static_cast<Si32>(spacing_horiz);
-    std::cerr << "," << static_cast<Si32>(spacing_vert);
-    std::cerr << " outline=" << static_cast<Si32>(outline);
-    std::cerr << std::endl;
-  }
+  void Log();
 };
 
 struct BmFontBinCommon {
@@ -123,21 +95,7 @@ struct BmFontBinCommon {
   Ui8 red_chnl;
   Ui8 green_chnl;
   Ui8 blue_chnl;
-  void Log() {
-    // TODO(Huldra): Use log here
-    std::cerr << "common";
-    std::cerr << " lineHeight=" << line_height;
-    std::cerr << " base=" << base;
-    std::cerr << " scaleW=" << scale_w;
-    std::cerr << " scaleH=" << scale_h;
-    std::cerr << " pages=" << pages;
-    std::cerr << " packed=" << ((bits & kPacked) ? 1 : 0);
-    std::cerr << " alphaChnl=" << static_cast<Si32>(alpha_chnl);
-    std::cerr << " redChnl=" << static_cast<Si32>(red_chnl);
-    std::cerr << " greenChnl=" << static_cast<Si32>(green_chnl);
-    std::cerr << " blueChnl=" << static_cast<Si32>(blue_chnl);
-    std::cerr << std::endl;
-  }
+  void Log();
 };
 
 struct BmFontBinPages {
@@ -149,13 +107,7 @@ struct BmFontBinPages {
   // so once you know the size of the first name, you can easily
   // determine the position of each of the names. The id of each page
   // is the zero-based index of the string name.
-  void Log(Si32 id) {
-    // TODO(Huldra): Use log here
-    std::cerr << "page";
-    std::cerr << " id=" << id;
-    std::cerr << " file=\"" << page_name << "\"";
-    std::cerr << std::endl;
-  }
+  void Log(Si32 id);
 };
 
 struct BmFontBinChars {
@@ -173,21 +125,7 @@ struct BmFontBinChars {
   // The number of characters in the file can be computed by taking the
   // size of the block and dividing with the size of the charInfo structure,
   // i.e.: numChars = charsBlock.blockSize/20.
-  void Log() {
-    // TODO(Huldra): Use log here
-    std::cerr << "char";
-    std::cerr << " id=" << id;
-    std::cerr << "\tx=" << x;
-    std::cerr << "  \ty=" << y;
-    std::cerr << "  \twidth=" << width;
-    std::cerr << "  \theight=" << height;
-    std::cerr << "  \txoffset=" << xoffset;
-    std::cerr << "\tyoffset=" << yoffset;
-    std::cerr << "\txadvance=" << xadvance;
-    std::cerr << "\tpage=" << static_cast<Si32>(page);
-    std::cerr << "\tchnl=" << static_cast<Si32>(chnl);
-    std::cerr << std::endl;
-  }
+  void Log();
 };
 
 struct BmFontBinKerningPair {
@@ -196,14 +134,7 @@ struct BmFontBinKerningPair {
                // described
   Ui32 second;
   Si16 amount;
-  void Log() {
-    // TODO(Huldra): Use log here
-    std::cerr << "kerning";
-    std::cerr << " first=" << first;
-    std::cerr << "\tsecond=" << second;
-    std::cerr << "\tamount=" << amount;
-    std::cerr << std::endl;
-  }
+  void Log();
 };
 #pragma pack(pop)
 
@@ -211,54 +142,9 @@ struct Utf32Reader {
   const Ui8 *begin = nullptr;
   const Ui8 *p = nullptr;
 
-  void Reset(const Ui8 *data) {
-    begin = data;
-    p = data;
-  }
-
-  void Rewind() {
-    p = begin;
-  }
-
-  Ui32 ReadOne() {
-    while (true) {
-      Ui32 u = 0;
-      if ((p[0] & 0x80) == 0) {
-        // 0xxxxxxx
-        u = Ui32(p[0]);
-        if (p[0] == 0) {
-          return 0;
-        }
-        p++;
-        return u;
-      } else if ((p[0] & 0xe0) == 0xc0) {
-        // 110xxxxx 10xxxxxx
-        if ((p[1] & 0xc0) == 0x80) {
-          u = (Ui32(p[0] & 0x1f) << 6) | (Ui32(p[1] & 0x3f));
-          p += 2;
-          return u;
-        }
-      } else if ((p[0] & 0xf0) == 0xe0) {
-        // 1110xxxx 10xxxxxx 10xxxxxx
-        if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80) {
-          u = (Ui32(p[0] & 0x0f) << 12) | (Ui32(p[1] & 0x3f) << 6) |
-            (Ui32(p[2] & 0x3f));
-          p += 3;
-          return u;
-        }
-      } else if ((p[0] & 0xf8) == 0xf0) {
-        // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-        if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80 &&
-          (p[3] & 0xc0) == 0x80) {
-          u = (Ui32(p[0] & 0x07) << 18) | (Ui32(p[1] & 0x3f) << 12) |
-            (Ui32(p[2] & 0x3f) << 6) | (Ui32(p[3] & 0x3f));
-          p += 4;
-          return u;
-        }
-      }
-      p++;
-    }
-  }
+  void Reset(const Ui8 *data);
+  void Rewind();
+  Ui32 ReadOne();
 };
 
 struct Glyph {
@@ -287,238 +173,14 @@ struct Font {
   Si32 base_to_bottom = 0;
   Si32 line_height = 0;
 
-  void Load(const char *file_name) {
-    codepoint.clear();
-    glyph.clear();
-
-
-    std::vector<Ui8> file = easy::ReadFile(file_name);
-    Si32 pos = 0;
-    BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
-    header->Log();
-    pos += sizeof(BmFontBinHeader);
-
-    Si8 block_type = file[pos];
-    ++pos;
-    Si32 block_size = *reinterpret_cast<Si32*>(&file[pos]);
-    pos += sizeof(Si32);
-    Check(block_type == kBlockInfo, "Unexpected block type 1");
-
-    Check(block_size >=
-      sizeof(BmFontBinInfo) - sizeof(BmFontBinInfo::font_name),
-      "Info block is too small");
-    BmFontBinInfo info;
-    memcpy(&info, &file[pos], sizeof(info) - sizeof(info.font_name));
-    info.font_name = reinterpret_cast<char*>(
-      &file[pos + sizeof(info) - sizeof(info.font_name)]);
-    info.Log();
-    pos += block_size;
-
-    block_type = file[pos];
-    ++pos;
-    block_size = *reinterpret_cast<Si32*>(&file[pos]);
-    pos += sizeof(Si32);
-    Check(block_type == kBlockCommon, "Unexpected block type 2");
-    Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
-    BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[pos]);
-    common->Log();
-    
-    base_to_top = common->base;
-    base_to_bottom = common->line_height - common->base;
-    line_height = common->line_height;
-    
-    pos += block_size;
-
-    block_type = file[pos];
-    ++pos;
-    block_size = *reinterpret_cast<Si32*>(&file[pos]);
-    pos += sizeof(Si32);
-    Check(block_type == kBlockPages, "Unexpected block type 3");
-    Check(block_size >= 1, "Pages block is too small");
-    Si32 inner_pos = pos;
-    std::vector<easy::Sprite> page_images;
-    page_images.resize(common->pages);
-
-    for (Si32 id = 0; id < common->pages; ++id) {
-      BmFontBinPages page;
-      page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
-      page.Log(id);
-
-      char path[65536];
-      const char *p = file_name;
-      Check(strlen(file_name) < sizeof(path) / 2, "File name is too long: ",
-        file_name);
-      Check(strlen(page.page_name) < sizeof(path) / 2,
-        "File name is too long: ", page.page_name);
-      const char *p2 = p;
-      const char *end = p;
-      while (*p2) {
-        if (*p2 == '\\' || *p2 == '/') {
-          end = p2 + 1;
-        }
-        ++p2;
-      }
-      if (end != p) {
-        memcpy(path, p, end - p);
-      }
-      strncpy(path + (end - p), page.page_name, sizeof(path) / 2);
-      page_images[id].Load(path);
-
-      inner_pos += static_cast<Si32>(std::strlen(page.page_name)) + 1;
-    }
-    pos += block_size;
-    block_type = file[pos];
-    ++pos;
-    block_size = *reinterpret_cast<Si32*>(&file[pos]);
-    pos += sizeof(Si32);
-    Check(block_type == kBlockChars, "Unexpected block type 4");
-    Check(block_size >= sizeof(BmFontBinChars), "Pages block is too small");
-    inner_pos = pos;
-    for (Si32 id = 0; id < block_size / 20; ++id) {
-      BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(
-        &file[inner_pos]);
-      chars->Log();
-
-      easy::Sprite sprite;
-      sprite.Reference(page_images[chars->page],
-        chars->x, page_images[chars->page].Height() - chars->y - chars->height,
-        chars->width, chars->height);
-      sprite.SetPivot(arctic::Vec2Si32(
-        chars->xoffset, chars->height + chars->yoffset - common->base));
-      glyph.emplace_back(chars->id, chars->xadvance, sprite);
-
-      inner_pos += 20;
-    }
-    pos += block_size;
-
-    if (static_cast<Si32>(file.size()) > pos) {
-      block_type = file[pos];
-      ++pos;
-      block_size = *reinterpret_cast<Si32*>(&file[pos]);
-      pos += sizeof(Si32);
-      Check(block_type == kBlockKerningPairs, "Unexpected block type 5");
-      Check(block_size >= sizeof(BmFontBinKerningPair),
-        "KerningPair block is too small");
-      inner_pos = pos;
-      for (Si32 id = 0; id < block_size / 10; ++id) {
-        BmFontBinKerningPair *kerning_pair =
-          reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
-        kerning_pair->Log();
-        inner_pos += 10;
-      }
-      pos += block_size;
-    }
-
-    Ui32 end_codepoint = 0;
-    for (auto it = glyph.begin(); it != glyph.end(); ++it) {
-      if (it->codepoint >= end_codepoint) {
-        end_codepoint = it->codepoint + 1;
-      }
-    }
-    codepoint.resize(end_codepoint, nullptr);
-    for (auto it = glyph.begin(); it != glyph.end(); ++it) {
-      codepoint[it->codepoint] = &(*it);
-    }
-  }
-  
+  void Load(const char *file_name);
   void DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
-      Si32 x, Si32 y, TextOrigin origin, bool do_draw,
-      Vec2Si32 *out_size) {
-    Si32 next_x = x;
-    Si32 next_y = y;
-    if (do_draw) {
-      if (origin == kTextOriginTop) {
-        next_y = y - base_to_top + line_height;
-      } else if (origin == kTextOriginFirstBase) {
-        next_y = y + line_height;
-      } else {
-        Vec2Si32 size;
-        DrawEvaluateSizeImpl(text, do_keep_xadvance,
-            x, y, origin, false,
-            &size);
-        if (origin == kTextOriginBottom) {
-          next_y = y + size.y - base_to_top + line_height;
-        } else if (origin == kTextOriginLastBase) {
-          next_y = y + size.y;
-        }
-      }
-    }
-    
-    Si32 width = 0;
-    Si32 max_width = 0;
-    Si32 lines = 0;
-    Ui32 prev_code = 0;
-    bool is_newline = false;
-    Si32 newline_count = 1;
-    Utf32Reader reader;
-    reader.Reset(reinterpret_cast<const Ui8*>(text));
-    Glyph *glyph = nullptr;
-    while (true) {
-      Ui32 code = reader.ReadOne();
-      if (!code) {
-        if (glyph && !do_keep_xadvance) {
-          width += glyph->sprite.Width() - glyph->xadvance;
-        }
-        max_width = std::max(max_width, width);
-        if (out_size) {
-          *out_size = Vec2Si32(max_width, lines * line_height);
-        }
-        return;
-      }
-      if (code == '\r' || code == '\n') {
-        if (is_newline) {
-          if (code == prev_code) {
-            newline_count++;
-          } else {
-            is_newline = false;
-          }
-        } else {
-          is_newline = true;
-          newline_count++;
-        }
-      } else {
-        is_newline = false;
-        if (code < codepoint.size() && codepoint[code]) {
-          if (newline_count) {
-            if (glyph && !do_keep_xadvance) {
-              width += glyph->sprite.Width() - glyph->xadvance;
-            }
-            max_width = std::max(max_width, width);
-            width = 0;
-            next_x = x;
-            lines += newline_count;
-            next_y -= newline_count * line_height;
-            newline_count = 0;
-          }
-          
-          glyph = codepoint[code];
-          width += glyph->xadvance;
-          if (do_draw) {
-            glyph->sprite.Draw(next_x, next_y);
-            next_x += glyph->xadvance;
-          }
-        }
-      }
-    }
-  }
-  
-  Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance) {
-    Vec2Si32 size;
-    DrawEvaluateSizeImpl(text, do_keep_xadvance,
-        0, 0, kTextOriginFirstBase, false,
-        &size);
-    return size;
-  }
-
-  void Draw(const char *text, const Si32 x, const Si32 y) {
-    DrawEvaluateSizeImpl(text, false, x, y,
-        kTextOriginBottom, true, nullptr);
-  }
-  
+    Si32 x, Si32 y, TextOrigin origin, bool do_draw,
+    Vec2Si32 *out_size);
+  Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
+  void Draw(const char *text, const Si32 x, const Si32 y);
   void Draw(const char *text, const Si32 x, const Si32 y,
-      TextOrigin origin) {
-    DrawEvaluateSizeImpl(text, false, x, y, origin, true, nullptr);
-  }
+    TextOrigin origin);
 };
 
 }  // namespace arctic

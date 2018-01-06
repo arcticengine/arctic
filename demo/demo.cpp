@@ -393,7 +393,7 @@ void PlayIntro() {
   Ui8 snow[2][320 * 200];
   for (Si32 i = 0; i < 320 * 200; ++i) {
     if (Random(0, 15) == 0) {
-      snow[0][i] = Random(0, 255);
+      snow[0][i] = static_cast<Ui8>(Random(0, 255));
     } else {
       snow[0][i] = 0;
     }

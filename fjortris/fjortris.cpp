@@ -63,6 +63,8 @@ Si32 g_dx = 0;
 Si32 g_dy = 0;
 Si32 g_rotate = 0;
 Si32 g_drop = 0;
+Si32 g_score = 0;
+Font g_font;
 void StartNewTetramino() {
 	Si32 idx = Random32(0, 6);
 	for (Si32 y = 0; y < 5; ++y) {
@@ -90,6 +92,8 @@ void Init() {
 	ResizeScreen(800, 500);
 	StartNewTetramino();
 	g_prev_time = Time();
+  g_score = 0;
+  g_font.Load("data/arctic_one_bmf.fnt");
 }
 bool IsPositionOk(Si32 test_x, Si32 test_y, Si32 test_orientation) {
 	for (Si32 y = 0; y < 5; ++y) {
@@ -124,6 +128,7 @@ void LockTetramino() {
 				}
 			}
 			if (is_full_line) {
+        g_score += 100;
 				do_continue = true;
 				for (Si32 y2 = y; y2 > 0; --y2) {
 					for (Si32 x = 0; x < 8; ++x) {
@@ -199,6 +204,9 @@ void Render() {
         x_offset + (x + g_current_x) * 25, (15 - y - g_current_y) * 25);
 		}
 	}
+  char score[128];
+  snprintf(score, sizeof(score), u8"Score: %d", g_score);
+  g_font.Draw(score, 0, ScreenSize().y, kTextOriginTop);
 	ShowFrame();
 }
 void EasyMain() {

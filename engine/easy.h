@@ -33,6 +33,7 @@
 #include "engine/easy_sound.h"
 #include "engine/easy_sprite.h"
 #include "engine/engine.h"
+#include "engine/font.h"
 
 namespace arctic {
 namespace easy {

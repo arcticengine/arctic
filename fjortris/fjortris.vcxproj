@@ -146,7 +146,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile />
       <TreatWarningAsError>true</TreatWarningAsError>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -179,6 +179,7 @@
     <ClInclude Include="..\engine\easy_sprite.h" />
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\font.h" />
     <ClInclude Include="..\engine\frustum3f.h" />
     <ClInclude Include="..\engine\mat22f.h" />
     <ClInclude Include="..\engine\mat33f.h" />
@@ -209,6 +210,7 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\font.cpp" />
     <ClCompile Include="fjortris.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
