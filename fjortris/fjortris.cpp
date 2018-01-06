@@ -23,14 +23,12 @@
 // fjortris.cpp : Defines the entry point for the application.
 #include "fjortris/fjortris.h"
 
-#include <random>
 #include "engine/easy.h"
 
 using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
 Sprite g_blocks[3];
-std::independent_bits_engine<std::mt19937_64, 8, Ui64> g_rnd;
 Si32 g_field[16][8] = {
 	{0,0,0,0,0,0,0,0},
 	{0,0,0,0,0,0,0,0},
@@ -66,7 +64,7 @@ Si32 g_dy = 0;
 Si32 g_rotate = 0;
 Si32 g_drop = 0;
 void StartNewTetramino() {
-	Si32 idx = g_rnd() % 7;
+	Si32 idx = Random32(0, 6);
 	for (Si32 y = 0; y < 5; ++y) {
 		for (Si32 x = 0; x < 5; ++x) {
 			g_current[0][y][x] = g_tetraminoes[y][x + idx * 5];
@@ -77,7 +75,7 @@ void StartNewTetramino() {
 	}
 	g_current_x = 3;
 	g_current_y = 0;
-	g_current_orientation = g_rnd() % 4;
+	g_current_orientation = Random32(0, 3);
 }
 void ClearField() {
 	for (Si32 y = 0; y < 16; ++y) {
@@ -138,14 +136,14 @@ void LockTetramino() {
 }
 void Update() {
 	double time = Time();
-	if (IsKey(kKeyLeft) || IsKey("a")) {
+	if (IsKeyDownward(kKeyLeft) || IsKeyDownward("a")) {
 		g_dx = -1;
-	} else if (IsKey(kKeyRight) || IsKey("d")) {
+	} else if (IsKeyDownward(kKeyRight) || IsKeyDownward("d")) {
 		g_dx = 1;
 	}
-	g_rotate = g_rotate || IsKey(kKeyUp) || IsKey("w") || IsKey(" ");
-	g_drop = g_drop || IsKey(kKeyDown) || IsKey("s");
-	if (IsKey("c")) {
+	g_rotate = g_rotate || IsKeyDownward(kKeyUp) || IsKeyDownward("w") || IsKeyDownward(" ");
+	g_drop = g_drop || IsKeyDownward(kKeyDown) || IsKeyDownward("s");
+	if (IsKeyDownward("c")) {
 		ClearField();
 		StartNewTetramino();
 		return;
@@ -189,22 +187,23 @@ void Update() {
 }
 void Render() {
 	Clear();
+  Si32 x_offset = (ScreenSize().x - 25 * 8) / 2;
 	for (Si32 y = 0; y < 16; ++y) {
 		for (Si32 x = 0; x < 8; ++x) {
-			g_blocks[g_field[y][x]].Draw(x * 25, (15 - y) * 25);
+			g_blocks[g_field[y][x]].Draw(x_offset + x * 25, (15 - y) * 25);
 		}
 	}
 	for (Si32 y = 0; y < 5; ++y) {
 		for (Si32 x = 0; x < 5; ++x) {
 			g_blocks[g_current[g_current_orientation][y][x]].Draw(
-				(x + g_current_x) * 25, (15 - y - g_current_y) * 25);
+        x_offset + (x + g_current_x) * 25, (15 - y - g_current_y) * 25);
 		}
 	}
 	ShowFrame();
 }
 void EasyMain() {
 	Init();
-	while (!IsKey(kKeyEscape)) {
+	while (!IsKeyDownward(kKeyEscape)) {
 		Update();
 		Render();
 	}
