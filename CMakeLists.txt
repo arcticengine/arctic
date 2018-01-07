@@ -5,20 +5,25 @@ cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 ###################################################
 
 
+set(CMAKE_MACOSX_BUNDLE 1)
 # Define Release by default.
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
   message(STATUS "Build type not specified: defaulting to release.")
 endif(NOT CMAKE_BUILD_TYPE)
 
+
 set(PROJECT_NAME demo)
 # Output Variables
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/demo )
 # Folders files
+set(DATA_DIR ./demo)
 set(CPP_DIR_1 ./engine)
 set(CPP_DIR_2 ./demo)
 set(HEADER_DIR_1 ./engine)
 set(HEADER_DIR_2 ./demo)
+
+file(GLOB_RECURSE RES_SOURCES "${DATA_DIR}/data/*")
 
 SET(CMAKE_CXX_COMPILER             "/usr/bin/clang++")
 set(CMAKE_CXX_STANDARD 14)
@@ -89,9 +94,11 @@ ENDIF (APPLE)
 
 
 # Add executable to build.
-add_executable(${PROJECT_NAME} 
+add_executable(${PROJECT_NAME} MACOSX_BUNDLE
    ${SRC_FILES}
+   ${RES_SOURCES}
 )
+SET_SOURCE_FILES_PROPERTIES(${RES_SOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/data)
 
 IF (APPLE)
 target_link_libraries(
@@ -111,4 +118,3 @@ target_link_libraries(
   ${ALSA_LIBRARY}
 )
 ENDIF (APPLE)
-
