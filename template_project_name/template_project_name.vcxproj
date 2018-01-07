@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{6A1411C8-5CE9-42FA-BCB3-9EE826107EFB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>demo</RootNamespace>
+    <RootNamespace>template_project_name</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -232,7 +232,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="demo.rc" />
+    <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="app_icon.ico" />
