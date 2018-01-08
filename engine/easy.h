@@ -78,9 +78,13 @@ Vec2Si32 MousePos();
 Vec2Si32 MouseMove();
 Si32 MouseWheelDelta();
 
+Si32 InputMessageCount();
+const InputMessage& GetInputMessage(Si32 idx);
+
 Vec2Si32 WindowSize();
 Vec2Si32 ScreenSize();
 void ResizeScreen(const Si32 width, const Si32 height);
+void ResizeScreen(const Vec2Si32 size);
 void SetInverseY(bool is_inverse);
 
 void Clear();

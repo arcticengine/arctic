@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <chrono>  // NOLINT
+#include <deque>
 #include <fstream>
 #include <limits>
 #include <thread>  // NOLINT
@@ -77,6 +78,7 @@ struct KeyState {
 };
 
 static KeyState g_key_state[kKeyCount];
+static std::deque<InputMessage> g_input_messages;
 
 static Engine *g_engine = nullptr;
 static Vec2Si32 g_mouse_pos_prev = Vec2Si32(0, 0);
@@ -469,7 +471,9 @@ void ShowFrame() {
     InputMessage message;
     g_mouse_pos_prev = g_mouse_pos;
     g_mouse_wheel_delta = 0;
+    g_input_messages.clear();
     while (PopInputMessage(&message)) {
+        g_input_messages.push_back(message);
         if (message.kind == InputMessage::kKeyboard) {
             g_key_state[message.keyboard.key].OnStateChange(
                 message.keyboard.key_state == 1);
@@ -690,7 +694,10 @@ Vec2Si32 ScreenSize() {
 // Sets virtual screen size
 void ResizeScreen(const Si32 width, const Si32 height) {
     GetEngine()->ResizeBackbuffer(width, height);
-    return;
+}
+
+void ResizeScreen(const Vec2Si32 size) {
+  GetEngine()->ResizeBackbuffer(size.x, size.y);
 }
 
 void SetInverseY(bool is_inverse) {
@@ -716,6 +723,18 @@ Si64 Random(Si64 min, Si64 max) {
 Si32 Random32(Si32 min, Si32 max) {
   return static_cast<Si32>(GetEngine()->GetRandom(min, max));
 }
+  
+Si32 InputMessageCount() {
+  return static_cast<Si32>(g_input_messages.size());
+}
+
+const InputMessage& GetInputMessage(Si32 idx) {
+  Check(idx >= 0, "GetInputMessage called with idx < 0");
+  Check(idx < g_input_messages.size(),
+      "GetInputMessage called with idx >= InputMessagesSize()");
+  return g_input_messages[idx];
+}
+
 
 void Sleep(double duration_seconds) {
     std::this_thread::sleep_for(
