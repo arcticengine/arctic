@@ -347,6 +347,7 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
         }
       } else {
         is_newline = true;
+        prev_code = code;
         newline_count++;
       }
     } else {
