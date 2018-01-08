@@ -21,10 +21,19 @@
 // IN THE SOFTWARE.
 
 // fjortris.cpp : Defines the entry point for the application.
+
+#include "engine/arctic_platform_def.h"
+#ifdef ARCTIC_PLATFORM_WINDOWS
+#elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
+#include <unistd.h>
+#else
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include "engine/easy.h"
+
 
 using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
@@ -32,22 +41,26 @@ using namespace arctic::easy;  // NOLINT
 Font g_font;
 std::string g_project_name;
 std::string g_progress;
+std::string g_path;
+std::string g_current_directory;
+std::string g_template;
 
-/*void ReplaceAll(std::string &str, const std::string &from,
-    const std::string &to) {
+void ReplaceAll(const std::string &from,
+    const std::string &to, std::string *in_out_str) {
   if (from.empty()) {
     return;
   }
+  Check(in_out_str, "ReplaceAll called with in_out_str == nullptr");
   size_t start_pos = 0;
   while (true) {
-    start_pos = str.find(from, start_pos));
+    start_pos = in_out_str->find(from, start_pos);
     if (start_pos == std::string::npos) {
       return;
     }
-    str.replace(start_pos, from.length(), to);
+    in_out_str->replace(start_pos, from.length(), to);
     start_pos += to.length();
   }
-}*/
+}
 
 void UpdateResolution() {
   Vec2Si32 size = WindowSize();
@@ -230,15 +243,46 @@ bool GetProjectName() {
   return false;
 }
 
-bool IsProjectNameOk() {
+int DoesDirectoryExist(const char *path) {
   struct stat info;
-  if (stat(g_project_name.c_str(), &info) != 0) {
-    return true;
+  if (stat(path, &info) != 0) {
+    return 0;
   } else if( info.st_mode & S_IFDIR ) {
-    return false;
+    return 1;
   } else {
-    return false;
+    return -1;
   }
+}
+
+bool MakeDirectory(const char *path) {
+#ifdef ARCTIC_PLATFORM_WINDOWS
+  BOOL is_ok = CreateDirectory(path, NULL);
+  return is_ok;
+#elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
+  Si32 result = mkdir(path,
+      S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IXOTH);
+  return (result == 0);
+#else
+  // Not implemented for this platform
+  return false;
+#endif
+}
+
+bool CurrentDir(std::string *out_dir) {
+#ifdef ARCTIC_PLATFORM_WINDOWS
+  return false;
+#elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
+  char cwd[1 << 20];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    out_dir->clear();
+    out_dir->append(cwd);
+    return true;
+  }
+  return false;
+#else
+  // Not implemented for this platform
+  return false;
+#endif
 }
 
 bool ShowProgress() {
@@ -247,14 +291,131 @@ bool ShowProgress() {
   while (!IsKeyDownward(kKeyEscape)) {
     switch (step) {
       case 1:
-        if (IsProjectNameOk()) {
+      {
+        bool is_ok = false;
+        for (Si32 i = 0; i < 10; ++i) {
+          std::string file;
+          file.clear();
+          file.append(g_current_directory);
+          file.append("/arctic.engine");
+          std::vector<Ui8> data = ReadFile(file.c_str(), true);
+          const char *expected = "arctic.engine";
+          if (data.size() >= strlen(expected)) {
+            if (memcmp(data.data(), expected, strlen(expected)) == 0) {
+              is_ok = true;
+              break;
+            }
+          }
+          g_current_directory.append("/..");
+        }
+        if (is_ok) {
+          g_path = g_current_directory;
+          g_path.append("/");
+          g_path.append(g_project_name);
+          g_progress.append(u8"Arctic Engine is detected.\n");
+        } else {
+          g_progress.append(u8"Can't detect Arctic Engine. ERROR.\n");
+          step = 100500;
+        }
+      }
+        break;
+      case 2:
+        if (DoesDirectoryExist(g_path.c_str()) == 0) {
           g_progress.append(u8"Directory name is OK\n");
         } else {
           g_progress.append(u8"A directory named \"");
-          g_progress.append(g_project_name);
-          g_progress.append(u8"\" already exists. Use another name.\n");
+          g_progress.append(g_path);
+          g_progress.append(u8"\" already exists. ERROR. Use another name.\n");
           step = 100500;
         }
+        break;
+      case 3:
+        if (MakeDirectory(g_path.c_str())) {
+          g_progress.append(u8"Directory is created OK\n");
+        } else {
+          g_progress.append(u8"Can't create directory \"");
+          g_progress.append(g_path);
+          g_progress.append(u8"\". ERROR.\n");
+          step = 100500;
+        }
+        break;
+      case 4:
+        g_template = g_current_directory + "/template_project_name";
+        if (DoesDirectoryExist(g_template.c_str()) == 1) {
+          g_progress.append(u8"Template found OK\n");
+        } else {
+          g_progress.append(u8"Can't find template directory \"");
+          g_progress.append(g_template);
+          g_progress.append(u8"\". ERROR.\n");
+          step = 100500;
+        }
+        break;
+      case 5:
+      {
+        std::vector<std::string> files = {
+          "Assets.xcassets"
+          , "Assets.xcassets/AppIcon.appiconset"
+          , "data"
+          , "template_project_name.xcodeproj"
+          , "template_project_name.xcodeproj/project.xcworkspace"
+          , "template_project_name.xcodeproj/xcshareddata"
+          , "template_project_name.xcodeproj/xcshareddata/xcschemes/"
+        };
+        for (Si32 idx = 0; idx < files.size(); ++idx) {
+          std::string name = files[idx];
+          ReplaceAll("template_project_name", g_project_name, &name);
+          MakeDirectory((g_path + "/" + name).c_str());
+        }
+        g_progress.append(u8"Project structure created OK\n");
+      }
+        break;
+      case 6:
+      {
+        std::vector<std::string> files = {
+          "app_icon.ico"
+          , "data/arctic_one_bmf_0.tga"
+          , "data/arctic_one_bmf.fnt"
+          , "small_app_icon.ico"
+        };
+        for (Si32 idx = 0; idx < files.size(); ++idx) {
+          auto data = ReadFile((g_template + "/" + files[idx]).c_str());
+          std::string name = files[idx];
+          ReplaceAll("template_project_name", g_project_name, &name);
+          WriteFile((g_path + "/" + name).c_str(), data.data(), data.size());
+        }
+        g_progress.append(u8"Data files copied OK\n");
+      }
+        break;
+      case 7:
+      {
+        std::vector<std::string> files = {
+          "Assets.xcassets/AppIcon.appiconset/Contents.json"
+          , "CMakeLists.txt"
+          , "Info.plist"
+          , "main.cpp"
+          , "resource.h"
+          , "resource.rc"
+          , "targetver.h"
+          , "template_project_name.sln"
+          , "template_project_name.vcxproj"
+          , "template_project_name.vcxproj.filters"
+          , "template_project_name.xcodeproj/project.pbxproj"
+          , "template_project_name.xcodeproj/project.xcworkspace/contents.xcworkspacedata"
+          , "template_project_name.xcodeproj/xcshareddata/xcschemes/Debug.xcscheme"
+          , "template_project_name.xcodeproj/xcshareddata/xcschemes/Release.xcscheme"
+        };
+        for (Si32 idx = 0; idx < files.size(); ++idx) {
+          std::vector<Ui8> data = ReadFile((g_template + "/" + files[idx]).c_str());
+          std::string name = files[idx];
+          ReplaceAll("template_project_name", g_project_name, &name);
+          data.push_back('\0');
+          std::string content = reinterpret_cast<char*>(data.data());
+          ReplaceAll("template_project_name", g_project_name, &content);
+          WriteFile((g_path + "/" + name).c_str(),
+              reinterpret_cast<const Ui8*>(content.data()), content.size());
+        }
+        g_progress.append(u8"Project created OK\n");
+      }
         break;
       default:
         break;
@@ -265,11 +426,13 @@ bool ShowProgress() {
     Clear();
     const char *welcome = u8"The Snow Wizard\n\n"
     "Creating project \"%s\"\n\n"
+    "Current directory: %s\n"
     "%s\n\n"
     "Press ESC to leave the Snow Wizard";
     
     snprintf(text, sizeof(text), welcome,
-        g_project_name.c_str(), g_progress.c_str());
+        g_project_name.c_str(), g_current_directory.c_str(),
+        g_progress.c_str());
     g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop);
     ShowFrame();
   }
@@ -278,6 +441,10 @@ bool ShowProgress() {
 
 void EasyMain() {
   g_font.Load("data/arctic_one_bmf.fnt");
+  if (!CurrentDir(&g_current_directory)) {
+    //
+  }
+  
   if (!GetProjectName()) {
     return;
   }
