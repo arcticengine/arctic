@@ -730,7 +730,7 @@ Si32 InputMessageCount() {
 
 const InputMessage& GetInputMessage(Si32 idx) {
   Check(idx >= 0, "GetInputMessage called with idx < 0");
-  Check(idx < g_input_messages.size(),
+  Check(idx < static_cast<Si32>(g_input_messages.size()),
       "GetInputMessage called with idx >= InputMessagesSize()");
   return g_input_messages[idx];
 }
@@ -741,47 +741,76 @@ void Sleep(double duration_seconds) {
         std::chrono::duration<double>(duration_seconds));
 }
 
-std::vector<Ui8> ReadFile(const char *file_name) {
+std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
     std::ifstream in(file_name, std::ios_base::in | std::ios_base::binary);
-    Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadFile. Can't open the file, file_name: ",
+  std::vector<Ui8> data;
+  if (in.rdstate() == std::ios_base::failbit) {
+    if (is_bulletproof) {
+      return data;
+    }
+    Check(false, "Error in ReadFile. Can't open the file, file_name: ",
         file_name);
-    in.exceptions(std::ios_base::goodbit);
-    in.seekg(0, std::ios_base::end);
-    Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadFile. Can't seek to the end, file_name: ",
+  }
+  in.exceptions(std::ios_base::goodbit);
+  in.seekg(0, std::ios_base::end);
+  if (in.rdstate() == std::ios_base::failbit) {
+    if (is_bulletproof) {
+      in.close();
+      return data;
+    }
+    Check(false, "Error in ReadFile. Can't seek to the end, file_name: ",
         file_name);
+  }
     std::streampos pos = in.tellg();
-    Check(pos != std::streampos(-1),
-        "Error in ReadFile."
+  if (pos == std::streampos(-1)) {
+    if (is_bulletproof) {
+      in.close();
+      return data;
+    }
+    Check(false, "Error in ReadFile."
         " Can't determine file size via tellg, file_name: ",
         file_name);
-    in.seekg(0, std::ios_base::beg);
-    Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadFile. Can't seek to the beg, file_name: ",
-        file_name);
-    std::vector<Ui8> data;
-    if (static_cast<Ui64>(pos) > 0ull) {
-        data.resize(static_cast<size_t>(pos));
-        in.read(reinterpret_cast<char*>(data.data()), static_cast<Ui64>(pos));
-        Check(in.rdstate() != (std::ios_base::failbit | std::ios_base::eofbit),
-            "Error in ReadFile."
-            " Can't read the data, eofbit is set, file_name: ",
-            file_name);
-        Check(in.rdstate() != std::ios_base::badbit,
-            "Error in ReadFile."
-            " Can't read the data, badbit is set, file_name: ",
-            file_name);
-        Check(in.rdstate() == std::ios_base::goodbit,
-            "Error in ReadFile."
-            " Can't read the data, non-goodbit, file_name: ",
-            file_name);
+  }
+  in.seekg(0, std::ios_base::beg);
+  if (in.rdstate() == std::ios_base::failbit) {
+    if (is_bulletproof) {
+      in.close();
+      return data;
     }
-    in.close();
-    Check(in.rdstate() != std::ios_base::failbit,
-        "Error in ReadFile. Can't close the file, file_name: ",
-        file_name);
-    return data;
+    Check(false, "Error in ReadFile. Can't seek to the beg, file_name: ",
+      file_name);
+  }
+  
+  if (static_cast<Ui64>(pos) > 0ull) {
+    data.resize(static_cast<size_t>(pos));
+    in.read(reinterpret_cast<char*>(data.data()), static_cast<Ui64>(pos));
+    if (in.rdstate() == (std::ios_base::failbit | std::ios_base::eofbit)
+        || in.rdstate() == std::ios_base::badbit
+        || in.rdstate() != std::ios_base::goodbit) {
+      if (is_bulletproof) {
+        in.close();
+        data.clear();
+        return data;
+      }
+      Check(in.rdstate() != (std::ios_base::failbit | std::ios_base::eofbit),
+          "Error in ReadFile."
+          " Can't read the data, eofbit is set, file_name: ",
+          file_name);
+      Check(in.rdstate() != std::ios_base::badbit,
+          "Error in ReadFile."
+          " Can't read the data, badbit is set, file_name: ",
+          file_name);
+      Check(in.rdstate() == std::ios_base::goodbit,
+          "Error in ReadFile."
+          " Can't read the data, non-goodbit, file_name: ",
+          file_name);
+    }
+  }
+  in.close();
+  Check(in.rdstate() != std::ios_base::failbit || is_bulletproof,
+      "Error in ReadFile. Can't close the file, file_name: ",
+      file_name);
+  return data;
 }
 
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {

@@ -95,7 +95,7 @@ Si64 Random(Si64 min, Si64 max);
 Si32 Random32(Si32 min, Si32 max);
 void Sleep(double duration_seconds);
 
-std::vector<Ui8> ReadFile(const char *file_name);
+std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof = false);
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
 
 Engine* GetEngine();
