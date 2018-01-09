@@ -28,6 +28,7 @@
 #else
 #endif
 
+#include <cstring>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -304,8 +305,8 @@ bool ShowProgress() {
           file.append("/arctic.engine");
           std::vector<Ui8> data = ReadFile(file.c_str(), true);
           const char *expected = "arctic.engine";
-          if (data.size() >= strlen(expected)) {
-            if (memcmp(data.data(), expected, strlen(expected)) == 0) {
+          if (data.size() >= std::strlen(expected)) {
+            if (memcmp(data.data(), expected, std::strlen(expected)) == 0) {
               is_ok = true;
               break;
             }
