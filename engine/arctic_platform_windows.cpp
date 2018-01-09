@@ -24,7 +24,9 @@
 
 #ifdef ARCTIC_PLATFORM_WINDOWS
 
-#define WIN32_LEAN_AND_MEAN  // Exclude rarely-used stuff from Windows headers
+#define IDI_ICON1 129
+
+#define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 #include <windowsx.h>
@@ -482,10 +484,9 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   wcex.cbClsExtra = 0;
   wcex.cbWndExtra = 0;
   wcex.hInstance = instance_handle;
-  //  wcex.hIcon = LoadIcon(instance_handle, MAKEINTRESOURCE(IDI_APP_ICON));
+  wcex.hIcon = LoadIcon(instance_handle, MAKEINTRESOURCE(IDI_ICON1));
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
   wcex.hbrBackground = g_black_brush;
-  //  wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_DEMO);
   wcex.lpszClassName = window_class_name;
   // wcex.hIconSm = LoadIcon(wcex.hInstance,
   //      MAKEINTRESOURCE(IDI_SMALL_APP_ICON));

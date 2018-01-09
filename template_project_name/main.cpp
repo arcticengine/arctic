@@ -20,10 +20,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-// fjortris.cpp : Defines the entry point for the application.
-
 #include "engine/arctic_platform_def.h"
 #ifdef ARCTIC_PLATFORM_WINDOWS
+#include <windows.h>
 #elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
 #include <unistd.h>
 #else
@@ -270,12 +269,17 @@ bool MakeDirectory(const char *path) {
 
 bool CurrentDir(std::string *out_dir) {
 #ifdef ARCTIC_PLATFORM_WINDOWS
+  char cwd[1 << 20];
+  DWORD res = GetCurrentDirectoryA(sizeof(cwd), cwd);
+  if (res > 0) {
+    out_dir->assign(cwd);
+    return true;
+  }
   return false;
 #elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
   char cwd[1 << 20];
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    out_dir->clear();
-    out_dir->append(cwd);
+    out_dir->assign(cwd);
     return true;
   }
   return false;
@@ -375,7 +379,6 @@ bool ShowProgress() {
           "app_icon.ico"
           , "data/arctic_one_bmf_0.tga"
           , "data/arctic_one_bmf.fnt"
-          , "small_app_icon.ico"
         };
         for (Si32 idx = 0; idx < files.size(); ++idx) {
           auto data = ReadFile((g_template + "/" + files[idx]).c_str());

@@ -131,15 +131,14 @@
     <ResourceCompile Include="resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="app_icon.ico" />
-    <Image Include="small_app_icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="..%255cengine">
       <UniqueIdentifier>{8f4a4ffd-6b4b-4f3e-84fd-efce79c2ab9f}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="app_icon.ico" />
   </ItemGroup>
 </Project>

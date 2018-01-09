@@ -20,8 +20,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef  DEMO_TARGETVER_H_
-#define  DEMO_TARGETVER_H_
+#ifndef  GAME_TARGETVER_H_
+#define  GAME_TARGETVER_H_
 
 // Including SDKDDKVer.h defines the highest available Windows platform.
 
@@ -31,4 +31,4 @@
 
 #include <SDKDDKVer.h>
 
-#endif  // DEMO_TARGETVER_H_
+#endif  // GAME_TARGETVER_H_
