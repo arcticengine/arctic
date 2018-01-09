@@ -21,9 +21,23 @@ before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install git-lfs; fi
 before_script:
 - git lfs pull
-script: 
+script:
+- cd antarctica_pyramids
 - cmake .
 - make all
+- cd ..
+- cd fjortris
+- cmake .
+- make all
+- cd ..
+- cd template_project_name
+- cmake .
+- make all
+- cd ..
+- cd wizard
+- cmake .
+- make all
+- cd ..
 branches:
   only:
   - master
