@@ -34,6 +34,7 @@
 #include "engine/easy_sprite.h"
 #include "engine/engine.h"
 #include "engine/font.h"
+#include "engine/log.h"
 
 namespace arctic {
 namespace easy {

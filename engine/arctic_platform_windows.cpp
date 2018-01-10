@@ -1,6 +1,6 @@
 // The MIT License(MIT)
 //
-// Copyright 2017 Huldra
+// Copyright 2017 - 2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -48,6 +48,7 @@
 #include "engine/arctic_input.h"
 #include "engine/arctic_platform.h"
 #include "engine/byte_array.h"
+#include "engine/log.h"
 #include "engine/rgb.h"
 #include "engine/vec3f.h"
 
@@ -100,6 +101,8 @@ void Fatal(const char *message, const char *message_postfix) {
   char *full_message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
   sprintf_s(full_message, size, "%s%s", message,
     (message_postfix ? message_postfix : ""));
+  Log(full_message);
+  StopLogger();
   MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
   ExitProcess(1);
 }
@@ -793,6 +796,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   UNREFERENCED_PARAMETER(prev_instance_handle);
   UNREFERENCED_PARAMETER(command_line);
 
+  arctic::StartLogger();
+
   BOOL is_ok_w = SetProcessDPIAware();
   arctic::Check(is_ok_w != FALSE,
     "Error from SetProessDPIAware! Code: WIN06.");
@@ -821,6 +826,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
       DispatchMessage(&msg);
     }
   }
+  arctic::StopLogger();
   ExitProcess(0);
   //    engine_thread.join();
   return 0;

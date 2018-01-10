@@ -835,6 +835,7 @@ Engine *GetEngine() {
     for (Si32 i = 0; i < kKeyCount; ++i) {
       g_key_state[i].Init();
     }
+    Log("\r\nStarting the engine.");
     g_engine = new Engine();
   }
   return g_engine;

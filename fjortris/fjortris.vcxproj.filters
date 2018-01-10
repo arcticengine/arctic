@@ -35,6 +35,9 @@
     <ClCompile Include="..\engine\font.cpp">
       <Filter>..%255cengine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\log.cpp">
+      <Filter>..%255cengine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -124,6 +127,9 @@
       <Filter>..%255cengine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\scalar_math.h">
+      <Filter>..%255cengine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\log.h">
       <Filter>..%255cengine</Filter>
     </ClInclude>
   </ItemGroup>

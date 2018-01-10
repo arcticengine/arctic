@@ -24,6 +24,7 @@
 
 #include <condition_variable>
 #include <deque>
+#include <fstream>
 #include <iostream>
 #include <mutex>  // NOLINT
 #include <string>
@@ -39,12 +40,16 @@ namespace arctic {
   static std::condition_variable g_logger_condition_variable;
 
   void LoggerThreadFunction() {
+    const char *file_name = "log.txt";
+    const char *newline = "\r\n";
+    std::ofstream out(file_name,
+      std::ios_base::binary | std::ios_base::out | std::ios_base::app);
+    Check(out.rdstate() != std::ios_base::failbit,
+      "Error in LoggerThreadFunction. Can't create/open the file, file_name: ",
+      file_name);
+    out.exceptions(std::ios_base::goodbit);
     bool is_present = false;
     while (true) {
-      if (g_logger_do_quit) {
-        // TODO(Huldra): sync file and close it
-        return;
-      }
       std::string message;
       {
         std::lock_guard<std::mutex> lock(g_logger_mutex);
@@ -59,8 +64,23 @@ namespace arctic {
         }
       }
       if (is_present) {
-        std::cout << message << std::endl;
+        out.write(message.data(), message.size());
+        Check(!(out.rdstate() & std::ios_base::badbit),
+          "Error in LoggerThreadFunction. Can't write the file, file_name: ",
+          file_name);
+        out.write(newline, 2);
+        Check(!(out.rdstate() & std::ios_base::badbit),
+          "Error in LoggerThreadFunction. Can't write the file, file_name: ",
+          file_name);
       } else {
+        if (g_logger_do_quit) {
+          out.close();
+          Check(!(out.rdstate() & std::ios_base::failbit),
+            "Error in LoggerThreadFunction. Can't close the file, file_name: ",
+            file_name);
+          return;
+        }
+        out.flush();
         std::unique_lock<std::mutex> lock(g_logger_mutex);
         if (g_logger_queue.empty()) {
           g_logger_condition_variable.wait(lock);
@@ -69,11 +89,28 @@ namespace arctic {
     }
   }
 
-  void Log(const char *text) {
-    std::string string(text);
+  void PushLog(std::string &str) {
     std::lock_guard<std::mutex> lock(g_logger_mutex);
-    g_logger_queue.push_back(string);
+    g_logger_queue.push_back(str);
     g_logger_condition_variable.notify_one();
+  }
+
+  void Log(const char *text) {
+    std::string str(text);
+    PushLog(str);
+  }
+
+  void Log(const char *text1, const char *text2) {
+    std::string str(text1);
+    str.append(text2);
+    PushLog(str);
+  }
+
+  void Log(const char *text1, const char *text2, const char *text3) {
+    std::string str(text1);
+    str.append(text2);
+    str.append(text3);
+    PushLog(str);
   }
 
   void StartLogger() {

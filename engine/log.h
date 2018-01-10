@@ -28,6 +28,8 @@
 namespace arctic {
 
 void Log(const char *text);
+void Log(const char *text1, const char *text2);
+void Log(const char *text1, const char *text2, const char *text3);
 
 void StartLogger();
 void StopLogger();

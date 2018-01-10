@@ -199,6 +199,7 @@
     <ClInclude Include="..\engine\engine.h" />
     <ClInclude Include="..\engine\font.h" />
     <ClInclude Include="..\engine\frustum3f.h" />
+    <ClInclude Include="..\engine\log.h" />
     <ClInclude Include="..\engine\mat22f.h" />
     <ClInclude Include="..\engine\mat33f.h" />
     <ClInclude Include="..\engine\mat44f.h" />
@@ -228,6 +229,7 @@
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
     <ClCompile Include="..\engine\font.cpp" />
+    <ClCompile Include="..\engine\log.cpp" />
     <ClCompile Include="main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
