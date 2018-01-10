@@ -27,6 +27,7 @@
 		34C1597B20019B5C0029160F /* data in Resources */ = {isa = PBXBuildFile; fileRef = 34C1597920019B5C0029160F /* data */; };
 		34C1597C20019B5C0029160F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C1597A20019B5C0029160F /* main.cpp */; };
 		34C5F3131FD4E22300A03FA2 /* arctic_platform_pi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */; };
+		34E1FEB12005ACD400D8264C /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34E1FEB02005ACD400D8264C /* log.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,6 +82,8 @@
 		34C1597A20019B5C0029160F /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
 		34C5F3111FD4E22300A03FA2 /* font.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = font.h; path = ../engine/font.h; sourceTree = SOURCE_ROOT; };
 		34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi.cpp; path = ../engine/arctic_platform_pi.cpp; sourceTree = SOURCE_ROOT; };
+		34E1FEAF2005ACD300D8264C /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = log.h; path = engine/log.h; sourceTree = "<group>"; };
+		34E1FEB02005ACD400D8264C /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = log.cpp; path = engine/log.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +151,8 @@
 		34A37FB21F68AD4E005ACF7B /* engine */ = {
 			isa = PBXGroup;
 			children = (
+				34E1FEB02005ACD400D8264C /* log.cpp */,
+				34E1FEAF2005ACD300D8264C /* log.h */,
 				34C15959200199EF0029160F /* font.cpp */,
 				34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */,
 				34C5F3111FD4E22300A03FA2 /* font.h */,
@@ -276,6 +281,7 @@
 				34C5F3131FD4E22300A03FA2 /* arctic_platform_pi.cpp in Sources */,
 				34C1595A200199EF0029160F /* font.cpp in Sources */,
 				34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */,
+				34E1FEB12005ACD400D8264C /* log.cpp in Sources */,
 				34A37FE21F68AD73005ACF7B /* easy_sound_instance.cpp in Sources */,
 				34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */,
 				34A37FE31F68AD73005ACF7B /* easy_sound.cpp in Sources */,

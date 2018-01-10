@@ -1,6 +1,6 @@
 // The MIT License(MIT)
 //
-// Copyright 2017 Huldra
+// Copyright 2017 - 2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -44,6 +44,7 @@
 #include "engine/arctic_input.h"
 #include "engine/arctic_platform.h"
 #include "engine/byte_array.h"
+#include "engine/log.h"
 #include "engine/rgb.h"
 #include "engine/vec3f.h"
 
@@ -868,6 +869,7 @@ int main(int argc, char *argv[]) {
 
 
 
+  arctic::StartLogger();
   arctic::CreateMainWindow();
 
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
@@ -877,6 +879,8 @@ int main(int argc, char *argv[]) {
   mixer.Initialize();
 
   EasyMain();
+
+  arctic::StopLogger();
 
   return 0;
 }
