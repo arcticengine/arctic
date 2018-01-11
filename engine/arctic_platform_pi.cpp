@@ -869,6 +869,7 @@ void StopSoundMixer() {
 int main() {
   arctic::SystemInfo system_info;
 
+  arctic::StartLogger();
   arctic::StartSoundMixer();
   CreateMainWindow(&system_info);
   arctic::easy::GetEngine();
@@ -879,6 +880,7 @@ int main() {
 
   XCloseDisplay(arctic::g_x_display);
   arctic::StopSoundMixer();
+  arctic::StopLogger();
 
   return 0;
 }
