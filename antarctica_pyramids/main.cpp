@@ -838,9 +838,7 @@ void Render() {
       ScreenSize().x / 3, 0, kTextOriginLastBase);
   g_font.Draw("line 1\nbottom at 0",
       ScreenSize().x * 2 / 3, 0, kTextOriginBottom);
-  static Si32 frame = 0;
-  frame++;
-  if (frame % 20 == 0)
+  
   ShowFrame();
 }
 
