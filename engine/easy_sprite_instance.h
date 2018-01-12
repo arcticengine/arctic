@@ -24,17 +24,24 @@
 #define ENGINE_EASY_SPRITE_INSTANCE_H_
 
 #include <memory>
+#include <vector>
 #include "engine/arctic_types.h"
 #include "engine/byte_array.h"
 
 namespace arctic {
 namespace easy {
+  
+struct SpanSi32 {
+  Si32 begin;
+  Si32 end;
+};
 
 class SpriteInstance {
  private:
   Si32 width_;
   Si32 height_;
   ByteArray data_;
+  std::vector<SpanSi32> opaque_;
 
  public:
   SpriteInstance(Si32 width, Si32 height);
@@ -50,6 +57,13 @@ class SpriteInstance {
   Ui8 *RawData() {
     return data_.data();
   }
+  
+  const std::vector<SpanSi32> &Opaque() {
+    return opaque_;
+  }
+
+  void UpdateOpaqueSpans();
+  void ClearOpaqueSpans();
 };
 
 }  // namespace easy

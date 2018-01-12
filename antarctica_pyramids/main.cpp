@@ -1,4 +1,4 @@
-﻿// The MIT License(MIT)
+// The MIT License(MIT)
 //
 // Copyright 2016-2017 Huldra
 //
@@ -552,10 +552,15 @@ void Init() {
   g_blood[6].Load("data/blood_6.tga");
 
   g_floor.Load("data/floor_1.tga");
+  g_floor.UpdateOpaqueSpans();
   g_floor_dark.Load("data/floor_1_dark.tga");
+  g_floor_dark.UpdateOpaqueSpans();
   g_hero[0].Load("data/hero_1.tga");
+  g_hero[0].UpdateOpaqueSpans();
   g_hero[1].Load("data/hero_2.tga");
+  g_hero[1].UpdateOpaqueSpans();
   g_intro_airplane.Load("data/intro_airplane_1.tga");
+  g_intro_airplane.UpdateOpaqueSpans();
   g_intro_pyramids.Load("data/intro_pyramids_1.tga");
 
   g_monster[0].Load("data/monster_0.tga");
@@ -575,7 +580,9 @@ void Init() {
   g_stone.Load("data/stone_1.tga");
   g_stone.SetPivot(Vec2Si32(12, 12));
   g_wall.Load("data/wall_1.tga");
+  g_wall.UpdateOpaqueSpans();
   g_wall_dark.Load("data/wall_1_dark.tga");
+  g_wall_dark.UpdateOpaqueSpans();
 
   PlayIntro();
 
@@ -831,6 +838,9 @@ void Render() {
       ScreenSize().x / 3, 0, kTextOriginLastBase);
   g_font.Draw("line 1\nbottom at 0",
       ScreenSize().x * 2 / 3, 0, kTextOriginBottom);
+  static Si32 frame = 0;
+  frame++;
+  if (frame % 20 == 0)
   ShowFrame();
 }
 

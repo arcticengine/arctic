@@ -37,6 +37,40 @@ SpriteInstance::SpriteInstance(Si32 width, Si32 height)
     , height_(height)
     , data_(width * height * sizeof(Rgba)) {
     }
+  
+void SpriteInstance::UpdateOpaqueSpans() {
+  if (!height_) {
+    opaque_.clear();
+    return;
+  }
+  opaque_.resize(height_);
+  for (Si32 y = 0; y < height_; ++y) {
+    const Rgba *line = reinterpret_cast<Rgba*>(data_.GetVoidData()) +
+      width_ * y;
+    SpanSi32 &span = opaque_[y];
+    span.begin = 0;
+    span.end = 0;
+    Si32 x = 0;
+    for (; x < width_; ++x) {
+      if (line[x].a != 0) {
+        span.begin = x;
+        break;
+      }
+    }
+    if (x < width_) {
+      for (; x < width_; ++x) {
+        if (line[x].a != 0) {
+          span.end = x;
+        }
+      }
+      span.end++;
+    }
+  }
+}
+  
+void SpriteInstance::ClearOpaqueSpans() {
+  opaque_.clear();
+}
 
 }  // namespace easy
 

@@ -252,10 +252,13 @@ void Font::Load(const char *file_name) {
       &file[inner_pos]);
     chars->Log();
 
-    easy::Sprite sprite;
-    sprite.Reference(page_images[chars->page],
+    easy::Sprite sprite0;
+    sprite0.Reference(page_images[chars->page],
       chars->x, page_images[chars->page].Height() - chars->y - chars->height,
       chars->width, chars->height);
+    easy::Sprite sprite;
+    sprite.Clone(sprite0);
+    sprite.UpdateOpaqueSpans();
     sprite.SetPivot(arctic::Vec2Si32(
       chars->xoffset, chars->height + chars->yoffset - common->base));
     glyph.emplace_back(chars->id, chars->xadvance, sprite);

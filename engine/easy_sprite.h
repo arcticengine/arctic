@@ -25,6 +25,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 #include "engine/easy_sprite_instance.h"
 #include "engine/arctic_types.h"
@@ -88,8 +89,12 @@ class Sprite {
   Vec2Si32 Size() const;
   Si32 StrideBytes() const;
   Si32 StridePixels() const;
+  bool IsRef() const;
   Ui8* RawData();
   Rgba* RgbaData();
+  const std::vector<SpanSi32> &Opaque() const;
+  void UpdateOpaqueSpans();
+  void ClearOpaqueSpans();
 };
 
 }  // namespace easy

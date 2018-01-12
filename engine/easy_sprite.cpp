@@ -252,14 +252,89 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
 template<DrawBlendingMode kBlendingMode>
 void DrawSprite(
-  const Si32 to_x_pivot, const Si32 to_y_pivot,
-  const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
-  const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite) {
+    const Si32 to_x_pivot, const Si32 to_y_pivot,
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    Sprite to_sprite, Sprite from_sprite) {
   const Si32 from_stride_pixels = from_sprite.StridePixels();
   const Si32 to_stride_pixels = to_sprite.Width();
 
+  if (to_width == from_width && to_height == from_height
+      && !from_sprite.IsRef() && !from_sprite.Opaque().empty()) {
+    
+    const std::vector<SpanSi32> &opaque = from_sprite.Opaque();
+    
+    const Si32 to_x = to_x_pivot - from_sprite.Pivot().x;
+    const Si32 to_y = to_y_pivot - from_sprite.Pivot().y;
+    
+    Rgba *to = to_sprite.RgbaData()
+      + to_y * to_stride_pixels
+      + to_x;
+    const Rgba *from = from_sprite.RgbaData()
+      + from_y * from_stride_pixels
+      + from_x;
+    
+    const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
+    const Si32 to_y_d_max = to_sprite.Height() - to_y;
+    const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
+    
+    const Si32 k_to_x_db = (to_x >= 0 ? 0 : -to_x);
+    const Si32 to_x_d_max = to_sprite.Width() - to_x;
+    const Si32 k_to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
+    const Si32 from_x_ab = k_to_x_db + from_x;
+    const Si32 from_x_ae = k_to_x_de + from_x;
+    
+    for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
+      const Si32 from_y_disp = to_y_disp;
+    
+      Si32 from_x_acc = 0;
+      const SpanSi32 &span = opaque[from_y + to_y_disp];
+      
+      Si32 to_x_db = k_to_x_db;
+      if (span.begin > from_x_ab) {
+        
+        to_x_db += span.begin - from_x_ab;
+      }
+      Si32 to_x_de = k_to_x_de;
+      if (span.end < from_x_ae) {
+        Si32 offset = span.end - from_x_ae;
+        to_x_de += offset;
+      }
+      
+      const Rgba *from_line = from + from_y_disp * from_stride_pixels;
+      Rgba *to_line = to + to_y_disp * to_stride_pixels;
+      
+      for (Si32 to_x_disp = to_x_db; to_x_disp < to_x_de; ++to_x_disp) {
+        Rgba *to_rgba = to_line + to_x_disp;
+        const Si32 from_x_disp = to_x_db + from_x_acc;
+        from_x_acc++;
+        const Rgba *from_rgba = from_line + from_x_disp;
+        Rgba color = *from_rgba;
+        if (kBlendingMode == kCopyRgba) {
+          to_rgba->rgba = from_rgba->rgba;
+        } else if (kBlendingMode == kAlphaBlend) {
+          if (color.a == 255) {
+            to_rgba->rgba = from_rgba->rgba;
+          } else if (color.a) {
+            Ui32 m = 255 - color.a;
+            Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
+            Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 m2 = color.a;
+            Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+            to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            ((g + g2) & 0x0000ff00ul);
+          }
+        } else {  // Unknown blending mode!
+          to_rgba->rgba = from_rgba->rgba;
+        }
+      }
+    }
+   
+    return;
+  }
+  
   const Si32 to_x = to_x_pivot -
     from_sprite.Pivot().x * to_width / from_width;
   const Si32 to_y = to_y_pivot -
@@ -426,57 +501,9 @@ Vec2Si32 Sprite::Pivot() const {
 }
 
 void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot) {
-  if (!sprite_instance_) {
-    return;
-  }
-  Sprite to_sprite = GetEngine()->GetBackbuffer();
-
-  const Si32 from_stride_pixels = StridePixels();
-  const Si32 to_stride_pixels = to_sprite.Width();
-
-  const Si32 width = Width();
-  const Si32 height = Height();
-
-  const Si32 to_x = to_x_pivot - pivot_.x;
-  const Si32 to_y = to_y_pivot - pivot_.y;
-
-  Rgba *to = to_sprite.RgbaData()
-    + to_y * to_stride_pixels
-    + to_x;
-  const Rgba *from = RgbaData();
-
-  const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
-  const Si32 to_y_d_max = to_sprite.Height() - to_y;
-  const Si32 to_y_de = (height < to_y_d_max ? height : to_y_d_max);
-
-  const Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
-  const Si32 to_x_d_max = to_sprite.Width() - to_x;
-  const Si32 to_x_de = (width < to_x_d_max ? width : to_x_d_max);
-
-  for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
-    const Si32 from_y_disp = to_y_disp;
-
-    const Rgba *from_line = from + from_y_disp * from_stride_pixels;
-    Rgba *to_line = to + to_y_disp * to_stride_pixels;
-
-    for (Si32 to_x_disp = to_x_db; to_x_disp < to_x_de; ++to_x_disp) {
-      Rgba *to_rgba = to_line + to_x_disp;
-      const Rgba *from_rgba = from_line + to_x_disp;
-      Rgba color = *from_rgba;
-      if (color.a == 255) {
-        to_rgba->rgba = from_rgba->rgba;
-      } else if (color.a) {
-        Ui32 m = 255 - color.a;
-        Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
-        Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
-        Ui32 m2 = color.a;
-        Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-        Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-        to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
-          ((g + g2) & 0x0000ff00ul);
-      }
-    }
-  }
+  DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, Width(), Height(),
+    0, 0, Width(), Height(),
+    GetEngine()->GetBackbuffer(), *this);
 }
 
 void Sprite::Draw(const Vec2Si32 to, float angle_radians) {
@@ -600,6 +627,13 @@ Si32 Sprite::StrideBytes() const {
 Si32 Sprite::StridePixels() const {
   return sprite_instance_->width();
 }
+  
+bool Sprite::IsRef() const {
+  return (ref_pos_.x
+      || ref_pos_.y
+      || ref_size_.x != sprite_instance_->width()
+      || ref_size_.y != sprite_instance_->height());
+}
 
 Ui8* Sprite::RawData() {
   return sprite_instance_->RawData();
@@ -610,6 +644,18 @@ Rgba* Sprite::RgbaData() {
     sprite_instance_->RawData())) +
     ref_pos_.y * StridePixels() +
     ref_pos_.x);
+}
+
+const std::vector<SpanSi32> &Sprite::Opaque() const {
+  return sprite_instance_->Opaque();
+}
+  
+void Sprite::UpdateOpaqueSpans() {
+  sprite_instance_->UpdateOpaqueSpans();
+}
+
+void Sprite::ClearOpaqueSpans() {
+  sprite_instance_->ClearOpaqueSpans();
 }
 
 }  // namespace easy
