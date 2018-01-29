@@ -95,7 +95,8 @@ static bool g_is_full_screen = false;
     }
   }
 
-  exit(0);
+  [[NSApplication sharedApplication] terminate:nil];
+//  exit(0);
 }
 - (void) fullScreenToggle:(NSNotification *)notification {
   if (!g_is_full_screen) {
@@ -159,7 +160,8 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 }
 
 - (void) windowWillClose: (NSNotification *)notification {
-  [g_app terminate: nil];
+  arctic::StopLogger();
+  exit(0);
 }
 @end
 
@@ -867,8 +869,6 @@ int main(int argc, char *argv[]) {
     [NSString stringWithFormat:@"%@/Contents/Resources",
     [[NSBundle mainBundle] bundlePath]]];
 
-
-
   arctic::StartLogger();
   arctic::CreateMainWindow();
 
@@ -880,8 +880,7 @@ int main(int argc, char *argv[]) {
 
   EasyMain();
 
-  arctic::StopLogger();
-
+  [g_app terminate: nil];  // It will stop the logger
   return 0;
 }
 

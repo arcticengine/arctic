@@ -121,6 +121,11 @@ namespace arctic {
 
   void StopLogger() {
     Check(g_logger_do_quit == false, "StopLogger called while g_logger_do_quit is true");
-    g_logger_do_quit = true;
+    {
+      std::lock_guard<std::mutex> lock(g_logger_mutex);
+      g_logger_do_quit = true;
+      g_logger_condition_variable.notify_one();
+    }
+    g_logger_thread.join();
   }
 }  // namespace arctic

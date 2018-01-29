@@ -501,6 +501,9 @@ Vec2Si32 Sprite::Pivot() const {
 }
 
 void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot) {
+  if (!sprite_instance_.get()) {
+    return;
+  }
   DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, Width(), Height(),
     0, 0, Width(), Height(),
     GetEngine()->GetBackbuffer(), *this);

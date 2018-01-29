@@ -345,7 +345,7 @@ bool ShowProgress() {
         }
         break;
       case 4:
-        g_template = g_current_directory + "/wizard";
+        g_template = g_current_directory + "/template_project_name";
         if (DoesDirectoryExist(g_template.c_str()) == 1) {
           g_progress.append(u8"Template found OK\n");
         } else {
@@ -361,14 +361,14 @@ bool ShowProgress() {
           "Assets.xcassets"
           , "Assets.xcassets/AppIcon.appiconset"
           , "data"
-          , "wizard.xcodeproj"
-          , "wizard.xcodeproj/project.xcworkspace"
-          , "wizard.xcodeproj/xcshareddata"
-          , "wizard.xcodeproj/xcshareddata/xcschemes/"
+          , "template_project_name.xcodeproj"
+          , "template_project_name.xcodeproj/project.xcworkspace"
+          , "template_project_name.xcodeproj/xcshareddata"
+          , "template_project_name.xcodeproj/xcshareddata/xcschemes/"
         };
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
           std::string name = files[idx];
-          ReplaceAll("wizard", g_project_name, &name);
+          ReplaceAll("template_project_name", g_project_name, &name);
           MakeDirectory((g_path + "/" + name).c_str());
         }
         g_progress.append(u8"Project structure created OK\n");
@@ -384,7 +384,7 @@ bool ShowProgress() {
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
           auto data = ReadFile((g_template + "/" + files[idx]).c_str());
           std::string name = files[idx];
-          ReplaceAll("wizard", g_project_name, &name);
+          ReplaceAll("template_project_name", g_project_name, &name);
           WriteFile((g_path + "/" + name).c_str(), data.data(), data.size());
         }
         g_progress.append(u8"Data files copied OK\n");
@@ -400,21 +400,21 @@ bool ShowProgress() {
           , "resource.h"
           , "resource.rc"
           , "targetver.h"
-          , "wizard.sln"
-          , "wizard.vcxproj"
-          , "wizard.vcxproj.filters"
-          , "wizard.xcodeproj/project.pbxproj"
-          , "wizard.xcodeproj/project.xcworkspace/contents.xcworkspacedata"
-          , "wizard.xcodeproj/xcshareddata/xcschemes/Debug.xcscheme"
-          , "wizard.xcodeproj/xcshareddata/xcschemes/Release.xcscheme"
+          , "template_project_name.sln"
+          , "template_project_name.vcxproj"
+          , "template_project_name.vcxproj.filters"
+          , "template_project_name.xcodeproj/project.pbxproj"
+          , "template_project_name.xcodeproj/project.xcworkspace/contents.xcworkspacedata"
+          , "template_project_name.xcodeproj/xcshareddata/xcschemes/Debug.xcscheme"
+          , "template_project_name.xcodeproj/xcshareddata/xcschemes/Release.xcscheme"
         };
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
           std::vector<Ui8> data = ReadFile((g_template + "/" + files[idx]).c_str());
           std::string name = files[idx];
-          ReplaceAll("wizard", g_project_name, &name);
+          ReplaceAll("template_project_name", g_project_name, &name);
           data.push_back('\0');
           std::string content = reinterpret_cast<char*>(data.data());
-          ReplaceAll("wizard", g_project_name, &content);
+          ReplaceAll("template_project_name", g_project_name, &content);
           WriteFile((g_path + "/" + name).c_str(),
               reinterpret_cast<const Ui8*>(content.data()), content.size());
         }
