@@ -403,7 +403,7 @@
 				"HEADER_SEARCH_PATHS[arch=*]" = $PROJECT_DIR/..;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = Arctic.antarctica_pyramids;
+				PRODUCT_BUNDLE_IDENTIFIER = "Arctic.antarctica-pyramids";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -417,7 +417,7 @@
 				"HEADER_SEARCH_PATHS[arch=*]" = $PROJECT_DIR/..;
 				INFOPLIST_FILE = Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = Arctic.antarctica_pyramids;
+				PRODUCT_BUNDLE_IDENTIFIER = "Arctic.antarctica-pyramids";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

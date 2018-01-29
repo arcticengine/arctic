@@ -37,6 +37,7 @@ namespace easy {
 // Just like MasterBoy wrote in HUGi 17, but without subpixel
 // see http://www.hugi.scene.org/online/coding/hugi%2017%20-%20cotriang.htm
 // or http://www.hugi.scene.org/online/hugi17/
+template<DrawBlendingMode kBlendingMode>
 inline void DrawTrianglePart(Rgba *dst, Si32 stride,
   float *x1, float *x2, Vec2F *tex_a, Vec2F *tex_b,
   float dxdy1, float dxdy2,
@@ -107,18 +108,22 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
       for (Si32 x = x1c; x < x2c; ++x) {
         Si32 offset = (tex_16.x >> 16) +
           (tex_16.y >> 16) * tex_stride;
-        Rgba color = tex_data[offset];
-        if (color.a == 255) {
-          p->rgba = color.rgba;
-        } else if (color.a) {
-          Ui32 m = 255 - color.a;
-          Ui32 rb = (p->rgba & 0x00ff00fful) * m;
-          Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
-          Ui32 m2 = color.a;
-          Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-          Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-          p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
-            ((g + g2) & 0x0000ff00ul);
+        if (kBlendingMode == kCopyRgba) {
+          p->rgba = tex_data[offset].rgba;
+        } else if (kBlendingMode == kAlphaBlend) {
+          Rgba color = tex_data[offset];
+          if (color.a == 255) {
+            p->rgba = color.rgba;
+          } else if (color.a) {
+            Ui32 m = 255 - color.a;
+            Ui32 rb = (p->rgba & 0x00ff00fful) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 m2 = color.a;
+            Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+              ((g + g2) & 0x0000ff00ul);
+          }
         }
         p++;
         tex_16 += tex_12_16_step;
@@ -132,6 +137,7 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
   }
 }
 
+template<DrawBlendingMode kBlendingMode>
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
   Vec2F tex_a, Vec2F tex_b, Vec2F tex_c,
   Sprite texture, Sprite to_sprite) {
@@ -186,7 +192,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       dtdy2 = dcdy_bc;
       tex1 = tex_a;
       tex2 = tex_b;
-      DrawTrianglePart(dst, stride, &x1, &x2, &tex1, &tex2,
+      DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, a.y, c.y, texture);
       return;
@@ -198,7 +204,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       dtdy2 = dcdy_ab;
       tex1 = tex_a;
       tex2 = tex_a;
-      DrawTrianglePart(dst, stride, &x1, &x2, &tex1, &tex2,
+      DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, a.y, b.y, texture);
     }
@@ -207,7 +213,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       x2 = static_cast<float>(b.x);
       dtdy2 = dcdy_bc;
       tex2 = tex_b;
-      DrawTrianglePart(dst, stride, &x1, &x2, &tex1, &tex2,
+      DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, b.y, c.y, texture);
     }
@@ -222,7 +228,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       dtdy1 = dcdy_bc;
       tex1 = tex_b;
       tex2 = tex_a;
-      DrawTrianglePart(dst, stride, &x1, &x2, &tex1, &tex2,
+      DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, a.y, c.y, texture);
       return;
@@ -234,7 +240,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       dtdy1 = dcdy_ab;
       tex1 = tex_a;
       tex2 = tex_a;
-      DrawTrianglePart(dst, stride, &x1, &x2, &tex1, &tex2,
+      DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, a.y, b.y, texture);
     }
@@ -243,7 +249,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       x1 = static_cast<float>(b.x);
       dtdy1 = dcdy_bc;
       tex1 = tex_b;
-      DrawTrianglePart(dst, stride, &x1, &x2, &tex1, &tex2,
+      DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, b.y, c.y, texture);
     }
@@ -500,34 +506,53 @@ Vec2Si32 Sprite::Pivot() const {
   return pivot_;
 }
 
-void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot) {
+void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
+    DrawBlendingMode blending_mode) {
   if (!sprite_instance_.get()) {
     return;
   }
-  DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, Width(), Height(),
-    0, 0, Width(), Height(),
-    GetEngine()->GetBackbuffer(), *this);
+  switch (blending_mode) {
+    case kAlphaBlend:
+      DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, Width(), Height(),
+        0, 0, Width(), Height(),
+        GetEngine()->GetBackbuffer(), *this);
+      break;
+    case kCopyRgba:
+      DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, Width(), Height(),
+        0, 0, Width(), Height(),
+        GetEngine()->GetBackbuffer(), *this);
+      break;
+  }
 }
 
-void Sprite::Draw(const Vec2Si32 to, float angle_radians) {
-  Draw(to.x, to.y, angle_radians, 1.f, GetEngine()->GetBackbuffer());
+void Sprite::Draw(const Vec2Si32 to, float angle_radians,
+    DrawBlendingMode blending_mode) {
+  Draw(to.x, to.y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
+      blending_mode);
 }
 
-void Sprite::Draw(const Si32 to_x, const Si32 to_y, float angle_radians) {
-  Draw(to_x, to_y, angle_radians, 1.f, GetEngine()->GetBackbuffer());
+void Sprite::Draw(const Si32 to_x, const Si32 to_y, float angle_radians,
+    DrawBlendingMode blending_mode) {
+  Draw(to_x, to_y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
+      blending_mode);
 }
 
-void Sprite::Draw(const Vec2Si32 to, float angle_radians, float zoom) {
-  Draw(to.x, to.y, angle_radians, zoom, GetEngine()->GetBackbuffer());
+void Sprite::Draw(const Vec2Si32 to, float angle_radians, float zoom,
+    DrawBlendingMode blending_mode) {
+  Draw(to.x, to.y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
+      blending_mode);
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
-  float angle_radians, float zoom) {
-  Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer());
+    float angle_radians, float zoom,
+    DrawBlendingMode blending_mode) {
+  Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
+      blending_mode);
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
-  float angle_radians, float zoom, Sprite to_sprite) {
+    float angle_radians, float zoom, Sprite to_sprite,
+    DrawBlendingMode blending_mode) {
   if (!sprite_instance_) {
     return;
   }
@@ -555,46 +580,59 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
   Vec2F td(0.001f,
     static_cast<float>(ref_size_.y) - 0.001f);
 
-  DrawTriangle(a, b, c, ta, tb, tc, *this, to_sprite);
-  DrawTriangle(c, d, a, tc, td, ta, *this, to_sprite);
+  switch (blending_mode) {
+    case kCopyRgba:
+      DrawTriangle<kCopyRgba>(a, b, c, ta, tb, tc, *this, to_sprite);
+      DrawTriangle<kCopyRgba>(c, d, a, tc, td, ta, *this, to_sprite);
+      break;
+    case kAlphaBlend:
+      DrawTriangle<kAlphaBlend>(a, b, c, ta, tb, tc, *this, to_sprite);
+      DrawTriangle<kAlphaBlend>(c, d, a, tc, td, ta, *this, to_sprite);
+      break;
+  }
+  
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
-  const Si32 to_width, const Si32 to_height) {
+    const Si32 to_width, const Si32 to_height,
+    DrawBlendingMode blending_mode) {
   Draw(to_x, to_y, to_width, to_height,
     0, 0, ref_size_.x, ref_size_.y);
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
-  const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
-  const Si32 from_width, const Si32 from_height) {
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    DrawBlendingMode blending_mode) {
   Draw(to_x, to_y, to_width, to_height,
     from_x, from_y, from_width, from_height,
     GetEngine()->GetBackbuffer());
 }
 
-void Sprite::Draw(const Vec2Si32 to_pos) {
+void Sprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode) {
   Draw(to_pos.x, to_pos.y);
 }
 
-void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size) {
+void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
+    DrawBlendingMode blending_mode) {
   Draw(to_pos.x, to_pos.y, to_size.x, to_size.y,
     0, 0, ref_size_.x, ref_size_.y);
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
-  const Vec2Si32 from_pos, const Vec2Si32 from_size) {
+    const Vec2Si32 from_pos, const Vec2Si32 from_size,
+    DrawBlendingMode blending_mode) {
   Draw(to_pos.x, to_pos.y, to_size.x, to_size.y,
     from_pos.x, from_pos.y, from_size.x, from_size.y);
 }
 
 
 void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
-  const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
-  const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, DrawBlendingMode blending_mode) {
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    Sprite to_sprite, DrawBlendingMode blending_mode) {
   switch (blending_mode) {
   default:
   case kCopyRgba:

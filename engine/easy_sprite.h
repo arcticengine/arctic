@@ -53,36 +53,46 @@ class Sprite {
   void Load(const std::string &file_name);
   void Create(const Si32 width, const Si32 height);
   void Reference(Sprite from, const Si32 from_x, const Si32 from_y,
-      const Si32 from_width, const Si32 from_height);
+    const Si32 from_width, const Si32 from_height);
   void Clear();
   void Clear(Rgba color);
   void Clone(Sprite from);
   void SetPivot(Vec2Si32 pivot);
   Vec2Si32 Pivot() const;
-  void Draw(const Si32 to_x, const Si32 to_y);
   void Draw(const Si32 to_x, const Si32 to_y,
-      const Si32 to_width, const Si32 to_height);
+    DrawBlendingMode blending_mode = kAlphaBlend);
   void Draw(const Si32 to_x, const Si32 to_y,
-      const Si32 to_width, const Si32 to_height,
-      const Si32 from_x, const Si32 from_y,
-      const Si32 from_width, const Si32 from_height);
-  void Draw(const Vec2Si32 to_pos);
-  void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size);
+    const Si32 to_width, const Si32 to_height,
+    DrawBlendingMode blending_mode = kAlphaBlend);
+  void Draw(const Si32 to_x, const Si32 to_y,
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    DrawBlendingMode blending_mode = kAlphaBlend);
+  void Draw(const Vec2Si32 to_pos,
+    DrawBlendingMode blending_mode = kAlphaBlend);
   void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
-      const Vec2Si32 from_pos, const Vec2Si32 from_size);
+    DrawBlendingMode blending_mode = kAlphaBlend);
+  void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
+    const Vec2Si32 from_pos, const Vec2Si32 from_size,
+    DrawBlendingMode blending_mode = kAlphaBlend);
   void Draw(const Si32 to_x, const Si32 to_y,
-      const Si32 to_width, const Si32 to_height,
-      const Si32 from_x, const Si32 from_y,
-      const Si32 from_width, const Si32 from_height,
-      Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend);
-
-  void Draw(const Vec2Si32 to, float angle_radians);
-  void Draw(const Si32 to_x, const Si32 to_y, float angle_radians);
-  void Draw(const Vec2Si32 to, float angle_radians, float zoom);
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend);
+  void Draw(const Vec2Si32 to, float angle_radians,
+    DrawBlendingMode blending_mode = kAlphaBlend);
+  void Draw(const Si32 to_x, const Si32 to_y, float angle_radians,
+    DrawBlendingMode blending_mode = kAlphaBlend);
+  void Draw(const Vec2Si32 to, float angle_radians, float zoom,
+    DrawBlendingMode blending_mode = kAlphaBlend);
   void Draw(const Si32 to_x, const Si32 to_y,
-      float angle_radians, float zoom);
+    float angle_radians, float zoom,
+    DrawBlendingMode blending_mode = kAlphaBlend);
   void Draw(const Si32 to_x, const Si32 to_y,
-      float angle_radians, float zoom, Sprite to_sprite);
+    float angle_radians, float zoom, Sprite to_sprite,
+    DrawBlendingMode blending_mode = kAlphaBlend);
 
   Si32 Width() const;
   Si32 Height() const;
