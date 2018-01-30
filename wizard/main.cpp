@@ -380,6 +380,8 @@ bool ShowProgress() {
           "app_icon.ico"
           , "data/arctic_one_bmf_0.tga"
           , "data/arctic_one_bmf.fnt"
+          , "data/block_1.tga"
+          , "data/block_2.tga"
         };
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
           auto data = ReadFile((g_template + "/" + files[idx]).c_str());
