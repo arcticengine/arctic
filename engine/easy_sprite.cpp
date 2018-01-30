@@ -268,38 +268,36 @@ void DrawSprite(
 
   if (to_width == from_width && to_height == from_height
       && !from_sprite.IsRef() && !from_sprite.Opaque().empty()) {
-    
     const std::vector<SpanSi32> &opaque = from_sprite.Opaque();
-    
+
     const Si32 to_x = to_x_pivot - from_sprite.Pivot().x;
     const Si32 to_y = to_y_pivot - from_sprite.Pivot().y;
-    
+
     Rgba *to = to_sprite.RgbaData()
       + to_y * to_stride_pixels
       + to_x;
     const Rgba *from = from_sprite.RgbaData()
       + from_y * from_stride_pixels
       + from_x;
-    
+
     const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
     const Si32 to_y_d_max = to_sprite.Height() - to_y;
     const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
-    
+
     const Si32 k_to_x_db = (to_x >= 0 ? 0 : -to_x);
     const Si32 to_x_d_max = to_sprite.Width() - to_x;
     const Si32 k_to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
     const Si32 from_x_ab = k_to_x_db + from_x;
     const Si32 from_x_ae = k_to_x_de + from_x;
-    
+
     for (Si32 to_y_disp = to_y_db; to_y_disp < to_y_de; ++to_y_disp) {
       const Si32 from_y_disp = to_y_disp;
-    
+
       Si32 from_x_acc = 0;
       const SpanSi32 &span = opaque[from_y + to_y_disp];
-      
+
       Si32 to_x_db = k_to_x_db;
       if (span.begin > from_x_ab) {
-        
         to_x_db += span.begin - from_x_ab;
       }
       Si32 to_x_de = k_to_x_de;
@@ -307,10 +305,10 @@ void DrawSprite(
         Si32 offset = span.end - from_x_ae;
         to_x_de += offset;
       }
-      
+
       const Rgba *from_line = from + from_y_disp * from_stride_pixels;
       Rgba *to_line = to + to_y_disp * to_stride_pixels;
-      
+
       for (Si32 to_x_disp = to_x_db; to_x_disp < to_x_de; ++to_x_disp) {
         Rgba *to_rgba = to_line + to_x_disp;
         const Si32 from_x_disp = to_x_db + from_x_acc;
@@ -337,10 +335,9 @@ void DrawSprite(
         }
       }
     }
-   
     return;
   }
-  
+
   const Si32 to_x = to_x_pivot -
     from_sprite.Pivot().x * to_width / from_width;
   const Si32 to_y = to_y_pivot -
@@ -590,7 +587,6 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
       DrawTriangle<kAlphaBlend>(c, d, a, tc, td, ta, *this, to_sprite);
       break;
   }
-  
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
@@ -668,7 +664,7 @@ Si32 Sprite::StrideBytes() const {
 Si32 Sprite::StridePixels() const {
   return sprite_instance_->width();
 }
-  
+
 bool Sprite::IsRef() const {
   return (ref_pos_.x
       || ref_pos_.y
@@ -690,7 +686,7 @@ Rgba* Sprite::RgbaData() {
 const std::vector<SpanSi32> &Sprite::Opaque() const {
   return sprite_instance_->Opaque();
 }
-  
+
 void Sprite::UpdateOpaqueSpans() {
   sprite_instance_->UpdateOpaqueSpans();
 }

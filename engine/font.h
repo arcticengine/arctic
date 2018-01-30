@@ -158,7 +158,7 @@ struct Glyph {
     , sprite(in_sprite) {
   }
 };
-  
+
 enum TextOrigin {
   kTextOriginBottom = 0,
   kTextOriginFirstBase = 1,

@@ -53,12 +53,12 @@ class Engine {
   std::chrono::high_resolution_clock::time_point start_time_;
   double time_correction_;
   double last_time_;
-  
+
   std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_64_;
   std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_32_;
   std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_16_;
   std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_8_;
-  
+
 
   bool is_inverse_y_ = false;
 

@@ -37,7 +37,7 @@ SpriteInstance::SpriteInstance(Si32 width, Si32 height)
     , height_(height)
     , data_(width * height * sizeof(Rgba)) {
     }
-  
+
 void SpriteInstance::UpdateOpaqueSpans() {
   if (!height_) {
     opaque_.clear();
@@ -67,7 +67,7 @@ void SpriteInstance::UpdateOpaqueSpans() {
     }
   }
 }
-  
+
 void SpriteInstance::ClearOpaqueSpans() {
   opaque_.clear();
 }

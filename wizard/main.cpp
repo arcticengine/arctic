@@ -23,14 +23,16 @@
 #include "engine/arctic_platform_def.h"
 #ifdef ARCTIC_PLATFORM_WINDOWS
 #include <windows.h>
-#elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
+#elif ((defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX))
 #include <unistd.h>
 #else
-#endif
+#endif  // ARCTIC_PLATFORM_WINDOWS
 
-#include <cstring>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <cstring>
+#include <string>
+#include <vector>
 
 #include "engine/easy.h"
 
@@ -39,11 +41,11 @@ using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
 Font g_font;
-std::string g_project_name;
-std::string g_progress;
-std::string g_path;
-std::string g_current_directory;
-std::string g_template;
+std::string g_project_name;  // NOLINT
+std::string g_progress;  // NOLINT
+std::string g_path;  // NOLINT
+std::string g_current_directory;  // NOLINT
+std::string g_template;  // NOLINT
 
 void ReplaceAll(const std::string &from,
     const std::string &to, std::string *in_out_str) {
@@ -229,7 +231,7 @@ bool GetProjectName() {
         }
       }
     }
-    
+
     const char *welcome = u8"The Snow Wizard\n\n"
     "This wizard will create a new Arctic Engine project for you.\n\n"
     "Enter the project name:  \"%s\"\n\n"
@@ -247,7 +249,7 @@ int DoesDirectoryExist(const char *path) {
   struct stat info;
   if (stat(path, &info) != 0) {
     return 0;
-  } else if( info.st_mode & S_IFDIR ) {
+  } else if ( info.st_mode & S_IFDIR ) {
     return 1;
   } else {
     return -1;
@@ -258,7 +260,7 @@ bool MakeDirectory(const char *path) {
 #ifdef ARCTIC_PLATFORM_WINDOWS
   BOOL is_ok = CreateDirectory(path, NULL);
   return is_ok;
-#elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
+#elif ((defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX))
   Si32 result = mkdir(path,
       S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IXOTH);
   return (result == 0);
@@ -277,7 +279,7 @@ bool CurrentDir(std::string *out_dir) {
     return true;
   }
   return false;
-#elif (defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX)
+#elif ((defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX))
   char cwd[1 << 20];
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
     out_dir->assign(cwd);
@@ -287,7 +289,7 @@ bool CurrentDir(std::string *out_dir) {
 #else
   // Not implemented for this platform
   return false;
-#endif
+#endif  // ARCTIC_PLATFORM_WINDOWS
 }
 
 bool ShowProgress() {
@@ -406,12 +408,16 @@ bool ShowProgress() {
           , "template_project_name.vcxproj"
           , "template_project_name.vcxproj.filters"
           , "template_project_name.xcodeproj/project.pbxproj"
-          , "template_project_name.xcodeproj/project.xcworkspace/contents.xcworkspacedata"
-          , "template_project_name.xcodeproj/xcshareddata/xcschemes/Debug.xcscheme"
-          , "template_project_name.xcodeproj/xcshareddata/xcschemes/Release.xcscheme"
+          , "template_project_name.xcodeproj/"
+                "project.xcworkspace/contents.xcworkspacedata"
+          , "template_project_name.xcodeproj/"
+                "xcshareddata/xcschemes/Debug.xcscheme"
+          , "template_project_name.xcodeproj/"
+                "xcshareddata/xcschemes/Release.xcscheme"
         };
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
-          std::vector<Ui8> data = ReadFile((g_template + "/" + files[idx]).c_str());
+          std::vector<Ui8> data = ReadFile(
+              (g_template + "/" + files[idx]).c_str());
           std::string name = files[idx];
           ReplaceAll("template_project_name", g_project_name, &name);
           data.push_back('\0');
@@ -427,7 +433,7 @@ bool ShowProgress() {
         break;
     }
     step++;
-    
+
     UpdateResolution();
     Clear();
     const char *welcome = u8"The Snow Wizard\n\n"
@@ -435,7 +441,7 @@ bool ShowProgress() {
     "Current directory: %s\n"
     "%s\n\n"
     "Press ESC to leave the Snow Wizard";
-    
+
     snprintf(text, sizeof(text), welcome,
         g_project_name.c_str(), g_current_directory.c_str(),
         g_progress.c_str());
@@ -450,7 +456,7 @@ void EasyMain() {
   if (!CurrentDir(&g_current_directory)) {
     //
   }
-  
+
   if (!GetProjectName()) {
     return;
   }

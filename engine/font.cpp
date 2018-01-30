@@ -21,6 +21,7 @@
 // IN THE SOFTWARE.
 
 #include <cstring>
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <list>

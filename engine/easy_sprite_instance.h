@@ -30,7 +30,7 @@
 
 namespace arctic {
 namespace easy {
-  
+
 struct SpanSi32 {
   Si32 begin;
   Si32 end;
@@ -57,7 +57,7 @@ class SpriteInstance {
   Ui8 *RawData() {
     return data_.data();
   }
-  
+
   const std::vector<SpanSi32> &Opaque() {
     return opaque_;
   }

@@ -89,7 +89,7 @@ namespace arctic {
     }
   }
 
-  void PushLog(std::string &str) {
+  void PushLog(const std::string &str) {
     std::lock_guard<std::mutex> lock(g_logger_mutex);
     g_logger_queue.push_back(str);
     g_logger_condition_variable.notify_one();
@@ -114,13 +114,15 @@ namespace arctic {
   }
 
   void StartLogger() {
-    Check(g_logger_do_quit == true, "StartLogger called while g_logger_do_quit is false");
+    Check(g_logger_do_quit == true,
+        "StartLogger called while g_logger_do_quit is false");
     g_logger_do_quit = false;
     g_logger_thread = std::thread(arctic::LoggerThreadFunction);
   }
 
   void StopLogger() {
-    Check(g_logger_do_quit == false, "StopLogger called while g_logger_do_quit is true");
+    Check(g_logger_do_quit == false,
+        "StopLogger called while g_logger_do_quit is true");
     {
       std::lock_guard<std::mutex> lock(g_logger_mutex);
       g_logger_do_quit = true;

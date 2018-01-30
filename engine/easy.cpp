@@ -719,11 +719,11 @@ double Time() {
 Si64 Random(Si64 min, Si64 max) {
   return GetEngine()->GetRandom(min, max);
 }
-  
+
 Si32 Random32(Si32 min, Si32 max) {
   return static_cast<Si32>(GetEngine()->GetRandom(min, max));
 }
-  
+
 Si32 InputMessageCount() {
   return static_cast<Si32>(g_input_messages.size());
 }
@@ -780,7 +780,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
     Check(false, "Error in ReadFile. Can't seek to the beg, file_name: ",
       file_name);
   }
-  
+
   if (static_cast<Ui64>(pos) > 0ull) {
     data.resize(static_cast<size_t>(pos));
     in.read(reinterpret_cast<char*>(data.data()), static_cast<Ui64>(pos));
