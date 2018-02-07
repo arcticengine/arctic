@@ -373,9 +373,6 @@ void PlayIntro() {
   Check(strncmp(data, reinterpret_cast<char*>(data2.data()), 10) == 0,
     "strings do not match");
 
-  g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
-  g_music.Play();
-
   Rgba *rgba = sp0.RgbaData();
   for (Si32 y = 0; y < 200; ++y) {
     for (Si32 x = 0; x < 320; x++) {
@@ -464,7 +461,7 @@ void PlayIntro() {
   }
 }
 
-void GenerateMaze() {
+void FillMaze() {
   Vec2Si32 pos;
   for (pos.x = 0; pos.x < g_maze_size.x; ++pos.x) {
     for (pos.y = 0; pos.y < g_maze_size.y; ++pos.y) {
@@ -473,6 +470,30 @@ void GenerateMaze() {
       Maze(pos).is_known = false;
     }
   }
+}
+
+void GenerateLineMaze() {
+  FillMaze();
+  
+  Vec2Si32 pos;
+  pos.y = g_maze_size.y / 2;
+  for (pos.x = 1; pos.x < g_maze_size.x - 1; ++pos.x) {
+    Maze(pos).kind = kCellFloor;
+    Maze(pos).is_visible = false;
+    Maze(pos).is_known = false;
+  }
+  
+  Hero().pos = Vec2Si32(1, pos.y);
+  
+  Creature enemy;
+  enemy.kind = static_cast<CreatureKind>(
+      Random(kCreatureMonsterBegin, kCreatureMonsterEnd - 1));
+  enemy.pos = Vec2Si32(g_maze_size.x - 2, pos.y);
+  g_creatures.push_back(enemy);
+}
+
+void GenerateMaze() {
+  FillMaze();
 
   StepMazeGeneration(g_creatures[g_hero_idx].pos, g_maze_size);
 
@@ -541,6 +562,9 @@ void GenerateMaze() {
 }
 
 void Init() {
+  g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
+  g_music.Play();
+  
   g_font.Load("data/arctic_one_bmf.fnt");
 
   g_blood[0].Load("data/blood_0.tga");
@@ -584,11 +608,12 @@ void Init() {
   g_wall_dark.Load("data/wall_1_dark.tga");
   g_wall_dark.UpdateOpaqueSpans();
 
-  PlayIntro();
+  //PlayIntro();
 
   ResizeScreen(800, 500);
 
   InitCreatures();
+  
   Hero().kind = static_cast<CreatureKind>(
       Random(kCreatureHeroBegin, kCreatureHeroEnd - 1));
   Hero().pos = Vec2Si32(1, 1);
@@ -596,7 +621,9 @@ void Init() {
   for (Ui32 idx = 0; idx < Hero().items.size(); ++idx) {
     Hero().items[idx] = 0;
   }
-  GenerateMaze();
+  
+  //GenerateMaze();
+  GenerateLineMaze();
 }
 
 void LookAround() {
@@ -771,11 +798,17 @@ void Render() {
         }
       }
     }
-    if (pos.y == Hero().pos.y) {
-      Vec2Si32 scr_pos = Hero().pos * 25 +
-        static_cast<Si32>(Hero().move_part * 25.0) *
-        (Hero().next_pos - Hero().pos);
-      CreatureSprite(Hero().kind).Draw(scr_pos);
+    for (Si64 creature_idx = 0; creature_idx < g_creatures.size();
+         ++creature_idx) {
+      Creature &creature = g_creatures[creature_idx];
+      if (pos.y == creature.pos.y) {
+        if (Maze(creature.pos).is_visible) {
+          Vec2Si32 scr_pos = creature.pos * 25 +
+            static_cast<Si32>(creature.move_part * 25.0) *
+            (creature.next_pos - creature.pos);
+          CreatureSprite(creature.kind).Draw(scr_pos);
+        }
+      }
     }
   }
 
