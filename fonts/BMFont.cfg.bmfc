@@ -1,0 +1,57 @@
+# AngelCode Bitmap Font Generator configuration file
+fileVersion=1
+
+# font settings
+fontName=Arctic One
+fontFile=ArcticOne.ttf
+charSet=0
+fontSize=32
+aa=1
+scaleH=100
+useSmoothing=1
+isBold=0
+isItalic=0
+useUnicode=1
+disableBoxChars=1
+outputInvalidCharGlyph=0
+dontIncludeKerningPairs=0
+useHinting=1
+renderFromOutline=0
+useClearType=1
+
+# character alignment
+paddingDown=0
+paddingUp=0
+paddingRight=0
+paddingLeft=0
+spacingHoriz=1
+spacingVert=1
+useFixedHeight=0
+forceZero=0
+
+# output file
+outWidth=512
+outHeight=512
+outBitDepth=32
+fontDescFormat=2
+fourChnlPacked=0
+textureFormat=tga
+textureCompression=0
+alphaChnl=1
+redChnl=0
+greenChnl=0
+blueChnl=0
+invA=0
+invR=0
+invG=0
+invB=0
+
+# outline
+outlineThickness=1
+
+# selected chars
+chars=32-126,160-311,313-329,332-383,402,536-539,567,699-700,704,710-712,728-730,732-733,768-772,774-776
+chars=778-780,786,789,806-807,1025,1029-1032,1040-1103,1105,1109-1112,8192-8213,8216-8226,8230,8239,8249
+chars=8250,8254,8260,8287-8288,8364,8722
+
+# imported icon images
