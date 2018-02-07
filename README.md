@@ -70,6 +70,10 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 * Doxygen 1.8.13 ([http://www.doxygen.org](http://www.doxygen.org))
 
+#### Bitmap Font Generator
+
+* BMFont Bitmap Font Generator 1.14 beta ([http://www.angelcode.com/products/bmfont](http://www.angelcode.com/products/bmfont))
+
 ## Ubuntu and Raspbian linux build instruction
 
 Just execute the following commands in terminal line by line to install all the required libraries and tools, clone the repository to ~/arctic, build and run the demo project: 
