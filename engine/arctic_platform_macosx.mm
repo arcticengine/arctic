@@ -772,28 +772,32 @@ void SoundMixer::Deinitialize() {
 
 
 void StartSoundBuffer(easy::Sound sound, float volume) {
-  SoundBuffer buffer;
-  buffer.sound = sound;
-  buffer.volume = volume;
-  buffer.next_position = 0;
-  buffer.sound.GetInstance()->IncPlaying();
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  g_sound_mixer_state.buffers.push_back(buffer);
+  if (sound.GetInstance()) {
+    SoundBuffer buffer;
+    buffer.sound = sound;
+    buffer.volume = volume;
+    buffer.next_position = 0;
+    buffer.sound.GetInstance()->IncPlaying();
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    g_sound_mixer_state.buffers.push_back(buffer);
+  }
 }
 
 void StopSoundBuffer(easy::Sound sound) {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
-    SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
-    if (buffer.sound.GetInstance() == sound.GetInstance()) {
-      buffer.sound.GetInstance()->DecPlaying();
-      if (idx != g_sound_mixer_state.buffers.size() - 1) {
-        g_sound_mixer_state.buffers[idx] =
-          g_sound_mixer_state.buffers[
-          g_sound_mixer_state.buffers.size() - 1];
+  if (sound.GetInstance()) {
+    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
+    for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
+      SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
+      if (buffer.sound.GetInstance() == sound.GetInstance()) {
+        buffer.sound.GetInstance()->DecPlaying();
+        if (idx != g_sound_mixer_state.buffers.size() - 1) {
+          g_sound_mixer_state.buffers[idx] =
+            g_sound_mixer_state.buffers[
+            g_sound_mixer_state.buffers.size() - 1];
+        }
+        g_sound_mixer_state.buffers.pop_back();
+        idx--;
       }
-      g_sound_mixer_state.buffers.pop_back();
-      idx--;
     }
   }
 }

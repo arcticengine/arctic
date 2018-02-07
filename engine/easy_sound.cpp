@@ -186,7 +186,7 @@ std::shared_ptr<SoundInstance> Sound::GetInstance() {
 }
 
 bool Sound::IsPlaying() {
-  return sound_instance_->IsPlaying();
+  return sound_instance_ && sound_instance_->IsPlaying();
 }
 
 }  // namespace easy
