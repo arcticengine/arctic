@@ -798,7 +798,7 @@ void Render() {
         }
       }
     }
-    for (Si64 creature_idx = 0; creature_idx < g_creatures.size();
+    for (Ui64 creature_idx = 0; creature_idx < g_creatures.size();
          ++creature_idx) {
       Creature &creature = g_creatures[creature_idx];
       if (pos.y == creature.pos.y) {
