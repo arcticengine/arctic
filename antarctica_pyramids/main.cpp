@@ -1,4 +1,4 @@
-﻿// The MIT License(MIT)
+// The MIT License(MIT)
 //
 // Copyright 2016-2017 Huldra
 //
@@ -184,6 +184,16 @@ Sprite& DecalSprite(DecalKind kind) {
   }
 }
 
+struct Action {
+  std::string name;
+  Si32 cost_endurance = 0;
+  Si32 cost_action_units = 1;
+  Si32 cost_ammo = 0;
+  Si32 produce_warmth = 0;
+  Si32 damage_hitpoints = 0;
+  Si32 damage_distance = 0;
+};
+
 struct Creature {
   CreatureKind kind = kCreatureMale;
   Vec2Si32 pos = Vec2Si32(1, 1);
@@ -192,6 +202,16 @@ struct Creature {
   double move_part = 0.0;
   bool is_moving = false;
   std::vector<Si32> items;
+  Si32 hitpoints = 100;
+  Si32 full_hitpoints = 100;
+  Si32 warmth = 8000;
+  Si32 full_warmth = 10000;
+  Si32 endurance = 100;
+  Si32 full_endurance = 100;
+  Si32 action_units = 100;
+  Si32 full_action_units = 100;
+  Si32 ammo = 31; // Glock
+  std::vector<Action> innate_actions;
 };
 
 struct Item {
@@ -223,6 +243,51 @@ void InitCreatures() {
 
 Creature& Hero() {
   return g_creatures[g_hero_idx];
+}
+
+void InitHero() {
+  Creature &hero = Hero();
+  hero.kind = static_cast<CreatureKind>(
+      Random(kCreatureHeroBegin, kCreatureHeroEnd - 1));
+  hero.pos = Vec2Si32(1, 1);
+  hero.items.resize(kItemKindCount);
+  for (Ui32 idx = 0; idx < hero.items.size(); ++idx) {
+    hero.items[idx] = 0;
+  }
+  
+  Action offhand_shot;
+  offhand_shot.name = "Offhand shot";
+  offhand_shot.cost_action_units = 40;
+  offhand_shot.cost_ammo = 1;
+  offhand_shot.damage_hitpoints = 45;
+  offhand_shot.damage_distance = 5;
+  hero.innate_actions.push_back(offhand_shot);
+  
+  Action aimed_shot;
+  aimed_shot.name = "Aimed shot";
+  aimed_shot.cost_action_units = 100;
+  aimed_shot.cost_ammo = 1;
+  aimed_shot.damage_hitpoints = 75;
+  aimed_shot.damage_distance = 5;
+  hero.innate_actions.push_back(aimed_shot);
+  
+  Action quick_kick;
+  quick_kick.name = "Quick kick";
+  quick_kick.cost_action_units = 20;
+  quick_kick.cost_endurance = 20;
+  quick_kick.produce_warmth = 60;
+  quick_kick.damage_hitpoints = 10;
+  quick_kick.damage_distance = 1;
+  hero.innate_actions.push_back(quick_kick);
+  
+  Action hard_kick;
+  hard_kick.name = "Hard kick";
+  hard_kick.cost_action_units = 60;
+  hard_kick.cost_endurance = 20;
+  hard_kick.produce_warmth = 80;
+  hard_kick.damage_hitpoints = 25;
+  hard_kick.damage_distance = 1;
+  hero.innate_actions.push_back(hard_kick);
 }
 
 Cell& Maze(Vec2Si32 pos) {
@@ -613,14 +678,7 @@ void Init() {
   ResizeScreen(800, 500);
 
   InitCreatures();
-  
-  Hero().kind = static_cast<CreatureKind>(
-      Random(kCreatureHeroBegin, kCreatureHeroEnd - 1));
-  Hero().pos = Vec2Si32(1, 1);
-  Hero().items.resize(kItemKindCount);
-  for (Ui32 idx = 0; idx < Hero().items.size(); ++idx) {
-    Hero().items[idx] = 0;
-  }
+  InitHero();
   
   //GenerateMaze();
   GenerateLineMaze();
@@ -733,8 +791,11 @@ void Update() {
       Hero().move_part = duration / kMoveDuration;
     }
   }
-
+  
   if (!Hero().is_moving) {
+    if (Hero().action_units == 0) {
+      Hero().action_units = Hero().full_action_units;
+    }
     Cell &cur = Maze(Hero().pos);
     if (!cur.items.empty()) {
       for (Ui32 idx = 0; idx < cur.items.size(); ++idx) {
@@ -742,21 +803,26 @@ void Update() {
       }
       cur.items.clear();
     }
-    if (!(step == Vec2Si32(0, 0))) {
-      Cell &cell = Maze(Hero().pos + step);
-      if (cell.kind != kCellWall) {
-        if (cell.kind == kCellFloor) {
-          Hero().is_moving = true;
-          Hero().next_pos = Hero().pos + step;
-          Hero().move_start_at = time;
-        } else if (cell.kind == kCellStairsDownLeft
-          || cell.kind == kCellStairsDownRight) {
-          Hero().pos += step;
-          g_is_first_level = false;
-          g_upper_cell_kind = cell.kind;
-          GenerateMaze();
-          easy::GetEngine()->GetBackbuffer().Clear();
+    if (step != Vec2Si32(0, 0)) {
+      if (Hero().action_units >= 20) {
+        Hero().action_units -= 20;
+        Cell &cell = Maze(Hero().pos + step);
+        if (cell.kind != kCellWall) {
+          if (cell.kind == kCellFloor) {
+            Hero().is_moving = true;
+            Hero().next_pos = Hero().pos + step;
+            Hero().move_start_at = time;
+          } else if (cell.kind == kCellStairsDownLeft
+            || cell.kind == kCellStairsDownRight) {
+            Hero().pos += step;
+            g_is_first_level = false;
+            g_upper_cell_kind = cell.kind;
+            GenerateMaze();
+            easy::GetEngine()->GetBackbuffer().Clear();
+          }
         }
+      } else {
+        Hero().action_units = 0;
       }
     }
   }
@@ -798,7 +864,7 @@ void Render() {
         }
       }
     }
-    for (Ui64 creature_idx = 0; creature_idx < g_creatures.size();
+    for (Ui32 creature_idx = 0; creature_idx < g_creatures.size();
          ++creature_idx) {
       Creature &creature = g_creatures[creature_idx];
       if (pos.y == creature.pos.y) {
@@ -853,7 +919,7 @@ void Render() {
   snprintf(fps_text, sizeof(fps_text), u8"FPS: %.1F", smooth_fps);
   g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop);
   
-  const char *long_text = u8"Длинный текст на русском языке по центру!\n"
+/*  const char *long_text = u8"Длинный текст на русском языке по центру!\n"
   u8"Second line !@#$%^&*()_+ with \\r at the end\r"
   u8"Third line ,./<>?;'\\:\"| with \\n at the end\n"
   u8"4th line []{}-=§±`~ with \\n\\r\\n\\r at the end\n\r\n\r"
@@ -871,6 +937,59 @@ void Render() {
       ScreenSize().x / 3, 0, kTextOriginLastBase);
   g_font.Draw("line 1\nbottom at 0",
       ScreenSize().x * 2 / 3, 0, kTextOriginBottom);
+  */
+  
+  Creature &hero = Hero();
+  char text[65536];
+  
+  snprintf(text, sizeof(text),
+    u8"Hitpoints: %d (%d)\n"
+    u8"Warmth: %d (%d)\n"
+    u8"Endurance: %d (%d)\n"
+    u8"Action units: %d (%d)\n"
+    u8"Ammo: %d",
+    hero.hitpoints, hero.full_hitpoints,
+    hero.warmth, hero.full_warmth,
+    hero.endurance, hero.full_endurance,
+    hero.action_units, hero.full_action_units,
+    hero.ammo);
+  g_font.Draw(text, 0, ScreenSize().y - 50, kTextOriginTop);
+  
+  int length = 0;
+  for (Ui32 idx = 0; idx < hero.innate_actions.size(); ++idx) {
+    Action &action = hero.innate_actions[idx];
+    bool is_ok = true;
+    if (hero.ammo < action.cost_ammo ||
+        hero.endurance < action.cost_endurance ||
+        hero.action_units < action.cost_action_units) {
+      is_ok = false;
+    }
+    if (is_ok) {
+      length += snprintf(text + length, sizeof(text) - length, u8"%d", idx);
+    } else {
+      length += snprintf(text + length, sizeof(text) - length, u8" ");
+    }
+                       
+    length += snprintf(text + length, sizeof(text) - length,
+        u8" - %s (%d dmg, -%d au", action.name.c_str(),
+        action.damage_hitpoints, action.cost_action_units);
+    if (action.cost_endurance) {
+      length += snprintf(text + length, sizeof(text) - length,
+          u8", -%d end", action.cost_endurance);
+    }
+    if (action.cost_endurance) {
+      length += snprintf(text + length, sizeof(text) - length,
+         u8", -%d end", action.cost_endurance);
+    }
+    Si32 warmth = action.produce_warmth - action.cost_action_units;
+    if (warmth) {
+      length += snprintf(text + length, sizeof(text) - length,
+          u8", %d war", warmth);
+    }
+    length += snprintf(text + length, sizeof(text) - length,
+         u8")%s", (idx == hero.innate_actions.size() - 1 ? "" : "\n"));
+  }
+  g_font.Draw(text, 0, 0);
   
   ShowFrame();
 }
