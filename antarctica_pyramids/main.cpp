@@ -234,6 +234,8 @@ Cell g_maze[32][20];
 std::vector<Creature> g_creatures;
 Si32 g_hero_idx = 0;
 
+Si32 g_kills = 0;
+
 void InitCreatures() {
   g_creatures.clear();
   Creature hero;
@@ -713,6 +715,31 @@ void LookAround() {
   }
 }
 
+bool IsActionPossible(Creature &hero, Action &action) {
+  bool is_ok = true;
+  if (hero.ammo < action.cost_ammo ||
+      hero.endurance < action.cost_endurance ||
+      hero.action_units < action.cost_action_units) {
+    is_ok = false;
+  }
+  return is_ok;
+}
+
+void PerformAction(Creature &hero, Action &action) {
+  hero.ammo -= action.cost_ammo;
+  hero.endurance -= action.cost_endurance;
+  hero.action_units -= action.cost_action_units;
+  hero.warmth += action.produce_warmth - action.cost_action_units;
+  
+  for (Ui32 idx = 0; idx < g_creatures.size(); ++idx) {
+    Creature &enemy = g_creatures[idx];
+    if (&enemy != &hero) {
+      enemy.hitpoints = std::max(enemy.hitpoints - action.damage_hitpoints, 0);
+      break;
+    }
+  }
+}
+
 void Update() {
   double time = Time();
 
@@ -734,6 +761,31 @@ void Update() {
   if (IsKeyDown(kKeyRight) || IsKeyDown("d")) {
     step.x = 1;
     step.y = 0;
+  }
+  
+  for (Ui32 idx = 0; idx < g_creatures.size(); ++idx) {
+    if (idx == g_hero_idx) {
+      
+    } else {
+      if (g_creatures[idx].hitpoints == 0) {
+        g_kills++;
+        g_creatures[idx].hitpoints = 100;
+        g_creatures[idx].kind = static_cast<CreatureKind>(
+            static_cast<Ui32>(g_creatures[idx].kind) + 1);
+        if (g_creatures[idx].kind >= kCreatureMonsterEnd) {
+          g_creatures[idx].kind = kCreatureMonsterBegin;
+        }
+      }
+    }
+  }
+  
+  for (Ui32 idx = 0; idx < Hero().innate_actions.size(); ++idx) {
+    if (IsKeyDown(kKey0 + idx)) {
+      Action &action = Hero().innate_actions[idx];
+      if (IsActionPossible(Hero(), action)) {
+        PerformAction(Hero(), action);
+      }
+    }
   }
 
   static bool g_musicDisabled = false;
@@ -795,6 +847,8 @@ void Update() {
   if (!Hero().is_moving) {
     if (Hero().action_units == 0) {
       Hero().action_units = Hero().full_action_units;
+      Hero().endurance += Hero().full_endurance / 5;
+      Hero().endurance = std::min(Hero().full_endurance, Hero().endurance);
     }
     Cell &cur = Maze(Hero().pos);
     if (!cur.items.empty()) {
@@ -955,15 +1009,15 @@ void Render() {
     hero.ammo);
   g_font.Draw(text, 0, ScreenSize().y - 50, kTextOriginTop);
   
+  snprintf(text, sizeof(text), u8"Kills: %d", g_kills);
+  g_font.Draw(text,
+    ScreenSize().x - g_font.EvaluateSize(text, false).x,
+    ScreenSize().y - 50, kTextOriginTop);
+  
   int length = 0;
   for (Ui32 idx = 0; idx < hero.innate_actions.size(); ++idx) {
     Action &action = hero.innate_actions[idx];
-    bool is_ok = true;
-    if (hero.ammo < action.cost_ammo ||
-        hero.endurance < action.cost_endurance ||
-        hero.action_units < action.cost_action_units) {
-      is_ok = false;
-    }
+    bool is_ok = IsActionPossible(hero, action);
     if (is_ok) {
       length += snprintf(text + length, sizeof(text) - length, u8"%d", idx);
     } else {
