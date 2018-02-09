@@ -204,14 +204,17 @@ struct Creature {
   std::vector<Si32> items;
   Si32 hitpoints = 100;
   Si32 full_hitpoints = 100;
-  Si32 warmth = 8000;
-  Si32 full_warmth = 10000;
+  Si32 warmth = 1000;
+  Si32 full_warmth = 1000;
   Si32 endurance = 100;
   Si32 full_endurance = 100;
   Si32 action_units = 100;
   Si32 full_action_units = 100;
-  Si32 ammo = 31; // Glock
+  Si32 ammo = 6;
   std::vector<Action> innate_actions;
+  double action_start_at = 0.0;
+  double action_part = 0.0;
+  bool is_acting = false;
 };
 
 struct Item {
@@ -277,7 +280,7 @@ void InitHero() {
   quick_kick.name = "Quick kick";
   quick_kick.cost_action_units = 20;
   quick_kick.cost_endurance = 20;
-  quick_kick.produce_warmth = 60;
+  quick_kick.produce_warmth = 30;
   quick_kick.damage_hitpoints = 10;
   quick_kick.damage_distance = 1;
   hero.innate_actions.push_back(quick_kick);
@@ -286,7 +289,7 @@ void InitHero() {
   hard_kick.name = "Hard kick";
   hard_kick.cost_action_units = 60;
   hard_kick.cost_endurance = 20;
-  hard_kick.produce_warmth = 80;
+  hard_kick.produce_warmth = 40;
   hard_kick.damage_hitpoints = 25;
   hard_kick.damage_distance = 1;
   hero.innate_actions.push_back(hard_kick);
@@ -726,6 +729,10 @@ bool IsActionPossible(Creature &hero, Action &action) {
 }
 
 void PerformAction(Creature &hero, Action &action) {
+  hero.is_acting = true;
+  hero.action_start_at = Time();
+  hero.action_part = 0.0;
+  
   hero.ammo -= action.cost_ammo;
   hero.endurance -= action.cost_endurance;
   hero.action_units -= action.cost_action_units;
@@ -779,15 +786,6 @@ void Update() {
     }
   }
   
-  for (Ui32 idx = 0; idx < Hero().innate_actions.size(); ++idx) {
-    if (IsKeyDown(kKey0 + idx)) {
-      Action &action = Hero().innate_actions[idx];
-      if (IsActionPossible(Hero(), action)) {
-        PerformAction(Hero(), action);
-      }
-    }
-  }
-
   static bool g_musicDisabled = false;
 
   if (!g_musicDisabled) {
@@ -831,8 +829,32 @@ void Update() {
     SetMasterVolume(Clamp(GetMasterVolume() - 0.01f, 0.f, 1.f));
   }
   // End of cheats
+  
+  if (!Hero().is_moving && !Hero().is_acting) {
+    for (Ui32 idx = 0; idx < Hero().innate_actions.size(); ++idx) {
+      if (IsKeyDown(kKey0 + idx)) {
+        Action &action = Hero().innate_actions[idx];
+        if (IsActionPossible(Hero(), action)) {
+          if (!Hero().is_acting) {
+            PerformAction(Hero(), action);
+          }
+        }
+      }
+    }
+    if (!Hero().is_acting) {
+      if (IsKeyDown(" ")) {
+        Creature &hero = Hero();
+        hero.is_acting = true;
+        hero.action_start_at = Time();
+        hero.action_part = 0.0;
+        
+        hero.warmth -= hero.action_units;
+        hero.action_units = 0;
+      }
+    }
+  }
 
-  const double kMoveDuration = 0.1;
+  const double kMoveDuration = 0.2;
   Hero().move_part = 0.0;
   if (Hero().is_moving) {
     double duration = time - Hero().move_start_at;
@@ -843,11 +865,20 @@ void Update() {
       Hero().move_part = duration / kMoveDuration;
     }
   }
+  Hero().action_part = 0.0;
+  if (Hero().is_acting) {
+    double duration = time - Hero().action_start_at;
+    if (duration > kMoveDuration) {
+      Hero().is_acting = false;
+    } else {
+      Hero().action_part = duration / kMoveDuration;
+    }
+  }
   
-  if (!Hero().is_moving) {
+  if (!Hero().is_moving && !Hero().is_acting) {
     if (Hero().action_units == 0) {
       Hero().action_units = Hero().full_action_units;
-      Hero().endurance += Hero().full_endurance / 5;
+      Hero().endurance += Hero().full_endurance / 2;
       Hero().endurance = std::min(Hero().full_endurance, Hero().endurance);
     }
     Cell &cur = Maze(Hero().pos);
@@ -1007,14 +1038,30 @@ void Render() {
     hero.endurance, hero.full_endurance,
     hero.action_units, hero.full_action_units,
     hero.ammo);
-  g_font.Draw(text, 0, ScreenSize().y - 50, kTextOriginTop);
+  g_font.Draw(text, 0, ScreenSize().y - 25 , kTextOriginTop);
   
-  snprintf(text, sizeof(text), u8"Kills: %d", g_kills);
+  Creature *enemy = nullptr;
+  for (Ui32 idx = 0; idx < g_creatures.size(); ++idx) {
+    if (idx != g_hero_idx) {
+      enemy = &g_creatures[idx];
+    }
+  }
+  
+  int length = 0;
+  length += snprintf(text + length, sizeof(text) - length,
+           u8"Kills: %d\n",
+           g_kills);
+  if (enemy) {
+    length += snprintf(text + length, sizeof(text) - length,
+           u8"\n"
+           u8"Enemy hitpoints: %d (%d)",
+           enemy->hitpoints, enemy->full_hitpoints);
+  }
   g_font.Draw(text,
     ScreenSize().x - g_font.EvaluateSize(text, false).x,
     ScreenSize().y - 50, kTextOriginTop);
   
-  int length = 0;
+  length = 0;
   for (Ui32 idx = 0; idx < hero.innate_actions.size(); ++idx) {
     Action &action = hero.innate_actions[idx];
     bool is_ok = IsActionPossible(hero, action);
