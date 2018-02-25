@@ -803,7 +803,7 @@ bool MakeDirectory(const char *path) {
   return is_ok;
 }
 
-bool GetCurrentDirectory(std::string *out_dir) {
+bool GetCurrentPath(std::string *out_dir) {
   char cwd[1 << 20];
   DWORD res = GetCurrentDirectoryA(sizeof(cwd), cwd);
   if (res > 0) {

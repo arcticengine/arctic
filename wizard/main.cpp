@@ -396,7 +396,7 @@ bool ShowProgress() {
 
 void EasyMain() {
   g_font.Load("data/arctic_one_bmf.fnt");
-  if (!GetCurrentDirectory(&g_current_directory)) {
+  if (!GetCurrentPath(&g_current_directory)) {
     //
   }
 

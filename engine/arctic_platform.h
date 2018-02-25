@@ -60,7 +60,7 @@ Si32 ToBe(Si32 x);
 
 Trivalent DoesDirectoryExist(const char *path);
 bool MakeDirectory(const char *path);
-bool GetCurrentDirectory(std::string *out_dir);
+bool GetCurrentPath(std::string *out_dir);
 bool GetDirectoryEntries(const char *path,
     std::deque<DirectoryEntry> *out_entries);
 
