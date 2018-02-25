@@ -20,16 +20,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/arctic_platform_def.h"
-#ifdef ARCTIC_PLATFORM_WINDOWS
-#include <windows.h>
-#elif ((defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX))
-#include <unistd.h>
-#else
-#endif  // ARCTIC_PLATFORM_WINDOWS
-
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -245,53 +235,6 @@ bool GetProjectName() {
   return false;
 }
 
-int DoesDirectoryExist(const char *path) {
-  struct stat info;
-  if (stat(path, &info) != 0) {
-    return 0;
-  } else if ( info.st_mode & S_IFDIR ) {
-    return 1;
-  } else {
-    return -1;
-  }
-}
-
-bool MakeDirectory(const char *path) {
-#ifdef ARCTIC_PLATFORM_WINDOWS
-  BOOL is_ok = CreateDirectory(path, NULL);
-  return is_ok;
-#elif ((defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX))
-  Si32 result = mkdir(path,
-      S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IXOTH);
-  return (result == 0);
-#else
-  // Not implemented for this platform
-  return false;
-#endif
-}
-
-bool CurrentDir(std::string *out_dir) {
-#ifdef ARCTIC_PLATFORM_WINDOWS
-  char cwd[1 << 20];
-  DWORD res = GetCurrentDirectoryA(sizeof(cwd), cwd);
-  if (res > 0) {
-    out_dir->assign(cwd);
-    return true;
-  }
-  return false;
-#elif ((defined ARCTIC_PLATFORM_PI) || (defined ARCTIC_PLATFORM_MACOSX))
-  char cwd[1 << 20];
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    out_dir->assign(cwd);
-    return true;
-  }
-  return false;
-#else
-  // Not implemented for this platform
-  return false;
-#endif  // ARCTIC_PLATFORM_WINDOWS
-}
-
 bool ShowProgress() {
   Si32 step = 0;
   char text[1 << 20];
@@ -453,7 +396,7 @@ bool ShowProgress() {
 
 void EasyMain() {
   g_font.Load("data/arctic_one_bmf.fnt");
-  if (!CurrentDir(&g_current_directory)) {
+  if (!GetCurrentDirectory(&g_current_directory)) {
     //
   }
 

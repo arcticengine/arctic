@@ -1,6 +1,6 @@
 // The MIT License(MIT)
 //
-// Copyright 2016 - 2017 Huldra
+// Copyright 2016 - 2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -23,11 +23,17 @@
 #ifndef ENGINE_ARCTIC_PLATFORM_H_
 #define ENGINE_ARCTIC_PLATFORM_H_
 
-#include <vector>
+#include <deque>
 #include "engine/arctic_types.h"
 #include "engine/easy_sound.h"
 
 namespace arctic {
+
+struct DirectoryEntry {
+  std::string title; // entries own full name, like "pet" or "font.tga"
+  Trivalent is_directory = kTrivalentUnknown;
+  Trivalent is_file = kTrivalentUnknown;
+};
 
 void Check(bool condition, const char *error_message,
     const char *error_message_postfix = nullptr);
@@ -51,6 +57,12 @@ Ui16 ToBe(Ui16 x);
 Si16 ToBe(Si16 x);
 Ui32 ToBe(Ui32 x);
 Si32 ToBe(Si32 x);
+
+Trivalent DoesDirectoryExist(const char *path);
+bool MakeDirectory(const char *path);
+bool GetCurrentDirectory(std::string *out_dir);
+bool GetDirectoryEntries(const char *path,
+    std::deque<DirectoryEntry> *out_entries);
 
 }  // namespace arctic
 

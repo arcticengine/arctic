@@ -787,6 +787,33 @@ bool SetVSync(bool is_enable) {
   return is_ok;
 }
 
+Trivalent DoesDirectoryExist(const char *path) {
+  struct stat info;
+  if (stat(path, &info) != 0) {
+    return kTrivalentFalse;
+  } else if (info.st_mode & S_IFDIR) {
+    return kTrivalentTrue;
+  } else {
+    return kTrivalentUnknown;
+  }
+}
+
+bool MakeDirectory(const char *path) {
+  BOOL is_ok = CreateDirectory(path, NULL);
+  return is_ok;
+}
+
+bool GetCurrentDirectory(std::string *out_dir) {
+  char cwd[1 << 20];
+  DWORD res = GetCurrentDirectoryA(sizeof(cwd), cwd);
+  if (res > 0) {
+    out_dir->assign(cwd);
+    return true;
+  }
+  return false;
+}
+
+
 }  // namespace arctic
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,

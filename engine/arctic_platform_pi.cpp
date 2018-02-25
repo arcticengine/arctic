@@ -27,6 +27,9 @@
 #include <alsa/asoundlib.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -862,6 +865,33 @@ void StopSoundMixer() {
   }
   snd_pcm_close(g_data.handle);
 }
+
+Trivalent DoesDirectoryExist(const char *path) {
+  struct stat info;
+  if (stat(path, &info) != 0) {
+    return kTrivalentFalse;
+  } else if (info.st_mode & S_IFDIR) {
+    return kTrivalentTrue;
+  } else {
+    return kTrivalentUnknown;
+  }
+}
+
+bool MakeDirectory(const char *path) {
+  Si32 result = mkdir(path,
+      S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IXOTH);
+  return (result == 0);
+}
+
+bool GetCurrentDirectory(std::string *out_dir) {
+  char cwd[1 << 20];
+  if (getcwd(cwd, sizeof(cwd)) != NULL) {
+    out_dir->assign(cwd);
+    return true;
+  }
+  return false;
+}
+
 
 }  // namespace arctic
 
