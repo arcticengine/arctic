@@ -63,6 +63,8 @@ bool MakeDirectory(const char *path);
 bool GetCurrentPath(std::string *out_dir);
 bool GetDirectoryEntries(const char *path,
     std::deque<DirectoryEntry> *out_entries);
+std::string CanonicalizePath(const char *path);
+std::string RelativePathFromTo(const char *from, const char *to);
 
 }  // namespace arctic
 

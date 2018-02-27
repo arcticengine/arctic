@@ -933,6 +933,48 @@ bool GetDirectoryEntries(const char *path,
   closedir(dir);
   return true;
 }
+  
+std::string CanonicalizePath(const char *path) {
+  Check(path, "CanonicalizePath error, path can't be nullptr");
+  char *canonic_path = realpath(path, nullptr);
+  std::string result;
+  if (canonic_path) {
+    result.assign(canonic_path);
+    free(canonic_path);
+  }
+  return result;
+}
+  
+std::string RelativePathFromTo(const char *from, const char *to) {
+  std::string from_abs = CanonicalizePath(from);
+  std::string to_abs = CanonicalizePath(to);
+  Ui32 matching = 0;
+  while (matching < from_abs.size() && matching < to_abs.size()) {
+    if (from_abs[matching] == to_abs[matching]) {
+      ++matching;
+    } else {
+      break;
+    }
+  }
+  if (matching == from_abs.size() && matching == to_abs.size()) {
+    return "./";
+  }
+  while (matching && from_abs[matching - 1] != '/') {
+    --matching;
+  }
+  const char *from_part = from_abs.c_str() + matching;
+  std::stringstream res;
+  while (*from_part != 0) {
+    res << "../";
+    ++from_part;
+    while (*from_part != 0 && *from_part != '/') {
+      ++from_part;
+    }
+  }
+  const char *to_part = to_abs.c_str() + matching;
+  res << to_part;
+  return res.str();
+}
 
 }  // namespace arctic
 
