@@ -32,6 +32,7 @@
 #include <windowsx.h>
 #include <winsock2.h>
 #include <Mmsystem.h>
+#include <Shlwapi.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 
@@ -52,10 +53,12 @@
 #include "engine/rgb.h"
 #include "engine/vec3f.h"
 
+#pragma comment(lib, "glu32.lib")
+#pragma comment(lib, "OpenGL32.lib")
+#pragma comment(lib, "Shlwapi.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "Ws2_32.lib")
-#pragma comment(lib, "OpenGL32.lib")
-#pragma comment(lib, "glu32.lib")
+
 
 extern void EasyMain();
 
@@ -813,6 +816,30 @@ bool GetCurrentPath(std::string *out_dir) {
   return false;
 }
 
+std::string CanonicalizePath(const char *path) {
+  Check(path, "CanonicalizePath error, path can't be nullptr");
+  char canonic_path[MAX_PATH];
+  BOOL is_ok = PathCanonicalize(canonic_path, path);
+  std::string result;
+  if (is_ok) {
+    result.assign(canonic_path);
+  }
+  return result;
+}
+
+std::string RelativePathFromTo(const char *from, const char *to) {
+  std::string from_abs = CanonicalizePath(from);
+  std::string to_abs = CanonicalizePath(to);
+  char relative_path[MAX_PATH];
+  BOOL is_ok = PathRelativePathTo(relative_path,
+    from_abs.c_str(), FILE_ATTRIBUTE_DIRECTORY,
+    to_abs.c_str(), FILE_ATTRIBUTE_DIRECTORY)
+  std::string result;
+  if (is_ok) {
+    result.assign(relative_path);
+  }
+  return result;
+}
 
 }  // namespace arctic
 
