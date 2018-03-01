@@ -844,7 +844,6 @@ bool GetDirectoryEntries(const char *path,
     return false;
   }
 
-  char full_path[1 << 20];
   while (true) {
     DirectoryEntry entry;
     entry.title = find_data.cFileName;
