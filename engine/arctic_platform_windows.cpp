@@ -816,6 +816,57 @@ bool GetCurrentPath(std::string *out_dir) {
   return false;
 }
 
+bool GetDirectoryEntries(const char *path,
+     std::deque<DirectoryEntry> *out_entries) {
+  Check(out_entries,
+        "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
+  out_entries->clear();
+
+  std::string canonic_path = CanonicalizePath(path);
+  if (canonic_path.size() == 0) {
+    std::stringstream info;
+    info << "GetDirectoryEntries can't canonize path: \"" << path << "\""
+      << std::endl;
+    Log(info.str().c_str());
+    return false;
+  }
+  std::stringstream search_pattern;
+  search_pattern << canonic_path << "\\*";
+
+  WIN32_FIND_DATA find_data;
+  HANDLE find_handle = FindFirstFile(search_pattern.str().c_str(), &find_data);
+  if (find_handle == INVALID_HANDLE_VALUE) {
+    std::stringstream info;
+    info << "GetDirectoryEntires error in FindFirstFile, path: \""
+      << path << "\"" << std::endl;
+    Log(info.str().c_str());
+    return false;
+  }
+
+  char full_path[1 << 20];
+  while (true) {
+    DirectoryEntry entry;
+    entry.title = find_data.cFileName;
+    if (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+      entry.is_directory = kTrivalentTrue;
+    } else {
+      entry.is_file = kTrivalentTrue;
+    }
+    out_entries->push_back(entry);
+    if (FindNextFile(find_handle, &find_data) == 0) {
+      break;
+    }
+  }
+
+  DWORD last_error = GetLastError();
+  if (last_error != ERROR_NO_MORE_FILES) {
+    FatalWithLastError("GetDirectoryEntries error in FindNextFile");
+  }
+  FindClose(find_handle);
+  return true;
+}
+
+
 std::string CanonicalizePath(const char *path) {
   Check(path, "CanonicalizePath error, path can't be nullptr");
   char canonic_path[MAX_PATH];
