@@ -833,7 +833,7 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   char relative_path[MAX_PATH];
   BOOL is_ok = PathRelativePathTo(relative_path,
     from_abs.c_str(), FILE_ATTRIBUTE_DIRECTORY,
-    to_abs.c_str(), FILE_ATTRIBUTE_DIRECTORY)
+    to_abs.c_str(), FILE_ATTRIBUTE_DIRECTORY);
   std::string result;
   if (is_ok) {
     result.assign(relative_path);
