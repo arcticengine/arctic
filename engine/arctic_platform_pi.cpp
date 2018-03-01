@@ -893,6 +893,45 @@ bool GetCurrentPath(std::string *out_dir) {
   return false;
 }
   
+bool GetDirectoryEntries(const char *path,
+     std::deque<DirectoryEntry> *out_entries) {
+  Check(out_entries,
+    "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
+  out_entries->clear();
+  DIR *dir = opendir(path);
+  if (dir == nullptr) {
+    std::stringstream info;
+    info << "Error errno: " << errno
+      << " while opening path: \"" << path << "\"" << std::endl;
+    Log(info.str().c_str());
+    return false;
+  }
+  char full_path[1 << 20];
+  while (true) {
+    struct dirent *dir_entry = readdir(dir);
+    if (dir_entry == nullptr) {
+      break;
+    }
+    DirectoryEntry entry;
+    entry.title = dir_entry->d_name;
+    sprintf(full_path, "%s/%s", path, dir_entry->d_name);
+    struct stat info;
+    if (stat(full_path, &info) != 0) {
+      return false;
+    }
+    if (info.st_mode & S_IFDIR) {
+      entry.is_directory = kTrivalentTrue;
+    }
+    if (info.st_mode & S_IFREG) {
+      entry.is_file = kTrivalentTrue;
+    }
+    out_entries->push_back(entry);
+  }
+  closedir(dir);
+  return true;
+}
+
+  
 std::string CanonicalizePath(const char *path) {
   Check(path, "CanonicalizePath error, path can't be nullptr");
   char *canonic_path = realpath(path, nullptr);
