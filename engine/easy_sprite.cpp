@@ -436,6 +436,23 @@ void Sprite::Load(const std::string &file_name) {
   Load(file_name.c_str());
 }
 
+void Sprite::Save(const char *file_name) {
+  Check(!!file_name, "Error in Sprite::Save, file_name is nullptr.");
+  const char *last_dot = strchr(file_name, '.');
+  Check(!!last_dot, "Error in Sprite::Save, file_name has no extension.");
+  if (strcmp(last_dot, ".tga") == 0) {
+    std::vector<Ui8> data;
+    SaveTga(sprite_instance_, &data);
+    WriteFile(file_name, data.data(), data.size());
+  } else {
+    Fatal("Error in Sprite::Save, unknown file extension.");
+  }
+}
+
+void Sprite::Save(const std::string &file_name) {
+  Save(file_name.c_str());
+}
+
 void Sprite::Create(const Si32 width, const Si32 height) {
   sprite_instance_.reset(new SpriteInstance(width, height));
   ref_pos_ = Vec2Si32(0, 0);

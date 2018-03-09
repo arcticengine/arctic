@@ -1,6 +1,6 @@
 // The MIT License(MIT)
 //
-// Copyright 2017 Huldra
+// Copyright 2017 - 2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -70,6 +70,9 @@ class SpriteInstance {
 
 std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
     const Si64 size);
+
+void SaveTga(std::shared_ptr<easy::SpriteInstance> sprite,
+    std::vector<Ui8> *data);
 
 }  // namespace arctic
 
