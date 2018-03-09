@@ -23,6 +23,7 @@
 
 #include "engine/easy_sprite_instance.h"
 
+#include <cstring>
 #include <memory>
 #include <sstream>
 
