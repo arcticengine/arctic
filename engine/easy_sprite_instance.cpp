@@ -265,7 +265,7 @@ void SaveTga(std::shared_ptr<easy::SpriteInstance> sprite,
   tga.image_type = 2; // uncommpressed rgb
   
   Si64 length = sizeof(tga) + 4 * tga.image_width * tga.image_height;
-  data->resize(length);
+  data->resize(static_cast<size_t>(length));
   memcpy(data->data(), &tga, sizeof(tga));
 
   const Ui8 *from = sprite->RawData();
