@@ -262,7 +262,6 @@
     <ClCompile Include="piFft.cpp" />
     <ClCompile Include="piNoise.cpp" />
     <ClCompile Include="piRandom.cpp" />
-    <ClCompile Include="mt19937ar.cpp" />
     <ClCompile Include="piVoronoi.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -274,7 +273,6 @@
     <ClInclude Include="piRandom.h" />
     <ClInclude Include="piSdf.h" />
     <ClInclude Include="piShading.h" />
-    <ClInclude Include="mt19937ar.h" />
     <ClInclude Include="cg\piBBox3F.h" />
     <ClInclude Include="cg\piCameraD.h" />
     <ClInclude Include="cg\piCameraF.h" />
