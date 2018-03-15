@@ -91,10 +91,10 @@ struct Rgba {
   
 
 inline Rgba Mix(Rgba const a, Rgba const b, float const f) {
-  return Rgba(a.r * (1.0f - f) + f * b.r,
-              a.g * (1.0f - f) + f * b.g,
-              a.b * (1.0f - f) + f * b.b,
-              a.a * (1.0f - f) + f * b.a);
+  return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
+              static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),
+              static_cast<Ui8>(a.b * (1.0f - f) + f * b.b),
+              static_cast<Ui8>(a.a * (1.0f - f) + f * b.a));
 }
 inline Rgba Min(const Rgba a, const Rgba b) {
   return Rgba((a.r < b.r) ? a.r : b.r,
