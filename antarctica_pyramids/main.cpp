@@ -446,8 +446,14 @@ void PlayIntro() {
   Rgba *rgba = sp0.RgbaData();
   for (Si32 y = 0; y < 200; ++y) {
     for (Si32 x = 0; x < 320; x++) {
-      Si32 a = Clamp(x - 35, 0, 255);
-      rgba[x + y * 320] = Rgba(255, 0, 255, a);
+      Ui32 x_1_8 = x * 256 / 319;
+      Ui32 y_1_8 = y * 256 / 199;
+      Rgba a(255, 0, 0, 128);
+      Rgba b(0, 255, 0, 255);
+      Rgba c(255, 0, 255, 128);
+      Rgba d(255, 0, 255, 255);
+      Rgba w(0, 0, 255, 255);
+      rgba[x + y * 320] = BlendFast(w, Bilerp(a, b, c, d, x_1_8, y_1_8));
     }
   }
   Sprite sp;
@@ -678,7 +684,7 @@ void Init() {
   g_wall_dark.Load("data/wall_1_dark.tga");
   g_wall_dark.UpdateOpaqueSpans();
 
-  //PlayIntro();
+  PlayIntro();
 
   ResizeScreen(800, 500);
 
