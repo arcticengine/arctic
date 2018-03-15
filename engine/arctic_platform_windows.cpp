@@ -1,5 +1,6 @@
 // The MIT License(MIT)
 //
+// Copyright 2015 - 2016 Inigo Quilez
 // Copyright 2017 - 2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -7,7 +8,7 @@
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
 // copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions :
+// furnished to do so, subject to the following conditions:
 //
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
@@ -899,7 +900,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   _In_ LPWSTR command_line,
   _In_ int cmd_show) {
   UNREFERENCED_PARAMETER(prev_instance_handle);
-  UNREFERENCED_PARAMETER(command_line);
 
   arctic::StartLogger();
 
@@ -909,6 +909,35 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   DisableProcessWindowsGhosting();
 
+  // remove quotes from command line
+  if (command_line) {
+    if (command_line[0] == L'"' ) {
+      Si32 i;
+      for (i = 0; command_line[i]; i++ ) {
+      }
+      command_line[i - 1] = 0;
+      command_line++;
+    }
+  }
+  int num_args = 0;
+  wchar_t **args = CommandLineToArgvW(GetCommandLineW(), &num_args);
+
+  // switch current directory to the executable
+  /*
+  wchar_t buffer[1024];
+  GetCurrentDirectory(1024, buffer);
+  GetModuleFileName( instance, buffer, 1024 );
+  int ls = 0;
+  for (int i = 0; buffer[i]; i++ ) {
+    if ( buffer[i] == L'/' || buffer[i] == L'\\' ) {
+      ls = i;
+    }
+  }
+  buffer[ls] = 0;
+  SetCurrentDirectory(buffer);
+  */
+
+  // create the main window
   bool is_ok = arctic::CreateMainWindow(instance_handle, cmd_show,
     &arctic::g_system_info);
   arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
@@ -931,6 +960,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
       DispatchMessage(&msg);
     }
   }
+
+  LocalFree(args);
   arctic::StopLogger();
   ExitProcess(0);
   //    engine_thread.join();
