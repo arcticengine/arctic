@@ -946,7 +946,15 @@ std::string CanonicalizePath(const char *path) {
 
 std::string RelativePathFromTo(const char *from, const char *to) {
   std::string from_abs = CanonicalizePath(from);
+  if (from && from[strlen(from) - 1] == '/' &&
+      from_abs.size() && from_abs[from_abs.size() - 1] != '/') {
+    from_abs = from_abs + '/';
+  }
   std::string to_abs = CanonicalizePath(to);
+  if (to && to[strlen(to) - 1] == '/' &&
+      to_abs.size() && to_abs[to_abs.size() - 1] != '/') {
+    to_abs = to_abs + '/';
+  }
   Ui32 matching = 0;
   while (matching < from_abs.size() && matching < to_abs.size()) {
     if (from_abs[matching] == to_abs[matching]) {
