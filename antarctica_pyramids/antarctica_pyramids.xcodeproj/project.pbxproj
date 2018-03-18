@@ -80,8 +80,8 @@
 		34C1597A20019B5C0029160F /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
 		34C5F3111FD4E22300A03FA2 /* font.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = font.h; path = ../engine/font.h; sourceTree = SOURCE_ROOT; };
 		34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi.cpp; path = ../engine/arctic_platform_pi.cpp; sourceTree = SOURCE_ROOT; };
-		34E1FEAF2005ACD300D8264C /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = log.h; path = engine/log.h; sourceTree = "<group>"; };
-		34E1FEB02005ACD400D8264C /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = log.cpp; path = engine/log.cpp; sourceTree = "<group>"; };
+		34E1FEAF2005ACD300D8264C /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = log.h; path = ../engine/log.h; sourceTree = SOURCE_ROOT; };
+		34E1FEB02005ACD400D8264C /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = log.cpp; path = ../engine/log.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

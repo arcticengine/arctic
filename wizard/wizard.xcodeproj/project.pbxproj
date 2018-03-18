@@ -36,8 +36,9 @@
 		34436D0E1F6431CD004DD16E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		34436D101F6431D3004DD16E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		346399361F7C93AB007E37F2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
-		346FB0DD201EACBE00CAD8E5 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = log.h; path = engine/log.h; sourceTree = "<group>"; };
-		346FB0DE201EACBE00CAD8E5 /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = log.cpp; path = engine/log.cpp; sourceTree = "<group>"; };
+		346FB0DD201EACBE00CAD8E5 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = log.h; path = ../engine/log.h; sourceTree = SOURCE_ROOT; };
+		346FB0DE201EACBE00CAD8E5 /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = log.cpp; path = ../engine/log.cpp; sourceTree = SOURCE_ROOT; };
+		349C99CB205DE6CE00A2BCBD /* stb_vorbis.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; name = stb_vorbis.inc; path = ../engine/stb_vorbis.inc; sourceTree = SOURCE_ROOT; };
 		34A37FB41F68AD73005ACF7B /* arctic_platform_windows.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_windows.cpp; path = ../engine/arctic_platform_windows.cpp; sourceTree = SOURCE_ROOT; };
 		34A37FB51F68AD73005ACF7B /* mat44f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mat44f.h; path = ../engine/mat44f.h; sourceTree = SOURCE_ROOT; };
 		34A37FB61F68AD73005ACF7B /* easy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy.cpp; path = ../engine/easy.cpp; sourceTree = SOURCE_ROOT; };
@@ -149,6 +150,7 @@
 		34A37FB21F68AD4E005ACF7B /* engine */ = {
 			isa = PBXGroup;
 			children = (
+				349C99CB205DE6CE00A2BCBD /* stb_vorbis.inc */,
 				346FB0DE201EACBE00CAD8E5 /* log.cpp */,
 				346FB0DD201EACBE00CAD8E5 /* log.h */,
 				34C15959200199EF0029160F /* font.cpp */,
