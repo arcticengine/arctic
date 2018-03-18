@@ -945,6 +945,7 @@ std::string CanonicalizePath(const char *path) {
   return result;
 }
   
+// TODO(Huldra): Move common code out of macos and pi specific files.
 std::string RelativePathFromTo(const char *from, const char *to) {
   std::string from_abs = CanonicalizePath(from);
   if (from && from[strlen(from) - 1] == '/' &&
@@ -967,6 +968,10 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   if (matching == from_abs.size() && matching == to_abs.size()) {
     return "./";
   }
+  // TODO(Huldra): check for the case where whole from path is a prefix of
+  // the to path and the first extra character of the to path is '/'.
+  // TODO(Huldra): check for the case where whole to path is a prefix of
+  // the from path and the first extra character of the from path is /
   while (matching && from_abs[matching - 1] != '/') {
     --matching;
   }
