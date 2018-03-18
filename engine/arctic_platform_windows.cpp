@@ -33,6 +33,7 @@
 #include <windowsx.h>
 #include <winsock2.h>
 #include <Mmsystem.h>
+#include <shellapi.h>
 #include <Shlwapi.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -912,7 +913,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   // remove quotes from command line
   if (command_line) {
     if (command_line[0] == L'"' ) {
-      Si32 i;
+      arctic::Si32 i;
       for (i = 0; command_line[i]; i++ ) {
       }
       command_line[i - 1] = 0;
