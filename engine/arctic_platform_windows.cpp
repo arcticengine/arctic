@@ -869,7 +869,7 @@ bool GetDirectoryEntries(const char *path,
 }
 
 void SlashesToBackslashes(std::string *in_out_str) {
-  for (Si32 idx = 0; idx < in_out_str->size(); ++idx) {
+  for (std::size_t idx = 0; idx < in_out_str->size(); ++idx) {
     if ((*in_out_str)[idx] == '/') {
       (*in_out_str)[idx] = '\\';
     }
