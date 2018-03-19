@@ -725,10 +725,12 @@ bool ShowUpdateProgress() {
                 } else {
                   new_files << " lastKnownFileType = sourcecode.cpp.cpp;";
                 }
+                std::string rel_path = RelativePathFromTo(
+                  g_project_directory.c_str(),
+                  (g_engine + "/" + entry.title).c_str());
+                ReplaceAll("\\", "/", &rel_path);
                 new_files << " name = " << entry.title << ";"
-                  << " path = " << RelativePathFromTo(
-                    g_project_directory.c_str(),
-                    (g_engine + "/" + entry.title).c_str()) << ";";
+                  << " path = " << rel_path << ";";
                 new_files << " sourceTree = SOURCE_ROOT;";
                 new_files << " };\n";
                 

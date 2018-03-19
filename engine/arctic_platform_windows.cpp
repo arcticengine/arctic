@@ -868,11 +868,20 @@ bool GetDirectoryEntries(const char *path,
   return true;
 }
 
+void SlashesToBackslashes(std::string *in_out_str) {
+  for (Si32 idx = 0; idx < in_out_str->size(); ++idx) {
+    if ((*in_out_str)[idx] == '/') {
+      (*in_out_str)[idx] = '\\';
+    }
+  }
+}
 
 std::string CanonicalizePath(const char *path) {
   Check(path, "CanonicalizePath error, path can't be nullptr");
+  std::string path_string(path);
+  SlashesToBackslashes(&path_string);
   char canonic_path[MAX_PATH];
-  BOOL is_ok = PathCanonicalize(canonic_path, path);
+  BOOL is_ok = PathCanonicalize(canonic_path, path_string.c_str());
   std::string result;
   if (is_ok) {
     result.assign(canonic_path);
@@ -889,7 +898,11 @@ std::string RelativePathFromTo(const char *from, const char *to) {
     to_abs.c_str(), FILE_ATTRIBUTE_DIRECTORY);
   std::string result;
   if (is_ok) {
-    result.assign(relative_path);
+    if (relative_path[0] == '.' && relative_path[1] == '\\') {
+      result.assign(relative_path + 2);
+    } else {
+      result.assign(relative_path);
+    }
   }
   return result;
 }

@@ -197,6 +197,8 @@
     <ClInclude Include="..\engine\easy_sprite.h" />
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\arctic_platform_macosx.mm" />
+    <ClInclude Include="..\engine\stb_vorbis.inc" />
     <ClInclude Include="..\engine\font.h" />
     <ClInclude Include="..\engine\frustum3f.h" />
     <ClInclude Include="..\engine\log.h" />
@@ -228,6 +230,7 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi.cpp" />
     <ClCompile Include="..\engine\font.cpp" />
     <ClCompile Include="..\engine\log.cpp" />
     <ClCompile Include="main.cpp">
