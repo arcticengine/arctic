@@ -18,9 +18,7 @@ template [![Windows build status](https://ci.appveyor.com/api/projects/status/ne
 fjortris [![Windows build status](https://ci.appveyor.com/api/projects/status/av1nhi147xf7ye6d?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 filetest [![Windows build status](https://ci.appveyor.com/api/projects/status/7tb6wk4xdwhp4dlq?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 
-
-
-MacOS X & Linux: [![Linux build status](https://travis-ci.org/FrostyMorning/arctic.svg?branch=master)](https://travis-ci.org/FrostyMorning/arctic)
+Linux: [![Linux build status](https://gitlab.com/huldra/arctic/badges/master/build.svg)](https://gitlab.com/huldra/arctic/pipelines)
 
 Scrum: [![Stories in Ready](https://badge.waffle.io/FrostyMorning/arctic.png?label=ready&title=Ready)](https://waffle.io/FrostyMorning/arctic?utm_source=badge)
 
@@ -81,15 +79,14 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 Just execute the following commands in terminal line by line to install all the required libraries and tools, clone the repository to ~/arctic, build and run the demo project: 
 
 ```bash
-sudo apt-get install git git-lfs cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
-git lfs install
+sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
 cd ~
-git clone https://github.com/FrostyMorning/arctic.git
+git clone https://gitlab.com/huldra/arctic.git
 cd ~/arctic
+cd ./wizard
 cmake .
 make all
-cd demo
-./demo
+./wizard
 ```
 
 ### Raspberry Pi notes
