@@ -326,7 +326,7 @@ bool GetProjectName() {
 
 bool SelectProject() {
   std::deque<DirectoryEntry> entries;
-  Si32 selected_idx = 0;
+  Ui32 selected_idx = 0;
   g_project_directory = g_current_directory;
   arctic::GetDirectoryEntries(g_project_directory.c_str(), &entries);
   if (entries[0].title == ".") {
@@ -614,13 +614,13 @@ bool ShowUpdateProgress() {
         // find *.xcodeproj folder and *.vcxproj files
         std::string xcode_ending = ".xcodeproj";
         std::string vcx_ending = ".vcxproj";
-        for (Si32 idx = 0; idx < entries.size(); ++idx) {
+        for (Ui32 idx = 0; idx < entries.size(); ++idx) {
           auto &file = entries[idx];
           if (file.is_directory == kTrivalentTrue) {
             if (EndsWith(file.title, xcode_ending)) {
               std::string project_name =
                 file.title.substr(0, file.title.size() - xcode_ending.size());
-              for (Si32 i = 0; i < entries.size(); ++i) {
+              for (Ui32 i = 0; i < entries.size(); ++i) {
                 std::string vcx = project_name + vcx_ending;
                 // make sure that names match
                 if (entries[i].title == vcx
@@ -687,7 +687,7 @@ bool ShowUpdateProgress() {
         std::stringstream new_engine_children;  // PBXGroup engine children
         std::stringstream new_buildphase;  // PBXSourcesBuildPhase
         std::unordered_set<std::string> new_hashes;
-        for (Si32 idx = 0; idx < engine_entries.size(); ++idx) {
+        for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
           if (entry.is_file == kTrivalentTrue
                 && existing_files.find(entry.title) == existing_files.end()) {
@@ -878,7 +878,7 @@ bool ShowUpdateProgress() {
         // find missing engine files
         std::stringstream new_h;
         std::stringstream new_cpp;
-        for (Si32 idx = 0; idx < engine_entries.size(); ++idx) {
+        for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
           if (entry.is_file == kTrivalentTrue
               && existing_files.find(entry.title) == existing_files.end()) {
