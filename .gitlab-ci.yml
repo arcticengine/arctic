@@ -1,0 +1,5 @@
+arctic_wizard:
+  script:
+    - cd wizard
+    - cmake .
+    - make all
