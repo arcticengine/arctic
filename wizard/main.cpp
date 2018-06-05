@@ -369,7 +369,7 @@ bool SelectProject() {
     "Press ESC to leave the Snow Wizard.\n\n";
     str << "Path: " << g_project_directory << "\n\n";
     
-    Si32 begin_i = std::max(0, selected_idx - 5);
+    Si32 begin_i = std::max(0, Si32(selected_idx) - 5);
     for (Si32 i = begin_i; i < entries.size(); ++i) {
       if (selected_idx == i) {
         str << "--> ";
