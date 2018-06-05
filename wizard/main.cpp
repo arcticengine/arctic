@@ -370,7 +370,7 @@ bool SelectProject() {
     str << "Path: " << g_project_directory << "\n\n";
     
     Si32 begin_i = std::max(0, Si32(selected_idx) - 5);
-    for (Si32 i = begin_i; i < entries.size(); ++i) {
+    for (Ui32 i = (Ui32)begin_i; i < entries.size(); ++i) {
       if (selected_idx == i) {
         str << "--> ";
       } else {
