@@ -2,7 +2,7 @@ arctic_wizard:
  image: gcc
  before_script:
   - apt-get update --yes
-  - apt-get install --yes cmake
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
  script:
   - cd wizard
   - cmake .
