@@ -12,10 +12,12 @@ Arctic Engine returns the power to the C++ programmer and makes game development
 Main discussion forum (in Russian): http://arcticengine.com/
 
 Windows:
-antarctica pyramids [![Windows build status](https://ci.appveyor.com/api/projects/status/tog1u6s5yebcl73w?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
-wizard [![Windows build status](https://ci.appveyor.com/api/projects/status/iv5g6cmkc63u4p6r?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
-template [![Windows build status](https://ci.appveyor.com/api/projects/status/rj8xfpub37pp3kca?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
-fjortris [![Windows build status](https://ci.appveyor.com/api/projects/status/4o1pfmc3ctmtg2oi?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+antarctica pyramids [![Windows build status](https://ci.appveyor.com/api/projects/status/69n7xslx9f3tcoy3?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+wizard [![Windows build status](https://ci.appveyor.com/api/projects/status/sa5a1rng94yb4w4o?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+template [![Windows build status](https://ci.appveyor.com/api/projects/status/nelacdfwhihmnjx0?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+fjortris [![Windows build status](https://ci.appveyor.com/api/projects/status/av1nhi147xf7ye6d?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+filetest [![Windows build status](https://ci.appveyor.com/api/projects/status/7tb6wk4xdwhp4dlq?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
+
 
 
 MacOS X & Linux: [![Linux build status](https://travis-ci.org/FrostyMorning/arctic.svg?branch=master)](https://travis-ci.org/FrostyMorning/arctic)
