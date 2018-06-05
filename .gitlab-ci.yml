@@ -1,5 +1,9 @@
 arctic_wizard:
-  script:
-    - cd wizard
-    - cmake .
-    - make all
+ image: gcc
+ before_script:
+  - apt-get update --yes
+  - apt-get install --yes cmake
+ script:
+  - cd wizard
+  - cmake .
+  - make all
