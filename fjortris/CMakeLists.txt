@@ -114,7 +114,7 @@ target_link_libraries(
   ${PROJECT_NAME}
   ${OPENGL_gl_LIBRARY}
   ${X11_LIBRARIES}
-  Threads::Threads
+  ${CMAKE_THREAD_LIBS_INIT}
   ${ALSA_LIBRARY}
 )
 ENDIF (APPLE)
