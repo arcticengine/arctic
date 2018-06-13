@@ -4,28 +4,42 @@ arctic_wizard:
   - apt-get update --yes
   - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
  script:
+
   - cd antarctica_pyramids
   - cmake .
+  - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
   - make all
   - cd ..
   - cd fjortris
   - cmake .
   - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
   - cd ..
   - cd template_project_name
   - cmake .
+  - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
   - make all
   - cd ..
   - cd wizard
   - cmake .
   - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
   - cd ..
   - cd filetest
   - cmake .
   - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
   - cd ..
   - cd tests
   - cmake .
+  - make all
+  - ./tests
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
   - make all
   - ./tests
   - cd ..

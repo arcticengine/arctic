@@ -12,6 +12,7 @@ if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "Build type not specified: defaulting to release.")
 endif(NOT CMAKE_BUILD_TYPE)
 
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}.")
 
 set(PROJECT_NAME filetest)
 # Output Variables
@@ -66,9 +67,12 @@ include_directories(${CMAKE_SOURCE_DIR}/..)
 # Defines Flags for Windows and Linux. #
 ########################################
 
+message(STATUS "CompilerId: ${CMAKE_CXX_COMPILER_ID}.")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O2")
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++")
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+    set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
 ################ Files ################
