@@ -24,3 +24,8 @@ arctic_wizard:
   - cmake .
   - make all
   - cd ..
+  - cd tests
+  - cmake .
+  - make all
+  - tests
+  - cd ..
