@@ -27,6 +27,5 @@ arctic_wizard:
   - cd tests
   - cmake .
   - make all
-  - ls
   - ./tests
   - cd ..
