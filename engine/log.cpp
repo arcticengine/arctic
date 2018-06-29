@@ -121,13 +121,17 @@ namespace arctic {
   }
 
   void StopLogger() {
-    Check(g_logger_do_quit == false,
-        "StopLogger called while g_logger_do_quit is true");
+    bool is_first = false;
     {
       std::lock_guard<std::mutex> lock(g_logger_mutex);
+      is_first = (g_logger_do_quit == false);
+      Check(!is_first || g_logger_thread.joinable(),
+        "StopLogger is supposed to be called after StartLogger");
       g_logger_do_quit = true;
       g_logger_condition_variable.notify_one();
     }
-    g_logger_thread.join();
+    if (is_first) {
+      g_logger_thread.join();
+    }
   }
 }  // namespace arctic
