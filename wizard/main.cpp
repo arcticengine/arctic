@@ -718,7 +718,7 @@ bool ShowUpdateProgress() {
 
                 // add to PBXFileReference
                 new_files << "\t\t" << uid_file
-                  << "/* " << entry.title << " */ = {"
+                  << " /* " << entry.title << " */ = {"
                   << "isa = PBXFileReference; fileEncoding = 4;";
                 if (EndsWith(entry.title, std::string(".h"))) {
                   new_files << " lastKnownFileType = sourcecode.c.h;";
