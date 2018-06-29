@@ -38,7 +38,7 @@ namespace arctic {
 namespace easy {
 
 void Sound::Load(const char *file_name) {
-  Load(file_name, true);
+  Load(file_name, true); 
 }
 
 void Sound::Load(const char *file_name, bool do_unpack) {
@@ -47,24 +47,28 @@ void Sound::Load(const char *file_name, bool do_unpack) {
   const char *last_dot = strchr(file_name, '.');
   Check(!!last_dot, "Error in Sound::Load, file_name has no extension.");
   if (strcmp(last_dot, ".wav") == 0) {
-    std::vector<Ui8> data = ReadFile(file_name);
-    sound_instance_ = LoadWav(data.data(), data.size());
+    std::vector<Ui8> data = ReadFile(file_name, true);
+    if (data.size()) {
+      sound_instance_ = LoadWav(data.data(), data.size());
+    }
   } else if (strcmp(last_dot, ".ogg") == 0) {
-    std::vector<Ui8> data = ReadFile(file_name);
-    if (do_unpack) {
-      int error = 0;
-      vorbis_codec_ = stb_vorbis_open_memory(data.data(),
-        static_cast<int>(data.size()), &error, nullptr);
-      Si32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
-      sound_instance_.reset(new SoundInstance(size));
-      // int res =
-      stb_vorbis_get_samples_short_interleaved(
-        vorbis_codec_, 2, sound_instance_->GetWavData(), size * 2);
-      // TODO(Huldra): if (res) {
-      stb_vorbis_close(vorbis_codec_);
-      vorbis_codec_ = nullptr;
-    } else {
-      sound_instance_.reset(new SoundInstance(data));
+    std::vector<Ui8> data = ReadFile(file_name, true);
+    if (data.size()) {
+      if (do_unpack) {
+        int error = 0;
+        vorbis_codec_ = stb_vorbis_open_memory(data.data(),
+          static_cast<int>(data.size()), &error, nullptr);
+        Si32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
+        sound_instance_.reset(new SoundInstance(size));
+        // int res =
+        stb_vorbis_get_samples_short_interleaved(
+          vorbis_codec_, 2, sound_instance_->GetWavData(), size * 2);
+        // TODO(Huldra): if (res) {
+        stb_vorbis_close(vorbis_codec_);
+        vorbis_codec_ = nullptr;
+      } else {
+        sound_instance_.reset(new SoundInstance(data));
+      }
     }
   } else {
     Fatal("Error in Sprite::Load, unknown file extension.");
@@ -113,26 +117,28 @@ void Sound::Stop() {
 
 double Sound::Duration() const {
   Si32 duration_samples = 0;
-  switch (sound_instance_->GetFormat()) {
-  case kSoundDataWav: {
-    duration_samples = sound_instance_->GetDurationSamples();
-    break;
-  }
-  case kSoundDataVorbis: {
-    if (vorbis_codec_) {
-      duration_samples =
-        stb_vorbis_stream_length_in_samples(vorbis_codec_);
-    } else {
-      int error = 0;
-      stb_vorbis *vorbis_codec = stb_vorbis_open_memory(
-        sound_instance_->GetVorbisData(),
-        sound_instance_->GetVorbisSize(), &error, nullptr);
-      duration_samples = stb_vorbis_stream_length_in_samples(
-        vorbis_codec_);
-      stb_vorbis_close(vorbis_codec);
+  if (sound_instance_) {
+    switch (sound_instance_->GetFormat()) {
+    case kSoundDataWav: {
+      duration_samples = sound_instance_->GetDurationSamples();
+      break;
     }
-    break;
-  }
+    case kSoundDataVorbis: {
+      if (vorbis_codec_) {
+        duration_samples =
+          stb_vorbis_stream_length_in_samples(vorbis_codec_);
+      } else {
+        int error = 0;
+        stb_vorbis *vorbis_codec = stb_vorbis_open_memory(
+          sound_instance_->GetVorbisData(),
+          sound_instance_->GetVorbisSize(), &error, nullptr);
+        duration_samples = stb_vorbis_stream_length_in_samples(
+          vorbis_codec_);
+        stb_vorbis_close(vorbis_codec);
+      }
+      break;
+    }
+    }
   }
   return static_cast<double>(duration_samples) * (1.0 / 44100.0);
 }
