@@ -159,10 +159,11 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
     if (!data) {
       return 0;
     }
-    if (offset + size > sound_instance_->GetDurationSamples()) {
+    if (offset >= sound_instance_->GetDurationSamples()) {
       return 0;
     }
-    Si32 to_copy = std::min(size, out_buffer_samples / 2);
+    Si32 to_copy = std::min(std::min(size, out_buffer_samples / 2),
+      sound_instance_->GetDurationSamples() / 2);
     memcpy(out_buffer, data + offset * 2, to_copy * 4);
     return to_copy;
   }
