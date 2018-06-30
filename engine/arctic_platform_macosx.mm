@@ -216,6 +216,13 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
   //    if (is_command != was_command) {
   //        PushInputKey(kKeyControl, is_command);
   //    }
+
+  was_caps_lock = is_caps_lock;
+  was_shift = is_shift;
+  was_control = is_control;
+  was_option = is_option;
+  //was_command = is_command;
+
 }
 
 - (void) keyDown: (NSEvent *)theEvent {
