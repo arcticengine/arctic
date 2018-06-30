@@ -463,31 +463,35 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 }
 
 void ShowFrame() {
-    GetEngine()->Draw2d();
+  GetEngine()->Draw2d();
 
+  for (Si32 i = 0; i < kKeyCount; ++i) {
+    g_key_state[i].OnShowFrame();
+  }
+  InputMessage message;
+  g_mouse_pos_prev = g_mouse_pos;
+  g_mouse_wheel_delta = 0;
+  g_input_messages.clear();
+  while (PopInputMessage(&message)) {
+    if (message.kind == InputMessage::kKeyboard) {
+      g_key_state[message.keyboard.key].OnStateChange(
+        message.keyboard.key_state == 1);
+    } else if (message.kind == InputMessage::kMouse) {
+      message.mouse.backbuffer_pos =
+        GetEngine()->MouseToBackbuffer(message.mouse.pos);
+      g_mouse_pos = message.mouse.backbuffer_pos;
+      g_mouse_wheel_delta += message.mouse.wheel_delta;
+      if (message.keyboard.key != kKeyCount) {
+        g_key_state[message.keyboard.key].OnStateChange(
+          message.keyboard.key_state == 1);
+      }
+    }
     for (Si32 i = 0; i < kKeyCount; ++i) {
-      g_key_state[i].OnShowFrame();
+      message.keyboard.state[i] = g_key_state[i].IsDown() ? 1 : 0;
     }
-    InputMessage message;
-    g_mouse_pos_prev = g_mouse_pos;
-    g_mouse_wheel_delta = 0;
-    g_input_messages.clear();
-    while (PopInputMessage(&message)) {
-        g_input_messages.push_back(message);
-        if (message.kind == InputMessage::kKeyboard) {
-            g_key_state[message.keyboard.key].OnStateChange(
-                message.keyboard.key_state == 1);
-        } else if (message.kind == InputMessage::kMouse) {
-            Vec2Si32 pos = GetEngine()->MouseToBackbuffer(message.mouse.pos);
-            g_mouse_pos = pos;
-            g_mouse_wheel_delta += message.mouse.wheel_delta;
-            if (message.keyboard.key != kKeyCount) {
-                g_key_state[message.keyboard.key].OnStateChange(
-                    message.keyboard.key_state == 1);
-            }
-        }
-    }
-    g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
+    g_input_messages.push_back(message);
+  }
+  g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
 }
 
 bool IsKeyDownwardImpl(Ui32 key_code) {
