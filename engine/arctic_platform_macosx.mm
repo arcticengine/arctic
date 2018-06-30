@@ -83,7 +83,9 @@ static NSApplication *g_app = nil;
 static ArcticAppDelegate *g_app_delegate = nil;
 
 static bool g_is_full_screen = false;
-
+static bool g_is_cursor_desired_visible = true;
+static bool g_is_cursor_set_visible = true;
+static bool g_is_cursor_in_bounds = false;
 
 @implementation ArcticAppDelegate
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:
@@ -252,6 +254,10 @@ isScroll: (bool)is_scroll {
 
   arctic::Vec2F pos((float)loc_rect.origin.x / (float)rect.size.width,
       (float)loc_rect.origin.y / (float)rect.size.height);
+  
+  g_is_cursor_in_bounds = (pos.x >= 0.0f && pos.y >= 0.0f &&
+    pos.x <= 1.0f && pos.y <= 1.0f);
+  arctic::SetCursorVisible(g_is_cursor_desired_visible);
 
   arctic::InputMessage msg;
   msg.kind = arctic::InputMessage::kMouse;
@@ -868,6 +874,26 @@ void SetFullScreen(bool is_enable) {
     return;
   }
   [g_app_delegate fullScreenToggle: nil];
+}
+  
+bool IsCursorVisible() {
+  return g_is_cursor_desired_visible;
+}
+  
+void SetCursorVisible(bool is_enable) {
+  g_is_cursor_desired_visible = is_enable;
+  bool next_is_visible = (g_is_cursor_desired_visible ||
+    !g_is_cursor_in_bounds);
+  if (next_is_visible == g_is_cursor_set_visible) {
+    return;
+  }
+  g_is_cursor_set_visible = next_is_visible;
+  if (g_is_cursor_set_visible) {
+    [NSCursor unhide];
+  } else {
+    [NSCursor hide];
+  }
+  
 }
   
 Trivalent DoesDirectoryExist(const char *path) {
