@@ -33,6 +33,7 @@
 #include "engine/easy_sound.h"
 #include "engine/easy_sprite.h"
 #include "engine/engine.h"
+#include "engine/gui.h"
 #include "engine/font.h"
 #include "engine/log.h"
 

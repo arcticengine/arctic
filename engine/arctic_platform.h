@@ -43,6 +43,8 @@ bool IsVSyncSupported();
 bool SetVSync(bool is_enable);
 bool IsFullScreen();
 void SetFullScreen(bool is_enable);
+bool IsCursorVisible();
+void SetCursorVisible(bool is_enable);
 void StartSoundBuffer(easy::Sound sound, float volume);
 void StopSoundBuffer(easy::Sound sound);
 
