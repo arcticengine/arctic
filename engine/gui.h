@@ -29,6 +29,7 @@
 #include "engine/arctic_input.h"
 #include "engine/easy_sound.h"
 #include "engine/easy_sprite.h"
+#include "engine/font.h"
 
 namespace arctic {
 
@@ -51,10 +52,12 @@ protected:
   Vec2Si32 size_;
   Ui32 tab_order_;
   bool is_current_tab_;
+  easy::Sprite background_;
   std::deque<std::shared_ptr<Panel>> children_;
 public:
 
-  Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0);
+  Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
+    easy::Sprite background = easy::Sprite());
   Ui32 GetTabOrder();
   void SetTabOrder(Ui32 tab_order);
   Ui64 GetTag();
@@ -106,6 +109,18 @@ public:
       std::deque<GuiMessage> *out_gui_messages,
       std::shared_ptr<Panel> *out_current_tab) override;
   void SetCurrentTab(bool is_current_tab) override;
+};
+  
+class Text : public Panel {
+protected:
+  Font font_;
+  TextOrigin origin_;
+  Rgba color_;
+  std::string text_;
+public:
+  Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+       Font font, TextOrigin origin, Rgba color, std::string text);
+  void Draw(Vec2Si32 parent_absolute_pos) override;
 };
 
 }  // namespace arctic

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,8 @@ namespace easy {
 
 enum DrawBlendingMode {
   kCopyRgba,
-  kAlphaBlend
+  kAlphaBlend,
+  kColorize
 };
 
 class Sprite {
@@ -62,39 +63,51 @@ class Sprite {
   void SetPivot(Vec2Si32 pivot);
   Vec2Si32 Pivot() const;
   void Draw(const Si32 to_x, const Si32 to_y,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+    DrawBlendingMode blending_mode = kAlphaBlend,
+    Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
     const Vec2Si32 from_pos, const Vec2Si32 from_size,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend);
+            Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to, float angle_radians,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y, float angle_radians,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to, float angle_radians, float zoom,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     float angle_radians, float zoom,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     float angle_radians, float zoom, Sprite to_sprite,
-    DrawBlendingMode blending_mode = kAlphaBlend);
+            DrawBlendingMode blending_mode = kAlphaBlend,
+            Rgba in_color = Rgba(0xffffffff));
 
   Si32 Width() const;
   Si32 Height() const;

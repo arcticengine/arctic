@@ -26,12 +26,14 @@
 
 namespace arctic {
 
-Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order)
+Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+      easy::Sprite background)
     : tag_(tag)
     , pos_(pos)
     , size_(size)
     , tab_order_(tab_order)
-    , is_current_tab_(0) {
+    , is_current_tab_(0)
+    , background_(background) {
 }
 
 Ui32 Panel::GetTabOrder() {
@@ -55,6 +57,7 @@ Panel::~Panel() {
 
 void Panel::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  background_.Draw(absolute_pos, size_);
   for (auto it = children_.begin(); it != children_.end(); ++it) {
     (**it).Draw(absolute_pos);
   }
@@ -326,5 +329,24 @@ void Button::SetCurrentTab(bool is_current_tab) {
   }
   is_current_tab_ = is_current_tab;
 }
+  
 
+Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+      Font font, TextOrigin origin, Rgba color, std::string text)
+    : Panel(tag, pos, size, tab_order)
+    , font_(font)
+    , origin_(origin)
+    , color_(color)
+    , text_(text) {
+  
+}
+  
+void Text::Draw(Vec2Si32 parent_absolute_pos) {
+  Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
+  Vec2Si32 offset = (size_ - size) / 2;
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
+  font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
+    origin_, easy::kColorize, color_);
+}
+  
 }  // namespace arctic

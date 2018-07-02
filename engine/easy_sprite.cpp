@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2018 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,11 +39,11 @@ namespace easy {
 // or http://www.hugi.scene.org/online/hugi17/
 template<DrawBlendingMode kBlendingMode>
 inline void DrawTrianglePart(Rgba *dst, Si32 stride,
-  float *x1, float *x2, Vec2F *tex_a, Vec2F *tex_b,
-  float dxdy1, float dxdy2,
-  Vec2F dtdy1, Vec2F dtdy2,
-  Si32 width, Si32 height,
-  Si32 y1, Si32 y2, Sprite texture) {
+    float *x1, float *x2, Vec2F *tex_a, Vec2F *tex_b,
+    float dxdy1, float dxdy2,
+    Vec2F dtdy1, Vec2F dtdy2,
+    Si32 width, Si32 height,
+    Si32 y1, Si32 y2, Sprite texture, Rgba in_color) {
   Si32 y = y1;
   if (y1 < 0) {
     Si32 yc = std::min(0, y2);
@@ -74,20 +74,48 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
           static_cast<float>(x12i));
         Si32 offset = static_cast<Si32>(tex_1c.x) +
           static_cast<Si32>(tex_1c.y) * tex_stride;
-        Rgba color = tex_data[offset];
-        if (color.a == 255) {
-          Rgba *p = dst + x1c;
-          p->rgba = color.rgba;
-        } else if (color.a) {
-          Rgba *p = dst + x1c;
-          Ui32 m = 255 - color.a;
-          Ui32 rb = (p->rgba & 0x00ff00fful) * m;
-          Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
-          Ui32 m2 = color.a;
-          Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-          Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-          p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
-            ((g + g2) & 0x0000ff00ul);
+        Rgba *p = dst + x1c;
+        if (kBlendingMode == kCopyRgba) {
+          p->rgba = tex_data[offset].rgba;
+        } else if (kBlendingMode == kAlphaBlend) {
+          Rgba color = tex_data[offset];
+          if (color.a == 255) {
+            p->rgba = color.rgba;
+          } else if (color.a) {
+            Ui32 m = 255 - color.a;
+            Ui32 rb = (p->rgba & 0x00ff00fful) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 m2 = color.a;
+            Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
+            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+              ((g + g2) & 0x0000ff00ul);
+          }
+        } else if (kBlendingMode == kColorize) {
+          Rgba color = tex_data[offset];
+          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          if (ca == 255) {
+            Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
+            Ui32 g2 = Ui32(color.g) * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 b2 = Ui32(color.b) * (Ui32(in_color.b) + 1) >> 8;
+            p->rgba = Rgba(r2, g2, b2).rgba;
+          } else if (ca) {
+            Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+            Ui32 m = 255 - ca;
+            Ui32 rb = (p->rgba & 0x00ff00fful) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            
+            Ui32 m2 = ca;
+            Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+            Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
+            Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+            
+            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+              ((g + g2) & 0x0000ff00ul);
+          }
+        } else {
+          p->rgba = tex_data[offset].rgba;
         }
       }
     } else {
@@ -124,6 +152,31 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
             p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
               ((g + g2) & 0x0000ff00ul);
           }
+        } else if (kBlendingMode == kColorize) {
+          Rgba color = tex_data[offset];
+          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          if (ca == 255) {
+            Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
+            Ui32 g2 = Ui32(color.g) * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 b2 = Ui32(color.b) * (Ui32(in_color.b) + 1) >> 8;
+            p->rgba = Rgba(r2, g2, b2).rgba;
+          } else if (ca) {
+            Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+            Ui32 m = 255 - ca;
+            Ui32 rb = (p->rgba & 0x00ff00fful) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            
+            Ui32 m2 = ca;
+            Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+            Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
+            Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+            
+            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            ((g + g2) & 0x0000ff00ul);
+          }
+        } else {
+          p->rgba = tex_data[offset].rgba;
         }
         p++;
         tex_16 += tex_12_16_step;
@@ -140,7 +193,7 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
 template<DrawBlendingMode kBlendingMode>
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
   Vec2F tex_a, Vec2F tex_b, Vec2F tex_c,
-  Sprite texture, Sprite to_sprite) {
+  Sprite texture, Sprite to_sprite, Rgba in_color) {
   if (a.y > b.y) {
     std::swap(a, b);
     std::swap(tex_a, tex_b);
@@ -194,7 +247,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       tex2 = tex_b;
       DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
-        dtdy1, dtdy2, width, height, a.y, c.y, texture);
+        dtdy1, dtdy2, width, height, a.y, c.y, texture, in_color);
       return;
     }
     if (a.y < b.y) {
@@ -206,7 +259,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       tex2 = tex_a;
       DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
-        dtdy1, dtdy2, width, height, a.y, b.y, texture);
+        dtdy1, dtdy2, width, height, a.y, b.y, texture, in_color);
     }
     if (b.y < c.y) {
       dxdy2 = dxdy_bc;
@@ -215,7 +268,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       tex2 = tex_b;
       DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
-        dtdy1, dtdy2, width, height, b.y, c.y, texture);
+        dtdy1, dtdy2, width, height, b.y, c.y, texture, in_color);
     }
   } else {
     // b is at the left side
@@ -230,7 +283,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       tex2 = tex_a;
       DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
-        dtdy1, dtdy2, width, height, a.y, c.y, texture);
+        dtdy1, dtdy2, width, height, a.y, c.y, texture, in_color);
       return;
     }
     if (a.y < b.y) {
@@ -242,7 +295,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       tex2 = tex_a;
       DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
-        dtdy1, dtdy2, width, height, a.y, b.y, texture);
+        dtdy1, dtdy2, width, height, a.y, b.y, texture, in_color);
     }
     if (b.y < c.y) {
       dxdy1 = dxdy_bc;
@@ -251,7 +304,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       tex1 = tex_b;
       DrawTrianglePart<kBlendingMode>(dst, stride, &x1, &x2, &tex1, &tex2,
         dxdy1, dxdy2,
-        dtdy1, dtdy2, width, height, b.y, c.y, texture);
+        dtdy1, dtdy2, width, height, b.y, c.y, texture, in_color);
     }
   }
 }
@@ -262,7 +315,10 @@ void DrawSprite(
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    Sprite to_sprite, Sprite from_sprite) {
+    Sprite to_sprite, Sprite from_sprite, Rgba in_color) {
+  if (!from_width || !from_height || !to_width || !to_height) {
+    return;
+  }
   const Si32 from_stride_pixels = from_sprite.StridePixels();
   const Si32 to_stride_pixels = to_sprite.Width();
 
@@ -330,6 +386,28 @@ void DrawSprite(
             to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
           }
+        } else if (kBlendingMode == kColorize) {
+          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          if (ca == 255) {
+            Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
+            Ui32 g2 = Ui32(color.g) * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 b2 = Ui32(color.b) * (Ui32(in_color.b) + 1) >> 8;
+            to_rgba->rgba = Rgba(r2, g2, b2).rgba;
+          } else if (ca) {
+            Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+            Ui32 m = 255 - ca;
+            Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
+            Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+            
+            Ui32 m2 = ca;
+            Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+            Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
+            Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+            
+            to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+              ((g + g2) & 0x0000ff00ul);
+          }
         } else {  // Unknown blending mode!
           to_rgba->rgba = from_rgba->rgba;
         }
@@ -389,6 +467,28 @@ void DrawSprite(
           to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
         }
+      } else if (kBlendingMode == kColorize) {
+        Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+        if (ca == 255) {
+          Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
+          Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) & 0xff00;
+          Ui32 b2 = ((Ui32(color.b) * (Ui32(in_color.b) + 1)) << 8) & 0xff0000;
+          to_rgba->rgba = r2 | g2 | b2;
+        } else if (ca) {
+          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          Ui32 m = 255 - ca;
+          Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
+          Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+          
+          Ui32 m2 = ca;
+          Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+          Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+          Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
+          Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+          
+          to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+          ((g + g2) & 0x0000ff00ul);
+        }
       } else {  // Unknown blending mode!
         to_rgba->rgba = from_rgba->rgba;
       }
@@ -401,14 +501,19 @@ template void DrawSprite<kCopyRgba>(
   const Si32 to_width, const Si32 to_height,
   const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite);
+  Sprite to_sprite, Sprite from_sprite, Rgba color);
 template void DrawSprite<kAlphaBlend>(
   const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite);
-
+  Sprite to_sprite, Sprite from_sprite, Rgba color);
+template void DrawSprite<kColorize>(
+  const Si32 to_x_pivot, const Si32 to_y_pivot,
+  const Si32 to_width, const Si32 to_height,
+  const Si32 from_x, const Si32 from_y,
+  const Si32 from_width, const Si32 from_height,
+  Sprite to_sprite, Sprite from_sprite, Rgba color);
 
 Sprite::Sprite() {
   ref_pos_ = Vec2Si32(0, 0);
@@ -521,7 +626,7 @@ Vec2Si32 Sprite::Pivot() const {
 }
 
 void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba color) {
   if (!sprite_instance_.get()) {
     return;
   }
@@ -529,44 +634,49 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     case kAlphaBlend:
       DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, Width(), Height(),
         0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this);
+        GetEngine()->GetBackbuffer(), *this, color);
       break;
     case kCopyRgba:
       DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, Width(), Height(),
         0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this);
+        GetEngine()->GetBackbuffer(), *this, color);
+      break;
+    case kColorize:
+      DrawSprite<kColorize>(to_x_pivot, to_y_pivot, Width(), Height(),
+        0, 0, Width(), Height(),
+        GetEngine()->GetBackbuffer(), *this, color);
       break;
   }
 }
 
 void Sprite::Draw(const Vec2Si32 to, float angle_radians,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to.x, to.y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
-      blending_mode);
+      blending_mode, in_color);
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y, float angle_radians,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to_x, to_y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
-      blending_mode);
+      blending_mode, in_color);
 }
 
 void Sprite::Draw(const Vec2Si32 to, float angle_radians, float zoom,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to.x, to.y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
-      blending_mode);
+      blending_mode, in_color);
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
     float angle_radians, float zoom,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
-      blending_mode);
+      blending_mode, in_color);
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
     float angle_radians, float zoom, Sprite to_sprite,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   if (!sprite_instance_) {
     return;
   }
@@ -596,19 +706,25 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
 
   switch (blending_mode) {
     case kCopyRgba:
-      DrawTriangle<kCopyRgba>(a, b, c, ta, tb, tc, *this, to_sprite);
-      DrawTriangle<kCopyRgba>(c, d, a, tc, td, ta, *this, to_sprite);
+      DrawTriangle<kCopyRgba>(a, b, c, ta, tb, tc, *this, to_sprite, in_color);
+      DrawTriangle<kCopyRgba>(c, d, a, tc, td, ta, *this, to_sprite, in_color);
       break;
     case kAlphaBlend:
-      DrawTriangle<kAlphaBlend>(a, b, c, ta, tb, tc, *this, to_sprite);
-      DrawTriangle<kAlphaBlend>(c, d, a, tc, td, ta, *this, to_sprite);
+      DrawTriangle<kAlphaBlend>(a, b, c, ta, tb, tc, *this, to_sprite,
+        in_color);
+      DrawTriangle<kAlphaBlend>(c, d, a, tc, td, ta, *this, to_sprite,
+        in_color);
+      break;
+    case kColorize:
+      DrawTriangle<kColorize>(a, b, c, ta, tb, tc, *this, to_sprite, in_color);
+      DrawTriangle<kColorize>(c, d, a, tc, td, ta, *this, to_sprite, in_color);
       break;
   }
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to_x, to_y, to_width, to_height,
     0, 0, ref_size_.x, ref_size_.y);
 }
@@ -617,25 +733,25 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to_x, to_y, to_width, to_height,
     from_x, from_y, from_width, from_height,
     GetEngine()->GetBackbuffer());
 }
 
-void Sprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode) {
+void Sprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to_pos.x, to_pos.y);
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to_pos.x, to_pos.y, to_size.x, to_size.y,
     0, 0, ref_size_.x, ref_size_.y);
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
     const Vec2Si32 from_pos, const Vec2Si32 from_size,
-    DrawBlendingMode blending_mode) {
+    DrawBlendingMode blending_mode, Rgba in_color) {
   Draw(to_pos.x, to_pos.y, to_size.x, to_size.y,
     from_pos.x, from_pos.y, from_size.x, from_size.y);
 }
@@ -645,18 +761,23 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    Sprite to_sprite, DrawBlendingMode blending_mode) {
+    Sprite to_sprite, DrawBlendingMode blending_mode, Rgba in_color) {
   switch (blending_mode) {
   default:
   case kCopyRgba:
     DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, to_width, to_height,
       from_x, from_y, from_width, from_height,
-      to_sprite, *this);
+      to_sprite, *this, in_color);
     break;
   case kAlphaBlend:
     DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, to_width, to_height,
       from_x, from_y, from_width, from_height,
-      to_sprite, *this);
+      to_sprite, *this, in_color);
+    break;
+  case kColorize:
+    DrawSprite<kColorize>(to_x_pivot, to_y_pivot, to_width, to_height,
+      from_x, from_y, from_width, from_height,
+      to_sprite, *this, in_color);
     break;
   }
   return;
