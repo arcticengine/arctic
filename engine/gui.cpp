@@ -26,6 +26,11 @@
 
 namespace arctic {
 
+GuiMessage::GuiMessage(std::shared_ptr<Panel> in_panel, GuiMessageKind in_kind)
+    : panel(in_panel)
+    , kind(in_kind) {
+}
+
 Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       easy::Sprite background)
     : tag_(tag)
@@ -50,6 +55,10 @@ Ui64 Panel::GetTag() {
 
 void Panel::SetTag(Ui64 tag) {
   tag_ = tag;
+}
+
+void Panel::SetBackground(easy::Sprite background) {
+  background_ = background;
 }
 
 Panel::~Panel() {
@@ -260,10 +269,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           prev_state == kDown) {
         *in_out_is_applied = true;
         up_sound_.Play();
-        GuiMessage gui_message;
-        gui_message.Kind = kGuiButtonClick;
-        gui_message.Panel = shared_from_this();
-        out_gui_messages->push_back(gui_message);
+        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
       }
     } else {
       if (is_current_tab_) {
@@ -275,6 +281,8 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (state_ != prev_state) {
       if (state_ == kDown) {
         down_sound_.Play();
+        *in_out_is_applied = true;
+        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
       }
       if (prev_state == kDown) {
         up_sound_.Play();
@@ -296,15 +304,13 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             if (is_hotkey && GetTabOrder() != 0) {
               *out_current_tab = shared_from_this();
             }
+            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
           }
         } else {
           if (prev_state == kDown) {
             *in_out_is_applied = true;
             up_sound_.Play();
-            GuiMessage gui_message;
-            gui_message.Kind = kGuiButtonClick;
-            gui_message.Panel = shared_from_this();
-            out_gui_messages->push_back(gui_message);
+            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
             if (GetTabOrder() == 0 || !is_current_tab_) {
               state_ = kNormal;
             } else {
@@ -339,6 +345,10 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , color_(color)
     , text_(text) {
   
+}
+
+void Text::SetText(std::string text) {
+  text_ = text;
 }
   
 void Text::Draw(Vec2Si32 parent_absolute_pos) {

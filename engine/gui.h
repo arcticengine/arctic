@@ -34,15 +34,18 @@
 namespace arctic {
 
 enum GuiMessageKind {
-  kGuiButtonClick
+  kGuiButtonClick,
+  kGuiButtonDown,
 };
 
 class Panel;
 
 class GuiMessage {
 public:
-  std::shared_ptr<Panel> Panel;
-  GuiMessageKind Kind;
+  std::shared_ptr<Panel> panel;
+  GuiMessageKind kind;
+
+  GuiMessage(std::shared_ptr<Panel> panel, GuiMessageKind kind);
 };
 
 class Panel : public std::enable_shared_from_this<Panel> {
@@ -62,6 +65,7 @@ public:
   void SetTabOrder(Ui32 tab_order);
   Ui64 GetTag();
   void SetTag(Ui64 tag);
+  void SetBackground(easy::Sprite background);
   virtual ~Panel();
   virtual void Draw(Vec2Si32 parent_absolute_pos);
   virtual bool ApplyInput(const InputMessage &message,
@@ -120,6 +124,7 @@ protected:
 public:
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
        Font font, TextOrigin origin, Rgba color, std::string text);
+  void SetText(std::string text);
   void Draw(Vec2Si32 parent_absolute_pos) override;
 };
 
