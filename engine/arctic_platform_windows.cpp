@@ -176,7 +176,8 @@ SystemInfo g_system_info;
 static bool g_is_full_screen = false;
 static Si32 g_window_width = 0;
 static Si32 g_window_height = 0;
-
+static std::atomic<bool> g_is_cursor_desired = true;
+static std::atomic<bool> g_is_cursor_visible = true;
 
 KeyCode TranslateKeyCode(WPARAM word_param) {
   if (word_param >= 'A' && word_param <= 'Z') {
@@ -303,6 +304,9 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = 0;
   PushInputMessage(msg);
+  if (!g_is_cursor_visible) {
+    SetCursor(NULL);
+  }
 }
 
 void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
@@ -359,6 +363,21 @@ void SetFullScreen(bool is_enable) {
     client_rect.right - client_rect.left,
     client_rect.bottom - client_rect.top,
     SWP_NOZORDER);
+}
+
+bool IsCursorVisible() {
+  return g_is_cursor_desired;
+}
+
+void SetCursorVisible(bool is_enable) {
+  g_is_cursor_desired = is_enable;
+  if (g_is_cursor_visible != is_enable) {
+    ShowCursor(is_enable);
+    g_is_cursor_visible = is_enable;
+  }
+  if (!g_is_cursor_visible) {
+    SetCursor(NULL);
+  }
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
