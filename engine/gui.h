@@ -120,10 +120,13 @@ protected:
   Font font_;
   TextOrigin origin_;
   Rgba color_;
+  std::vector<Rgba> palete_;
   std::string text_;
 public:
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
        Font font, TextOrigin origin, Rgba color, std::string text);
+  Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+    Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text);
   void SetText(std::string text);
   void Draw(Vec2Si32 parent_absolute_pos) override;
 };

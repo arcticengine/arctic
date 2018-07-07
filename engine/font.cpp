@@ -319,7 +319,7 @@ void Font::Load(const char *file_name) {
 
 void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
     Si32 x, Si32 y, TextOrigin origin, easy::DrawBlendingMode blending_mode,
-    Rgba color, bool do_draw,
+    Rgba color, const std::vector<Rgba> &palete, bool do_draw,
     Vec2Si32 *out_size) {
   Si32 next_x = x;
   Si32 next_y = y;
@@ -331,7 +331,7 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
     } else {
       Vec2Si32 size;
       DrawEvaluateSizeImpl(text, do_keep_xadvance,
-        x, y, origin, blending_mode, color, false,
+        x, y, origin, blending_mode, color, palete, false,
         &size);
       if (origin == kTextOriginBottom) {
         next_y = y + size.y - base_to_top_ + line_height_;
@@ -347,6 +347,7 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
   Ui32 prev_code = 0;
   bool is_newline = false;
   Si32 newline_count = 1;
+  Ui32 color_idx = 0;
   Utf32Reader reader;
   reader.Reset(reinterpret_cast<const Ui8*>(text));
   Glyph *glyph = nullptr;
@@ -376,7 +377,13 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
       }
     } else {
       is_newline = false;
-      if (code < codepoint_.size() && codepoint_[code]) {
+      if (code >= 1 && code <= 8) {
+        color_idx = code;
+        if (color_idx >= palete.size()) {
+          color_idx = 0;
+          // TODO(Huldra): Log error here
+        }
+      } else if (code < codepoint_.size() && codepoint_[code]) {
         if (newline_count) {
           if (glyph && !do_keep_xadvance) {
             width += glyph->sprite.Width() - glyph->xadvance;
@@ -392,7 +399,11 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
         glyph = codepoint_[code];
         width += glyph->xadvance;
         if (do_draw) {
-          glyph->sprite.Draw(next_x, next_y, blending_mode, color);
+          if (palete.size()) {
+            glyph->sprite.Draw(next_x, next_y, blending_mode, palete[color_idx]);
+          } else {
+            glyph->sprite.Draw(next_x, next_y, blending_mode, color);
+          }
           next_x += glyph->xadvance;
         }
       }
@@ -404,7 +415,7 @@ Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
   Vec2Si32 size;
   DrawEvaluateSizeImpl(text, do_keep_xadvance,
     0, 0, kTextOriginFirstBase, easy::kCopyRgba,
-    Rgba(255, 255, 255), false,
+    Rgba(255, 255, 255), std::vector<Rgba>(), false,
     &size);
   return size;
 }
@@ -414,7 +425,15 @@ void Font::Draw(const char *text, const Si32 x, const Si32 y,
     const easy::DrawBlendingMode blending_mode,
     const Rgba color) {
   DrawEvaluateSizeImpl(text, false, x, y, origin, blending_mode, color,
-    true, nullptr);
+    std::vector<Rgba>(), true, nullptr);
+}
+
+void Font::Draw(const char *text, const Si32 x, const Si32 y,
+    const TextOrigin origin,
+    const easy::DrawBlendingMode blending_mode,
+    const std::vector<Rgba> &palete) {
+  DrawEvaluateSizeImpl(text, false, x, y, origin, blending_mode, palete[0],
+    palete, true, nullptr);
 }
 
 }  // namespace arctic

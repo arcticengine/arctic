@@ -344,7 +344,17 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , origin_(origin)
     , color_(color)
     , text_(text) {
-  
+}
+
+Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+      Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text)
+    : Panel(tag, pos, size, tab_order)
+    , font_(font)
+    , origin_(origin)
+    , palete_(palete)
+    , text_(text) {
+  Check(palete.size(), "Error! Palete is empty!");
+  color_ = palete[0];
 }
 
 void Text::SetText(std::string text) {
@@ -355,8 +365,13 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
   Vec2Si32 offset = (size_ - size) / 2;
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
-  font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
-    origin_, easy::kColorize, color_);
+  if (palete_.size()) {
+    font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
+      origin_, easy::kColorize, palete_);
+  } else {
+    font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
+      origin_, easy::kColorize, color_);
+  }
 }
   
 }  // namespace arctic

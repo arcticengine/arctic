@@ -179,13 +179,17 @@ struct Font {
   void Load(const char *file_name);
   void DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
     Si32 x, Si32 y, TextOrigin origin, easy::DrawBlendingMode blending_mode,
-    Rgba color, bool do_draw,
+    Rgba color, const std::vector<Rgba> &palete, bool do_draw,
     Vec2Si32 *out_size);
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
   void Draw(const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin = kTextOriginBottom,
     const easy::DrawBlendingMode blending_mode = easy::kAlphaBlend,
     const Rgba color = Rgba(0xffffffff));
+  void Draw(const char *text, const Si32 x, const Si32 y,
+    const TextOrigin origin,
+    const easy::DrawBlendingMode blending_mode,
+    const std::vector<Rgba> &palete);
 };
 
 }  // namespace arctic
