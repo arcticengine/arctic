@@ -61,10 +61,12 @@ public:
 
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
     easy::Sprite background = easy::Sprite());
+  Vec2Si32 GetSize();
   Ui32 GetTabOrder();
   void SetTabOrder(Ui32 tab_order);
   Ui64 GetTag();
   void SetTag(Ui64 tag);
+  void SetPos(Vec2Si32 pos);
   void SetBackground(easy::Sprite background);
   virtual ~Panel();
   virtual void Draw(Vec2Si32 parent_absolute_pos);

@@ -41,6 +41,10 @@ Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , background_(background) {
 }
 
+Vec2Si32 Panel::GetSize() {
+  return size_;
+}
+  
 Ui32 Panel::GetTabOrder() {
   return tab_order_;
 }
@@ -55,6 +59,10 @@ Ui64 Panel::GetTag() {
 
 void Panel::SetTag(Ui64 tag) {
   tag_ = tag;
+}
+  
+void Panel::SetPos(Vec2Si32 pos) {
+  pos_ = pos;
 }
 
 void Panel::SetBackground(easy::Sprite background) {
