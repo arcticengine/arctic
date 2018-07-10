@@ -310,12 +310,12 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 }
 
 template<DrawBlendingMode kBlendingMode>
-void DrawSprite(
+void DrawSprite(Sprite to_sprite,
     const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 to_width, const Si32 to_height,
-    const Si32 from_x, const Si32 from_y,
+    Sprite from_sprite, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    Sprite to_sprite, Sprite from_sprite, Rgba in_color) {
+    Rgba in_color) {
   if (!from_width || !from_height || !to_width || !to_height) {
     return;
   }
@@ -497,23 +497,23 @@ void DrawSprite(
 }
 
 template void DrawSprite<kCopyRgba>(
-  const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
+  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite, Rgba color);
+  Rgba color);
 template void DrawSprite<kAlphaBlend>(
-  const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
+  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite, Rgba color);
+  Rgba color);
 template void DrawSprite<kColorize>(
-  const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
+  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite, Rgba color);
+  Rgba color);
 
 Sprite::Sprite() {
   ref_pos_ = Vec2Si32(0, 0);
@@ -629,28 +629,34 @@ Vec2Si32 Sprite::Pivot() const {
   return pivot_;
 }
 
-void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
-    DrawBlendingMode blending_mode, Rgba color) {
+void Sprite::Draw(Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  DrawBlendingMode blending_mode, Rgba color) {
   if (!sprite_instance_.get()) {
     return;
   }
   switch (blending_mode) {
-    case kAlphaBlend:
-      DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, Width(), Height(),
-        0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this, color);
-      break;
-    case kCopyRgba:
-      DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, Width(), Height(),
-        0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this, color);
-      break;
-    case kColorize:
-      DrawSprite<kColorize>(to_x_pivot, to_y_pivot, Width(), Height(),
-        0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this, color);
-      break;
+  case kAlphaBlend:
+    DrawSprite<kAlphaBlend>(to_sprite, to_x_pivot, to_y_pivot, Width(), Height(),
+      *this, 0, 0, Width(), Height(),
+      color);
+    break;
+  case kCopyRgba:
+    DrawSprite<kCopyRgba>(to_sprite, to_x_pivot, to_y_pivot, Width(), Height(),
+      *this, 0, 0, Width(), Height(),
+      color);
+    break;
+  case kColorize:
+    DrawSprite<kColorize>(to_sprite, to_x_pivot, to_y_pivot, Width(), Height(),
+      *this, 0, 0, Width(), Height(),
+      color);
+    break;
   }
+}
+
+
+void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
+    DrawBlendingMode blending_mode, Rgba color) {
+  Draw(GetEngine()->GetBackbuffer(), to_x_pivot, to_y_pivot, blending_mode, color);
 }
 
 void Sprite::Draw(const Vec2Si32 to, float angle_radians,
@@ -744,7 +750,11 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode, Rgba in_color) {
-  Draw(to_pos.x, to_pos.y);
+  Draw(to_pos.x, to_pos.y, blending_mode, in_color);
+}
+
+void Sprite::Draw(Sprite to_sprite, const Vec2Si32 to_pos, DrawBlendingMode blending_mode, Rgba in_color) {
+  Draw(to_sprite, to_pos.x, to_pos.y, blending_mode, in_color);
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
@@ -769,19 +779,19 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
   switch (blending_mode) {
   default:
   case kCopyRgba:
-    DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, to_width, to_height,
-      from_x, from_y, from_width, from_height,
-      to_sprite, *this, in_color);
+    DrawSprite<kCopyRgba>(to_sprite, to_x_pivot, to_y_pivot, to_width, to_height,
+      *this, from_x, from_y, from_width, from_height,
+      in_color);
     break;
   case kAlphaBlend:
-    DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, to_width, to_height,
-      from_x, from_y, from_width, from_height,
-      to_sprite, *this, in_color);
+    DrawSprite<kAlphaBlend>(to_sprite, to_x_pivot, to_y_pivot, to_width, to_height,
+      *this, from_x, from_y, from_width, from_height,
+      in_color);
     break;
   case kColorize:
-    DrawSprite<kColorize>(to_x_pivot, to_y_pivot, to_width, to_height,
-      from_x, from_y, from_width, from_height,
-      to_sprite, *this, in_color);
+    DrawSprite<kColorize>(to_sprite, to_x_pivot, to_y_pivot, to_width, to_height,
+      *this, from_x, from_y, from_width, from_height,
+      in_color);
     break;
   }
   return;

@@ -116,7 +116,13 @@ public:
       std::shared_ptr<Panel> *out_current_tab) override;
   void SetCurrentTab(bool is_current_tab) override;
 };
-  
+
+enum TextAlignment {
+  kAlignLeft,
+  kAlignCenter,
+  kAlignRight
+};
+
 class Text : public Panel {
 protected:
   Font font_;
@@ -124,11 +130,14 @@ protected:
   Rgba color_;
   std::vector<Rgba> palete_;
   std::string text_;
+  TextAlignment alignment_;
 public:
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-       Font font, TextOrigin origin, Rgba color, std::string text);
+    Font font, TextOrigin origin, Rgba color, std::string text,
+    TextAlignment alignment = kAlignLeft);
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-    Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text);
+    Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text,
+    TextAlignment alignment = kAlignLeft);
   void SetText(std::string text);
   void Draw(Vec2Si32 parent_absolute_pos) override;
 };

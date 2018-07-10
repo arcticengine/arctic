@@ -346,21 +346,25 @@ void Button::SetCurrentTab(bool is_current_tab) {
   
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-      Font font, TextOrigin origin, Rgba color, std::string text)
+      Font font, TextOrigin origin, Rgba color, std::string text,
+      TextAlignment alignment)
     : Panel(tag, pos, size, tab_order)
     , font_(font)
     , origin_(origin)
     , color_(color)
-    , text_(text) {
+    , text_(text)
+    , alignment_(alignment) {
 }
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-      Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text)
+      Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text,
+      TextAlignment alignment)
     : Panel(tag, pos, size, tab_order)
     , font_(font)
     , origin_(origin)
     , palete_(palete)
-    , text_(text) {
+    , text_(text)
+    , alignment_(alignment) {
   Check(palete.size(), "Error! Palete is empty!");
   color_ = palete[0];
 }
@@ -372,6 +376,11 @@ void Text::SetText(std::string text) {
 void Text::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
   Vec2Si32 offset = (size_ - size) / 2;
+  if (alignment_ == kAlignLeft) {
+    offset.x = 0;
+  } else if (alignment_ == kAlignRight) {
+    offset.x = (size_.x - size.x);
+  }
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
   if (palete_.size()) {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
