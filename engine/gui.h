@@ -142,6 +142,25 @@ public:
   void Draw(Vec2Si32 parent_absolute_pos) override;
 };
 
+class Progressbar: public Panel {
+protected:
+  easy::Sprite incomplete_;
+  easy::Sprite complete_;
+  float total_value_;
+  float current_value_;
+  std::shared_ptr<Text> text_;
+public:
+
+  Progressbar(Ui64 tag, Vec2Si32 pos,
+    easy::Sprite incomplete, easy::Sprite complete,
+    std::vector<Rgba> palete, Font font,
+    float total_value = 1.0f, float current_value = 0.0f);
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+  void UpdateText();
+  void SetTotalValue(float total_value);
+  void SetCurrentValue(float current_value);
+};
+
 }  // namespace arctic
 
 #endif  // ENGINE_GUI_H_

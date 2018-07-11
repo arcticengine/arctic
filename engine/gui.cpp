@@ -390,5 +390,55 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
       origin_, easy::kColorize, color_);
   }
 }
-  
+
+Progressbar::Progressbar(Ui64 tag, Vec2Si32 pos,
+      easy::Sprite incomplete, easy::Sprite complete,
+      std::vector<Rgba> palete, Font font,
+      float total_value, float current_value)
+    : Panel(tag, pos, Max(incomplete.Size(), complete.Size()), 0)
+    , incomplete_(incomplete)
+    , complete_(complete)
+    , total_value_(total_value)
+    , current_value_(current_value) {
+  text_.reset(new Text(Ui64(-1), Vec2Si32(0, 0), GetSize(), 0,
+    font, kTextOriginBottom, palete, "0% Done", kAlignCenter));
+  AddChild(text_);
+  UpdateText();
+}
+
+void Progressbar::Draw(Vec2Si32 parent_absolute_pos) {
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  Si32 w1 = GetSize().x;
+  if (current_value_ >= 0.0f && total_value_ > 0.0f && current_value_ <= total_value_) {
+    w1 = Si32(current_value_ / total_value_ * GetSize().x);
+  }
+  Si32 w2 = GetSize().x - w1;
+  complete_.Draw(absolute_pos.x, absolute_pos.y, w1, complete_.Size().y,
+    0, 0, w1, complete_.Size().y);
+  incomplete_.Draw(absolute_pos.x + w1, absolute_pos.y, w2, incomplete_.Size().y,
+    w1, 0, w2, incomplete_.Size().y);
+  Panel::Draw(parent_absolute_pos);
+}
+
+void Progressbar::UpdateText() {
+  Si32 p = 100;
+  if (current_value_ >= 0.0f && total_value_ > 0.0f && current_value_ <= total_value_) {
+    p = Si32(current_value_ / total_value_ * 100);
+  }
+  char str[32];
+  sprintf(str, "%d%% Done", p);
+  text_->SetText(str);
+}
+
+void Progressbar::SetTotalValue(float total_value) {
+  total_value_ = total_value;
+  UpdateText();
+}
+
+void Progressbar::SetCurrentValue(float current_value) {
+  current_value_ = current_value;
+  UpdateText();
+}
+
+
 }  // namespace arctic
