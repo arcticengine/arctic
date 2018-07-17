@@ -22,6 +22,8 @@
 
 #include "engine/gui.h"
 
+#include <algorithm>
+#include "engine/easy.h"
 #include "engine/arctic_platform.h"
 
 namespace arctic {
@@ -440,5 +442,191 @@ void Progressbar::SetCurrentValue(float current_value) {
   UpdateText();
 }
 
+
+Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+    easy::Sprite normal, easy::Sprite focused,
+    Font font, TextOrigin origin, Rgba color, std::string text,
+    TextAlignment alignment)
+    : Panel(tag,
+      pos,
+      Max(normal.Size(), focused.Size()),
+      tab_order)
+    , font_(font)
+    , origin_(origin)
+    , color_(color)
+    , text_(text)
+    , alignment_(alignment)
+    , normal_(normal)
+    , focused_(focused)
+    , cursor_pos_((Si32)text.length())
+    , selection_begin_(0)
+    , selection_end_((Si32)text.length()){
+}
+
+void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+    bool is_top_level, bool *in_out_is_applied,
+    std::deque<GuiMessage> *out_gui_messages,
+    std::shared_ptr<Panel> *out_current_tab) {
+  Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
+    out_gui_messages, out_current_tab);
+  Vec2Si32 pos = parent_pos + pos_;
+  if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
+    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+      relative_pos.x < size_.x && relative_pos.y < size_.y;
+    if (is_inside && !*in_out_is_applied) {
+      *out_current_tab = shared_from_this();
+      is_current_tab_ = true;
+      *in_out_is_applied = true;
+    }
+  }
+  if (!*in_out_is_applied && is_current_tab_) {
+    // Edit the text
+    if (message.kind == InputMessage::kKeyboard) {
+      if (message.keyboard.key_state == 1) {
+        Ui32 key = message.keyboard.key;
+        if (key >= kKeySpace && key <= kKeyGraveAccent) {
+          *in_out_is_applied = true;
+          if (key >= kKeyA && key <= kKeyZ) {
+            if (!message.keyboard.state[kKeyShift]) {
+              key = key - kKeyA + Ui32('a');
+            }
+          }
+          if (selection_begin_ != selection_end_) {
+            text_.erase(selection_begin_, selection_end_ - selection_begin_);
+            cursor_pos_ = selection_begin_;
+            selection_end_ = selection_begin_;
+          }
+          text_.insert(cursor_pos_, 1, static_cast<char>(key));
+          cursor_pos_++;
+        } else if (key == kKeyBackspace) {
+          *in_out_is_applied = true;
+          if (text_.length() && cursor_pos_) {
+            if (selection_begin_ != selection_end_) {
+              text_.erase(selection_begin_, selection_end_ - selection_begin_);
+              selection_end_ = selection_begin_;
+              cursor_pos_ = selection_begin_;
+            } else {
+              text_.erase(cursor_pos_ - 1, 1);
+              cursor_pos_--;
+            }
+          }
+        } else if (key == kKeyLeft) {
+          *in_out_is_applied = true;
+          if (message.keyboard.state[kKeyShift]) {
+            if (cursor_pos_) {
+              if (selection_begin_ == selection_end_) {
+                selection_end_ = cursor_pos_;
+                cursor_pos_--;
+                selection_begin_ = cursor_pos_;
+              } else if (selection_begin_ == cursor_pos_) {
+                cursor_pos_--;
+                selection_begin_ = cursor_pos_;
+              } else if (selection_end_ == cursor_pos_) {
+                cursor_pos_--;
+                selection_end_ = cursor_pos_;
+              }
+            }
+          } else {
+            if (cursor_pos_) {
+              cursor_pos_--;
+              selection_begin_ = cursor_pos_;
+              selection_end_ = cursor_pos_;
+            }
+          }
+        } else if (key == kKeyRight) {
+          *in_out_is_applied = true;
+          if (message.keyboard.state[kKeyShift]) {
+            if (cursor_pos_ < text_.length()) {
+              if (selection_begin_ == selection_end_) {
+                selection_begin_ = cursor_pos_;
+                cursor_pos_++;
+                selection_end_ = cursor_pos_;
+              } else if (selection_end_ == cursor_pos_) {
+                cursor_pos_++;
+                selection_end_ = cursor_pos_;
+              } else if (selection_begin_ == cursor_pos_) {
+                cursor_pos_++;
+                selection_begin_ = cursor_pos_;
+              }
+            }
+          } else {
+            if (cursor_pos_ < text_.length()) {
+              cursor_pos_++;
+              selection_begin_ = cursor_pos_;
+              selection_end_ = cursor_pos_;
+            }
+          }
+        }
+      }
+    }
+  }
+  cursor_pos_ = std::min(std::max(0, cursor_pos_), (Si32)text_.length());
+  selection_begin_ = std::min(std::max(0, selection_begin_), (Si32)text_.length());
+  selection_end_ = std::min(std::max(0, selection_end_), (Si32)text_.length());
+}
+
+void Editbox::SetText(std::string text) {
+  cursor_pos_ = std::min(std::max(0, cursor_pos_), (Si32)text_.length());
+  selection_begin_ = 0;
+  selection_end_ = 0;
+}
+
+void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
+  Vec2Si32 pos = parent_absolute_pos + pos_;
+  if (is_current_tab_) {
+    focused_.Draw(pos);
+  } else {
+    normal_.Draw(pos);
+  }
+  Si32 border = (normal_.Height() - font_.line_height_) / 2;
+  font_.Draw(text_.c_str(), pos.x + border, pos.y + border,
+    origin_, easy::kAlphaBlend, color_);
+
+  Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
+  std::string left_part = text_.substr(0, cursor_pos);
+  Si32 cursor_x = font_.EvaluateSize(left_part.c_str(), false).x;
+
+  Si32 space_width = font_.EvaluateSize(" ", false).x;
+  Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
+  Vec2Si32 b(a.x + space_width - 1, a.y);
+  if (fmod(easy::Time(), 0.6) < 0.3) {
+    for (Si32 y = 0; y < 3; ++y) {
+      easy::DrawLine(a, b, color_);
+      a.y++;
+      b.y++;
+    }
+  }
+
+  if (selection_begin_ != selection_end_) {
+    Si32 x1 = pos.x + border + font_.EvaluateSize(
+      text_.substr(0, selection_begin_).c_str(), false).x;
+    Si32 x2 = pos.x + border + font_.EvaluateSize(
+      text_.substr(0, selection_end_).c_str(), true).x;
+    Si32 y1 = pos.y + border;
+    Si32 y2 = pos.y + border + font_.line_height_;
+    easy::Sprite backbuffer = easy::GetEngine()->GetBackbuffer();
+    for (Si32 y = y1; y < y2; ++y) {
+      Rgba *p = backbuffer.RgbaData() + backbuffer.StridePixels() * y;
+      for (Si32 x = x1; x < x2; ++x) {
+        Rgba &c = p[x];
+        c.r = 255 - c.r;
+        c.g = 255 - c.g;
+        c.b = 255 - c.b;
+      }
+    }
+  }
+
+  Panel::Draw(parent_absolute_pos);
+}
+
+std::string Editbox::GetText() {
+  return text_;
+}
+
+void Editbox::SelectAll() {
+  selection_begin_ = 0;
+  selection_end_ = (Si32)text_.length();
+}
 
 }  // namespace arctic

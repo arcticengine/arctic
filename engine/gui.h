@@ -161,6 +161,34 @@ public:
   void SetCurrentValue(float current_value);
 };
 
+class Editbox: public Panel {
+protected:
+  Font font_;
+  TextOrigin origin_;
+  Rgba color_;
+  std::string text_;
+  TextAlignment alignment_;
+  easy::Sprite normal_;
+  easy::Sprite focused_;
+  Si32 cursor_pos_;
+  Si32 selection_begin_;
+  Si32 selection_end_;
+public:
+  Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+    easy::Sprite normal, easy::Sprite focused,
+    Font font, TextOrigin origin, Rgba color, std::string text,
+    TextAlignment alignment = kAlignLeft);
+  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+    bool is_top_level,
+    bool *in_out_is_applied,
+    std::deque<GuiMessage> *out_gui_messages,
+    std::shared_ptr<Panel> *out_current_tab) override;
+  void SetText(std::string text);
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+  std::string GetText();
+  void SelectAll();
+};
+
 }  // namespace arctic
 
 #endif  // ENGINE_GUI_H_
