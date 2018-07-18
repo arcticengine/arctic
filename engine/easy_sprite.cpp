@@ -526,7 +526,11 @@ void Sprite::Load(const char *file_name) {
   const char *last_dot = strchr(file_name, '.');
   Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
   if (strcmp(last_dot, ".tga") == 0) {
-    std::vector<Ui8> data = ReadFile(file_name);
+    std::vector<Ui8> data = ReadFile(file_name, true);
+    if (data.size() == 0) {
+      Log("File \"", file_name, "\" could not be loaded. Using empty sprite.");
+      return;
+    }
     sprite_instance_ = LoadTga(data.data(), data.size());
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = Vec2Si32(sprite_instance_->width(),
