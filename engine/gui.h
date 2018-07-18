@@ -171,6 +171,7 @@ protected:
   easy::Sprite normal_;
   easy::Sprite focused_;
   Si32 cursor_pos_;
+  Si32 display_pos_;
   Si32 selection_begin_;
   Si32 selection_end_;
 public:

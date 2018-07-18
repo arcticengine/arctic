@@ -459,6 +459,7 @@ Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     , normal_(normal)
     , focused_(focused)
     , cursor_pos_((Si32)text.length())
+    , display_pos_(0)
     , selection_begin_(0)
     , selection_end_((Si32)text.length()){
 }
@@ -501,14 +502,26 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           cursor_pos_++;
         } else if (key == kKeyBackspace) {
           *in_out_is_applied = true;
-          if (text_.length() && cursor_pos_) {
+          if (text_.length()) {
             if (selection_begin_ != selection_end_) {
               text_.erase(selection_begin_, selection_end_ - selection_begin_);
               selection_end_ = selection_begin_;
               cursor_pos_ = selection_begin_;
-            } else {
+            } else if (cursor_pos_) {
               text_.erase(cursor_pos_ - 1, 1);
               cursor_pos_--;
+            }
+          }
+        } else if (key == kKeyDelete) {
+          *in_out_is_applied = true;
+          if (text_.length()) {
+            if (selection_begin_ != selection_end_) {
+              text_.erase(selection_begin_, selection_end_ - selection_begin_);
+              selection_end_ = selection_begin_;
+              cursor_pos_ = selection_begin_;
+            } else if (cursor_pos_ >= 0 && cursor_pos_ < text_.length()) {
+              text_.erase(cursor_pos_, 1);
+              cursor_pos_;
             }
           }
         } else if (key == kKeyLeft) {
@@ -580,15 +593,59 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     normal_.Draw(pos);
   }
   Si32 border = (normal_.Height() - font_.line_height_) / 2;
-  font_.Draw(text_.c_str(), pos.x + border, pos.y + border,
+  Si32 space_width = font_.EvaluateSize(" ", false).x;
+
+  Si32 available_width = size_.x - border * 2 - space_width;
+  Si32 displayable_width = size_.x - border * 2;
+
+  // Update display_pos_ so that both display_pos_ and cursor_pos_ are both visible.
+  Si32 end_pos = (Si32)text_.length();
+  if (cursor_pos_ <= display_pos_) {
+    // Move display pos to the left when cursor is at the left border.
+    display_pos_ = std::max(0, cursor_pos_ - 1);
+  } else {
+    // Move display pos to the right when cursor is at the right border.
+    std::string part = text_.substr(display_pos_, cursor_pos_ - display_pos_);
+    Si32 w = font_.EvaluateSize(part.c_str(), true).x;
+    if (available_width) {
+      while (w > available_width) {
+        display_pos_++;
+        part = text_.substr(display_pos_, cursor_pos_ - display_pos_);
+        w = font_.EvaluateSize(part.c_str(), true).x;
+        end_pos = cursor_pos_ + 1;
+      }
+    }
+  }
+  // Display part of text with start at the display_pos_.
+
+  const char *visible = text_.c_str();
+
+  std::string display_text = text_.substr(display_pos_, end_pos - display_pos_);
+  Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
+  if (available_width) {
+    while (visible_width > displayable_width) {
+      Si32 visible_len = (Si32)display_text.length();
+      Si32 desired_len = visible_len * displayable_width / visible_width;
+      if (desired_len >= visible_len) {
+        desired_len = visible_len - 1;
+      }
+      end_pos = display_pos_ + desired_len;
+      display_text = text_.substr(display_pos_, end_pos - display_pos_);
+      visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
+    }
+  }
+
+  font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
     origin_, easy::kAlphaBlend, color_);
 
   Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
   std::string left_part = text_.substr(0, cursor_pos);
   Si32 cursor_x = font_.EvaluateSize(left_part.c_str(), false).x;
 
-  Si32 space_width = font_.EvaluateSize(" ", false).x;
+  Si32 skip_x = font_.EvaluateSize(text_.substr(0, display_pos_).c_str(), false).x;
+
   Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
+  a.x = std::max(pos.x + border, a.x - skip_x);
   Vec2Si32 b(a.x + space_width - 1, a.y);
   if (fmod(easy::Time(), 0.6) < 0.3) {
     for (Si32 y = 0; y < 3; ++y) {
@@ -606,6 +663,10 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     Si32 y1 = pos.y + border;
     Si32 y2 = pos.y + border + font_.line_height_;
     easy::Sprite backbuffer = easy::GetEngine()->GetBackbuffer();
+
+    x1 = std::min(std::max(pos.x + border, x1 - skip_x), pos.x + border + displayable_width);
+    x2 = std::min(std::max(pos.x + border, x2 - skip_x), pos.x + border + displayable_width);
+
     for (Si32 y = y1; y < y2; ++y) {
       Rgba *p = backbuffer.RgbaData() + backbuffer.StridePixels() * y;
       for (Si32 x = x1; x < x2; ++x) {
