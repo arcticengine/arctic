@@ -378,6 +378,12 @@ void Text::SetText(std::string text) {
 void Text::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
   Vec2Si32 offset = (size_ - size) / 2;
+  if (offset.x < 0) {
+    offset.x = 0;
+  }
+  if (offset.y < 0) {
+    offset.y = 0;
+  }
   if (alignment_ == kAlignLeft) {
     offset.x = 0;
   } else if (alignment_ == kAlignRight) {
