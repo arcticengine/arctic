@@ -118,6 +118,20 @@ struct Vec2Si32 {
   Vec2Si32 yy() const {
     return Vec2Si32(y, y);
   }
+
+  Vec2Si32 xo() const {
+    return Vec2Si32(x, 0);
+  }
+  Vec2Si32 ox() const {
+    return Vec2Si32(0, x);
+  }
+  Vec2Si32 yo() const {
+    return Vec2Si32(y, 0);
+  }
+  Vec2Si32 oy() const {
+    return Vec2Si32(0, y);
+  }
+
 };
 
 inline Vec2Si32 operator+(Vec2Si32  const &v, Si32 const &s) {
