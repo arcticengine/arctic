@@ -37,6 +37,7 @@ enum GuiMessageKind {
   kGuiButtonClick,
   kGuiButtonDown,
   kGuiScrollChange,
+  kGuiPanelLeftDown,
 };
 
 class Panel;
@@ -58,10 +59,11 @@ protected:
   bool is_current_tab_;
   easy::Sprite background_;
   std::deque<std::shared_ptr<Panel>> children_;
+  bool is_clickable_;
 public:
 
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
-    easy::Sprite background = easy::Sprite());
+    easy::Sprite background = easy::Sprite(), bool is_clickable = false);
   Vec2Si32 GetSize();
   Ui32 GetTabOrder();
   void SetTabOrder(Ui32 tab_order);

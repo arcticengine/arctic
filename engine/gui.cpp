@@ -34,13 +34,14 @@ GuiMessage::GuiMessage(std::shared_ptr<Panel> in_panel, GuiMessageKind in_kind)
 }
 
 Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-      easy::Sprite background)
+      easy::Sprite background, bool is_clickable)
     : tag_(tag)
     , pos_(pos)
     , size_(size)
     , tab_order_(tab_order)
     , is_current_tab_(0)
-    , background_(background) {
+    , background_(background)
+    , is_clickable_(is_clickable) {
 }
 
 Vec2Si32 Panel::GetSize() {
@@ -108,6 +109,20 @@ void Panel::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     (**it).ApplyInput(pos, message, false, in_out_is_applied,
         out_gui_messages, out_current_tab);
+  }
+  if (!*in_out_is_applied &&
+      is_clickable_ &&
+      message.kind == InputMessage::kMouse) {
+    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
+    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+      relative_pos.x < size_.x && relative_pos.y < size_.y;
+    if (is_inside) {
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1) {
+        out_gui_messages->emplace_back(shared_from_this(), kGuiPanelLeftDown);
+        *in_out_is_applied = true;
+      }
+    }
   }
   if (is_top_level) {
     if (*in_out_is_applied == false) {
@@ -900,5 +915,7 @@ void HorizontalScroll::SetValue(Si32 value) {
 Si32 HorizontalScroll::GetValue() {
   return value_;
 }
+
+
 
 }  // namespace arctic
