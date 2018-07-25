@@ -55,14 +55,18 @@ void Panel::SetTabOrder(Ui32 tab_order) {
   tab_order_ = tab_order;
 }
 
-Ui64 Panel::GetTag() {
+Ui64 Panel::GetTag() const {
   return tag_;
 }
 
 void Panel::SetTag(Ui64 tag) {
   tag_ = tag;
 }
-  
+
+Vec2Si32 Panel::GetPos() const {
+  return pos_;
+}
+
 void Panel::SetPos(Vec2Si32 pos) {
   pos_ = pos;
 }
@@ -380,7 +384,7 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 offset = (size_ - size) / 2;
   if (offset.x < 0) {
     offset.x = 0;
-  }
+  } 
   if (offset.y < 0) {
     offset.y = 0;
   }
@@ -452,7 +456,7 @@ void Progressbar::SetCurrentValue(float current_value) {
 Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     easy::Sprite normal, easy::Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
-    TextAlignment alignment)
+    TextAlignment alignment, bool is_digits)
     : Panel(tag,
       pos,
       Max(normal.Size(), focused.Size()),
@@ -467,7 +471,8 @@ Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     , cursor_pos_((Si32)text.length())
     , display_pos_(0)
     , selection_begin_(0)
-    , selection_end_((Si32)text.length()){
+    , selection_end_((Si32)text.length())
+    , is_digits_(is_digits) {
 }
 
 void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -492,7 +497,9 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (message.kind == InputMessage::kKeyboard) {
       if (message.keyboard.key_state == 1) {
         Ui32 key = message.keyboard.key;
-        if (key >= kKeySpace && key <= kKeyGraveAccent) {
+        if (is_digits_ ?
+            (key >= kKey0 && key <= kKey9) :
+            (key >= kKeySpace && key <= kKeyGraveAccent)) {
           *in_out_is_applied = true;
           if (key >= kKeyA && key <= kKeyZ) {
             if (!message.keyboard.state[kKeyShift]) {
@@ -642,7 +649,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   }
 
   font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
-    origin_, easy::kAlphaBlend, color_);
+    origin_, easy::kColorize, color_);
 
   Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
   std::string left_part = text_.substr(0, cursor_pos);
@@ -653,7 +660,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
   a.x = std::max(pos.x + border, a.x - skip_x);
   Vec2Si32 b(a.x + space_width - 1, a.y);
-  if (fmod(easy::Time(), 0.6) < 0.3) {
+  if (fmod(easy::Time(), 0.6) < 0.3 && is_current_tab_) {
     for (Si32 y = 0; y < 3; ++y) {
       easy::DrawLine(a, b, color_);
       a.y++;
@@ -661,7 +668,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     }
   }
 
-  if (selection_begin_ != selection_end_) {
+  if (selection_begin_ != selection_end_ && is_current_tab_) {
     Si32 x1 = pos.x + border + font_.EvaluateSize(
       text_.substr(0, selection_begin_).c_str(), false).x;
     Si32 x2 = pos.x + border + font_.EvaluateSize(
@@ -694,6 +701,204 @@ std::string Editbox::GetText() {
 void Editbox::SelectAll() {
   selection_begin_ = 0;
   selection_end_ = (Si32)text_.length();
+}
+
+
+HorizontalScroll::HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+  easy::Sprite normal_background,
+  easy::Sprite focused_background, easy::Sprite normal_button_left,
+  easy::Sprite focused_button_left, easy::Sprite down_button_left,
+  easy::Sprite normal_button_right, easy::Sprite focused_button_right,
+  easy::Sprite down_button_right, easy::Sprite normal_button_cur,
+  easy::Sprite focused_button_cur, easy::Sprite down_button_cur,
+  Si32 min_value, Si32 max_value, Si32 value)
+  : Panel(tag, pos,
+      Max(normal_background.Size(),
+        focused_background.Size()),
+      tab_order)
+  , normal_background_(normal_background)
+  , focused_background_(focused_background)
+  , normal_button_left_(normal_button_left)
+  , focused_button_left_(focused_button_left)
+  , down_button_left_(down_button_left)
+  , normal_button_right_(normal_button_right)
+  , focused_button_right_(focused_button_right)
+  , down_button_right_(down_button_right)
+  , normal_button_cur_(normal_button_cur)
+  , focused_button_cur_(focused_button_cur)
+  , down_button_cur_(down_button_cur)
+  , min_value_(min_value)
+  , max_value_(max_value)
+  , value_(value) {
+}
+
+void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+    bool is_top_level,
+    bool *in_out_is_applied,
+    std::deque<GuiMessage> *out_gui_messages,
+    std::shared_ptr<Panel> *out_current_tab) {
+  if (state_ == kHidden) {
+    return;
+  }
+  Check(in_out_is_applied,
+    "ApplyInput must not be called with in_out_is_applied == nullptr");
+  Check(out_gui_messages,
+    "ApplyInput must not be called with out_gui_messages == nullptr");
+  Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
+    out_gui_messages, out_current_tab);
+  Vec2Si32 pos = parent_pos + pos_;
+  //    x1    x2  x3    x4
+  // |--|-----|---|-----|--|
+  // |<<|     | @ |     |>>|
+  // |--|-----|---|-----|--|
+  Si32 x1 = 1 + normal_button_left_.Size().x;
+  Si32 x4 = size_.x - 1 - normal_button_right_.Size().x;
+  Si32 w = x4 - x1 - normal_button_cur_.Size().x;
+  Si32 x2 = x1 + w * (value_ - min_value_) / (max_value_ - min_value_);
+  Si32 x3 = x2 + normal_button_cur_.Size().x;
+
+  ScrollState prev_state = state_;
+  if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
+    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+      relative_pos.x < size_.x && relative_pos.y < size_.y;
+
+    if (!*in_out_is_applied &&
+        message.keyboard.state[kKeyMouseLeft] == 1 &&
+        state_ == kMiddleDragged &&
+        is_current_tab_) {
+      *out_current_tab = shared_from_this();
+      *in_out_is_applied = true;
+      Si32 drag_x = relative_pos.x - start_x_;
+      Si32 value_diff = drag_x * (max_value_ - min_value_) / w;
+      value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
+      out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+    } else if (message.keyboard.state[kKeyMouseLeft] != 1) {
+      if (is_inside && !*in_out_is_applied) {
+        *out_current_tab = shared_from_this();
+        is_current_tab_ = true;
+      }
+      if (is_current_tab_) {
+        state_ = kHovered;
+      } else {
+        state_ = kNormal;
+      }
+    } else if (is_inside && !*in_out_is_applied) {
+      *out_current_tab = shared_from_this();
+      is_current_tab_ = true;
+      if (message.keyboard.state[kKeyMouseLeft] == 1) {
+        *in_out_is_applied = true;
+        if (state_ == kMiddleDragged) {
+          Si32 drag_x = relative_pos.x - start_x_;
+          Si32 value_diff = drag_x * (max_value_ - min_value_) / w;
+          value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
+          out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+        } else if (relative_pos.x < x1) {
+          state_ = kLeftDown;
+          if (prev_state != state_) {
+            value_ = std::max(min_value_, value_ - 1);
+            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          }
+        } else if (relative_pos.x < x2) {
+          state_ = kLeftFast;
+          if (prev_state != state_) {
+            value_ = std::max(min_value_, value_ - 5);
+            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          }
+        } else if (relative_pos.x < x3) {
+          state_ = kMiddleDragged;
+          if (prev_state != state_) {
+            start_x_ = relative_pos.x;
+            start_value_ = value_;
+          }
+        } else if (relative_pos.x < x4) {
+          state_ = kRightFast;
+          if (prev_state != state_) {
+            value_ = std::min(max_value_, value_ + 5);
+            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          }
+        } else {
+          state_ = kRightDown;
+          if (prev_state != state_) {
+            value_ = std::min(max_value_, value_ + 1);
+            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          }
+        }
+      } else {
+        if (is_current_tab_) {
+          state_ = kHovered;
+        } else {
+          state_ = kNormal;
+        }
+      }
+    }
+  } else if (message.kind == InputMessage::kKeyboard) {
+    if (is_current_tab_) {
+      if (message.keyboard.key_state == 1) {
+        if (message.keyboard.key == kKeyLeft) {
+          value_ = Clamp(value_ - 1, min_value_, max_value_);
+          out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+        } else if (message.keyboard.key == kKeyRight) {
+          value_ = Clamp(value_ + 1, min_value_, max_value_);
+          out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+        }
+      }
+    }
+  }
+
+  if (is_current_tab_ && state_ == kNormal) {
+    state_ = kHovered;
+  }
+  if (!is_current_tab_) {
+    state_ = kNormal;
+  }
+}
+
+void HorizontalScroll::Draw(Vec2Si32 parent_absolute_pos) {
+  if (state_ == kHidden) {
+    return;
+  }
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  Vec2Si32 button_offset = Vec2Si32(1, 1);
+  if (state_ == kNormal) {
+    normal_background_.Draw(absolute_pos);
+  } else {
+    focused_background_.Draw(absolute_pos);
+  }
+  if (state_ == kLeftDown) {
+    down_button_left_.Draw(absolute_pos + button_offset);
+  } else {
+    normal_button_left_.Draw(absolute_pos + button_offset);
+  }
+  Vec2Si32 right_pos = absolute_pos + size_.xo()
+    - normal_button_right_.Size().xo() + Vec2Si32(-1, 0);
+  if (state_ == kRightDown) {
+    down_button_right_.Draw(right_pos + button_offset);
+  } else {
+    normal_button_right_.Draw(right_pos + button_offset);
+  }
+  Vec2Si32 after_left = absolute_pos + button_offset.xo()
+    + normal_button_left_.Size().xo();
+  Si32 width = right_pos.x - after_left.x - normal_button_cur_.Size().x + 1;
+  Si32 offset = 0;
+  if (width > 0 && max_value_ != min_value_) {
+    offset = width * (value_ - min_value_) / (max_value_ - min_value_);
+  }
+  Vec2Si32 cur_pos = after_left + Vec2Si32(offset, 1);
+  if (state_ == kMiddleDragged) {
+    down_button_cur_.Draw(cur_pos);
+  } else {
+    normal_button_cur_.Draw(cur_pos);
+  }
+  Panel::Draw(parent_absolute_pos);
+}
+
+void HorizontalScroll::SetValue(Si32 value) {
+  value_ = std::min(max_value_, std::max(min_value_, value));
+}
+
+Si32 HorizontalScroll::GetValue() {
+  return value_;
 }
 
 }  // namespace arctic

@@ -36,6 +36,7 @@ namespace arctic {
 enum GuiMessageKind {
   kGuiButtonClick,
   kGuiButtonDown,
+  kGuiScrollChange,
 };
 
 class Panel;
@@ -64,8 +65,9 @@ public:
   Vec2Si32 GetSize();
   Ui32 GetTabOrder();
   void SetTabOrder(Ui32 tab_order);
-  Ui64 GetTag();
+  Ui64 GetTag() const;
   void SetTag(Ui64 tag);
+  Vec2Si32 GetPos() const;
   void SetPos(Vec2Si32 pos);
   void SetBackground(easy::Sprite background);
   virtual ~Panel();
@@ -174,11 +176,12 @@ protected:
   Si32 display_pos_;
   Si32 selection_begin_;
   Si32 selection_end_;
+  bool is_digits_;
 public:
   Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     easy::Sprite normal, easy::Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
-    TextAlignment alignment = kAlignLeft);
+    TextAlignment alignment = kAlignLeft, bool is_digits = false);
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
@@ -188,6 +191,55 @@ public:
   void Draw(Vec2Si32 parent_absolute_pos) override;
   std::string GetText();
   void SelectAll();
+};
+
+class HorizontalScroll : public Panel {
+public:
+  enum ScrollState {
+    kHidden = 0,
+    kNormal = 1,
+    kHovered = 2,
+    kLeftDown = 3,
+    kRightDown = 4,
+    kMiddleDragged = 5,
+    kLeftFast = 6,
+    kRightFast = 7
+  };
+protected:
+  easy::Sprite normal_background_;
+  easy::Sprite focused_background_;
+  easy::Sprite normal_button_left_;
+  easy::Sprite focused_button_left_;
+  easy::Sprite down_button_left_;
+  easy::Sprite normal_button_right_;
+  easy::Sprite focused_button_right_;
+  easy::Sprite down_button_right_;
+  easy::Sprite normal_button_cur_;
+  easy::Sprite focused_button_cur_;
+  easy::Sprite down_button_cur_;
+  Si32 min_value_;
+  Si32 max_value_;
+  Si32 value_;
+  ScrollState state_ = kNormal;
+  Si32 start_x_;
+  Si32 start_value_;
+public:
+  HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+    easy::Sprite normal_background,
+    easy::Sprite focused_background, easy::Sprite normal_button_left,
+    easy::Sprite focused_button_left, easy::Sprite down_button_left,
+    easy::Sprite normal_button_right, easy::Sprite focused_button_right,
+    easy::Sprite down_button_right, easy::Sprite normal_button_cur,
+    easy::Sprite focused_button_cur, easy::Sprite down_button_cur,
+    Si32 min_value, Si32 max_value, Si32 value);
+  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+    bool is_top_level,
+    bool *in_out_is_applied,
+    std::deque<GuiMessage> *out_gui_messages,
+    std::shared_ptr<Panel> *out_current_tab) override;
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+  void SetValue(Si32 value);
+  Si32 GetValue();
 };
 
 }  // namespace arctic
