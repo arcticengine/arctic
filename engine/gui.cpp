@@ -549,7 +549,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               cursor_pos_ = selection_begin_;
             } else if (cursor_pos_ >= 0 && cursor_pos_ < text_.length()) {
               text_.erase(cursor_pos_, 1);
-              cursor_pos_;
+              // cursor_pos_;
             }
           }
         } else if (key == kKeyLeft) {
@@ -646,7 +646,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   }
   // Display part of text with start at the display_pos_.
 
-  const char *visible = text_.c_str();
+  //const char *visible = text_.c_str();
 
   std::string display_text = text_.substr(display_pos_, end_pos - display_pos_);
   Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;

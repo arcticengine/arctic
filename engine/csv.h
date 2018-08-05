@@ -24,6 +24,7 @@
 #ifndef ENGINE_CSV_H_
 #define ENGINE_CSV_H_
 
+#include <deque>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -34,14 +35,6 @@
 
 namespace arctic {
 
-class CsvError : public std::runtime_error {
- public:
-  CsvError(const std::string &msg):
-      std::runtime_error(std::string("CsvParser : ").append(msg))
-  {
-  }
-};
-
 class CsvRow {
  private:
   const std::vector<std::string> header_;
@@ -51,23 +44,36 @@ class CsvRow {
   CsvRow(const std::vector<std::string> &);
   ~CsvRow();
 
-  unsigned int Size() const;
+  Ui32 Size() const;
   void Push(const std::string &);
   bool Set(const std::string &, const std::string &);
 
   template<typename T>
-  const T GetValue(unsigned int pos) const {
+  const T GetValue(Ui32 pos, T default_value) const {
     if (pos < values_.size()) {
       T res;
       std::stringstream ss;
       ss << values_[pos];
       ss >> res;
+      if (ss.fail()) {
+        return default_value;
+      }
       return res;
     }
-    throw CsvError("can't return this value (doesn't exist)");
+    return default_value;
   }
-  const std::string operator[](unsigned int) const;
-  const std::string operator[](const std::string &valueName) const;
+  template<typename T>
+  const T GetValue(const std::string &value_name, T default_value) const {
+    std::stringstream ss((*this)[value_name]);
+    T res;
+    ss >> res;
+    if (ss.fail()) {
+      return default_value;
+    }
+    return res;
+  }
+  const std::string operator[](Ui32) const;
+  const std::string operator[](const std::string &value_name) const;
   friend std::ostream& operator<<(std::ostream& os, const CsvRow &row);
   friend std::ofstream& operator<<(std::ofstream& os, const CsvRow &row);
 };
@@ -79,32 +85,33 @@ enum CsvSourceType {
 
 class CsvTable {
  public:
-  CsvTable(const std::string &, const CsvSourceType &type = kCsvSourceFile, char sep = ',');
+  CsvTable();
+  bool LoadFile(const std::string &filename, char sep = ',');
+  bool LoadString(const std::string &input, char sep = ',');
   ~CsvTable();
-
-  CsvRow &GetRow(unsigned int row) const;
-  unsigned int RowCount() const;
-  unsigned int ColumnCount() const;
+  CsvRow *GetRow(Ui32 row) const;
+  Ui32 RowCount() const;
+  Ui32 ColumnCount() const;
   std::vector<std::string> GetHeader() const;
-  const std::string GetHeaderElement(unsigned int pos) const;
+  const std::string GetHeaderElement(Ui32 pos) const;
   const std::string &GetFileName() const;
+  bool DeleteRow(Ui32 row);
+  bool AddRow(Ui32 pos, const std::vector<std::string> &);
+  void SaveFile() const;
+  CsvRow &operator[](Ui32 row) const;
 
-  bool DeleteRow(unsigned int row);
-  bool AddRow(unsigned int pos, const std::vector<std::string> &);
-  void Sync() const;
-
-  CsvRow &operator[](unsigned int row) const;
  protected:
-  void ParseHeader();
-  void ParseContent();
+  bool ParseHeader();
+  bool ParseContent();
 
  private:
   std::string file_;
-  const CsvSourceType type_;
-  const char sep_;
-  std::vector<std::string> original_file_;
+  CsvSourceType type_;
+  char sep_;
+  std::deque<std::string> original_file_;
   std::vector<std::string> header_;
   std::vector<CsvRow *> content_;
+  std::string error_description;
 };
 
 }  // namespace arctic
