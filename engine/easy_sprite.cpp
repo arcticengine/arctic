@@ -614,11 +614,59 @@ void Sprite::Clear(Rgba color) {
   }
 }
 
-void Sprite::Clone(Sprite from) {
-  Create(from.Width(), from.Height());
-  from.Draw(0, 0, from.Width(), from.Height(),
-    0, 0, from.Width(), from.Height(), *this, kCopyRgba);
-  SetPivot(from.Pivot());
+void Sprite::Clone(Sprite from, CloneTransform transform) {
+  if (transform == kCloneUntransformed) {
+    Create(from.Width(), from.Height());
+    from.Draw(0, 0, from.Width(), from.Height(),
+      0, 0, from.Width(), from.Height(), *this, kCopyRgba);
+    SetPivot(from.Pivot());
+    return;
+  }
+  Vec2Si32 dst_base;
+  Vec2Si32 dst_dir_x;
+  Vec2Si32 dst_dir_y;
+  if (transform == kCloneRotateCw90 || transform == kCloneRotateCcw90) {
+    Create(from.Height(), from.Width());
+    if (transform == kCloneRotateCw90) {
+      dst_base = Vec2Si32(0, Height() - 1);
+      dst_dir_x = Vec2Si32(0, -1);
+      dst_dir_y = Vec2Si32(1, 0);
+    } else {
+      dst_base = Vec2Si32(Width() - 1, 0);
+      dst_dir_x = Vec2Si32(0, 1);
+      dst_dir_y = Vec2Si32(-1, 0);
+    }
+  } else {
+    Create(from.Width(), from.Height());
+    if (transform == kCloneMirrorLr) {
+      dst_base = Vec2Si32(Width() - 1, 0);
+      dst_dir_x = Vec2Si32(-1, 0);
+      dst_dir_y = Vec2Si32(0, 1);
+    } else if (transform == kCloneMirrorUd) {
+      dst_base = Vec2Si32(0, Height() - 1);
+      dst_dir_x = Vec2Si32(1, 0);
+      dst_dir_y = Vec2Si32(0, -1);
+    } else {  // kCloneRotate180
+      dst_base = Vec2Si32(Width() - 1, Height() - 1);
+      dst_dir_x = Vec2Si32(-1, 0);
+      dst_dir_y = Vec2Si32(0, -1);
+    }
+  }
+
+  Si32 wid = from.Width();
+  Si32 hei = from.Height();
+  Si32 src_stride = from.StridePixels();
+  Si32 dst_stride = StridePixels();
+  Rgba *src_data = from.RgbaData();
+  Rgba *dst_data = RgbaData();
+  for (Si32 y = 0; y < hei; ++y) {
+    for (Si32 x = 0; x < wid; ++x) {
+      Vec2Si32 dst_pos = dst_base + dst_dir_y * y + dst_dir_x * x;
+      dst_data[dst_pos.y * dst_stride + dst_pos.x] = src_data[y * src_stride + x];
+    }
+  }
+
+  SetPivot(dst_base + from.Pivot().x * dst_dir_x + from.Pivot().y * dst_dir_y);
 }
 
 void Sprite::SetPivot(Vec2Si32 pivot) {

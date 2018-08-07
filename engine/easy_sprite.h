@@ -41,6 +41,15 @@ enum DrawBlendingMode {
   kColorize
 };
 
+enum CloneTransform {
+  kCloneUntransformed,
+  kCloneRotateCw90,
+  kCloneRotateCcw90,
+  kCloneRotate180,
+  kCloneMirrorLr,
+  kCloneMirrorUd
+};
+
 class Sprite {
  private:
   std::shared_ptr<SpriteInstance> sprite_instance_;
@@ -59,7 +68,7 @@ class Sprite {
     const Si32 from_width, const Si32 from_height);
   void Clear();
   void Clear(Rgba color);
-  void Clone(Sprite from);
+  void Clone(Sprite from, CloneTransform transform = kCloneUntransformed);
   void SetPivot(Vec2Si32 pivot);
   Vec2Si32 Pivot() const;
   void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
