@@ -60,7 +60,7 @@ enum KeyCode {
   // 29
   // 30
   // 31
-  kKeySpace = 32,  // ' ' ASCII Space
+  kKeySpace = 32,  // ' ' ASCII Space  // SAFE to map BEGIN ----
   // 33
   // 34
   // 35
@@ -124,7 +124,7 @@ enum KeyCode {
   kKeyRightSquareBracket = 93,   // ']'
   // 94
   // 95
-  kKeyGraveAccent = 96,   // '`'
+  kKeyGraveAccent = 96,   // '`'  // SAFE to map END ----
   kKeyF1 = 97,
   kKeyF2 = 98,
   kKeyF3 = 99,

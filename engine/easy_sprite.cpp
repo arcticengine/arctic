@@ -310,12 +310,12 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 }
 
 template<DrawBlendingMode kBlendingMode>
-void DrawSprite(
+void DrawSprite(Sprite to_sprite,
     const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 to_width, const Si32 to_height,
-    const Si32 from_x, const Si32 from_y,
+    Sprite from_sprite, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    Sprite to_sprite, Sprite from_sprite, Rgba in_color) {
+    Rgba in_color) {
   if (!from_width || !from_height || !to_width || !to_height) {
     return;
   }
@@ -497,23 +497,23 @@ void DrawSprite(
 }
 
 template void DrawSprite<kCopyRgba>(
-  const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
+  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite, Rgba color);
+  Rgba color);
 template void DrawSprite<kAlphaBlend>(
-  const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
+  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite, Rgba color);
+  Rgba color);
 template void DrawSprite<kColorize>(
-  const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  const Si32 from_x, const Si32 from_y,
+  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
-  Sprite to_sprite, Sprite from_sprite, Rgba color);
+  Rgba color);
 
 Sprite::Sprite() {
   ref_pos_ = Vec2Si32(0, 0);
@@ -526,7 +526,11 @@ void Sprite::Load(const char *file_name) {
   const char *last_dot = strchr(file_name, '.');
   Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
   if (strcmp(last_dot, ".tga") == 0) {
-    std::vector<Ui8> data = ReadFile(file_name);
+    std::vector<Ui8> data = ReadFile(file_name, true);
+    if (data.size() == 0) {
+      Log("File \"", file_name, "\" could not be loaded. Using empty sprite.");
+      return;
+    }
     sprite_instance_ = LoadTga(data.data(), data.size());
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = Vec2Si32(sprite_instance_->width(),
@@ -610,11 +614,59 @@ void Sprite::Clear(Rgba color) {
   }
 }
 
-void Sprite::Clone(Sprite from) {
-  Create(from.Width(), from.Height());
-  from.Draw(0, 0, from.Width(), from.Height(),
-    0, 0, from.Width(), from.Height(), *this, kCopyRgba);
-  SetPivot(from.Pivot());
+void Sprite::Clone(Sprite from, CloneTransform transform) {
+  if (transform == kCloneUntransformed) {
+    Create(from.Width(), from.Height());
+    from.Draw(0, 0, from.Width(), from.Height(),
+      0, 0, from.Width(), from.Height(), *this, kCopyRgba);
+    SetPivot(from.Pivot());
+    return;
+  }
+  Vec2Si32 dst_base;
+  Vec2Si32 dst_dir_x;
+  Vec2Si32 dst_dir_y;
+  if (transform == kCloneRotateCw90 || transform == kCloneRotateCcw90) {
+    Create(from.Height(), from.Width());
+    if (transform == kCloneRotateCw90) {
+      dst_base = Vec2Si32(0, Height() - 1);
+      dst_dir_x = Vec2Si32(0, -1);
+      dst_dir_y = Vec2Si32(1, 0);
+    } else {
+      dst_base = Vec2Si32(Width() - 1, 0);
+      dst_dir_x = Vec2Si32(0, 1);
+      dst_dir_y = Vec2Si32(-1, 0);
+    }
+  } else {
+    Create(from.Width(), from.Height());
+    if (transform == kCloneMirrorLr) {
+      dst_base = Vec2Si32(Width() - 1, 0);
+      dst_dir_x = Vec2Si32(-1, 0);
+      dst_dir_y = Vec2Si32(0, 1);
+    } else if (transform == kCloneMirrorUd) {
+      dst_base = Vec2Si32(0, Height() - 1);
+      dst_dir_x = Vec2Si32(1, 0);
+      dst_dir_y = Vec2Si32(0, -1);
+    } else {  // kCloneRotate180
+      dst_base = Vec2Si32(Width() - 1, Height() - 1);
+      dst_dir_x = Vec2Si32(-1, 0);
+      dst_dir_y = Vec2Si32(0, -1);
+    }
+  }
+
+  Si32 wid = from.Width();
+  Si32 hei = from.Height();
+  Si32 src_stride = from.StridePixels();
+  Si32 dst_stride = StridePixels();
+  Rgba *src_data = from.RgbaData();
+  Rgba *dst_data = RgbaData();
+  for (Si32 y = 0; y < hei; ++y) {
+    for (Si32 x = 0; x < wid; ++x) {
+      Vec2Si32 dst_pos = dst_base + dst_dir_y * y + dst_dir_x * x;
+      dst_data[dst_pos.y * dst_stride + dst_pos.x] = src_data[y * src_stride + x];
+    }
+  }
+
+  SetPivot(dst_base + from.Pivot().x * dst_dir_x + from.Pivot().y * dst_dir_y);
 }
 
 void Sprite::SetPivot(Vec2Si32 pivot) {
@@ -625,28 +677,34 @@ Vec2Si32 Sprite::Pivot() const {
   return pivot_;
 }
 
-void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
-    DrawBlendingMode blending_mode, Rgba color) {
+void Sprite::Draw(Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  DrawBlendingMode blending_mode, Rgba color) {
   if (!sprite_instance_.get()) {
     return;
   }
   switch (blending_mode) {
-    case kAlphaBlend:
-      DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, Width(), Height(),
-        0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this, color);
-      break;
-    case kCopyRgba:
-      DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, Width(), Height(),
-        0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this, color);
-      break;
-    case kColorize:
-      DrawSprite<kColorize>(to_x_pivot, to_y_pivot, Width(), Height(),
-        0, 0, Width(), Height(),
-        GetEngine()->GetBackbuffer(), *this, color);
-      break;
+  case kAlphaBlend:
+    DrawSprite<kAlphaBlend>(to_sprite, to_x_pivot, to_y_pivot, Width(), Height(),
+      *this, 0, 0, Width(), Height(),
+      color);
+    break;
+  case kCopyRgba:
+    DrawSprite<kCopyRgba>(to_sprite, to_x_pivot, to_y_pivot, Width(), Height(),
+      *this, 0, 0, Width(), Height(),
+      color);
+    break;
+  case kColorize:
+    DrawSprite<kColorize>(to_sprite, to_x_pivot, to_y_pivot, Width(), Height(),
+      *this, 0, 0, Width(), Height(),
+      color);
+    break;
   }
+}
+
+
+void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
+    DrawBlendingMode blending_mode, Rgba color) {
+  Draw(GetEngine()->GetBackbuffer(), to_x_pivot, to_y_pivot, blending_mode, color);
 }
 
 void Sprite::Draw(const Vec2Si32 to, float angle_radians,
@@ -740,7 +798,11 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode, Rgba in_color) {
-  Draw(to_pos.x, to_pos.y);
+  Draw(to_pos.x, to_pos.y, blending_mode, in_color);
+}
+
+void Sprite::Draw(Sprite to_sprite, const Vec2Si32 to_pos, DrawBlendingMode blending_mode, Rgba in_color) {
+  Draw(to_sprite, to_pos.x, to_pos.y, blending_mode, in_color);
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
@@ -765,19 +827,19 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
   switch (blending_mode) {
   default:
   case kCopyRgba:
-    DrawSprite<kCopyRgba>(to_x_pivot, to_y_pivot, to_width, to_height,
-      from_x, from_y, from_width, from_height,
-      to_sprite, *this, in_color);
+    DrawSprite<kCopyRgba>(to_sprite, to_x_pivot, to_y_pivot, to_width, to_height,
+      *this, from_x, from_y, from_width, from_height,
+      in_color);
     break;
   case kAlphaBlend:
-    DrawSprite<kAlphaBlend>(to_x_pivot, to_y_pivot, to_width, to_height,
-      from_x, from_y, from_width, from_height,
-      to_sprite, *this, in_color);
+    DrawSprite<kAlphaBlend>(to_sprite, to_x_pivot, to_y_pivot, to_width, to_height,
+      *this, from_x, from_y, from_width, from_height,
+      in_color);
     break;
   case kColorize:
-    DrawSprite<kColorize>(to_x_pivot, to_y_pivot, to_width, to_height,
-      from_x, from_y, from_width, from_height,
-      to_sprite, *this, in_color);
+    DrawSprite<kColorize>(to_sprite, to_x_pivot, to_y_pivot, to_width, to_height,
+      *this, from_x, from_y, from_width, from_height,
+      in_color);
     break;
   }
   return;
