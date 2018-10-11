@@ -71,7 +71,7 @@ public:
   void SetTag(Ui64 tag);
   Vec2Si32 GetPos() const;
   void SetPos(Vec2Si32 pos);
-  void SetBackground(easy::Sprite background);
+  void SetBackground(easy::Sprite &background);
   virtual ~Panel();
   virtual void Draw(Vec2Si32 parent_absolute_pos);
   virtual bool ApplyInput(const InputMessage &message,

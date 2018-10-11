@@ -365,7 +365,7 @@ inline Vec4F MakePlane(Vec3F const &a, Vec3F const &b, Vec3F const &c) {
 }
 
 inline Vec3F IntersectPlanes(Vec4F const &p1, Vec4F const &p2,
-  Vec4F const &p3) {
+    Vec4F const &p3) {
   const float den = Dot(p1.xyz(), Cross(p2.xyz(), p3.xyz()));
 
   if (den == 0.0f) {

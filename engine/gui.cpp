@@ -72,7 +72,7 @@ void Panel::SetPos(Vec2Si32 pos) {
   pos_ = pos;
 }
 
-void Panel::SetBackground(easy::Sprite background) {
+void Panel::SetBackground(easy::Sprite &background) {
   background_ = background;
 }
 
