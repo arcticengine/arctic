@@ -64,7 +64,7 @@ class Sprite {
   void Save(const char *file_name);
   void Save(const std::string &file_name);
   void Create(const Si32 width, const Si32 height);
-  void Reference(Sprite from, const Si32 from_x, const Si32 from_y,
+  void Reference(Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height);
   void Clear();
   void Clear(Rgba color);

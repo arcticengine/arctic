@@ -93,21 +93,21 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
           }
         } else if (kBlendingMode == kColorize) {
           Rgba color = tex_data[offset];
-          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
           if (ca == 255) {
-            Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
-            Ui32 g2 = Ui32(color.g) * (Ui32(in_color.g) + 1) >> 8;
-            Ui32 b2 = Ui32(color.b) * (Ui32(in_color.b) + 1) >> 8;
+            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
+            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8;
+            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8;
             p->rgba = Rgba(r2, g2, b2).rgba;
           } else if (ca) {
-            Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
             Ui32 m = 255 - ca;
             Ui32 rb = (p->rgba & 0x00ff00fful) * m;
             Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
             
             Ui32 m2 = ca;
             Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-            Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
             Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
             Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
             
@@ -154,21 +154,21 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
           }
         } else if (kBlendingMode == kColorize) {
           Rgba color = tex_data[offset];
-          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
           if (ca == 255) {
-            Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
-            Ui32 g2 = Ui32(color.g) * (Ui32(in_color.g) + 1) >> 8;
-            Ui32 b2 = Ui32(color.b) * (Ui32(in_color.b) + 1) >> 8;
+            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
+            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8;
+            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8;
             p->rgba = Rgba(r2, g2, b2).rgba;
           } else if (ca) {
-            Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
             Ui32 m = 255 - ca;
             Ui32 rb = (p->rgba & 0x00ff00fful) * m;
             Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
             
             Ui32 m2 = ca;
             Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-            Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
             Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
             Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
             
@@ -387,21 +387,21 @@ void DrawSprite(Sprite to_sprite,
             ((g + g2) & 0x0000ff00ul);
           }
         } else if (kBlendingMode == kColorize) {
-          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
           if (ca == 255) {
-            Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
-            Ui32 g2 = Ui32(color.g) * (Ui32(in_color.g) + 1) >> 8;
-            Ui32 b2 = Ui32(color.b) * (Ui32(in_color.b) + 1) >> 8;
+            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
+            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8;
+            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8;
             to_rgba->rgba = Rgba(r2, g2, b2).rgba;
           } else if (ca) {
-            Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
             Ui32 m = 255 - ca;
             Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
             Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
             
             Ui32 m2 = ca;
             Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-            Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
             Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
             Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
             
@@ -468,21 +468,21 @@ void DrawSprite(Sprite to_sprite,
             ((g + g2) & 0x0000ff00ul);
         }
       } else if (kBlendingMode == kColorize) {
-        Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+        Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
         if (ca == 255) {
-          Ui32 r2 = Ui32(color.r) * (Ui32(in_color.r) + 1) >> 8;
+          Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
           Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) & 0xff00;
           Ui32 b2 = ((Ui32(color.b) * (Ui32(in_color.b) + 1)) << 8) & 0xff0000;
           to_rgba->rgba = r2 | g2 | b2;
         } else if (ca) {
-          Ui32 ca = Ui32(color.a) * (Ui32(in_color.a) + 1) >> 8;
+          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
           Ui32 m = 255 - ca;
           Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
           Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
           
           Ui32 m2 = ca;
           Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-          Ui32 g2 = Ui32(color.g) * m2 * (Ui32(in_color.g) + 1) >> 8;
+          Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
           Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
           Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
           
@@ -570,7 +570,7 @@ void Sprite::Create(const Si32 width, const Si32 height) {
   Clear();
 }
 
-void Sprite::Reference(Sprite from, const Si32 from_x, const Si32 from_y,
+void Sprite::Reference(Sprite &from, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height) {
   ref_pos_ = Vec2Si32(
     from.ref_pos_.x + std::min(std::max(from_x, 0), from.ref_size_.x - 1),
