@@ -71,7 +71,7 @@ class Sprite {
   void Clone(Sprite from, CloneTransform transform = kCloneUntransformed);
   void SetPivot(Vec2Si32 pivot);
   Vec2Si32 Pivot() const;
-  void Draw(Sprite &to_sprite, const Si32 to_x, const Si32 to_y,
+  void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
     DrawBlendingMode blending_mode = kAlphaBlend,
     Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
@@ -104,7 +104,7 @@ class Sprite {
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-            Sprite &to_sprite, DrawBlendingMode blending_mode = kAlphaBlend,
+            Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to, float angle_radians,
             DrawBlendingMode blending_mode = kAlphaBlend,
@@ -120,7 +120,7 @@ class Sprite {
             DrawBlendingMode blending_mode = kAlphaBlend,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
-    float angle_radians, float zoom, Sprite &to_sprite,
+    float angle_radians, float zoom, Sprite to_sprite,
             DrawBlendingMode blending_mode = kAlphaBlend,
             Rgba in_color = Rgba(0xffffffff));
 

@@ -677,7 +677,7 @@ Vec2Si32 Sprite::Pivot() const {
   return pivot_;
 }
 
-void Sprite::Draw(Sprite &to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+void Sprite::Draw(Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   DrawBlendingMode blending_mode, Rgba color) {
   if (!sprite_instance_.get()) {
     return;
@@ -733,7 +733,7 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
 }
 
 void Sprite::Draw(const Si32 to_x, const Si32 to_y,
-    float angle_radians, float zoom, Sprite &to_sprite,
+    float angle_radians, float zoom, Sprite to_sprite,
     DrawBlendingMode blending_mode, Rgba in_color) {
   if (!sprite_instance_) {
     return;
@@ -823,7 +823,7 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-    Sprite &to_sprite, DrawBlendingMode blending_mode, Rgba in_color) {
+    Sprite to_sprite, DrawBlendingMode blending_mode, Rgba in_color) {
   switch (blending_mode) {
   default:
   case kCopyRgba:
