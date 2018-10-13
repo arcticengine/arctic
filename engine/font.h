@@ -177,13 +177,22 @@ struct Font {
   void AddGlyph(const Glyph &glyph);
   void AddGlyph(Ui32 codepoint, Si32 xadvance, easy::Sprite sprite);
   void Load(const char *file_name);
-  void DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
+  void DrawEvaluateSizeImpl(easy::Sprite to_sprite,
+    const char *text, bool do_keep_xadvance,
     Si32 x, Si32 y, TextOrigin origin,
     easy::DrawBlendingMode blending_mode,
     easy::DrawFilterMode filter_mode,
     Rgba color, const std::vector<Rgba> &palete, bool do_draw,
     Vec2Si32 *out_size);
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
+  void Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
+    const TextOrigin origin = kTextOriginBottom,
+    const easy::DrawBlendingMode blending_mode = easy::kAlphaBlend,
+    const Rgba color = Rgba(0xffffffff));
+  void Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
+    const TextOrigin origin,
+    const easy::DrawBlendingMode blending_mode,
+    const std::vector<Rgba> &palete);
   void Draw(const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin = kTextOriginBottom,
     const easy::DrawBlendingMode blending_mode = easy::kAlphaBlend,

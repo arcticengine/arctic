@@ -320,7 +320,7 @@ void DrawSprite(Sprite to_sprite,
     return;
   }
   const Si32 from_stride_pixels = from_sprite.StridePixels();
-  const Si32 to_stride_pixels = to_sprite.Width();
+  const Si32 to_stride_pixels = to_sprite.StridePixels();
 
   if (to_width == from_width && to_height == from_height
       && !from_sprite.IsRef() && !from_sprite.Opaque().empty()) {
