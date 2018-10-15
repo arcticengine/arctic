@@ -123,6 +123,7 @@ bool CsvTable::ParseContent() {
     
     // if value(s) missing
     if (row->Size() != header_.size()) {
+      delete row;
       std::stringstream str;
       str << "corrupted data at line " << line_idx;
       error_description = str.str();
