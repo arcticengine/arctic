@@ -277,7 +277,7 @@ std::ostream &operator<<(std::ostream &os, const CsvRow &row) {
 std::ofstream &operator<<(std::ofstream &os, const CsvRow &row) {
   for (Ui32 i = 0; i != row.values_.size(); i++) {
     os << row.values_[i];
-    if (i < row.values_.size() - 1) {
+    if (i + 1 < row.values_.size()) {
       os << ",";
     }
   }
