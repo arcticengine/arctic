@@ -43,6 +43,7 @@ void Sound::Load(const char *file_name) {
 
 void Sound::Load(const char *file_name, bool do_unpack) {
   Clear();
+  file_name_ = file_name;
   Check(!!file_name, "Error in Sound::Load, file_name is nullptr.");
   const char *last_dot = strchr(file_name, '.');
   Check(!!last_dot, "Error in Sound::Load, file_name has no extension.");
@@ -85,6 +86,7 @@ void Sound::Load(const std::string &file_name, bool do_unpack) {
 
 void Sound::Create(double duration) {
   Clear();
+  file_name_ = "CREATE";
   double samples = duration * 44100.f + 0.5f;
   // TODO(Huldra): Handle overflows
   sound_instance_.reset(new SoundInstance(static_cast<Si32>(samples)));
@@ -96,6 +98,7 @@ void Sound::Create(double duration) {
 }
 
 void Sound::Clear() {
+  file_name_ = "CLEAR";
   if (vorbis_codec_) {
     stb_vorbis_close(vorbis_codec_);
     vorbis_codec_ = nullptr;
@@ -173,6 +176,14 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
       vorbis_codec_ = stb_vorbis_open_memory(
         sound_instance_->GetVorbisData(),
         sound_instance_->GetVorbisSize(), &error, nullptr);
+      if (!vorbis_codec_) {
+        Fatal((std::stringstream() << "StreamOut encountered error: " << error
+              << " while opening sound file: \"" << file_name_
+              << "\", vorbis data: "
+              << (sound_instance_->GetVorbisData() == nullptr ? "0" : "not 0")
+              << " size: " << sound_instance_->GetVorbisSize()).str().c_str());
+        return 0;
+      }
     }
     stb_vorbis_seek(vorbis_codec_, offset);
     int res = stb_vorbis_get_samples_short_interleaved(
@@ -184,7 +195,10 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
     return res;
   }
   }
-  Fatal("StreamOut encountered an unknown SoundDataFormat");
+  Fatal((std::stringstream()
+         << "StreamOut encountered unknown SoundDataFormat: "
+         << (Ui64)sound_instance_->GetFormat()
+         << " file: \"" << file_name_ << "\"").str().c_str());
   return 0;
 }
 
