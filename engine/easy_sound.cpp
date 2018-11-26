@@ -177,7 +177,8 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
         sound_instance_->GetVorbisData(),
         sound_instance_->GetVorbisSize(), &error, nullptr);
       if (!vorbis_codec_) {
-        Fatal((std::stringstream() << "StreamOut encountered error: " << error
+        Fatal(static_cast<const std::stringstream&>(std::stringstream()
+              << "StreamOut encountered error: " << error
               << " while opening sound file: \"" << file_name_
               << "\", vorbis data: "
               << (sound_instance_->GetVorbisData() == nullptr ? "0" : "not 0")
@@ -195,7 +196,7 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
     return res;
   }
   }
-  Fatal((std::stringstream()
+  Fatal(static_cast<const std::stringstream&>(std::stringstream()
          << "StreamOut encountered unknown SoundDataFormat: "
          << (Ui64)sound_instance_->GetFormat()
          << " file: \"" << file_name_ << "\"").str().c_str());
