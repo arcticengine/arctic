@@ -187,6 +187,7 @@ bool CsvTable::AddRow(Ui32 pos, const std::vector<std::string> &r) {
     content_.insert(content_.begin() + pos, row);
     return true;
   }
+  delete row;
   return false;
 }
 
