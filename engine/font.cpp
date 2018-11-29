@@ -318,7 +318,9 @@ void Font::Load(const char *file_name) {
 }
 
 void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
-    Si32 x, Si32 y, TextOrigin origin, easy::DrawBlendingMode blending_mode,
+    Si32 x, Si32 y, TextOrigin origin,
+    easy::DrawBlendingMode blending_mode,
+    easy::DrawFilterMode filter_mode,
     Rgba color, const std::vector<Rgba> &palete, bool do_draw,
     Vec2Si32 *out_size) {
   Si32 next_x = x;
@@ -331,7 +333,7 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
     } else {
       Vec2Si32 size;
       DrawEvaluateSizeImpl(text, do_keep_xadvance,
-        x, y, origin, blending_mode, color, palete, false,
+        x, y, origin, blending_mode, filter_mode, color, palete, false,
         &size);
       if (origin == kTextOriginBottom) {
         next_y = y + size.y - base_to_top_ + line_height_;
@@ -400,9 +402,11 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
         width += glyph->xadvance;
         if (do_draw) {
           if (palete.size()) {
-            glyph->sprite.Draw(next_x, next_y, blending_mode, palete[color_idx]);
+            glyph->sprite.Draw(next_x, next_y,
+               blending_mode, filter_mode, palete[color_idx]);
           } else {
-            glyph->sprite.Draw(next_x, next_y, blending_mode, color);
+            glyph->sprite.Draw(next_x, next_y,
+               blending_mode, filter_mode, color);
           }
           next_x += glyph->xadvance;
         }
@@ -414,26 +418,30 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
 Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
   Vec2Si32 size;
   DrawEvaluateSizeImpl(text, do_keep_xadvance,
-    0, 0, kTextOriginFirstBase, easy::kCopyRgba,
+    0, 0, kTextOriginFirstBase, easy::kCopyRgba, easy::kFilterNearest,
     Rgba(255, 255, 255), std::vector<Rgba>(), false,
     &size);
   return size;
 }
   
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
-    const TextOrigin origin,
-    const easy::DrawBlendingMode blending_mode,
-    const Rgba color) {
-  DrawEvaluateSizeImpl(text, false, x, y, origin, blending_mode, color,
-    std::vector<Rgba>(), true, nullptr);
+      const TextOrigin origin,
+      const easy::DrawBlendingMode blending_mode,
+      const easy::DrawFilterMode filter_mode,
+      const Rgba color) {
+  DrawEvaluateSizeImpl(text, false, x, y, origin,
+      blending_mode, filter_mode, color,
+      std::vector<Rgba>(), true, nullptr);
 }
 
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin,
     const easy::DrawBlendingMode blending_mode,
+    const easy::DrawFilterMode filter_mode,
     const std::vector<Rgba> &palete) {
-  DrawEvaluateSizeImpl(text, false, x, y, origin, blending_mode, palete[0],
-    palete, true, nullptr);
+  DrawEvaluateSizeImpl(text, false, x, y, origin,
+      blending_mode, filter_mode, palete[0],
+      palete, true, nullptr);
 }
 
 }  // namespace arctic

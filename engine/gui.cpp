@@ -411,10 +411,10 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
   if (palete_.size()) {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
-      origin_, easy::kColorize, palete_);
+      origin_, easy::kColorize, easy::kFilterNearest, palete_);
   } else {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
-      origin_, easy::kColorize, color_);
+      origin_, easy::kColorize, easy::kFilterNearest, color_);
   }
 }
 
@@ -664,7 +664,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   }
 
   font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
-    origin_, easy::kColorize, color_);
+    origin_, easy::kColorize, easy::kFilterNearest, color_);
 
   Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
   std::string left_part = text_.substr(0, cursor_pos);
