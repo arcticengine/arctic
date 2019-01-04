@@ -463,31 +463,35 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 }
 
 void ShowFrame() {
-    GetEngine()->Draw2d();
+  GetEngine()->Draw2d();
 
+  for (Si32 i = 0; i < kKeyCount; ++i) {
+    g_key_state[i].OnShowFrame();
+  }
+  InputMessage message;
+  g_mouse_pos_prev = g_mouse_pos;
+  g_mouse_wheel_delta = 0;
+  g_input_messages.clear();
+  while (PopInputMessage(&message)) {
+    if (message.kind == InputMessage::kKeyboard) {
+      g_key_state[message.keyboard.key].OnStateChange(
+        message.keyboard.key_state == 1);
+    } else if (message.kind == InputMessage::kMouse) {
+      message.mouse.backbuffer_pos =
+        GetEngine()->MouseToBackbuffer(message.mouse.pos);
+      g_mouse_pos = message.mouse.backbuffer_pos;
+      g_mouse_wheel_delta += message.mouse.wheel_delta;
+      if (message.keyboard.key != kKeyCount) {
+        g_key_state[message.keyboard.key].OnStateChange(
+          message.keyboard.key_state == 1);
+      }
+    }
     for (Si32 i = 0; i < kKeyCount; ++i) {
-      g_key_state[i].OnShowFrame();
+      message.keyboard.state[i] = g_key_state[i].IsDown() ? 1 : 0;
     }
-    InputMessage message;
-    g_mouse_pos_prev = g_mouse_pos;
-    g_mouse_wheel_delta = 0;
-    g_input_messages.clear();
-    while (PopInputMessage(&message)) {
-        g_input_messages.push_back(message);
-        if (message.kind == InputMessage::kKeyboard) {
-            g_key_state[message.keyboard.key].OnStateChange(
-                message.keyboard.key_state == 1);
-        } else if (message.kind == InputMessage::kMouse) {
-            Vec2Si32 pos = GetEngine()->MouseToBackbuffer(message.mouse.pos);
-            g_mouse_pos = pos;
-            g_mouse_wheel_delta += message.mouse.wheel_delta;
-            if (message.keyboard.key != kKeyCount) {
-                g_key_state[message.keyboard.key].OnStateChange(
-                    message.keyboard.key_state == 1);
-            }
-        }
-    }
-    g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
+    g_input_messages.push_back(message);
+  }
+  g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
 }
 
 bool IsKeyDownwardImpl(Ui32 key_code) {
@@ -744,7 +748,7 @@ void Sleep(double duration_seconds) {
 std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
     std::ifstream in(file_name, std::ios_base::in | std::ios_base::binary);
   std::vector<Ui8> data;
-  if (in.rdstate() == std::ios_base::failbit) {
+  if (in.rdstate() & std::ios_base::failbit) {
     if (is_bulletproof) {
       return data;
     }
@@ -753,7 +757,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
   }
   in.exceptions(std::ios_base::goodbit);
   in.seekg(0, std::ios_base::end);
-  if (in.rdstate() == std::ios_base::failbit) {
+  if (in.rdstate() & std::ios_base::failbit) {
     if (is_bulletproof) {
       in.close();
       return data;
@@ -772,7 +776,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
         file_name);
   }
   in.seekg(0, std::ios_base::beg);
-  if (in.rdstate() == std::ios_base::failbit) {
+  if (in.rdstate() & std::ios_base::failbit) {
     if (is_bulletproof) {
       in.close();
       return data;
@@ -784,19 +788,18 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
   if (static_cast<Ui64>(pos) > 0ull) {
     data.resize(static_cast<size_t>(pos));
     in.read(reinterpret_cast<char*>(data.data()), static_cast<Ui64>(pos));
-    if (in.rdstate() == (std::ios_base::failbit | std::ios_base::eofbit)
-        || in.rdstate() == std::ios_base::badbit
-        || in.rdstate() != std::ios_base::goodbit) {
+    if (in.rdstate() != std::ios_base::goodbit) {
       if (is_bulletproof) {
         in.close();
         data.clear();
         return data;
       }
-      Check(in.rdstate() != (std::ios_base::failbit | std::ios_base::eofbit),
+      Check((in.rdstate() & (std::ios_base::failbit | std::ios_base::eofbit))
+        != (std::ios_base::failbit | std::ios_base::eofbit),
           "Error in ReadFile."
           " Can't read the data, eofbit is set, file_name: ",
           file_name);
-      Check(in.rdstate() != std::ios_base::badbit,
+      Check(!(in.rdstate() & std::ios_base::badbit),
           "Error in ReadFile."
           " Can't read the data, badbit is set, file_name: ",
           file_name);
@@ -807,7 +810,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
     }
   }
   in.close();
-  Check(in.rdstate() != std::ios_base::failbit || is_bulletproof,
+  Check(!(in.rdstate() & std::ios_base::failbit) || is_bulletproof,
       "Error in ReadFile. Can't close the file, file_name: ",
       file_name);
   return data;
@@ -816,7 +819,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
     std::ofstream out(file_name,
         std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-    Check(out.rdstate() != std::ios_base::failbit,
+    Check(!(out.rdstate() & std::ios_base::failbit),
         "Error in WriteFile. Can't create/open the file, file_name: ",
         file_name);
     out.exceptions(std::ios_base::goodbit);

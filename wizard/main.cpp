@@ -712,7 +712,7 @@ bool ShowUpdateProgress() {
                 if (EndsWith(entry.title, std::string(".cpp"))) {
                   new_buildfiles << "\t\t" << uid_buildfile
                     << " /* " << entry.title << " in Sources */ = {"
-                    << "isa = PBXBuildFile; fileref = " << uid_file
+                    << "isa = PBXBuildFile; fileRef = " << uid_file
                     << " /* " << entry.title << " */; };\n";
                 }
 

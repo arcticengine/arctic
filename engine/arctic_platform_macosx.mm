@@ -83,7 +83,9 @@ static NSApplication *g_app = nil;
 static ArcticAppDelegate *g_app_delegate = nil;
 
 static bool g_is_full_screen = false;
-
+static bool g_is_cursor_desired_visible = true;
+static bool g_is_cursor_set_visible = true;
+static bool g_is_cursor_in_bounds = false;
 
 @implementation ArcticAppDelegate
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:
@@ -214,6 +216,13 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
   //    if (is_command != was_command) {
   //        PushInputKey(kKeyControl, is_command);
   //    }
+
+  was_caps_lock = is_caps_lock;
+  was_shift = is_shift;
+  was_control = is_control;
+  was_option = is_option;
+  //was_command = is_command;
+
 }
 
 - (void) keyDown: (NSEvent *)theEvent {
@@ -252,6 +261,10 @@ isScroll: (bool)is_scroll {
 
   arctic::Vec2F pos((float)loc_rect.origin.x / (float)rect.size.width,
       (float)loc_rect.origin.y / (float)rect.size.height);
+  
+  g_is_cursor_in_bounds = (pos.x >= 0.0f && pos.y >= 0.0f &&
+    pos.x <= 1.0f && pos.y <= 1.0f);
+  arctic::SetCursorVisible(g_is_cursor_desired_visible);
 
   arctic::InputMessage msg;
   msg.kind = arctic::InputMessage::kMouse;
@@ -870,6 +883,26 @@ void SetFullScreen(bool is_enable) {
   [g_app_delegate fullScreenToggle: nil];
 }
   
+bool IsCursorVisible() {
+  return g_is_cursor_desired_visible;
+}
+  
+void SetCursorVisible(bool is_enable) {
+  g_is_cursor_desired_visible = is_enable;
+  bool next_is_visible = (g_is_cursor_desired_visible ||
+    !g_is_cursor_in_bounds);
+  if (next_is_visible == g_is_cursor_set_visible) {
+    return;
+  }
+  g_is_cursor_set_visible = next_is_visible;
+  if (g_is_cursor_set_visible) {
+    [NSCursor unhide];
+  } else {
+    [NSCursor hide];
+  }
+  
+}
+  
 Trivalent DoesDirectoryExist(const char *path) {
   struct stat info;
   if (stat(path, &info) != 0) {
@@ -968,10 +1001,10 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   if (matching == from_abs.size() && matching == to_abs.size()) {
     return "./";
   }
-  // TODO(Huldra): check for the case where whole from path is a prefix of
-  // the to path and the first extra character of the to path is '/'.
-  // TODO(Huldra): check for the case where whole to path is a prefix of
-  // the from path and the first extra character of the from path is /
+  // TODO(Huldra): check for the case where whole 'from' path is a prefix of
+  // the 'to' path and the first extra character of the 'to' path is '/'.
+  // TODO(Huldra): check for the case where whole 'to' path is a prefix of
+  // the 'from' path and the first extra character of the 'from' path is '/'.
   while (matching && from_abs[matching - 1] != '/') {
     --matching;
   }

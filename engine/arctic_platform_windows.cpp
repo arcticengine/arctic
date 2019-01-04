@@ -105,8 +105,12 @@ void Fatal(const char *message, const char *message_postfix) {
     strlen(message) +
     (message_postfix ? strlen(message_postfix) : 0);
   char *full_message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
-  sprintf_s(full_message, size, "%s%s", message,
-    (message_postfix ? message_postfix : ""));
+  if (!full_message) {
+    full_message = "Not enough memroy to report a fatal error!";
+  } else {
+    sprintf_s(full_message, size, "%s%s", message,
+      (message_postfix ? message_postfix : ""));
+  }
   Log(full_message);
   StopLogger();
   MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
@@ -135,9 +139,13 @@ static void FatalWithLastError(const char* message_prefix,
     (message_infix ? strlen(message_infix) : 0) +
     (message_postfix ? strlen(message_postfix) : 0);
   message = static_cast<char *>(LocalAlloc(LMEM_ZEROINIT, size));
-  sprintf_s(message, size, "%s%s%s%s", message_prefix, message_info,
-    (message_infix ? message_infix : ""),
-    (message_postfix ? message_postfix : ""));
+  if (message) {
+    sprintf_s(message, size, "%s%s%s%s", message_prefix, message_info,
+      (message_infix ? message_infix : ""),
+      (message_postfix ? message_postfix : ""));
+  } else {
+    message = "Not enough memory to report details on a fatal error!";
+  }
   Fatal(message);
 }
 
@@ -176,7 +184,8 @@ SystemInfo g_system_info;
 static bool g_is_full_screen = false;
 static Si32 g_window_width = 0;
 static Si32 g_window_height = 0;
-
+static std::atomic<bool> g_is_cursor_desired = true;
+static std::atomic<bool> g_is_cursor_visible = true;
 
 KeyCode TranslateKeyCode(WPARAM word_param) {
   if (word_param >= 'A' && word_param <= 'Z') {
@@ -303,6 +312,9 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = 0;
   PushInputMessage(msg);
+  if (!g_is_cursor_visible) {
+    SetCursor(NULL);
+  }
 }
 
 void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
@@ -321,7 +333,7 @@ void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = kKeyCount;
-  msg.keyboard.key_state = false;
+  msg.keyboard.key_state = 0;
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = z_delta;
   PushInputMessage(msg);
@@ -359,6 +371,21 @@ void SetFullScreen(bool is_enable) {
     client_rect.right - client_rect.left,
     client_rect.bottom - client_rect.top,
     SWP_NOZORDER);
+}
+
+bool IsCursorVisible() {
+  return g_is_cursor_desired;
+}
+
+void SetCursorVisible(bool is_enable) {
+  g_is_cursor_desired = is_enable;
+  if (g_is_cursor_visible != is_enable) {
+    ShowCursor(is_enable);
+    g_is_cursor_visible = is_enable;
+  }
+  if (!g_is_cursor_visible) {
+    SetCursor(NULL);
+  }
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
@@ -557,6 +584,7 @@ struct SoundBuffer {
 struct SoundMixerState {
   float master_volume = 0.7f;
   std::vector<SoundBuffer> buffers;
+  std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);
 };
 SoundMixerState g_sound_mixer_state;
 
@@ -642,9 +670,8 @@ void SoundMixerThreadFunction() {
   Check(result == MMSYSERR_NOERROR, "Error in SoundMixerThreadFunction");
 
   int cur_buffer_idx = 0;
-  bool do_continue = true;
   timeBeginPeriod(1);
-  while (do_continue) {
+  while (!g_sound_mixer_state.do_quit) {
     while (!(wave_headers[cur_buffer_idx].dwFlags & WHDR_DONE)) {
       Sleep(0);
     }
@@ -976,6 +1003,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   }
 
   LocalFree(args);
+  arctic::g_sound_mixer_state.do_quit = true;
+  sound_thread.join();
+
   arctic::StopLogger();
   ExitProcess(0);
   //    engine_thread.join();

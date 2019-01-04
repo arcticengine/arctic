@@ -160,11 +160,30 @@ Ui32 Utf32Reader::ReadOne() {
     p++;
   }
 }
+  
+void Font::CreateEmpty(Si32 base_to_top, Si32 line_height) {
+  codepoint_.clear();
+  glyph_.clear();
+  base_to_top_ = base_to_top;
+  base_to_bottom_ = line_height - base_to_top;
+  line_height_ = line_height;
+}
+
+void Font::AddGlyph(const Glyph &glyph) {
+  AddGlyph(glyph.codepoint, glyph.xadvance, glyph.sprite);
+}
+  
+void Font::AddGlyph(Ui32 codepoint, Si32 xadvance, easy::Sprite sprite) {
+  glyph_.emplace_back(codepoint, xadvance, sprite);
+  if (codepoint >= codepoint_.size()) {
+    codepoint_.resize(codepoint + 1, nullptr);
+  }
+  codepoint_[codepoint] = &glyph_.back();
+}
 
 void Font::Load(const char *file_name) {
-  codepoint.clear();
-  glyph.clear();
-
+  codepoint_.clear();
+  glyph_.clear();
 
   std::vector<Ui8> file = easy::ReadFile(file_name);
   Si32 pos = 0;
@@ -197,9 +216,9 @@ void Font::Load(const char *file_name) {
   BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[pos]);
   common->Log();
 
-  base_to_top = common->base;
-  base_to_bottom = common->line_height - common->base;
-  line_height = common->line_height;
+  base_to_top_ = common->base;
+  base_to_bottom_ = common->line_height - common->base;
+  line_height_ = common->line_height;
 
   pos += block_size;
 
@@ -262,7 +281,7 @@ void Font::Load(const char *file_name) {
     sprite.UpdateOpaqueSpans();
     sprite.SetPivot(arctic::Vec2Si32(
       chars->xoffset, chars->height + chars->yoffset - common->base));
-    glyph.emplace_back(chars->id, chars->xadvance, sprite);
+    glyph_.emplace_back(chars->id, chars->xadvance, sprite);
 
     inner_pos += 20;
   }
@@ -287,34 +306,37 @@ void Font::Load(const char *file_name) {
   }
 
   Ui32 end_codepoint = 0;
-  for (auto it = glyph.begin(); it != glyph.end(); ++it) {
+  for (auto it = glyph_.begin(); it != glyph_.end(); ++it) {
     if (it->codepoint >= end_codepoint) {
       end_codepoint = it->codepoint + 1;
     }
   }
-  codepoint.resize(end_codepoint, nullptr);
-  for (auto it = glyph.begin(); it != glyph.end(); ++it) {
-    codepoint[it->codepoint] = &(*it);
+  codepoint_.resize(end_codepoint, nullptr);
+  for (auto it = glyph_.begin(); it != glyph_.end(); ++it) {
+    codepoint_[it->codepoint] = &(*it);
   }
 }
 
 void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
-  Si32 x, Si32 y, TextOrigin origin, bool do_draw,
-  Vec2Si32 *out_size) {
+    Si32 x, Si32 y, TextOrigin origin,
+    easy::DrawBlendingMode blending_mode,
+    easy::DrawFilterMode filter_mode,
+    Rgba color, const std::vector<Rgba> &palete, bool do_draw,
+    Vec2Si32 *out_size) {
   Si32 next_x = x;
   Si32 next_y = y;
   if (do_draw) {
     if (origin == kTextOriginTop) {
-      next_y = y - base_to_top + line_height;
+      next_y = y - base_to_top_ + line_height_;
     } else if (origin == kTextOriginFirstBase) {
-      next_y = y + line_height;
+      next_y = y + line_height_;
     } else {
       Vec2Si32 size;
       DrawEvaluateSizeImpl(text, do_keep_xadvance,
-        x, y, origin, false,
+        x, y, origin, blending_mode, filter_mode, color, palete, false,
         &size);
       if (origin == kTextOriginBottom) {
-        next_y = y + size.y - base_to_top + line_height;
+        next_y = y + size.y - base_to_top_ + line_height_;
       } else if (origin == kTextOriginLastBase) {
         next_y = y + size.y;
       }
@@ -327,6 +349,7 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
   Ui32 prev_code = 0;
   bool is_newline = false;
   Si32 newline_count = 1;
+  Ui32 color_idx = 0;
   Utf32Reader reader;
   reader.Reset(reinterpret_cast<const Ui8*>(text));
   Glyph *glyph = nullptr;
@@ -338,7 +361,7 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
       }
       max_width = std::max(max_width, width);
       if (out_size) {
-        *out_size = Vec2Si32(max_width, lines * line_height);
+        *out_size = Vec2Si32(max_width, lines * line_height_);
       }
       return;
     }
@@ -356,7 +379,13 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
       }
     } else {
       is_newline = false;
-      if (code < codepoint.size() && codepoint[code]) {
+      if (code >= 1 && code <= 8) {
+        color_idx = code;
+        if (color_idx >= palete.size()) {
+          color_idx = 0;
+          // TODO(Huldra): Log error here
+        }
+      } else if (code < codepoint_.size() && codepoint_[code]) {
         if (newline_count) {
           if (glyph && !do_keep_xadvance) {
             width += glyph->sprite.Width() - glyph->xadvance;
@@ -365,14 +394,20 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
           width = 0;
           next_x = x;
           lines += newline_count;
-          next_y -= newline_count * line_height;
+          next_y -= newline_count * line_height_;
           newline_count = 0;
         }
 
-        glyph = codepoint[code];
+        glyph = codepoint_[code];
         width += glyph->xadvance;
         if (do_draw) {
-          glyph->sprite.Draw(next_x, next_y);
+          if (palete.size()) {
+            glyph->sprite.Draw(next_x, next_y,
+               blending_mode, filter_mode, palete[color_idx]);
+          } else {
+            glyph->sprite.Draw(next_x, next_y,
+               blending_mode, filter_mode, color);
+          }
           next_x += glyph->xadvance;
         }
       }
@@ -383,19 +418,30 @@ void Font::DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
 Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
   Vec2Si32 size;
   DrawEvaluateSizeImpl(text, do_keep_xadvance,
-    0, 0, kTextOriginFirstBase, false,
+    0, 0, kTextOriginFirstBase, easy::kCopyRgba, easy::kFilterNearest,
+    Rgba(255, 255, 255), std::vector<Rgba>(), false,
     &size);
   return size;
 }
-
-void Font::Draw(const char *text, const Si32 x, const Si32 y) {
-  DrawEvaluateSizeImpl(text, false, x, y,
-    kTextOriginBottom, true, nullptr);
+  
+void Font::Draw(const char *text, const Si32 x, const Si32 y,
+      const TextOrigin origin,
+      const easy::DrawBlendingMode blending_mode,
+      const easy::DrawFilterMode filter_mode,
+      const Rgba color) {
+  DrawEvaluateSizeImpl(text, false, x, y, origin,
+      blending_mode, filter_mode, color,
+      std::vector<Rgba>(), true, nullptr);
 }
 
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
-  TextOrigin origin) {
-  DrawEvaluateSizeImpl(text, false, x, y, origin, true, nullptr);
+    const TextOrigin origin,
+    const easy::DrawBlendingMode blending_mode,
+    const easy::DrawFilterMode filter_mode,
+    const std::vector<Rgba> &palete) {
+  DrawEvaluateSizeImpl(text, false, x, y, origin,
+      blending_mode, filter_mode, palete[0],
+      palete, true, nullptr);
 }
 
 }  // namespace arctic

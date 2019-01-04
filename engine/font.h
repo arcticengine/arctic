@@ -167,20 +167,33 @@ enum TextOrigin {
 };
 
 struct Font {
-  std::vector<Glyph*> codepoint;
-  std::list<Glyph> glyph;
-  Si32 base_to_top = 0;
-  Si32 base_to_bottom = 0;
-  Si32 line_height = 0;
+  std::vector<Glyph*> codepoint_;
+  std::list<Glyph> glyph_;
+  Si32 base_to_top_ = 0;
+  Si32 base_to_bottom_ = 0;
+  Si32 line_height_ = 0;
 
+  void CreateEmpty(Si32 base_to_top, Si32 line_height);
+  void AddGlyph(const Glyph &glyph);
+  void AddGlyph(Ui32 codepoint, Si32 xadvance, easy::Sprite sprite);
   void Load(const char *file_name);
   void DrawEvaluateSizeImpl(const char *text, bool do_keep_xadvance,
-    Si32 x, Si32 y, TextOrigin origin, bool do_draw,
+    Si32 x, Si32 y, TextOrigin origin,
+    easy::DrawBlendingMode blending_mode,
+    easy::DrawFilterMode filter_mode,
+    Rgba color, const std::vector<Rgba> &palete, bool do_draw,
     Vec2Si32 *out_size);
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
-  void Draw(const char *text, const Si32 x, const Si32 y);
   void Draw(const char *text, const Si32 x, const Si32 y,
-    TextOrigin origin);
+    const TextOrigin origin = kTextOriginBottom,
+    const easy::DrawBlendingMode blending_mode = easy::kAlphaBlend,
+    const easy::DrawFilterMode filter_mode = easy::kFilterNearest,
+    const Rgba color = Rgba(0xffffffff));
+  void Draw(const char *text, const Si32 x, const Si32 y,
+    const TextOrigin origin,
+    const easy::DrawBlendingMode blending_mode,
+    const easy::DrawFilterMode filter_mode,
+    const std::vector<Rgba> &palete);
 };
 
 }  // namespace arctic
