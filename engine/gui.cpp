@@ -800,8 +800,8 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos, const InputMessage &messa
       }
     } else if (is_inside && !*in_out_is_applied) {
       *out_current_tab = shared_from_this();
-      is_current_tab_ = true;
       if (message.keyboard.state[kKeyMouseLeft] == 1) {
+        is_current_tab_ = true;
         *in_out_is_applied = true;
         if (state_ == kMiddleDragged) {
           Si32 drag_x = relative_pos.x - start_x_;

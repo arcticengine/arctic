@@ -85,7 +85,7 @@ bool CsvTable::LoadString(const std::string &data, char sep) {
 
 CsvTable::~CsvTable() {
   std::vector<CsvRow *>::iterator it;
-  for (it = content_.begin(); it != content_.end(); it++) {
+  for (it = content_.begin(); it != content_.end(); ++it) {
     delete *it;
   }
 }
@@ -101,16 +101,16 @@ bool CsvTable::ParseHeader() {
 
 bool CsvTable::ParseContent() {
   std::deque<std::string>::iterator it = original_file_.begin();
-  it++; // skip header
+  ++it; // skip header
   Si32 line_idx = 1;
-  for (; it != original_file_.end(); it++) {
+  for (; it != original_file_.end(); ++it) {
     bool quoted = false;
     Si32 token_start = 0;
     Ui32 i = 0;
     
     CsvRow *row = new CsvRow(header_);
     
-    for (; i != it->length(); i++) {
+    for (; i != it->length(); ++i) {
       if (it->at(i) == '"') {
         quoted = ((quoted) ? (false) : (true));
       } else if (it->at(i) == ',' && !quoted) {
@@ -123,6 +123,7 @@ bool CsvTable::ParseContent() {
     
     // if value(s) missing
     if (row->Size() != header_.size()) {
+      delete row;
       std::stringstream str;
       str << "corrupted data at line " << line_idx;
       error_description = str.str();
@@ -179,7 +180,7 @@ bool CsvTable::DeleteRow(Ui32 pos) {
 bool CsvTable::AddRow(Ui32 pos, const std::vector<std::string> &r) {
   CsvRow *row = new CsvRow(header_);
   
-  for (auto it = r.begin(); it != r.end(); it++) {
+  for (auto it = r.begin(); it != r.end(); ++it) {
     row->Push(*it);
   }
   
@@ -198,7 +199,7 @@ void CsvTable::SaveFile() const {
     
     // header
     Ui32 i = 0;
-    for (auto it = header_.begin(); it != header_.end(); it++) {
+    for (auto it = header_.begin(); it != header_.end(); ++it) {
       f << *it;
       if (i < header_.size() - 1) {
         f << ",";
@@ -208,7 +209,7 @@ void CsvTable::SaveFile() const {
       i++;
     }
     
-    for (auto it = content_.begin(); it != content_.end(); it++) {
+    for (auto it = content_.begin(); it != content_.end(); ++it) {
       f << **it << std::endl;
     }
     f.close();
@@ -237,7 +238,7 @@ void CsvRow::Push(const std::string &value) {
 bool CsvRow::Set(const std::string &key, const std::string &value) {
   std::vector<std::string>::const_iterator it;
   Si32 pos = 0;
-  for (it = header_.begin(); it != header_.end(); it++) {
+  for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
       values_[pos] = value;
       return true;
@@ -257,7 +258,7 @@ const std::string CsvRow::operator[](Ui32 value_position) const {
 const std::string CsvRow::operator[](const std::string &key) const {
   std::vector<std::string>::const_iterator it;
   Si32 pos = 0;
-  for (it = header_.begin(); it != header_.end(); it++) {
+  for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
       return values_[pos];
     }
@@ -267,16 +268,16 @@ const std::string CsvRow::operator[](const std::string &key) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const CsvRow &row) {
-  for (Ui32 i = 0; i != row.values_.size(); i++) {
+  for (Ui32 i = 0; i != row.values_.size(); ++i) {
     os << row.values_[i] << " | ";
   }
   return os;
 }
 
 std::ofstream &operator<<(std::ofstream &os, const CsvRow &row) {
-  for (Ui32 i = 0; i != row.values_.size(); i++) {
+  for (Ui32 i = 0; i != row.values_.size(); ++i) {
     os << row.values_[i];
-    if (i < row.values_.size() - 1) {
+    if (i + 1 < row.values_.size()) {
       os << ",";
     }
   }

@@ -320,7 +320,7 @@ void DrawSprite(Sprite to_sprite,
     return;
   }
   const Si32 from_stride_pixels = from_sprite.StridePixels();
-  const Si32 to_stride_pixels = to_sprite.Width();
+  const Si32 to_stride_pixels = to_sprite.StridePixels();
 
   if (to_width == from_width && to_height == from_height
       && !from_sprite.IsRef() && !from_sprite.Opaque().empty()) {
@@ -436,7 +436,7 @@ void DrawSprite(Sprite to_sprite,
   const Si32 to_x_d_max = to_sprite.Width() - to_x;
   const Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
 
-  const Si32 from_y_step_16 = 65535 * from_height / to_height;
+  const Si32 from_y_step_16 = 65536 * from_height / to_height;
   Si32 from_y_disp_0 = ((from_height * to_y_db) / to_height);
   Si32 from_y_acc_16 = 0;
   if (kFilterMode == kFilterBilinear) {
