@@ -188,10 +188,12 @@ struct Font {
   void Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin = kTextOriginBottom,
     const easy::DrawBlendingMode blending_mode = easy::kAlphaBlend,
+    const easy::DrawFilterMode filter_mode = easy::kFilterNearest,
     const Rgba color = Rgba(0xffffffff));
   void Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin,
     const easy::DrawBlendingMode blending_mode,
+    const easy::DrawFilterMode filter_mode,
     const std::vector<Rgba> &palete);
   void Draw(const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin = kTextOriginBottom,

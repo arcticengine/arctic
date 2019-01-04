@@ -429,18 +429,20 @@ Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
 void Font::Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin,
     const easy::DrawBlendingMode blending_mode,
+    const easy::DrawFilterMode filter_mode,
     const Rgba color) {
   DrawEvaluateSizeImpl(to_sprite,
-    text, false, x, y, origin, blending_mode, color,
+    text, false, x, y, origin, blending_mode, filter_mode, color,
     std::vector<Rgba>(), true, nullptr);
 }
 
 void Font::Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin,
     const easy::DrawBlendingMode blending_mode,
+    const easy::DrawFilterMode filter_mode,
     const std::vector<Rgba> &palete) {
   DrawEvaluateSizeImpl(to_sprite,
-    text, false, x, y, origin, blending_mode, palete[0],
+    text, false, x, y, origin, blending_mode, filter_mode, palete[0],
     palete, true, nullptr);
 }
   
