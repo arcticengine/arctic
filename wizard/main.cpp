@@ -414,6 +414,7 @@ bool ShowProgress() {
         }
         if (is_ok) {
           g_path = g_current_directory;
+          g_path.append("/..");
           g_path.append("/");
           g_path.append(g_project_name);
           g_progress.append(u8"Arctic Engine is detected.\n");

@@ -19,9 +19,9 @@ set(PROJECT_NAME template_project_name)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # Folders files
 set(DATA_DIR .)
-set(CPP_DIR_1 ../engine)
+set(CPP_DIR_1 ../arctic/engine)
 set(CPP_DIR_2 .)
-set(HEADER_DIR_1 ../engine)
+set(HEADER_DIR_1 ../arctic/engine)
 set(HEADER_DIR_2 .)
 
 file(GLOB_RECURSE RES_SOURCES "${DATA_DIR}/data/*")
@@ -62,6 +62,7 @@ add_definitions(
 ENDIF (APPLE)
 
 include_directories(${CMAKE_SOURCE_DIR}/..)
+include_directories(${CMAKE_SOURCE_DIR}/../arctic)
 
 ################# Flags ################
 # Defines Flags for Windows and Linux. #
