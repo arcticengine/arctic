@@ -107,6 +107,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4201</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>..\arctic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -124,6 +125,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4201</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>..\arctic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,6 +148,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CallingConvention>FastCall</CallingConvention>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\arctic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -171,6 +174,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CallingConvention>FastCall</CallingConvention>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..\arctic;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -184,52 +188,52 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\engine\arctic_input.h" />
-    <ClInclude Include="..\engine\arctic_math.h" />
-    <ClInclude Include="..\engine\arctic_platform.h" />
-    <ClInclude Include="..\engine\arctic_types.h" />
-    <ClInclude Include="..\engine\bound2f.h" />
-    <ClInclude Include="..\engine\bound3f.h" />
-    <ClInclude Include="..\engine\byte_array.h" />
-    <ClInclude Include="..\engine\easy.h" />
-    <ClInclude Include="..\engine\easy_sound.h" />
-    <ClInclude Include="..\engine\easy_sound_instance.h" />
-    <ClInclude Include="..\engine\easy_sprite.h" />
-    <ClInclude Include="..\engine\easy_sprite_instance.h" />
-    <ClInclude Include="..\engine\engine.h" />
-    <ClInclude Include="..\engine\font.h" />
-    <ClInclude Include="..\engine\frustum3f.h" />
-    <ClInclude Include="..\engine\log.h" />
-    <ClInclude Include="..\engine\mat22f.h" />
-    <ClInclude Include="..\engine\mat33f.h" />
-    <ClInclude Include="..\engine\mat44f.h" />
-    <ClInclude Include="..\engine\arctic_platform_def.h" />
-    <ClInclude Include="..\engine\opengl.h" />
-    <ClInclude Include="..\engine\rgb.h" />
-    <ClInclude Include="..\engine\rgba.h" />
-    <ClInclude Include="..\engine\scalar_math.h" />
-    <ClInclude Include="..\engine\vec2f.h" />
-    <ClInclude Include="..\engine\vec2si32.h" />
-    <ClInclude Include="..\engine\vec3f.h" />
-    <ClInclude Include="..\engine\vec3si32.h" />
-    <ClInclude Include="..\engine\vec4f.h" />
-    <ClInclude Include="..\engine\vec4si32.h" />
+    <ClInclude Include="..\arctic\engine\arctic_input.h" />
+    <ClInclude Include="..\arctic\engine\arctic_math.h" />
+    <ClInclude Include="..\arctic\engine\arctic_platform.h" />
+    <ClInclude Include="..\arctic\engine\arctic_types.h" />
+    <ClInclude Include="..\arctic\engine\bound2f.h" />
+    <ClInclude Include="..\arctic\engine\bound3f.h" />
+    <ClInclude Include="..\arctic\engine\byte_array.h" />
+    <ClInclude Include="..\arctic\engine\easy.h" />
+    <ClInclude Include="..\arctic\engine\easy_sound.h" />
+    <ClInclude Include="..\arctic\engine\easy_sound_instance.h" />
+    <ClInclude Include="..\arctic\engine\easy_sprite.h" />
+    <ClInclude Include="..\arctic\engine\easy_sprite_instance.h" />
+    <ClInclude Include="..\arctic\engine\engine.h" />
+    <ClInclude Include="..\arctic\engine\font.h" />
+    <ClInclude Include="..\arctic\engine\frustum3f.h" />
+    <ClInclude Include="..\arctic\engine\log.h" />
+    <ClInclude Include="..\arctic\engine\mat22f.h" />
+    <ClInclude Include="..\arctic\engine\mat33f.h" />
+    <ClInclude Include="..\arctic\engine\mat44f.h" />
+    <ClInclude Include="..\arctic\engine\arctic_platform_def.h" />
+    <ClInclude Include="..\arctic\engine\opengl.h" />
+    <ClInclude Include="..\arctic\engine\rgb.h" />
+    <ClInclude Include="..\arctic\engine\rgba.h" />
+    <ClInclude Include="..\arctic\engine\scalar_math.h" />
+    <ClInclude Include="..\arctic\engine\vec2f.h" />
+    <ClInclude Include="..\arctic\engine\vec2si32.h" />
+    <ClInclude Include="..\arctic\engine\vec3f.h" />
+    <ClInclude Include="..\arctic\engine\vec3si32.h" />
+    <ClInclude Include="..\arctic\engine\vec4f.h" />
+    <ClInclude Include="..\arctic\engine\vec4si32.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\engine\arctic_input.cpp" />
-    <ClCompile Include="..\engine\arctic_math.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_windows.cpp" />
-    <ClCompile Include="..\engine\byte_array.cpp" />
-    <ClCompile Include="..\engine\easy.cpp" />
-    <ClCompile Include="..\engine\easy_sound.cpp" />
-    <ClCompile Include="..\engine\easy_sound_instance.cpp" />
-    <ClCompile Include="..\engine\easy_sprite.cpp" />
-    <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
-    <ClCompile Include="..\engine\engine.cpp" />
-    <ClCompile Include="..\engine\font.cpp" />
-    <ClCompile Include="..\engine\log.cpp" />
+    <ClCompile Include="..\arctic\engine\arctic_input.cpp" />
+    <ClCompile Include="..\arctic\engine\arctic_math.cpp" />
+    <ClCompile Include="..\arctic\engine\arctic_platform_windows.cpp" />
+    <ClCompile Include="..\arctic\engine\byte_array.cpp" />
+    <ClCompile Include="..\arctic\engine\easy.cpp" />
+    <ClCompile Include="..\arctic\engine\easy_sound.cpp" />
+    <ClCompile Include="..\arctic\engine\easy_sound_instance.cpp" />
+    <ClCompile Include="..\arctic\engine\easy_sprite.cpp" />
+    <ClCompile Include="..\arctic\engine\easy_sprite_instance.cpp" />
+    <ClCompile Include="..\arctic\engine\engine.cpp" />
+    <ClCompile Include="..\arctic\engine\font.cpp" />
+    <ClCompile Include="..\arctic\engine\log.cpp" />
     <ClCompile Include="main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

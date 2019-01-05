@@ -414,6 +414,7 @@ bool ShowProgress() {
         }
         if (is_ok) {
           g_path = g_current_directory;
+          g_path.append("/..");
           g_path.append("/");
           g_path.append(g_project_name);
           g_progress.append(u8"Arctic Engine is detected.\n");
@@ -838,7 +839,15 @@ bool ShowUpdateProgress() {
         std::vector<Ui8> data = ReadFile(vs_project_full_name.c_str());
         data.push_back(0);
         std::string full_content(reinterpret_cast<char*>(data.data()));
-        
+       
+        std::string filter_name = "template_project_name.vcxproj.filters";
+        ReplaceAll("template_project_name", g_project_name, &filter_name);
+        std::string vs_filter_full_name = g_project_directory + "/" + filter_name;
+        std::vector<Ui8> filter_data = ReadFile(vs_filter_full_name.c_str());
+        filter_data.push_back(0);
+        std::string full_filter_content(
+          reinterpret_cast<char*>(filter_data.data()));
+
         {
           std::regex include_path_regex("<ClInclude Include=\"(.*)\" />");
           std::sregex_iterator next(full_content.begin(),
@@ -878,6 +887,8 @@ bool ShowUpdateProgress() {
         // find missing engine files
         std::stringstream new_h;
         std::stringstream new_cpp;
+        std::stringstream new_filter_h;
+        std::stringstream new_filter_cpp;
         for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
           if (entry.is_file == kTrivalentTrue
@@ -888,55 +899,108 @@ bool ShowUpdateProgress() {
             ReplaceAll("/", "\\", &rel_path);
             if (EndsWith(entry.title, std::string(".cpp"))) {
               new_cpp << "\n    <ClCompile Include=\"" << rel_path << "\" />";
+              new_filter_cpp << "\n      <Filter>engine</Filter>"
+                << "\n    </ClCompile>"
+                << "\n    <ClCompile Include=\"" << rel_path << "\">";
             } else {
               new_h << "\n    <ClInclude Include=\"" << rel_path << "\" />";
+              new_filter_h << "\n      <Filter>engine</Filter>"
+                << "\n    </ClInclude>"
+                << "\n    <ClInclude Include=\"" << rel_path << "\">";
             }
           }  // if .. entry is a file AND is missing from references
         }  // for ... entries
         
-        
+
         // save the resulting file
-        std::stringstream resulting_file;
-        std::size_t cursor = 0;
-        std::string engine_h_pattern =
-          "<ClInclude Include=\"..\\engine\\engine.h\" />";
-        std::size_t next_item =
-          full_content.find(engine_h_pattern);
-        if (next_item == std::string::npos) {
-          g_progress.append(u8"No engine.h in VS project!\nERROR.\n");
-          step = 100500;
-          break;
-        }
-        next_item += engine_h_pattern.size();
-        resulting_file << full_content.substr(cursor, next_item - cursor);
-        resulting_file << new_h.str();
-        
-        cursor = next_item;
-        std::string engine_cpp_pattern =
-          "<ClCompile Include=\"..\\engine\\engine.cpp\" />";
-        next_item = full_content.find(engine_cpp_pattern);
-        if (next_item == std::string::npos) {
-          g_progress.append(u8"No engine.cpp in VS project!\nERROR.\n");
-          step = 100500;
-          break;
-        }
-        if (next_item < cursor) {
-          g_progress.append(
-            u8"Out of order engine.cpp in VS project!\nERROR.\n");
-          step = 100500;
-          break;
-        }
-        next_item += engine_cpp_pattern.size();
-        resulting_file << full_content.substr(cursor, next_item - cursor);
-        resulting_file << new_cpp.str();
-        
-        cursor = next_item;
-        resulting_file << full_content.substr(cursor, std::string::npos);
+        {
+          std::string engine_h_pattern =
+            "<ClInclude Include=\"..\\arctic\\engine\\engine.h\" />";
+          std::string engine_cpp_pattern =
+            "<ClCompile Include=\"..\\arctic\\engine\\engine.cpp\" />";
 
-        WriteFile(vs_project_full_name.c_str(),
-          reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
-          resulting_file.str().size());
+          std::stringstream resulting_file;
+          std::size_t cursor = 0;
+          std::size_t next_item =
+            full_content.find(engine_h_pattern);
+          if (next_item == std::string::npos) {
+            g_progress.append(u8"No engine.h in VS project!\nERROR.\n");
+            step = 100500;
+            break;
+          }
+          next_item += engine_h_pattern.size();
+          resulting_file << full_content.substr(cursor, next_item - cursor);
+          resulting_file << new_h.str();
 
+          cursor = next_item;
+          next_item = full_content.find(engine_cpp_pattern);
+          if (next_item == std::string::npos) {
+            g_progress.append(u8"No engine.cpp in VS project!\nERROR.\n");
+            step = 100500;
+            break;
+          }
+          if (next_item < cursor) {
+            g_progress.append(
+              u8"Out of order engine.cpp in VS project!\nERROR.\n");
+            step = 100500;
+            break;
+          }
+          next_item += engine_cpp_pattern.size();
+          resulting_file << full_content.substr(cursor, next_item - cursor);
+          resulting_file << new_cpp.str();
+
+          cursor = next_item;
+          resulting_file << full_content.substr(cursor, std::string::npos);
+
+          WriteFile(vs_project_full_name.c_str(),
+            reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
+            resulting_file.str().size());
+        }
+
+        // save the resulting filter file
+        {
+          std::string engine_h_pattern =
+            "<ClInclude Include=\"..\\arctic\\engine\\engine.h\">";
+          std::string engine_cpp_pattern =
+            "<ClCompile Include=\"..\\arctic\\engine\\engine.cpp\">";
+
+          std::stringstream resulting_file;
+          std::size_t cursor = 0;
+          std::size_t next_item =
+            full_filter_content.find(engine_cpp_pattern);
+          if (next_item == std::string::npos) {
+            g_progress.append(u8"No engine.cpp in VS project filters!\nERROR.\n");
+            step = 100500;
+            break;
+          }
+          next_item += engine_cpp_pattern.size();
+          resulting_file << full_filter_content.substr(cursor, next_item - cursor);
+          resulting_file << new_filter_cpp.str();
+
+          cursor = next_item;
+          next_item = full_filter_content.find(engine_h_pattern);
+          if (next_item == std::string::npos) {
+            g_progress.append(u8"No engine.h in VS project filters!\nERROR.\n");
+            step = 100500;
+            break;
+          }
+          if (next_item < cursor) {
+            g_progress.append(
+              u8"Out of order engine.h in VS project filters!\nERROR.\n");
+            step = 100500;
+            break;
+          }
+          next_item += engine_h_pattern.size();
+          resulting_file << full_filter_content.substr(cursor, next_item - cursor);
+          resulting_file << new_filter_h.str();
+
+          cursor = next_item;
+          resulting_file << full_filter_content.substr(cursor, std::string::npos);
+
+          WriteFile(vs_filter_full_name.c_str(),
+            reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
+            resulting_file.str().size());
+        }
         g_progress.append(u8"Visual Studio project updated OK\n");
         g_progress.append(u8"All Done\n");
       }
