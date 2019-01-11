@@ -310,17 +310,17 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 }
 
 template<DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode>
-void DrawSprite(Sprite to_sprite,
+void DrawSprite(Sprite *to_sprite,
     const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 to_width, const Si32 to_height,
-    Sprite from_sprite, const Si32 from_x, const Si32 from_y,
+    Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
     Rgba in_color) {
   if (!from_width || !from_height || !to_width || !to_height) {
     return;
   }
   const Si32 from_stride_pixels = from_sprite.StridePixels();
-  const Si32 to_stride_pixels = to_sprite.StridePixels();
+  const Si32 to_stride_pixels = to_sprite->StridePixels();
 
   if (to_width == from_width && to_height == from_height
       && !from_sprite.IsRef() && !from_sprite.Opaque().empty()) {
@@ -329,7 +329,7 @@ void DrawSprite(Sprite to_sprite,
     const Si32 to_x = to_x_pivot - from_sprite.Pivot().x;
     const Si32 to_y = to_y_pivot - from_sprite.Pivot().y;
 
-    Rgba *to = to_sprite.RgbaData()
+    Rgba *to = to_sprite->RgbaData()
       + to_y * to_stride_pixels
       + to_x;
     const Rgba *from = from_sprite.RgbaData()
@@ -337,11 +337,11 @@ void DrawSprite(Sprite to_sprite,
       + from_x;
 
     const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
-    const Si32 to_y_d_max = to_sprite.Height() - to_y;
+    const Si32 to_y_d_max = to_sprite->Height() - to_y;
     const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
 
     const Si32 k_to_x_db = (to_x >= 0 ? 0 : -to_x);
-    const Si32 to_x_d_max = to_sprite.Width() - to_x;
+    const Si32 to_x_d_max = to_sprite->Width() - to_x;
     const Si32 k_to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
     const Si32 from_x_ab = k_to_x_db + from_x;
     const Si32 from_x_ae = k_to_x_de + from_x;
@@ -421,7 +421,7 @@ void DrawSprite(Sprite to_sprite,
   const Si32 to_y = to_y_pivot -
     from_sprite.Pivot().y * to_height / from_height;
 
-  Rgba *to = to_sprite.RgbaData()
+  Rgba *to = to_sprite->RgbaData()
     + to_y * to_stride_pixels
     + to_x;
   const Rgba *from = from_sprite.RgbaData()
@@ -429,11 +429,11 @@ void DrawSprite(Sprite to_sprite,
     + from_x;
 
   const Si32 to_y_db = (to_y >= 0 ? 0 : -to_y);
-  const Si32 to_y_d_max = to_sprite.Height() - to_y;
+  const Si32 to_y_d_max = to_sprite->Height() - to_y;
   const Si32 to_y_de = (to_height < to_y_d_max ? to_height : to_y_d_max);
 
   const Si32 to_x_db = (to_x >= 0 ? 0 : -to_x);
-  const Si32 to_x_d_max = to_sprite.Width() - to_x;
+  const Si32 to_x_d_max = to_sprite->Width() - to_x;
   const Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
 
   const Si32 from_y_step_16 = 65536 * from_height / to_height;
@@ -550,39 +550,39 @@ void DrawSprite(Sprite to_sprite,
 }
 
 template void DrawSprite<kCopyRgba, kFilterNearest>(
-  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
+  Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
 template void DrawSprite<kAlphaBlend, kFilterNearest>(
-  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
+  Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
 template void DrawSprite<kColorize, kFilterNearest>(
-  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
+  Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
 template void DrawSprite<kCopyRgba, kFilterBilinear>(
-  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
+  Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
 template void DrawSprite<kAlphaBlend, kFilterBilinear>(
-  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
+  Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
 template void DrawSprite<kColorize, kFilterBilinear>(
-  Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
-  Sprite from_sprite, const Si32 from_x, const Si32 from_y,
+  Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
 
@@ -761,21 +761,21 @@ void Sprite::Draw(Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot
     case kFilterNearest:
       switch (blending_mode) {
         case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterNearest>(to_sprite,
+          DrawSprite<kAlphaBlend, kFilterNearest>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(),
             color);
           break;
         case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterNearest>(to_sprite,
+          DrawSprite<kCopyRgba, kFilterNearest>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(),
             color);
           break;
         case kColorize:
-          DrawSprite<kColorize, kFilterNearest>(to_sprite,
+          DrawSprite<kColorize, kFilterNearest>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(),
@@ -786,19 +786,19 @@ void Sprite::Draw(Sprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot
     case kFilterBilinear:
       switch (blending_mode) {
         case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterBilinear>(to_sprite,
+          DrawSprite<kAlphaBlend, kFilterBilinear>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(), color);
           break;
         case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterBilinear>(to_sprite,
+          DrawSprite<kCopyRgba, kFilterBilinear>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(), color);
           break;
         case kColorize:
-          DrawSprite<kColorize, kFilterBilinear>(to_sprite,
+          DrawSprite<kColorize, kFilterBilinear>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(), color);
@@ -973,19 +973,19 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
       switch (blending_mode) {
         default:
         case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterNearest>(to_sprite,
+          DrawSprite<kCopyRgba, kFilterNearest>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
         case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterNearest>(to_sprite,
+          DrawSprite<kAlphaBlend, kFilterNearest>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
         case kColorize:
-          DrawSprite<kColorize, kFilterNearest>(to_sprite,
+          DrawSprite<kColorize, kFilterNearest>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
@@ -996,19 +996,19 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
       switch (blending_mode) {
         default:
         case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterBilinear>(to_sprite,
+          DrawSprite<kCopyRgba, kFilterBilinear>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
         case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterBilinear>(to_sprite,
+          DrawSprite<kAlphaBlend, kFilterBilinear>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
         case kColorize:
-          DrawSprite<kColorize, kFilterBilinear>(to_sprite,
+          DrawSprite<kColorize, kFilterBilinear>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
