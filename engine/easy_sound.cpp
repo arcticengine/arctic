@@ -111,11 +111,15 @@ void Sound::Play() {
 }
 
 void Sound::Play(float volume) {
-  arctic::StartSoundBuffer(*this, volume);
+  if (sound_instance_) {
+    arctic::StartSoundBuffer(*this, volume);
+  }
 }
 
 void Sound::Stop() {
-  arctic::StopSoundBuffer(*this);
+  if (sound_instance_) {
+    arctic::StopSoundBuffer(*this);
+  }
 }
 
 double Sound::Duration() const {
@@ -166,7 +170,7 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
       return 0;
     }
     Si32 to_copy = std::min(std::min(size, out_buffer_samples / 2),
-      sound_instance_->GetDurationSamples() / 2);
+      sound_instance_->GetDurationSamples() - offset);
     memcpy(out_buffer, data + offset * 2, to_copy * 4);
     return to_copy;
   }

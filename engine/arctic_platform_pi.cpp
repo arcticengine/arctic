@@ -604,6 +604,9 @@ float GetMasterVolume() {
   return g_sound_mixer_state.master_volume;
 }
 
+void ExitProgram() {
+  exit(0);
+}
 
 void Swap() {
   glFlush();

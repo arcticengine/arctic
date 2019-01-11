@@ -847,6 +847,10 @@ void PumpMessages() {
   }
 }
 
+void ExitProgram() {
+  [g_app terminate: nil];  // It will stop the logger
+}
+
 void Swap() {
   [[g_main_view openGLContext] flushBuffer];
   PumpMessages();
