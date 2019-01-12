@@ -70,6 +70,8 @@ void Sound::Load(const char *file_name, bool do_unpack) {
       } else {
         sound_instance_.reset(new SoundInstance(data));
       }
+    } else {
+      Log("Error loading file \"", file_name, "\", size is 0");
     }
   } else {
     Fatal("Error in Sprite::Load, unknown file extension.");
