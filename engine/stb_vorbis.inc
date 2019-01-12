@@ -4799,7 +4799,7 @@ int stb_vorbis_seek_frame(stb_vorbis *f, unsigned int sample_number)
       }
    }
    // the next frame will start with the sample
-   assert(f->current_loc == sample_number);
+ //  assert(f->current_loc == sample_number);
    return 1;
 }
 
@@ -4812,7 +4812,7 @@ int stb_vorbis_seek(stb_vorbis *f, unsigned int sample_number)
       int n;
       uint32 frame_start = f->current_loc;
       stb_vorbis_get_frame_float(f, &n, NULL);
-      assert(sample_number > frame_start);
+//      assert(sample_number > frame_start);
       assert(f->channel_buffer_start + (int) (sample_number-frame_start) <= f->channel_buffer_end);
       f->channel_buffer_start += (sample_number - frame_start);
    }
