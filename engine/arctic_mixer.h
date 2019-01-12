@@ -50,8 +50,8 @@ struct SoundMixerState {
   std::vector<SoundBuffer> buffers;
   // Mixer-only state end
 
-  std::atomic<Si64> buffer_starts = ATOMIC_VAR_INIT(0);
-  std::mutex mutex;
+  std::atomic<Si64> task_pushers = ATOMIC_VAR_INIT(0);
+  std::mutex task_mutex;
   // Mutex-protected state begin
   std::atomic<Ui64> task_count;
   std::deque<SoundBuffer> tasks;
@@ -59,18 +59,18 @@ struct SoundMixerState {
 
   void AddSoundTask(SoundBuffer &buffer) {
     while (true) {
-      Si64 starts = buffer_starts.load();
+      Si64 starts = task_pushers.load();
       if (starts >= 0) {
-        if (buffer_starts.compare_exchange_strong(starts, starts + 1)) {
+        if (task_pushers.compare_exchange_strong(starts, starts + 1)) {
           break;
         }
       }
     }
     {
-      std::lock_guard<std::mutex> lock(mutex);
+      std::lock_guard<std::mutex> lock(task_mutex);
       tasks.push_back(buffer);
     }
-    buffer_starts.fetch_add(-1);
+    task_pushers.fetch_add(-1);
     task_count.fetch_add(1);
   }
 
@@ -79,10 +79,10 @@ struct SoundMixerState {
       return;
     }
     Si64 exp = 0;
-    if (!buffer_starts.compare_exchange_strong(exp, -1)) {
+    if (!task_pushers.compare_exchange_strong(exp, -1)) {
       return;
     }
-    std::lock_guard<std::mutex> lock(mutex);
+    std::lock_guard<std::mutex> lock(task_mutex);
     for (Ui64 i = 0; i < tasks.size(); ++i) {
       SoundBuffer &task = tasks[i];
       switch (task.action) {
@@ -106,7 +106,7 @@ struct SoundMixerState {
     }
     tasks.clear();
     task_count.store(0);
-    buffer_starts.store(0);
+    task_pushers.store(0);
   }
 };
 

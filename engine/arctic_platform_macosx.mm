@@ -38,7 +38,6 @@
 #include <cmath>
 #include <fstream>
 #include <memory>
-#include <mutex>  // NOLINT
 #include <sstream>
 #include <thread>  // NOLINT
 #include <vector>
@@ -46,6 +45,7 @@
 #include "engine/engine.h"
 #include "engine/easy.h"
 #include "engine/arctic_input.h"
+#include "engine/arctic_mixer.h"
 #include "engine/arctic_platform.h"
 #include "engine/byte_array.h"
 #include "engine/log.h"
@@ -656,19 +656,9 @@ void CreateMainWindow() {
   }
 }
 
-static std::mutex g_sound_mixer_mutex;
-struct SoundBuffer {
-  easy::Sound sound;
-  float volume = 1.0f;
-  Si32 next_position = 0;
-};
-struct SoundMixerState {
-  float master_volume = 0.7f;
-  std::vector<SoundBuffer> buffers;
-};
 SoundMixerState g_sound_mixer_state;
 
-struct SoundMixer {
+struct SoundPlayer {
   AudioUnit output_unit = {0};
   std::vector<Si16> tmp;
   double starting_frame_count = 0.0;
@@ -676,7 +666,7 @@ struct SoundMixer {
 
   void Initialize();
   void Deinitialize();
-  ~SoundMixer() {
+  ~SoundPlayer() {
     Deinitialize();
   }
 };
@@ -694,41 +684,43 @@ OSStatus SoundRenderProc(void *inRefCon,
     UInt32 inBusNumber,
     UInt32 inNumberFrames,
     AudioBufferList *ioData) {
-  SoundMixer *mixer = (SoundMixer*)inRefCon;
+  SoundPlayer *mixer = (SoundPlayer*)inRefCon;
 
   Float32 *mixL = (Float32*)ioData->mBuffers[0].mData;
   Float32 *mixR = (Float32*)ioData->mBuffers[1].mData;
   memset(mixL, 0, inNumberFrames * sizeof(Float32));
   memset(mixR, 0, inNumberFrames * sizeof(Float32));
+  
+  g_sound_mixer_state.InputTasksToMixerThread();
 
-  float master_volume = 1.0f;
-  {
-    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-    master_volume = g_sound_mixer_state.master_volume / 32767.0;
-    for (Ui32 idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
-      SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
+  float master_volume = g_sound_mixer_state.master_volume.load() / 32767.0;
+  
+  for (Ui32 idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
+    SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
 
-      Ui32 size = inNumberFrames;
-      size = sound.sound.StreamOut(sound.next_position, inNumberFrames,
-          mixer->tmp.data(), inNumberFrames * 2);
-      Si16 *in_data = mixer->tmp.data();
-      for (Ui32 i = 0; i < size; ++i) {
-        mixL[i] += static_cast<Si32>(
-            static_cast<float>(in_data[i * 2]) * sound.volume);
-        mixR[i] += static_cast<Si32>(
-            static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
-        ++sound.next_position;
-      }
+    Si32 size = inNumberFrames;
+    if (mixer->tmp.size() < inNumberFrames * 2) {
+      mixer->tmp.resize(inNumberFrames * 2);
+    }
+    size = sound.sound.StreamOut(sound.next_position, inNumberFrames,
+        mixer->tmp.data(), inNumberFrames * 2);
+    Si16 *in_data = mixer->tmp.data();
+    for (Ui32 i = 0; i < size; ++i) {
+      mixL[i] += static_cast<Si32>(
+          static_cast<float>(in_data[i * 2]) * sound.volume);
+      mixR[i] += static_cast<Si32>(
+          static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
+    }
+    sound.next_position += size;
 
-      if (sound.next_position == sound.sound.DurationSamples()
-          || size == 0) {
-        sound.sound.GetInstance()->DecPlaying();
-        g_sound_mixer_state.buffers[idx] =
-          g_sound_mixer_state.buffers[
-          g_sound_mixer_state.buffers.size() - 1];
-        g_sound_mixer_state.buffers.pop_back();
-        --idx;
-      }
+    if (sound.next_position == sound.sound.DurationSamples()
+        || size == 0) {
+      sound.sound.GetInstance()->DecPlaying();
+      g_sound_mixer_state.buffers[idx] =
+        g_sound_mixer_state.buffers[
+        g_sound_mixer_state.buffers.size() - 1];
+      g_sound_mixer_state.buffers.pop_back();
+      --idx;
     }
   }
 
@@ -739,7 +731,7 @@ OSStatus SoundRenderProc(void *inRefCon,
   return noErr;
 }
 
-void SoundMixer::Initialize() {
+void SoundPlayer::Initialize() {
   if (is_initialized) {
     return;
   }
@@ -778,7 +770,7 @@ void SoundMixer::Initialize() {
   is_initialized = true;
 }
 
-void SoundMixer::Deinitialize() {
+void SoundPlayer::Deinitialize() {
   if (is_initialized) {
     AudioOutputUnitStop(output_unit);
     AudioUnitUninitialize(output_unit);
@@ -787,7 +779,6 @@ void SoundMixer::Deinitialize() {
   }
 }
 
-
 void StartSoundBuffer(easy::Sound sound, float volume) {
   if (sound.GetInstance()) {
     SoundBuffer buffer;
@@ -795,39 +786,30 @@ void StartSoundBuffer(easy::Sound sound, float volume) {
     buffer.volume = volume;
     buffer.next_position = 0;
     buffer.sound.GetInstance()->IncPlaying();
-    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-    g_sound_mixer_state.buffers.push_back(buffer);
+    buffer.action = SoundBuffer::kStart;
+    g_sound_mixer_state.AddSoundTask(buffer);
   }
 }
 
 void StopSoundBuffer(easy::Sound sound) {
   if (sound.GetInstance()) {
-    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-    for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
-      SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
-      if (buffer.sound.GetInstance() == sound.GetInstance()) {
-        buffer.sound.GetInstance()->DecPlaying();
-        if (idx != g_sound_mixer_state.buffers.size() - 1) {
-          g_sound_mixer_state.buffers[idx] =
-            g_sound_mixer_state.buffers[
-            g_sound_mixer_state.buffers.size() - 1];
-        }
-        g_sound_mixer_state.buffers.pop_back();
-        idx--;
-      }
-    }
+    SoundBuffer buffer;
+    buffer.sound = sound;
+    buffer.volume = 0.f;
+    buffer.next_position = 0;
+    buffer.action = SoundBuffer::kStop;
+    g_sound_mixer_state.AddSoundTask(buffer);
   }
 }
 
 void SetMasterVolume(float volume) {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  g_sound_mixer_state.master_volume = volume;
+  g_sound_mixer_state.master_volume.store(volume);
 }
 
 float GetMasterVolume() {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  return g_sound_mixer_state.master_volume;
+  return g_sound_mixer_state.master_volume.load();
 }
+
 
 void PumpMessages() {
   @autoreleasepool {
@@ -1039,7 +1021,7 @@ int main(int argc, char *argv[]) {
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
   arctic::easy::GetEngine()->Init(rect.size.width, rect.size.height);
 
-  arctic::SoundMixer mixer;
+  arctic::SoundPlayer mixer;
   mixer.Initialize();
 
   EasyMain();
