@@ -83,7 +83,7 @@ struct SoundMixerState {
       return;
     }
     std::lock_guard<std::mutex> lock(task_mutex);
-    for (Ui64 i = 0; i < tasks.size(); ++i) {
+    for (size_t i = 0; i < tasks.size(); ++i) {
       SoundBuffer &task = tasks[i];
       switch (task.action) {
       case SoundBuffer::kStart:
