@@ -579,22 +579,26 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
 SoundMixerState g_sound_mixer_state;
 
 void StartSoundBuffer(easy::Sound sound, float volume) {
-  SoundBuffer buffer;
-  buffer.sound = sound;
-  buffer.volume = volume;
-  buffer.next_position = 0;
-  buffer.sound.GetInstance()->IncPlaying();
-  buffer.action = SoundBuffer::kStart;
-  g_sound_mixer_state.AddSoundTask(buffer);
+  if (sound.GetInstance()) {
+    SoundBuffer buffer;
+    buffer.sound = sound;
+    buffer.volume = volume;
+    buffer.next_position = 0;
+    buffer.sound.GetInstance()->IncPlaying();
+    buffer.action = SoundBuffer::kStart;
+    g_sound_mixer_state.AddSoundTask(buffer);
+  }
 }
 
 void StopSoundBuffer(easy::Sound sound) {
-  SoundBuffer buffer;
-  buffer.sound = sound;
-  buffer.volume = 0.f;
-  buffer.next_position = 0;
-  buffer.action = SoundBuffer::kStop;
-  g_sound_mixer_state.AddSoundTask(buffer);
+  if (sound.GetInstance()) {
+    SoundBuffer buffer;
+    buffer.sound = sound;
+    buffer.volume = 0.f;
+    buffer.next_position = 0;
+    buffer.action = SoundBuffer::kStop;
+    g_sound_mixer_state.AddSoundTask(buffer);
+  }
 }
 
 void SetMasterVolume(float volume) {
