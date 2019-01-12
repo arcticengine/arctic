@@ -825,12 +825,11 @@ void StartSoundMixer() {
   err = snd_pcm_sw_params_current(g_data.handle, swparams);
   Check(err >= 0, "Can't determine current sw params for sound: ",
       snd_strerror(err));
-  err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams,
-      (g_data.buffer_size / g_data.period_size) * g_data.period_size);
+  err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams, 512);
   Check(err >= 0, "Can't set start threshold mode for sound: ",
       snd_strerror(err));
   err = snd_pcm_sw_params_set_avail_min(g_data.handle, swparams,
-      g_data.period_size);
+      512);
   Check(err >= 0, "Can't set avail min for sound: ", snd_strerror(err));
   err = snd_pcm_sw_params(g_data.handle, swparams);
   Check(err >= 0, "Can't set sw params for sound: ", snd_strerror(err));
