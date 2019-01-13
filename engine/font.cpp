@@ -188,7 +188,7 @@ void Font::Load(const char *file_name) {
   std::vector<Ui8> file = easy::ReadFile(file_name);
   Si32 pos = 0;
   BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
-  header->Log();
+  //header->Log();
   pos += sizeof(BmFontBinHeader);
 
   Si8 block_type = file[pos];
@@ -204,7 +204,7 @@ void Font::Load(const char *file_name) {
   memcpy(&info, &file[pos], sizeof(info) - sizeof(info.font_name));
   info.font_name = reinterpret_cast<char*>(
     &file[pos + sizeof(info) - sizeof(info.font_name)]);
-  info.Log();
+  //info.Log();
   pos += block_size;
 
   block_type = file[pos];
@@ -214,7 +214,7 @@ void Font::Load(const char *file_name) {
   Check(block_type == kBlockCommon, "Unexpected block type 2");
   Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
   BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[pos]);
-  common->Log();
+  //common->Log();
 
   base_to_top_ = common->base;
   base_to_bottom_ = common->line_height - common->base;
@@ -235,7 +235,7 @@ void Font::Load(const char *file_name) {
   for (Si32 id = 0; id < common->pages; ++id) {
     BmFontBinPages page;
     page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
-    page.Log(id);
+    //page.Log(id);
 
     char path[65536];
     const char *p = file_name;
@@ -270,7 +270,7 @@ void Font::Load(const char *file_name) {
   for (Si32 id = 0; id < block_size / 20; ++id) {
     BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(
       &file[inner_pos]);
-    chars->Log();
+    //chars->Log();
 
     easy::Sprite sprite0;
     sprite0.Reference(page_images[chars->page],
@@ -299,7 +299,7 @@ void Font::Load(const char *file_name) {
     for (Si32 id = 0; id < block_size / 10; ++id) {
       BmFontBinKerningPair *kerning_pair =
         reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
-      kerning_pair->Log();
+      //kerning_pair->Log();
       inner_pos += 10;
     }
     pos += block_size;
