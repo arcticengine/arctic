@@ -54,6 +54,9 @@ ENDIF (APPLE)
 
 #-D_DEBUG 
 IF (APPLE)
+add_definitions(
+  -DGL_SILENCE_DEPRECATION
+)
 ELSE (APPLE)
 add_definitions(
    -DGLX
