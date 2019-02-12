@@ -688,6 +688,13 @@ void Sprite::Clear(Rgba color) {
 }
 
 void Sprite::Clone(Sprite from, CloneTransform transform) {
+  if (!from.sprite_instance_.get()) {
+    sprite_instance_ = nullptr;
+    ref_pos_ = Vec2Si32(0, 0);
+    ref_size_ = Vec2Si32(0, 0);
+    pivot_ = Vec2Si32(0, 0);
+    return;
+  }
   if (transform == kCloneUntransformed) {
     Create(from.Width(), from.Height());
     from.Draw(0, 0, from.Width(), from.Height(),
@@ -935,6 +942,16 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
     from_x, from_y, from_width, from_height,
     GetEngine()->GetBackbuffer(), blending_mode, filter_mode, in_color);
 }
+  
+void Sprite::Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
+                  const Si32 to_width, const Si32 to_height,
+                  const Si32 from_x, const Si32 from_y,
+                  const Si32 from_width, const Si32 from_height,
+                  DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+  Draw(to_x, to_y, to_width, to_height,
+       from_x, from_y, from_width, from_height,
+       to_sprite, blending_mode, filter_mode, in_color);
+}
 
 void Sprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode,
     DrawFilterMode filter_mode, Rgba in_color) {
@@ -944,6 +961,13 @@ void Sprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode,
 void Sprite::Draw(Sprite to_sprite, const Vec2Si32 to_pos,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   Draw(to_sprite, to_pos.x, to_pos.y, blending_mode, filter_mode, in_color);
+}
+  
+void Sprite::Draw(Sprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+  Draw(to_sprite, to_pos.x, to_pos.y, to_size.x, to_size.y,
+       0, 0, ref_size_.x, ref_size_.y,
+       blending_mode, filter_mode, in_color);
 }
 
 void Sprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
@@ -1062,11 +1086,15 @@ const std::vector<SpanSi32> &Sprite::Opaque() const {
 }
 
 void Sprite::UpdateOpaqueSpans() {
-  sprite_instance_->UpdateOpaqueSpans();
+  if (sprite_instance_) {
+    sprite_instance_->UpdateOpaqueSpans();
+  }
 }
 
 void Sprite::ClearOpaqueSpans() {
-  sprite_instance_->ClearOpaqueSpans();
+  if (sprite_instance_) {
+    sprite_instance_->ClearOpaqueSpans();
+  }
 }
 
 }  // namespace easy

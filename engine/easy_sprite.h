@@ -96,9 +96,17 @@ class Sprite {
             DrawBlendingMode blending_mode = kAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
+  void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
+    const Si32 to_width, const Si32 to_height,
+    const Si32 from_x, const Si32 from_y,
+    const Si32 from_width, const Si32 from_height,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color);
   void Draw(Sprite to_sprite, const Vec2Si32 to_pos,
     DrawBlendingMode blending_mode = kAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
+    Rgba in_color = Rgba(0xffffffff));
+  void Draw(Sprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode,
     Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos,
             DrawBlendingMode blending_mode = kAlphaBlend,
