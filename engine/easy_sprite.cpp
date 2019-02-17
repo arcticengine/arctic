@@ -697,7 +697,7 @@ void Sprite::Clone(Sprite from, CloneTransform transform) {
   }
   if (transform == kCloneUntransformed) {
     Create(from.Width(), from.Height());
-    from.Draw(0, 0, from.Width(), from.Height(),
+    from.Draw(from.Pivot().x, from.Pivot().y, from.Width(), from.Height(),
       0, 0, from.Width(), from.Height(), *this, kCopyRgba);
     SetPivot(from.Pivot());
     UpdateOpaqueSpans();
