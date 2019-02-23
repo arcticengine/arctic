@@ -30,10 +30,10 @@ namespace arctic {
 void MathTables::Init() {
   cicrle_16_16_size_bits = 12;
   cicrle_16_16_mask = (1 << (cicrle_16_16_size_bits - 1)) - 1;
-  circle_16_16.resize(1 << (cicrle_16_16_size_bits - 1));
+  circle_16_16.resize(size_t(1 << (cicrle_16_16_size_bits - 1)));
   for (Si32 y = 0; y < (Si32)circle_16_16.size(); ++y) {
     double yy = double(y) / double(circle_16_16.size() - 1);
-    double xx = std::sqrt(1 - yy * yy);
+    double xx = std::sqrt(1.0 - yy * yy);
     Si32 x = Si32(xx * 65536.0);
     circle_16_16[y] = x;
   }
