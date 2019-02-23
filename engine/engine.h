@@ -32,6 +32,14 @@
 
 namespace arctic {
 
+struct MathTables {
+  std::vector<Si32> circle_16_16;
+  Si32 cicrle_16_16_size_bits = 0;
+  Si32 cicrle_16_16_mask = 0;
+  
+  void Init();
+};
+  
 class Engine {
  private:
   Si32 width_ = 0;
@@ -61,6 +69,8 @@ class Engine {
 
 
   bool is_inverse_y_ = false;
+  
+  MathTables math_tables_;
 
  public:
   void Init(Si32 width, Si32 height);
@@ -75,6 +85,9 @@ class Engine {
   void OnWindowResize(Si32 width, Si32 height);
   Vec2Si32 GetWindowSize() const;
   void SetInverseY(bool is_inverse);
+  MathTables &GetMathTables() {
+    return math_tables_;
+  }
 };
 
 }  // namespace arctic

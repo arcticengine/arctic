@@ -461,6 +461,83 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
         }
     }
 }
+  
+void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
+  Sprite back = GetEngine()->GetBackbuffer();
+  Vec2Si32 limit = back.Size();
+  Si32 x1 = std::max(std::min(ll.x, ur.x), 0);
+  Si32 x2 = std::min(std::max(ll.x, ur.x) + 1, limit.x);
+  Si32 y1 = std::max(std::min(ll.y, ur.y), 0);
+  Si32 y2 = std::min(std::max(ll.y, ur.y) + 1, limit.y);
+  if (x1 < x2 && y1 < y2) {
+    Rgba *data = back.RgbaData();
+    Si32 stride = back.StridePixels();
+    Rgba *p_begin = data + stride * y1 + x1;
+    Si32 w = x2 - x1;
+    Rgba *p = p_begin;
+    Si32 stride_rem = stride - w;
+    for (Si32 y = y1; y < y2; ++y) {
+      Rgba *p_end = p + w;
+      for (; p < p_end; ++p) {
+        p->rgba = color.rgba;
+      }
+      p += stride_rem;
+    }
+  }
+}
+
+void DrawCircle(Vec2Si32 c, Si32 r, Rgba color) {
+  DrawOval(c, Vec2Si32(r, r), color);
+}
+
+void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color) {
+  Sprite back = GetEngine()->GetBackbuffer();
+  Vec2Si32 limit = back.Size();
+  MathTables &tables = GetEngine()->GetMathTables();
+  
+  Rgba *data = back.RgbaData();
+  Si32 stride = back.StridePixels();
+  
+  if (r.x >= 0) {
+    // from c up
+    {
+      Si32 y1 = std::max(c.y, 0);
+      Si32 y2 = std::min(c.y + r.y + 1, limit.y);
+      if (y1 < y2) {
+        for (Si32 y = y1; y < y2; ++y) {
+          Si32 table_y = tables.cicrle_16_16_mask * (y - c.y) / (r.y + 1);
+          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16;
+          Si32 x1 = std::max(c.x - table_x, 0);
+          Si32 x2 = std::min(c.x + table_x + 1, limit.x);
+          Rgba *p = data + stride * y + x1;
+          Rgba *p_end = p + (x2 - x1);
+          for (; p < p_end; ++p) {
+            p->rgba = color.rgba;
+          }
+        }
+      }
+    }
+    
+    // from bottom to c
+    {
+      Si32 y1 = std::max(c.y - r.y, 0);
+      Si32 y2 = std::min(c.y, limit.y);
+      if (y1 < y2) {
+        for (Si32 y = y1; y < y2; ++y) {
+          Si32 table_y = tables.cicrle_16_16_mask * (c.y - y) / (r.y + 1);
+          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16;
+          Si32 x1 = std::max(c.x - table_x, 0);
+          Si32 x2 = std::min(c.x + table_x + 1, limit.x);
+          Rgba *p = data + stride * y + x1;
+          Rgba *p_end = p + (x2 - x1);
+          for (; p < p_end; ++p) {
+            p->rgba = color.rgba;
+          }
+        }
+      }
+    }
+  }
+}
 
 void ShowFrame() {
   GetEngine()->Draw2d();

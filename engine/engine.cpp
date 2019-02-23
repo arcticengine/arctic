@@ -27,6 +27,18 @@
 
 namespace arctic {
 
+void MathTables::Init() {
+  cicrle_16_16_size_bits = 12;
+  cicrle_16_16_mask = (1 << (cicrle_16_16_size_bits - 1)) - 1;
+  circle_16_16.resize(1 << (cicrle_16_16_size_bits - 1));
+  for (Si32 y = 0; y < circle_16_16.size(); ++y) {
+    double yy = double(y) / double(circle_16_16.size() - 1);
+    double xx = std::sqrt(1 - yy * yy);
+    Si32 x = Si32(xx * 65536.0);
+    circle_16_16[y] = x;
+  }
+}
+  
 void Engine::Init(Si32 width, Si32 height) {
   width_ = width;
   height_ = height;
@@ -44,6 +56,8 @@ void Engine::Init(Si32 width, Si32 height) {
   rnd_16_.seed(static_cast<Ui64>(ms + 1));
   rnd_32_.seed(static_cast<Ui64>(ms + 2));
   rnd_64_.seed(static_cast<Ui64>(ms + 3));
+  
+  math_tables_.Init();
 }
 
 void Engine::Draw2d() {

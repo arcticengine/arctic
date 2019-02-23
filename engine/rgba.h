@@ -52,6 +52,7 @@ struct Rgba {
     b = b_in;
     a = 255;
   }
+  // a = 255 is opaque, a = 0 is transparent.
   explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in, Ui8 a_in) {
     r = r_in;
     g = g_in;
@@ -65,7 +66,7 @@ struct Rgba {
     a = 255;
   }
   
-  /// rgba_in is 32 bits containing 0xAABBGGRR.
+  /// rgba_in is 32 bits containing 0xAABBGGRR. 0xff00ff00 is opaque green.
   explicit Rgba(Ui32 rgba_in) {
     rgba = rgba_in;
   }
