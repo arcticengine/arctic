@@ -131,7 +131,7 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
       "Error in LoadWav, subchunk_2_size is too small.");
 
   Check((wav->bits_per_sample == 8) || (wav->bits_per_sample == 16),
-      "Error in LoadTga, unsupported bits_per_sample.");
+      "Error in LoadWav, unsupported bits_per_sample.");
 
   std::shared_ptr<easy::SoundInstance> sound;
   Ui32 sample_count = wav->subchunk_2_size / wav->block_align;
