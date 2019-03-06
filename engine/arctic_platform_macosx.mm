@@ -386,7 +386,7 @@ void Fatal(const char *message, const char *message_postfix) {
 
   NSAlert *alert = [[NSAlert alloc] init];
   [alert addButtonWithTitle: @"OK"];
-  [alert setMessageText: @"Arctic Engine Error"];
+  [alert setMessageText: @"Fatal Error"];
   [alert setInformativeText:
     [[NSString alloc] initWithUTF8String: full_message]];
   [alert setAlertStyle: NSAlertStyleCritical];
