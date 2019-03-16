@@ -187,7 +187,7 @@ void Font::Load(const char *file_name) {
 
   std::vector<Ui8> file = easy::ReadFile(file_name);
   Si32 pos = 0;
-  BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
+  //BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
   //header->Log();
   pos += sizeof(BmFontBinHeader);
 
@@ -297,8 +297,8 @@ void Font::Load(const char *file_name) {
       "KerningPair block is too small");
     inner_pos = pos;
     for (Si32 id = 0; id < block_size / 10; ++id) {
-      BmFontBinKerningPair *kerning_pair =
-        reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
+      //BmFontBinKerningPair *kerning_pair =
+      //  reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
       //kerning_pair->Log();
       inner_pos += 10;
     }

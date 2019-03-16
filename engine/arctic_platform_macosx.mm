@@ -133,7 +133,7 @@ static bool g_is_cursor_in_bounds = false;
   
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
   arctic::easy::GetEngine()->OnWindowResize(
-      rect.size.width, rect.size.height);
+      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
 }
 @end
 
@@ -273,9 +273,9 @@ isScroll: (bool)is_scroll {
   msg.mouse.pos = pos;
   if (is_scroll) {
     if (event.hasPreciseScrollingDeltas) {
-      msg.mouse.wheel_delta = [event scrollingDeltaY];
+      msg.mouse.wheel_delta = (arctic::Si32)[event scrollingDeltaY];
     } else {
-      msg.mouse.wheel_delta = [event deltaY];
+      msg.mouse.wheel_delta = (arctic::Si32)[event deltaY];
     }
   } else {
     msg.mouse.wheel_delta = 0;
@@ -839,7 +839,7 @@ void Swap() {
 
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
   arctic::easy::GetEngine()->OnWindowResize(
-      rect.size.width, rect.size.height);
+      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
 }
 
 
@@ -1019,7 +1019,8 @@ int main(int argc, char *argv[]) {
   arctic::CreateMainWindow();
 
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-  arctic::easy::GetEngine()->Init(rect.size.width, rect.size.height);
+  arctic::easy::GetEngine()->Init((arctic::Si32)rect.size.width,
+                                  (arctic::Si32)rect.size.height);
 
   arctic::SoundPlayer mixer;
   mixer.Initialize();
