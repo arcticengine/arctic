@@ -486,6 +486,27 @@ void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   }
 }
 
+
+void SetPixel(Si32 x, Si32 y, Rgba color) {
+  Sprite back = GetEngine()->GetBackbuffer();
+  Rgba *data = back.RgbaData();
+  Si32 stride = back.StridePixels();
+  if (x >= 0 && x < back.Width() && y >= 0 && y < back.Height()) {
+    data[x + y * stride] = color;
+  }
+}
+
+Rgba GetPixel(Si32 x, Si32 y) {
+  Sprite back = GetEngine()->GetBackbuffer();
+  Rgba *data = back.RgbaData();
+  Si32 stride = back.StridePixels();
+  if (x >= 0 && x < back.Width() && y >= 0 && y < back.Height()) {
+    return data[x + y * stride];
+  } else {
+    return Rgba(0, 0, 0);
+  }
+}
+
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color) {
   DrawOval(c, Vec2Si32(r, r), color);
 }

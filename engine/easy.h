@@ -47,6 +47,8 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Rgba color_a, Rgba color_b, Rgba color_c);
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color);
+Rgba GetPixel(Si32 x, Si32 y);
+void SetPixel(Si32 x, Si32 y, Rgba color);
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color);
 void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color);
 
