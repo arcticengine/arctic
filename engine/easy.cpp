@@ -486,7 +486,6 @@ void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   }
 }
 
-
 void SetPixel(Si32 x, Si32 y, Rgba color) {
   Sprite back = GetEngine()->GetBackbuffer();
   Rgba *data = back.RgbaData();

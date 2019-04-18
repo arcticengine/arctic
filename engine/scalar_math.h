@@ -37,6 +37,11 @@ inline float Clamp(const float v, const float mi, const float ma) {
     return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
+inline float Lerp(float a, float b, float alpha) {
+  float d = a + ((b - a) * alpha);
+  return d;
+}
+
 }  // namespace arctic
 
 #endif  // ENGINE_SCALAR_MATH_H_
