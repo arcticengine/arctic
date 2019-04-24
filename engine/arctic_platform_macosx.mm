@@ -181,6 +181,7 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 }
 
 -(void) prepareOpenGL {
+    [super prepareOpenGL];
 }
 
 -(NSMenu *)menuForEvent: (NSEvent *)theEvent {
