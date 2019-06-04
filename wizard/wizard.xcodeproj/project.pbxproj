@@ -11,6 +11,7 @@
 		34436D0F1F6431CD004DD16E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34436D0E1F6431CD004DD16E /* Cocoa.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		34436D111F6431D3004DD16E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34436D101F6431D3004DD16E /* OpenGL.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		346399371F7C93AB007E37F2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 346399361F7C93AB007E37F2 /* AudioToolbox.framework */; };
+		3466640A22A71F2B00D2128B /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 3466640922A71F2B00D2128B /* arctic_platform_macosx_sound.mm */; };
 		346FB0DF201EACBE00CAD8E5 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 346FB0DE201EACBE00CAD8E5 /* log.cpp */; };
 		34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FB41F68AD73005ACF7B /* arctic_platform_windows.cpp */; };
 		34A37FDD1F68AD73005ACF7B /* easy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FB61F68AD73005ACF7B /* easy.cpp */; };
@@ -36,6 +37,7 @@
 		34436D0E1F6431CD004DD16E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		34436D101F6431D3004DD16E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		346399361F7C93AB007E37F2 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		3466640922A71F2B00D2128B /* arctic_platform_macosx_sound.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = arctic_platform_macosx_sound.mm; path = engine/arctic_platform_macosx_sound.mm; sourceTree = "<group>"; };
 		346FB0DD201EACBE00CAD8E5 /* log.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = log.h; path = ../engine/log.h; sourceTree = SOURCE_ROOT; };
 		346FB0DE201EACBE00CAD8E5 /* log.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = log.cpp; path = ../engine/log.cpp; sourceTree = SOURCE_ROOT; };
 		349C99CB205DE6CE00A2BCBD /* stb_vorbis.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; name = stb_vorbis.inc; path = ../engine/stb_vorbis.inc; sourceTree = SOURCE_ROOT; };
@@ -150,6 +152,7 @@
 		34A37FB21F68AD4E005ACF7B /* engine */ = {
 			isa = PBXGroup;
 			children = (
+				3466640922A71F2B00D2128B /* arctic_platform_macosx_sound.mm */,
 				349C99CB205DE6CE00A2BCBD /* stb_vorbis.inc */,
 				346FB0DE201EACBE00CAD8E5 /* log.cpp */,
 				346FB0DD201EACBE00CAD8E5 /* log.h */,
@@ -240,6 +243,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -273,6 +277,7 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				3466640A22A71F2B00D2128B /* arctic_platform_macosx_sound.mm in Sources */,
 				34A37FDF1F68AD73005ACF7B /* easy_sprite.cpp in Sources */,
 				34A37FE01F68AD73005ACF7B /* easy_sprite_instance.cpp in Sources */,
 				34A37FE41F68AD73005ACF7B /* byte_array.cpp in Sources */,

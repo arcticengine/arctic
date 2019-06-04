@@ -29,6 +29,26 @@
 
 namespace arctic {
 
+
+class SoundPlayerImpl;
+
+class SoundPlayer {
+public:
+  void Initialize();
+  void Deinitialize();
+  ~SoundPlayer();
+protected:
+  SoundPlayerImpl *impl = nullptr;
+};
+
+void StartSoundBuffer(easy::Sound sound, float volume);
+void StopSoundBuffer(easy::Sound sound);
+
+void SetMasterVolume(float volume);
+float GetMasterVolume();
+
+
+
 struct DirectoryEntry {
   std::string title; // entries own full name, like "pet" or "font.tga"
   Trivalent is_directory = kTrivalentUnknown;
@@ -46,11 +66,7 @@ bool IsFullScreen();
 void SetFullScreen(bool is_enable);
 bool IsCursorVisible();
 void SetCursorVisible(bool is_enable);
-void StartSoundBuffer(easy::Sound sound, float volume);
-void StopSoundBuffer(easy::Sound sound);
 
-void SetMasterVolume(float volume);
-float GetMasterVolume();
 
 Ui16 FromBe(Ui16 x);
 Si16 FromBe(Si16 x);
