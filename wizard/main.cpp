@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 - 2018 Huldra
+// Copyright (c) 2016 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -710,7 +710,9 @@ bool ShowUpdateProgress() {
                 new_hashes.insert(uid_buildfile);
                 
                 // add to PBXBuildFile
-                if (EndsWith(entry.title, std::string(".cpp"))) {
+                if (EndsWith(entry.title, std::string(".cpp")) ||
+                    EndsWith(entry.title, std::string(".c")) ||
+                    EndsWith(entry.title, std::string(".mm"))) {
                   new_buildfiles << "\t\t" << uid_buildfile
                     << " /* " << entry.title << " in Sources */ = {"
                     << "isa = PBXBuildFile; fileRef = " << uid_file
@@ -723,6 +725,8 @@ bool ShowUpdateProgress() {
                   << "isa = PBXFileReference; fileEncoding = 4;";
                 if (EndsWith(entry.title, std::string(".h"))) {
                   new_files << " lastKnownFileType = sourcecode.c.h;";
+                } else if (EndsWith(entry.title, std::string(".mm"))) {
+                  new_files << " lastKnownFileType = sourcecode.cpp.objcpp;";
                 } else {
                   new_files << " lastKnownFileType = sourcecode.cpp.cpp;";
                 }
@@ -740,7 +744,9 @@ bool ShowUpdateProgress() {
                   " /* " << entry.title << " */,";
                 
                 // add to PBXSourcesBuildPhase
-                if (EndsWith(entry.title, std::string(".cpp"))) {
+                if (EndsWith(entry.title, std::string(".cpp")) ||
+                    EndsWith(entry.title, std::string(".c")) ||
+                    EndsWith(entry.title, std::string(".mm"))) {
                   new_buildphase << "\n\t\t\t\t" << uid_buildfile
                     << " /* " << entry.title << " in Sources */,";
                 }
@@ -897,7 +903,8 @@ bool ShowUpdateProgress() {
               (g_project_directory).c_str(),
               (g_engine + "/" + entry.title).c_str());
             ReplaceAll("/", "\\", &rel_path);
-            if (EndsWith(entry.title, std::string(".cpp"))) {
+            if (EndsWith(entry.title, std::string(".cpp")) ||
+                EndsWith(entry.title, std::string(".c"))) {
               new_cpp << "\n    <ClCompile Include=\"" << rel_path << "\" />";
               new_filter_cpp << "\n      <Filter>engine</Filter>"
                 << "\n    </ClCompile>"
