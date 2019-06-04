@@ -226,7 +226,7 @@ static i64 secondsToFbxTime(double value)
 	return i64(value * 46186158000L);
 }
 
-
+/*
 static Vec3 operator*(const Vec3& v, float f)
 {
 	return {v.x * f, v.y * f, v.z * f};
@@ -237,7 +237,7 @@ static Vec3 operator+(const Vec3& a, const Vec3& b)
 {
 	return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
-
+*/
 
 template <int SIZE> static bool copyString(char (&destination)[SIZE], const char* source)
 {
@@ -628,8 +628,8 @@ static OptionalError<Element*> readElement(Cursor* cursor, u32 version)
 	OptionalError<u64> prop_length = readElementOffset(cursor, version);
 	if (prop_count.isError() || prop_length.isError()) return Error();
 
-	const char* sbeg = 0;
-	const char* send = 0;
+	//const char* sbeg = 0;
+	//const char* send = 0;
 	OptionalError<DataView> id = readShortString(cursor);
 	if (id.isError()) return Error();
 
@@ -965,7 +965,7 @@ static OptionalError<Element*> tokenize(const u8* data, size_t size, u32& versio
 	}
 }
 
-
+/*
 static void parseTemplates(const Element& root)
 {
 	const Element* defs = findChild(root, "Definitions");
@@ -983,7 +983,7 @@ static void parseTemplates(const Element& root)
 				if (subdef->id == "PropertyTemplate")
 				{
 					DataView prop1 = def->first_property->value;
-					DataView prop2 = subdef->first_property->value;
+					//DataView prop2 = subdef->first_property->value;
 					std::string key((const char*)prop1.begin, prop1.end - prop1.begin);
 					key += std::string((const char*)prop1.begin, prop1.end - prop1.begin);
 					templates[key] = subdef;
@@ -994,7 +994,7 @@ static void parseTemplates(const Element& root)
 		def = def->sibling;
 	}
 	// TODO
-}
+}*/
 
 
 struct Scene;
@@ -2598,6 +2598,9 @@ static bool parseObjects(const Element& root, Scene* scene)
 					node->bone_link_property = con.property;
 				}
 				break;
+      default:
+        Error::s_message = "Unexpected child, code 2602";
+        return false;
 		}
 
 		switch (parent->getType())
@@ -2615,7 +2618,12 @@ static bool parseObjects(const Element& root, Scene* scene)
 						}
 						mesh->geometry = (Geometry*)child;
 						break;
-					case Object::Type::MATERIAL: mesh->materials.push_back((Material*)child); break;
+					case Object::Type::MATERIAL:
+            mesh->materials.push_back((Material*)child);
+            break;
+          default:
+            Error::s_message = "Unexpected child, code 2625";
+            return false;
 				}
 				break;
 			}
@@ -2650,8 +2658,8 @@ static bool parseObjects(const Element& root, Scene* scene)
 					if (mat->textures[type])
 					{
 						break;// This may happen for some models (eg. 2 normal maps in use)
-						Error::s_message = "Invalid material";
-						return false;
+						//  Error::s_message = "Invalid material";
+						//  return false;
 					}
 
 					mat->textures[type] = (Texture*)child;
@@ -2715,6 +2723,9 @@ static bool parseObjects(const Element& root, Scene* scene)
 				}
 				break;
 			}
+      default:
+        Error::s_message = "Unexpected parent type, code 2727";
+        return false;
 		}
 	}
 
