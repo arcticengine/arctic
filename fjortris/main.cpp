@@ -150,11 +150,13 @@ void Update() {
 		StartNewTetramino();
 		return;
 	}
-	if (time - g_prev_time < 0.5) {
-		return;
-	}
-	g_prev_time = time;
-	g_dy = 1;
+	if (time - g_prev_time >= 0.5) {
+    g_dy = 1;
+    g_prev_time = time;
+  } else {
+    g_dy = 0;
+  }
+
 	if (g_dx && IsPositionOk(g_current_x + g_dx, g_current_y, g_current_orientation)) {
 		g_current_x += g_dx;
 		g_dy = 0;
