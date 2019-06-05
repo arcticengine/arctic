@@ -361,6 +361,11 @@ bool SelectProject() {
       is_done = true;
     }
     
+    std::vector<Rgba> palete;
+    palete.emplace_back((Ui32)0xffffffff);
+    palete.emplace_back((Ui32)0xffff9999);
+    palete.emplace_back((Ui32)0xffffffff);
+
     std::stringstream str;
     str << u8"The Snow Wizard\n\n"
     "Select an existing Arctic Engine project to update.\n\n"
@@ -376,11 +381,16 @@ bool SelectProject() {
       } else {
         str << "    ";
       }
+      if (entries[i].is_directory == kTrivalentTrue) {
+        str << "\x01";
+      }
       str << entries[i].title;
+      str << "\x02";
       str << "\n";
     }
     
-    g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop);
+    g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop,
+      easy::kColorize, easy::kFilterNearest, palete);
     ShowFrame();
     if (is_done) {
       return true;
@@ -897,19 +907,22 @@ bool ShowUpdateProgress() {
         std::stringstream new_filter_cpp;
         for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
-          if (entry.is_file == kTrivalentTrue
+          if (entry.is_file != kTrivalentFalse
               && existing_files.find(entry.title) == existing_files.end()) {
             std::string rel_path = RelativePathFromTo(
               (g_project_directory).c_str(),
               (g_engine + "/" + entry.title).c_str());
             ReplaceAll("/", "\\", &rel_path);
             if (EndsWith(entry.title, std::string(".cpp")) ||
-                EndsWith(entry.title, std::string(".c"))) {
+              EndsWith(entry.title, std::string(".c"))) {
               new_cpp << "\n    <ClCompile Include=\"" << rel_path << "\" />";
               new_filter_cpp << "\n      <Filter>engine</Filter>"
                 << "\n    </ClCompile>"
                 << "\n    <ClCompile Include=\"" << rel_path << "\">";
-            } else {
+            } else if (EndsWith(entry.title, std::string(".h")) ||
+                     EndsWith(entry.title, std::string(".inc")) ||
+                     EndsWith(entry.title, std::string(".mm")) ||
+                     EndsWith(entry.title, std::string(".hpp"))) {
               new_h << "\n    <ClInclude Include=\"" << rel_path << "\" />";
               new_filter_h << "\n      <Filter>engine</Filter>"
                 << "\n    </ClInclude>"
@@ -918,13 +931,19 @@ bool ShowUpdateProgress() {
           }  // if .. entry is a file AND is missing from references
         }  // for ... entries
         
+        std::string rel_engine_h_path = RelativePathFromTo(
+          (g_project_directory).c_str(),
+          (g_engine + "/engine.h").c_str());
+        std::string rel_engine_cpp_path = RelativePathFromTo(
+          (g_project_directory).c_str(),
+          (g_engine + "/engine.cpp").c_str());
 
         // save the resulting file
         {
           std::string engine_h_pattern =
-            "<ClInclude Include=\"..\\arctic\\engine\\engine.h\" />";
+            "<ClInclude Include=\"" + rel_engine_h_path + "\" />";
           std::string engine_cpp_pattern =
-            "<ClCompile Include=\"..\\arctic\\engine\\engine.cpp\" />";
+            "<ClCompile Include=\"" + rel_engine_cpp_path + "\" />";
 
           std::stringstream resulting_file;
           std::size_t cursor = 0;
@@ -967,9 +986,9 @@ bool ShowUpdateProgress() {
         // save the resulting filter file
         {
           std::string engine_h_pattern =
-            "<ClInclude Include=\"..\\arctic\\engine\\engine.h\">";
+            "<ClInclude Include=\"" + rel_engine_h_path + "\">";
           std::string engine_cpp_pattern =
-            "<ClCompile Include=\"..\\arctic\\engine\\engine.cpp\">";
+            "<ClCompile Include=\"" + rel_engine_cpp_path + "\">";
 
           std::stringstream resulting_file;
           std::size_t cursor = 0;
