@@ -3,134 +3,182 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="..\engine\arctic_input.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\arctic_math.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\arctic_platform_windows.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\byte_array.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\easy.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\easy_sound.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\easy_sound_instance.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\easy_sprite.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\easy_sprite_instance.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\engine.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_mixer.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\csv.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\gui.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\miniz.c">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\ofbx.cpp">
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\font.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\log.cpp">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="..\engine\arctic_input.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\arctic_math.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\arctic_platform.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\arctic_platform_def.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\arctic_types.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\bound2f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\bound3f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\byte_array.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\easy.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\easy_sound.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\easy_sound_instance.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\easy_sprite.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\easy_sprite_instance.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\engine.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\arctic_mixer.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\arctic_platform_macosx.mm">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\arctic_platform_macosx_sound.mm">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\csv.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\gui.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\miniz.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\ofbx.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\stb_vorbis.inc">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\test.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\test_main.h">
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\font.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\frustum3f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\mat22f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\mat33f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\mat44f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\opengl.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\vec2f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\vec2si32.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\vec3f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\vec3si32.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\vec4f.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\vec4si32.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\rgb.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\rgba.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\scalar_math.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\log.h">
-      <Filter>..%255cengine</Filter>
+      <Filter>engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -140,7 +188,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="..%255cengine">
+    <Filter Include="engine">
       <UniqueIdentifier>{8f4a4ffd-6b4b-4f3e-84fd-efce79c2ab9f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
