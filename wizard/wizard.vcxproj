@@ -223,6 +223,7 @@
     <ClCompile Include="..\engine\arctic_input.cpp" />
     <ClCompile Include="..\engine\arctic_math.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp" />
     <ClCompile Include="..\engine\byte_array.cpp" />
     <ClCompile Include="..\engine\easy.cpp" />
     <ClCompile Include="..\engine\easy_sound.cpp" />

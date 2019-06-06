@@ -238,6 +238,7 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp" />
     <ClCompile Include="..\engine\arctic_mixer.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi.cpp" />
     <ClCompile Include="..\engine\csv.cpp" />

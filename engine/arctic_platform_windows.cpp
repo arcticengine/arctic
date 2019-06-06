@@ -21,6 +21,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include "engine/arctic_platform.h"
 #include "engine/arctic_platform_def.h"
 
 #ifdef ARCTIC_PLATFORM_WINDOWS
@@ -576,153 +577,6 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   return true;
 }
 
-SoundMixerState g_sound_mixer_state;
-
-void StartSoundBuffer(easy::Sound sound, float volume) {
-  if (sound.GetInstance()) {
-    SoundBuffer buffer;
-    buffer.sound = sound;
-    buffer.volume = volume;
-    buffer.next_position = 0;
-    buffer.sound.GetInstance()->IncPlaying();
-    buffer.action = SoundBuffer::kStart;
-    g_sound_mixer_state.AddSoundTask(buffer);
-  }
-}
-
-void StopSoundBuffer(easy::Sound sound) {
-  if (sound.GetInstance()) {
-    SoundBuffer buffer;
-    buffer.sound = sound;
-    buffer.volume = 0.f;
-    buffer.next_position = 0;
-    buffer.action = SoundBuffer::kStop;
-    g_sound_mixer_state.AddSoundTask(buffer);
-  }
-}
-
-void SetMasterVolume(float volume) {
-  g_sound_mixer_state.master_volume.store(volume);
-}
-
-float GetMasterVolume() {
-  return g_sound_mixer_state.master_volume.load();
-}
-
-void SoundMixerThreadFunction() {
-  Si32 bytes_per_sample = 2;
-
-  WAVEFORMATEX format;
-  format.wFormatTag = WAVE_FORMAT_PCM;
-  format.nChannels = 2;
-  format.nSamplesPerSec = 44100;
-  format.nAvgBytesPerSec =
-    bytes_per_sample * format.nChannels * format.nSamplesPerSec;
-  format.nBlockAlign = bytes_per_sample * format.nChannels;
-  format.wBitsPerSample = 8 * bytes_per_sample;
-  format.cbSize = 0;
-
-  HANDLE hEvent = CreateEvent(NULL, false, false, nullptr);
-  Check(hEvent != 0, "Can't create event");
-
-  HWAVEOUT wave_out_handle;
-  MMRESULT result = waveOutOpen(&wave_out_handle, WAVE_MAPPER,
-    &format, (DWORD_PTR)(void*)hEvent, 0, CALLBACK_EVENT | WAVE_FORMAT_DIRECT);
-
-  Ui32 buffer_count = 10ull;
-  Ui64 buffer_duration_us = 5000ull;
-  Ui32 buffer_samples_per_channel =
-    static_cast<Ui32>(
-      static_cast<Ui64>(format.nSamplesPerSec) *
-      buffer_duration_us / 1000000ull);
-  Ui32 buffer_samples_total = format.nChannels * buffer_samples_per_channel;
-  Ui32 buffer_bytes = bytes_per_sample * buffer_samples_total;
-
-  std::vector<WAVEHDR> wave_headers(buffer_count);
-  std::vector<std::vector<Si16>> wave_buffers(buffer_count);
-  std::vector<Si16> tmp(buffer_samples_total);
-  std::vector<float> mix(buffer_samples_total);
-  memset(&(mix[0]), 0, 2 * buffer_bytes);
-  for (Ui32 i = 0; i < wave_headers.size(); ++i) {
-    wave_buffers[i].resize(buffer_samples_total);
-    memset((char*)&(wave_buffers[i][0]), 0, buffer_bytes);
-
-    memset((char*)&wave_headers[i], 0, sizeof(WAVEHDR));
-    wave_headers[i].dwBufferLength = buffer_bytes;
-    wave_headers[i].lpData = reinterpret_cast<char*>(&(wave_buffers[i][0]));
-    waveOutPrepareHeader(wave_out_handle,
-      &wave_headers[i], sizeof(WAVEHDR));
-    wave_headers[i].dwFlags |= WHDR_DONE;
-  }
-  Check(result == MMSYSERR_NOERROR, "Error in SoundMixerThreadFunction");
-
-  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-
-  int cur_buffer_idx = 0;
-  while (!g_sound_mixer_state.do_quit) {
-    memset((char*)mix.data(), 0, 2 * buffer_bytes);
-    MMTIME mmt;
-    waveOutGetPosition(wave_out_handle, &mmt, sizeof(mmt));
-    while (!(*(volatile DWORD*)&wave_headers[cur_buffer_idx].dwFlags & WHDR_DONE)) {
-      WaitForSingleObject(hEvent, INFINITE);
-      waveOutGetPosition(wave_out_handle, &mmt, sizeof(mmt));
-    }
-
-    g_sound_mixer_state.InputTasksToMixerThread();
-
-    (*(volatile DWORD*)&wave_headers[cur_buffer_idx].dwFlags) &= ~WHDR_DONE;
-
-    float master_volume = g_sound_mixer_state.master_volume.load();
-
-    for (Ui32 idx = 0;
-      idx < g_sound_mixer_state.buffers.size(); ++idx) {
-      SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
-
-      Ui32 size = buffer_samples_per_channel;
-      size = sound.sound.StreamOut(sound.next_position, size,
-        tmp.data(), buffer_samples_total);
-      Si16 *in_data = tmp.data();
-      for (Ui32 i = 0; i < size; ++i) {
-        mix[i * 2] +=
-          static_cast<float>(in_data[i * 2]) * sound.volume;
-        mix[i * 2 + 1] +=
-          static_cast<float>(in_data[i * 2 + 1]) * sound.volume;
-      }
-      sound.next_position += size;
-
-      if (size < buffer_samples_per_channel) {
-        sound.sound.GetInstance()->DecPlaying();
-        g_sound_mixer_state.buffers[idx] =
-          g_sound_mixer_state.buffers[
-            g_sound_mixer_state.buffers.size() - 1];
-        g_sound_mixer_state.buffers.pop_back();
-        --idx;
-      }
-    }
-
-    Si16* out_data = &(wave_buffers[cur_buffer_idx][0]);
-    for (Ui32 i = 0; i < buffer_samples_total; ++i) {
-      out_data[i] = static_cast<Si16>(Clamp(
-        mix[i] * master_volume, -32767.0, 32767.0));
-    }
-
-    waveOutWrite(wave_out_handle,
-      &wave_headers[cur_buffer_idx], sizeof(WAVEHDR));
-    cur_buffer_idx = (cur_buffer_idx + 1) % wave_headers.size();
-  }
-  timeEndPeriod(1);
-
-  for (Ui32 i = 0; i < wave_headers.size(); ++i) {
-    do {
-      result = waveOutUnprepareHeader(wave_out_handle,
-        &wave_headers[i], sizeof(WAVEHDR));
-    } while (result == WAVERR_STILLPLAYING);
-  }
-  waveOutClose(wave_out_handle);
-  CloseHandle(hEvent);
-  return;
-}
-
 void EngineThreadFunction(SystemInfo system_info) {
   //  Init opengl start
 
@@ -970,7 +824,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   arctic::easy::GetEngine();
 
-  std::thread sound_thread(arctic::SoundMixerThreadFunction);
+
+  arctic::SoundPlayer soundPlayer;
+  soundPlayer.Initialize();
+ 
+
   std::thread engine_thread(arctic::EngineThreadFunction,
     arctic::g_system_info);
   while (true) {
@@ -988,8 +846,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   }
 
   LocalFree(args);
-  arctic::g_sound_mixer_state.do_quit = true;
-  sound_thread.join();
+
+  soundPlayer.Deinitialize();
 
   arctic::StopLogger();
   ExitProcess(0);

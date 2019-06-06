@@ -32,6 +32,9 @@
     <ClCompile Include="..\engine\engine.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
     <ClCompile Include="..\engine\arctic_mixer.cpp">
       <Filter>engine</Filter>
     </ClCompile>

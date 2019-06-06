@@ -41,6 +41,9 @@
     <ClCompile Include="..\engine\arctic_platform_pi.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />

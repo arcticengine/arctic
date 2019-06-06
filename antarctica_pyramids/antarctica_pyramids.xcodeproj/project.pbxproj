@@ -33,6 +33,7 @@
 		278096C945DC33DAF062AE5A /* gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 142DBAE8CA52E8B9857E8F2E /* gui.cpp */; };
 		33AFDC6B9440810611DCF321 /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8B623F22CEAFCC02BA69C75B /* arctic_platform_macosx_sound.mm */; };
 		60F82CE5B0AD3F4CF45A2F2D /* ofbx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5FAA99056B5C1EC0EDC16EBA /* ofbx.cpp */; };
+		F38AA18044DF61486AEF7EFA /* arctic_platform_windows_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0E42B1CCF6D84016727F30C0 /* arctic_platform_windows_sound.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -102,6 +103,7 @@
 		8B623F22CEAFCC02BA69C75B /* arctic_platform_macosx_sound.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = arctic_platform_macosx_sound.mm; path = ../engine/arctic_platform_macosx_sound.mm; sourceTree = SOURCE_ROOT; };
 		289D1813A7133F26E44AC227 /* ofbx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofbx.h; path = ../engine/ofbx.h; sourceTree = SOURCE_ROOT; };
 		5FAA99056B5C1EC0EDC16EBA /* ofbx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofbx.cpp; path = ../engine/ofbx.cpp; sourceTree = SOURCE_ROOT; };
+		0E42B1CCF6D84016727F30C0 /* arctic_platform_windows_sound.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_windows_sound.cpp; path = ../engine/arctic_platform_windows_sound.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -198,6 +200,7 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				0E42B1CCF6D84016727F30C0 /* arctic_platform_windows_sound.cpp */,
 				2156A70C9A604F7BCA4B3019 /* csv.h */,
 				FEE59E3E4F2B334655A60240 /* miniz.c */,
 				F590DBC6FB2BA8234B11BAD0 /* csv.cpp */,
@@ -305,6 +308,7 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				F38AA18044DF61486AEF7EFA /* arctic_platform_windows_sound.cpp in Sources */,
 				6234CEB54E972FC7D2B0B93E /* miniz.c in Sources */,
 				9BC194554416DD7DCD2A68FC /* csv.cpp in Sources */,
 				23F7EA330E1256E24468272E /* arctic_mixer.cpp in Sources */,
