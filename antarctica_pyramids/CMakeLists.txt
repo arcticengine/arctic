@@ -35,19 +35,31 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 project(${PROJECT_NAME} CXX)
 ENABLE_LANGUAGE(C)
 
-IF (APPLE)
-  FIND_LIBRARY(AUDIOTOOLBOX AudioToolbox)
-  FIND_LIBRARY(COREAUDIO CoreAudio)
-  FIND_LIBRARY(COREFOUNDATION CoreFoundation)
-  FIND_LIBRARY(COCOA Cocoa)
-  FIND_LIBRARY(OPENGL OpenGL)
-ELSE (APPLE)
-  find_package(ALSA REQUIRED)
-  find_package(OpenGL REQUIRED)
-  find_package(X11 REQUIRED)
-  find_package(Threads REQUIRED)
-ENDIF (APPLE)
 
+IF (APPLE)
+file(GLOB SRC_FILES
+    ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.mm
+    ${CPP_DIR_1}/*.c
+    ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
+    ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
+    ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
+)
+ELSE (APPLE)
+file(GLOB SRC_FILES
+    ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.c
+    ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
+    ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
+    ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
+)
+ENDIF (APPLE)
 
 # Definition of Macros
 

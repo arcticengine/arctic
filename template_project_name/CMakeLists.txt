@@ -84,16 +84,24 @@ IF (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
     ${CPP_DIR_1}/*.mm
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ELSE (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ENDIF (APPLE)
 
