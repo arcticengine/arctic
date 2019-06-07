@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 - 2018 Huldra
+// Copyright (c) 2016 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,41 +20,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_ARCTIC_PLATFORM_H_
-#define ENGINE_ARCTIC_PLATFORM_H_
-
-#include <deque>
-#include "engine/arctic_types.h"
-
-#include "engine/arctic_platform_byteorder.h"
-#include "engine/arctic_platform_fatal.h"
-#include "engine/arctic_platform_sound.h"
+#ifndef ENGINE_ARCTIC_PLATFORM_FATAL_H_
+#define ENGINE_ARCTIC_PLATFORM_FATAL_H_
 
 namespace arctic {
 
-struct DirectoryEntry {
-  std::string title; // entries own full name, like "pet" or "font.tga"
-  Trivalent is_directory = kTrivalentUnknown;
-  Trivalent is_file = kTrivalentUnknown;
-};
-
-void ExitProgram();
-void Swap();
-bool IsVSyncSupported();
-bool SetVSync(bool is_enable);
-bool IsFullScreen();
-void SetFullScreen(bool is_enable);
-bool IsCursorVisible();
-void SetCursorVisible(bool is_enable);
-
-Trivalent DoesDirectoryExist(const char *path);
-bool MakeDirectory(const char *path);
-bool GetCurrentPath(std::string *out_dir);
-bool GetDirectoryEntries(const char *path,
-    std::deque<DirectoryEntry> *out_entries);
-std::string CanonicalizePath(const char *path);
-std::string RelativePathFromTo(const char *from, const char *to);
+void Check(bool condition, const char *error_message,
+    const char *error_message_postfix = nullptr);
+void Fatal(const char *error_message, const char *message_postfix = nullptr);
 
 }  // namespace arctic
 
-#endif  // ENGINE_ARCTIC_PLATFORM_H_
+#endif  // ENGINE_ARCTIC_PLATFORM_FATAL_H_

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 - 2018 Huldra
+// Copyright (c) 2017 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,41 +20,37 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_ARCTIC_PLATFORM_H_
-#define ENGINE_ARCTIC_PLATFORM_H_
+#include "engine/arctic_platform_def.h"
 
-#include <deque>
-#include "engine/arctic_types.h"
+#ifdef ARCTIC_PLATFORM_PI
 
-#include "engine/arctic_platform_byteorder.h"
-#include "engine/arctic_platform_fatal.h"
-#include "engine/arctic_platform_sound.h"
+#include <string.h>
+
+#include <iostream>
 
 namespace arctic {
 
-struct DirectoryEntry {
-  std::string title; // entries own full name, like "pet" or "font.tga"
-  Trivalent is_directory = kTrivalentUnknown;
-  Trivalent is_file = kTrivalentUnknown;
-};
+void Fatal(const char *message, const char *message_postfix) {
+  size_t size = 1 +
+    strlen(message) +
+    (message_postfix ? strlen(message_postfix) : 0);
+  char *full_message = static_cast<char *>(malloc(size));
+  memset(full_message, 0, size);
+  snprintf(full_message, size, "%s%s", message,
+      (message_postfix ? message_postfix : ""));
+  std::cerr << "Arctic Engine ERROR: " << full_message << std::endl;
+  exit(1);
+}
 
-void ExitProgram();
-void Swap();
-bool IsVSyncSupported();
-bool SetVSync(bool is_enable);
-bool IsFullScreen();
-void SetFullScreen(bool is_enable);
-bool IsCursorVisible();
-void SetCursorVisible(bool is_enable);
+void Check(bool condition, const char *error_message,
+    const char *error_message_postfix) {
+  if (condition) {
+    return;
+  }
+  Fatal(error_message, error_message_postfix);
+}
 
-Trivalent DoesDirectoryExist(const char *path);
-bool MakeDirectory(const char *path);
-bool GetCurrentPath(std::string *out_dir);
-bool GetDirectoryEntries(const char *path,
-    std::deque<DirectoryEntry> *out_entries);
-std::string CanonicalizePath(const char *path);
-std::string RelativePathFromTo(const char *from, const char *to);
 
 }  // namespace arctic
 
-#endif  // ENGINE_ARCTIC_PLATFORM_H_
+#endif  // ARCTIC_PLATFORM_PI

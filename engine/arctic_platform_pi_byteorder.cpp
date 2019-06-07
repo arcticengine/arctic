@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 - 2018 Huldra
+// Copyright (c) 2017 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,41 +20,40 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_ARCTIC_PLATFORM_H_
-#define ENGINE_ARCTIC_PLATFORM_H_
+#include "engine/arctic_platform_def.h"
 
-#include <deque>
-#include "engine/arctic_types.h"
+#ifdef ARCTIC_PLATFORM_PI
 
-#include "engine/arctic_platform_byteorder.h"
-#include "engine/arctic_platform_fatal.h"
-#include "engine/arctic_platform_sound.h"
+#include <arpa/inet.h>
 
 namespace arctic {
 
-struct DirectoryEntry {
-  std::string title; // entries own full name, like "pet" or "font.tga"
-  Trivalent is_directory = kTrivalentUnknown;
-  Trivalent is_file = kTrivalentUnknown;
-};
+Ui16 FromBe(Ui16 x) {
+  return ntohs(x);
+}
+Si16 FromBe(Si16 x) {
+  return ntohs(x);
+}
+Ui32 FromBe(Ui32 x) {
+  return ntohl(x);
+}
+Si32 FromBe(Si32 x) {
+  return ntohl(x);
+}
+Ui16 ToBe(Ui16 x) {
+  return htons(x);
+}
+Si16 ToBe(Si16 x) {
+  return htons(x);
+}
+Ui32 ToBe(Ui32 x) {
+  return htonl(x);
+}
+Si32 ToBe(Si32 x) {
+  return htonl(x);
+}
 
-void ExitProgram();
-void Swap();
-bool IsVSyncSupported();
-bool SetVSync(bool is_enable);
-bool IsFullScreen();
-void SetFullScreen(bool is_enable);
-bool IsCursorVisible();
-void SetCursorVisible(bool is_enable);
-
-Trivalent DoesDirectoryExist(const char *path);
-bool MakeDirectory(const char *path);
-bool GetCurrentPath(std::string *out_dir);
-bool GetDirectoryEntries(const char *path,
-    std::deque<DirectoryEntry> *out_entries);
-std::string CanonicalizePath(const char *path);
-std::string RelativePathFromTo(const char *from, const char *to);
 
 }  // namespace arctic
 
-#endif  // ENGINE_ARCTIC_PLATFORM_H_
+#endif  // ARCTIC_PLATFORM_PI

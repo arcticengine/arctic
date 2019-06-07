@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,12 @@
 // IN THE SOFTWARE.
 
 #include "engine/arctic_platform_def.h"
+#include "engine/arctic_platform.h"
 
 #ifdef ARCTIC_PLATFORM_PI
 
-#include <alsa/asoundlib.h>
-#include <arpa/inet.h>
 #include <dirent.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -43,74 +41,12 @@
 #include <X11/keysymdef.h>
 #include <X11/Xatom.h>
 
-#include <algorithm>
-#include <atomic>
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <memory>
-#include <mutex>  // NOLINT
-#include <sstream>
-#include <thread>  // NOLINT
-#include <vector>
-
-#include "engine/engine.h"
 #include "engine/easy.h"
-#include "engine/arctic_input.h"
 #include "engine/arctic_platform.h"
-#include "engine/byte_array.h"
-#include "engine/rgb.h"
-#include "engine/vec3f.h"
-
 
 extern void EasyMain();
 
 namespace arctic {
-
-Ui16 FromBe(Ui16 x) {
-  return ntohs(x);
-}
-Si16 FromBe(Si16 x) {
-  return ntohs(x);
-}
-Ui32 FromBe(Ui32 x) {
-  return ntohl(x);
-}
-Si32 FromBe(Si32 x) {
-  return ntohl(x);
-}
-Ui16 ToBe(Ui16 x) {
-  return htons(x);
-}
-Si16 ToBe(Si16 x) {
-  return htons(x);
-}
-Ui32 ToBe(Ui32 x) {
-  return htonl(x);
-}
-Si32 ToBe(Si32 x) {
-  return htonl(x);
-}
-
-void Fatal(const char *message, const char *message_postfix) {
-  size_t size = 1 +
-    strlen(message) +
-    (message_postfix ? strlen(message_postfix) : 0);
-  char *full_message = static_cast<char *>(malloc(size));
-  memset(full_message, 0, size);
-  snprintf(full_message, size, "%s%s", message,
-      (message_postfix ? message_postfix : ""));
-  std::cerr << "Arctic Engine ERROR: " << full_message << std::endl;
-  exit(1);
-}
-
-void Check(bool condition, const char *error_message,
-    const char *error_message_postfix) {
-  if (condition) {
-    return;
-  }
-  Fatal(error_message, error_message_postfix);
-}
 
 static int glx_config[] = {
   GLX_DOUBLEBUFFER,
@@ -420,7 +356,7 @@ void PumpMessages() {
         if (kcode != 0) {
           ks = XkbKeycodeToKeysym(g_x_display, kcode, 0, 0);
           key = TranslateKeyCode(ks);
-          std::cerr << "ks: " << ks << " key: " << key << std::endl;
+          // std::cerr << "ks: " << ks << " key: " << key << std::endl;
         }
       }
       bool is_down = (ev.type == KeyPress);
@@ -554,56 +490,6 @@ void CreateMainWindow(SystemInfo *system_info) {
   return;
 }
 
-static std::mutex g_sound_mixer_mutex;
-struct SoundBuffer {
-  easy::Sound sound;
-  float volume = 1.0f;
-  Si32 next_position = 0;
-};
-struct SoundMixerState {
-  float master_volume = 0.7f;
-  std::vector<SoundBuffer> buffers;
-  std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);
-};
-SoundMixerState g_sound_mixer_state;
-
-void StartSoundBuffer(easy::Sound sound, float volume) {
-  SoundBuffer buffer;
-  buffer.sound = sound;
-  buffer.volume = volume;
-  buffer.next_position = 0;
-  buffer.sound.GetInstance()->IncPlaying();
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  g_sound_mixer_state.buffers.push_back(buffer);
-}
-
-void StopSoundBuffer(easy::Sound sound) {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
-    SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
-    if (buffer.sound.GetInstance() == sound.GetInstance()) {
-      buffer.sound.GetInstance()->DecPlaying();
-      if (idx != g_sound_mixer_state.buffers.size() - 1) {
-        g_sound_mixer_state.buffers[idx] =
-          g_sound_mixer_state.buffers[
-          g_sound_mixer_state.buffers.size() - 1];
-      }
-      g_sound_mixer_state.buffers.pop_back();
-      idx--;
-    }
-  }
-}
-
-void SetMasterVolume(float volume) {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  g_sound_mixer_state.master_volume = volume;
-}
-
-float GetMasterVolume() {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  return g_sound_mixer_state.master_volume;
-}
-
 void ExitProgram() {
   exit(0);
 }
@@ -643,231 +529,6 @@ bool IsFullScreen() {
 
 void SetFullScreen(bool/* is_enable*/) {
   return;
-}
-
-static unsigned int g_buffer_time_us = 50000;
-static unsigned int g_period_time_us = 10000;
-
-struct async_private_data {
-  std::vector<Si16> samples;
-  std::vector<Si32> mix;
-  std::vector<Si16> tmp;
-  snd_async_handler_t *ahandler = nullptr;
-  snd_pcm_t *handle = nullptr;
-  snd_output_t *output = nullptr;
-  snd_pcm_sframes_t buffer_size;
-  snd_pcm_sframes_t period_size;
-};
-
-static async_private_data g_data;
-
-void MixSound() {
-  async_private_data *data = &g_data;
-
-  Si32 buffer_samples_total = data->period_size * 2;
-  Si32 buffer_bytes = data->period_size * 4;
-
-  float master_volume = 1.0f;
-  {
-    memset(data->mix.data(), 0, 2 * buffer_bytes);
-    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-    master_volume = g_sound_mixer_state.master_volume;
-    for (Ui32 idx = 0;
-        idx < g_sound_mixer_state.buffers.size(); ++idx) {
-      SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
-
-      Ui32 size = data->period_size;
-      size = sound.sound.StreamOut(sound.next_position, size,
-          data->tmp.data(), buffer_samples_total);
-      Si16 *in_data = data->tmp.data();
-      for (Ui32 i = 0; i < size; ++i) {
-        data->mix[i * 2] += static_cast<Si32>(
-            static_cast<float>(in_data[i * 2]) * sound.volume);
-        data->mix[i * 2 + 1] += static_cast<Si32>(
-            static_cast<float>(in_data[i * 2 + 1]) * sound.volume);
-        ++sound.next_position;
-      }
-
-      if (sound.next_position == sound.sound.DurationSamples()
-          || size == 0) {
-        sound.sound.GetInstance()->DecPlaying();
-        g_sound_mixer_state.buffers[idx] =
-          g_sound_mixer_state.buffers[
-          g_sound_mixer_state.buffers.size() - 1];
-        g_sound_mixer_state.buffers.pop_back();
-        --idx;
-      }
-    }
-  }
-
-  unsigned char *out_buffer = (unsigned char *)data->samples.data();
-  for (Ui32 i = 0; i < buffer_samples_total; ++i) {
-    Si16 res = static_cast<Si16>(Clamp(
-          static_cast<float>(data->mix[i]) * master_volume,
-          -32767.0, 32767.0));
-    out_buffer[i * 2 + 0] = res & 0xff;
-    out_buffer[i * 2 + 1] = (res >> 8) & 0xff;
-  }
-}
-
-static void SoundMixerCallback(snd_async_handler_t *ahandler) {
-  snd_pcm_t *handle = snd_async_handler_get_pcm(ahandler);
-  async_private_data *data = static_cast<async_private_data*>(
-      snd_async_handler_get_callback_private(ahandler));
-
-  while (true) {
-    snd_pcm_sframes_t avail = snd_pcm_avail_update(handle);
-    if (avail < data->period_size) {
-      return;
-    }
-
-    MixSound();
-
-    unsigned char *out_buffer = (unsigned char *)data->samples.data();
-    int err = snd_pcm_writei(handle, out_buffer, data->period_size);
-    Check(err >= 0, "Sound write error: ", snd_strerror(err));
-    Check(err == data->period_size,
-        "Sound write error: written != expected.");
-  }
-}
-
-void SoundMixerThreadFunction() {
-  while (!g_sound_mixer_state.do_quit) {
-    MixSound();
-
-    Si16 *out_buffer = g_data.samples.data();
-    Si32 size_left = g_data.period_size;
-    while (size_left > 0) {
-      int err = snd_pcm_writei(g_data.handle, out_buffer, size_left);
-      if (err == -EAGAIN) {
-        continue;
-      } else if (err == -EPIPE) {
-        err = snd_pcm_prepare(g_data.handle);
-        Check(err >= 0, "Can't recover sound from underrun: ",
-            snd_strerror(err));
-      } else if (err == -ESTRPIPE) {
-        while (true) {
-          err = snd_pcm_resume(g_data.handle);
-          if (err != -EAGAIN) {
-            break;
-          }
-          sleep(1);
-        }
-        if (err < 0) {
-          err = snd_pcm_prepare(g_data.handle);
-          Check(err >= 0, "Can't recover sound from suspend: ",
-              snd_strerror(err));
-        }
-      } else {
-        Check(err >= 0, "Can't write sound data: ",
-            snd_strerror(err));
-      }
-      out_buffer += err * 2;
-      size_left -= err;
-    }
-  }
-}
-
-std::thread sound_thread;
-
-void StartSoundMixer() {
-  snd_pcm_hw_params_t *hwparams;
-  snd_pcm_hw_params_alloca(&hwparams);
-  snd_pcm_sw_params_t *swparams;
-  snd_pcm_sw_params_alloca(&swparams);
-  int err = snd_output_stdio_attach(&g_data.output, stdout, 0);
-  Check(err >= 0, "Sound error output setup failed: ", snd_strerror(err));
-
-  err = snd_pcm_open(&g_data.handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
-  if (err == -ENOENT) {
-    err = snd_pcm_open(&g_data.handle, "plughw:0,0",
-        SND_PCM_STREAM_PLAYBACK, 0);
-    Check(err >= 0, "Can't open 'plughw:0,0' sound device: ",
-        snd_strerror(err));
-  } else {
-    Check(err >= 0, "Can't open 'default' sound device: ",
-        snd_strerror(err));
-  }
-
-  err = snd_pcm_hw_params_any(g_data.handle, hwparams);
-  Check(err >= 0, "Can't get sound configuration space: ", snd_strerror(err));
-  err = snd_pcm_hw_params_set_rate_resample(g_data.handle, hwparams, 1);
-  Check(err >= 0, "Can't set sound resampling: ", snd_strerror(err));
-  err = snd_pcm_hw_params_set_access(g_data.handle, hwparams,
-      SND_PCM_ACCESS_RW_INTERLEAVED);
-  Check(err >= 0, "Can't set access type for sound: ", snd_strerror(err));
-  err = snd_pcm_hw_params_set_format(g_data.handle, hwparams,
-      SND_PCM_FORMAT_S16);
-  Check(err >= 0, "Can't set sample format for sound: ", snd_strerror(err));
-  err = snd_pcm_hw_params_set_channels(g_data.handle, hwparams, 2);
-  Check(err >= 0, "Can't set 2 channels for sound: ", snd_strerror(err));
-  unsigned int rate = 44100;
-  err = snd_pcm_hw_params_set_rate_near(g_data.handle, hwparams, &rate, 0);
-  Check(err >= 0, "Can't set 44100 Hz rate for sound: ", snd_strerror(err));
-  Check(rate == 44100, "Sound output rate doesn't match requested 44100 Hz.");
-  int dir;
-  err = snd_pcm_hw_params_set_buffer_time_near(g_data.handle, hwparams,
-      &g_buffer_time_us, &dir);
-  Check(err >= 0, "Can't set buffer time for sound: ", snd_strerror(err));
-  snd_pcm_uframes_t size;
-  err = snd_pcm_hw_params_get_buffer_size(hwparams, &size);
-  Check(err >= 0, "Can't get buffer size for sound: ", snd_strerror(err));
-  g_data.buffer_size = size;
-  err = snd_pcm_hw_params_set_period_time_near(g_data.handle, hwparams,
-      &g_period_time_us, &dir);
-  Check(err >= 0, "Can't set period time for sound: ", snd_strerror(err));
-  err = snd_pcm_hw_params_get_period_size(hwparams, &size, &dir);
-  Check(err >= 0, "Can't get period size for sound: ", snd_strerror(err));
-  g_data.period_size = size;
-  err = snd_pcm_hw_params(g_data.handle, hwparams);
-  Check(err >= 0, "Can't set hw params for sound: ", snd_strerror(err));
-
-  err = snd_pcm_sw_params_current(g_data.handle, swparams);
-  Check(err >= 0, "Can't determine current sw params for sound: ",
-      snd_strerror(err));
-  err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams, 512);
-  Check(err >= 0, "Can't set start threshold mode for sound: ",
-      snd_strerror(err));
-  err = snd_pcm_sw_params_set_avail_min(g_data.handle, swparams,
-      512);
-  Check(err >= 0, "Can't set avail min for sound: ", snd_strerror(err));
-  err = snd_pcm_sw_params(g_data.handle, swparams);
-  Check(err >= 0, "Can't set sw params for sound: ", snd_strerror(err));
-
-  // start sound
-  g_data.samples.resize(g_data.period_size * 2, 0);
-  g_data.mix.resize(g_data.period_size * 2, 0);
-  g_data.tmp.resize(g_data.period_size * 2, 0);
-  err = snd_async_add_pcm_handler(&g_data.ahandler, g_data.handle,
-      SoundMixerCallback, &g_data);
-  if (err == -ENOSYS) {
-    sound_thread = std::thread(arctic::SoundMixerThreadFunction);
-  } else {
-    Check(err >= 0, "Can't register async pcm handler for sound:",
-        snd_strerror(err));
-    for (int count = 0; count < 3; count++) {
-      err = snd_pcm_writei(g_data.handle, g_data.samples.data(),
-          g_data.period_size);
-      Check(err >= 0, "Sound pcm write error: ", snd_strerror(err));
-      Check(err == g_data.period_size,
-          "Sound pcm write error: written != expected");
-    }
-    if (snd_pcm_state(g_data.handle) == SND_PCM_STATE_PREPARED) {
-      err = snd_pcm_start(g_data.handle);
-      Check(err >= 0, "Sound pcm start error: ", snd_strerror(err));
-    }
-  }
-}
-
-void StopSoundMixer() {
-  g_sound_mixer_state.do_quit = true;
-  sound_thread.join();
-
-  if (g_data.ahandler) {
-    int err = snd_async_del_handler(g_data.ahandler);
-    Check(err >= 0, "Can't delete async sound handler", snd_strerror(err));
-  }
-  snd_pcm_close(g_data.handle);
 }
 
 Trivalent DoesDirectoryExist(const char *path) {
@@ -993,7 +654,8 @@ int main() {
   arctic::SystemInfo system_info;
 
   arctic::StartLogger();
-  arctic::StartSoundMixer();
+  arctic::SoundPlayer soundPlayer;
+  soundPlayer.Initialize();
   CreateMainWindow(&system_info);
   arctic::easy::GetEngine();
   arctic::easy::GetEngine()->Init(system_info.screen_width,
@@ -1002,7 +664,7 @@ int main() {
   EasyMain();
 
   XCloseDisplay(arctic::g_x_display);
-  arctic::StopSoundMixer();
+  soundPlayer.Deinitialize();
   arctic::StopLogger();
 
   return 0;

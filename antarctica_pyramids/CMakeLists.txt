@@ -35,36 +35,27 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 project(${PROJECT_NAME} CXX)
 ENABLE_LANGUAGE(C)
 
-
 IF (APPLE)
-file(GLOB SRC_FILES
-    ${CPP_DIR_1}/*.cpp
-    ${CPP_DIR_1}/*.mm
-    ${CPP_DIR_1}/*.c
-    ${CPP_DIR_2}/*.cpp
-    ${CPP_DIR_2}/*.c
-    ${HEADER_DIR_1}/*.h
-    ${HEADER_DIR_1}/*.hpp
-    ${HEADER_DIR_2}/*.h
-    ${HEADER_DIR_2}/*.hpp
-)
+  FIND_LIBRARY(AUDIOTOOLBOX AudioToolbox)
+  FIND_LIBRARY(COREAUDIO CoreAudio)
+  FIND_LIBRARY(COREFOUNDATION CoreFoundation)
+  FIND_LIBRARY(COCOA Cocoa)
+  FIND_LIBRARY(OPENGL OpenGL)
 ELSE (APPLE)
-file(GLOB SRC_FILES
-    ${CPP_DIR_1}/*.cpp
-    ${CPP_DIR_1}/*.c
-    ${CPP_DIR_2}/*.cpp
-    ${CPP_DIR_2}/*.c
-    ${HEADER_DIR_1}/*.h
-    ${HEADER_DIR_1}/*.hpp
-    ${HEADER_DIR_2}/*.h
-    ${HEADER_DIR_2}/*.hpp
-)
+  find_package(ALSA REQUIRED)
+  find_package(OpenGL REQUIRED)
+  find_package(X11 REQUIRED)
+  find_package(Threads REQUIRED)
 ENDIF (APPLE)
+
 
 # Definition of Macros
 
 #-D_DEBUG 
 IF (APPLE)
+add_definitions(
+  -DGL_SILENCE_DEPRECATION
+)
 ELSE (APPLE)
 add_definitions(
    -DGLX
@@ -90,23 +81,31 @@ endif()
 #   --   Add files to project.   --   #
 #######################################
 
+
 IF (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
     ${CPP_DIR_1}/*.mm
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ELSE (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ENDIF (APPLE)
-
 
 # Add executable to build.
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE
