@@ -54,6 +54,9 @@ ENDIF (APPLE)
 
 #-D_DEBUG 
 IF (APPLE)
+add_definitions(
+  -DGL_SILENCE_DEPRECATION
+)
 ELSE (APPLE)
 add_definitions(
    -DGLX
@@ -79,23 +82,31 @@ endif()
 #   --   Add files to project.   --   #
 #######################################
 
+
 IF (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
     ${CPP_DIR_1}/*.mm
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ELSE (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ENDIF (APPLE)
-
 
 # Add executable to build.
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE

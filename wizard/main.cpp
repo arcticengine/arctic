@@ -44,6 +44,9 @@ std::string g_template;  // NOLINT
 std::string g_project_directory;  // NOLINT
 std::string g_engine;  //NOLINT
 
+std::vector<Rgba> g_palete;
+
+
 enum MainMode {
   kModeCreate = 0,
   kModeUpdate = 1
@@ -144,7 +147,8 @@ bool GetOperationMode() {
     "Press U to Update an existing project.\n"
     "Press ESC to leave the Snow Wizard.";
 
-    g_font.Draw(welcome, 32, ScreenSize().y - 32, kTextOriginTop);
+    g_font.Draw(welcome, 32, ScreenSize().y - 32, kTextOriginTop,
+                easy::kColorize, easy::kFilterNearest, g_palete);
     ShowFrame();
     if (is_done) {
       return true;
@@ -318,7 +322,8 @@ bool GetProjectName() {
     "Press ESC to leave the Snow Wizard";
     char text[1024];
     snprintf(text, sizeof(text), welcome, g_project_name.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop);
+    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
+                easy::kColorize, easy::kFilterNearest, g_palete);
     ShowFrame();
   }
   return false;
@@ -361,10 +366,7 @@ bool SelectProject() {
       is_done = true;
     }
     
-    std::vector<Rgba> palete;
-    palete.emplace_back((Ui32)0xffffffff);
-    palete.emplace_back((Ui32)0xffff9999);
-    palete.emplace_back((Ui32)0xffffffff);
+
 
     std::stringstream str;
     str << u8"The Snow Wizard\n\n"
@@ -390,7 +392,7 @@ bool SelectProject() {
     }
     
     g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop,
-      easy::kColorize, easy::kFilterNearest, palete);
+      easy::kColorize, easy::kFilterNearest, g_palete);
     ShowFrame();
     if (is_done) {
       return true;
@@ -429,7 +431,7 @@ bool ShowProgress() {
           g_path.append(g_project_name);
           g_progress.append(u8"Arctic Engine is detected.\n");
         } else {
-          g_progress.append(u8"Can't detect Arctic Engine. ERROR.\n");
+          g_progress.append(u8"\003Can't detect Arctic Engine. ERROR.\n");
           step = 100500;
         }
       }
@@ -438,7 +440,7 @@ bool ShowProgress() {
         if (DoesDirectoryExist(g_path.c_str()) == 0) {
           g_progress.append(u8"Directory name is OK\n");
         } else {
-          g_progress.append(u8"A directory named \"");
+          g_progress.append(u8"\003A directory named \"");
           g_progress.append(g_path);
           g_progress.append(u8"\" already exists. ERROR. Use another name.\n");
           step = 100500;
@@ -449,7 +451,7 @@ bool ShowProgress() {
           g_progress.append(u8"Directory is created OK\n");
           g_project_directory = g_path;
         } else {
-          g_progress.append(u8"Can't create directory \"");
+          g_progress.append(u8"\003Can't create directory \"");
           g_progress.append(g_path);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
@@ -460,7 +462,7 @@ bool ShowProgress() {
         if (DoesDirectoryExist(g_template.c_str()) == 1) {
           g_progress.append(u8"Template found OK\n");
         } else {
-          g_progress.append(u8"Can't find template directory \"");
+          g_progress.append(u8"\003Can't find template directory \"");
           g_progress.append(g_template);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
@@ -556,7 +558,8 @@ bool ShowProgress() {
     snprintf(text, sizeof(text), welcome,
         g_project_name.c_str(), g_current_directory.c_str(),
         g_progress.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop);
+    g_font.Draw(text, 32, ScreenSize().y - 32,  kTextOriginTop,
+                easy::kColorize, easy::kFilterNearest, g_palete);
     ShowFrame();
   }
   return false;
@@ -591,7 +594,7 @@ bool ShowUpdateProgress() {
         if (is_ok) {
           g_progress.append(u8"Arctic Engine is detected.\n");
         } else {
-          g_progress.append(u8"Can't detect Arctic Engine. ERROR.\n");
+          g_progress.append(u8"\003Can't detect Arctic Engine. ERROR.\n");
           step = 100500;
         }
       }
@@ -606,7 +609,7 @@ bool ShowUpdateProgress() {
           g_progress.append(g_engine);
           g_progress.append(u8"\"\n");
         } else {
-          g_progress.append(u8"Can't find engine directory \"");
+          g_progress.append(u8"\003Can't find engine directory \"");
           g_progress.append(g_engine);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
@@ -650,12 +653,12 @@ bool ShowUpdateProgress() {
         
         // make sure that there are no other xcodeproj and vcxproj pairs
         if (candidate_count == 0) {
-          g_progress.append(u8"Can't find project files in\"");
+          g_progress.append(u8"\003Can't find project files in\"");
           g_progress.append(g_project_directory);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
         } else if (candidate_count > 1) {
-          g_progress.append(u8"Multiple project files in\"");
+          g_progress.append(u8"\003Multiple project files in\"");
           g_progress.append(g_project_directory);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
@@ -772,7 +775,7 @@ bool ShowUpdateProgress() {
           full_content.find("/* End PBXBuildFile section */");
         if (next_item == std::string::npos) {
           g_progress.append(
-            u8"No PBXBuildFile section in xcode project!\nERROR.\n");
+            u8"\003No PBXBuildFile section in xcode project!\nERROR.\n");
           step = 100500;
           break;
         }
@@ -783,13 +786,13 @@ bool ShowUpdateProgress() {
         next_item = full_content.find("/* End PBXFileReference section */");
         if (next_item == std::string::npos) {
           g_progress.append(
-            u8"No PBXFileReference section in xcode project!\nERROR.\n");
+            u8"\003No PBXFileReference section in xcode project!\nERROR.\n");
           step = 100500;
           break;
         }
         if (next_item < cursor) {
           g_progress.append(
-            u8"Out of order PBXFileReference in xcode project!\nERROR.\n");
+            u8"\003Out of order PBXFileReference in xcode project!\nERROR.\n");
           step = 100500;
           break;
         }
@@ -801,13 +804,13 @@ bool ShowUpdateProgress() {
         next_item = full_content.find(engine_group_entry);
         if (next_item == std::string::npos) {
           g_progress.append(
-            u8"No engine_group_entry in xcode project!\nERROR.\n");
+            u8"\003No engine_group_entry in xcode project!\nERROR.\n");
           step = 100500;
           break;
         }
         if (next_item < cursor) {
           g_progress.append(
-            u8"Out of order engine_group_entry in xcode project!\nERROR.\n");
+            u8"\003Out of order engine_group_entry in xcode project!\nERROR.\n");
           step = 100500;
           break;
         }
@@ -821,13 +824,13 @@ bool ShowUpdateProgress() {
         next_item = full_content.find(buildphase_entry);
         if (next_item == std::string::npos) {
           g_progress.append(
-            u8"No buildphase_entry in xcode project!\nERROR.\n");
+            u8"\003No buildphase_entry in xcode project!\nERROR.\n");
           step = 100500;
           break;
         }
         if (next_item < cursor) {
           g_progress.append(
-            u8"Out of order buildphase_entry in xcode project!\nERROR.\n");
+            u8"\003Out of order buildphase_entry in xcode project!\nERROR.\n");
           step = 100500;
           break;
         }
@@ -949,8 +952,17 @@ bool ShowUpdateProgress() {
           std::size_t cursor = 0;
           std::size_t next_item =
             full_content.find(engine_h_pattern);
+
+
           if (next_item == std::string::npos) {
-            g_progress.append(u8"No engine.h in VS project!\nERROR.\n");
+            ReplaceAll("/", "\\", &rel_engine_h_path);
+            engine_h_pattern =
+              "<ClInclude Include=\"" + rel_engine_h_path + "\" />";
+            next_item = full_content.find(engine_h_pattern);
+          }
+
+          if (next_item == std::string::npos) {
+            g_progress.append(u8"\003No engine.h in VS project!\nERROR.\n");
             step = 100500;
             break;
           }
@@ -961,13 +973,20 @@ bool ShowUpdateProgress() {
           cursor = next_item;
           next_item = full_content.find(engine_cpp_pattern);
           if (next_item == std::string::npos) {
-            g_progress.append(u8"No engine.cpp in VS project!\nERROR.\n");
+            ReplaceAll("/", "\\", &rel_engine_cpp_path);
+            std::string engine_cpp_pattern =
+              "<ClCompile Include=\"" + rel_engine_cpp_path + "\" />";
+            next_item = full_content.find(engine_cpp_pattern);
+          }
+
+          if (next_item == std::string::npos) {
+            g_progress.append(u8"\003No engine.cpp in VS project!\nERROR.\n");
             step = 100500;
             break;
           }
           if (next_item < cursor) {
             g_progress.append(
-              u8"Out of order engine.cpp in VS project!\nERROR.\n");
+              u8"\003Out of order engine.cpp in VS project!\nERROR.\n");
             step = 100500;
             break;
           }
@@ -995,7 +1014,7 @@ bool ShowUpdateProgress() {
           std::size_t next_item =
             full_filter_content.find(engine_cpp_pattern);
           if (next_item == std::string::npos) {
-            g_progress.append(u8"No engine.cpp in VS project filters!\nERROR.\n");
+            g_progress.append(u8"\003No engine.cpp in VS project filters!\nERROR.\n");
             step = 100500;
             break;
           }
@@ -1006,13 +1025,18 @@ bool ShowUpdateProgress() {
           cursor = next_item;
           next_item = full_filter_content.find(engine_h_pattern);
           if (next_item == std::string::npos) {
-            g_progress.append(u8"No engine.h in VS project filters!\nERROR.\n");
+            ReplaceAll("/", "\\", &engine_h_pattern);
+            next_item = full_content.find(engine_h_pattern);
+          }
+          
+          if (next_item == std::string::npos) {
+            g_progress.append(u8"\003No engine.h in VS project filters!\nERROR.\n");
             step = 100500;
             break;
           }
           if (next_item < cursor) {
             g_progress.append(
-              u8"Out of order engine.h in VS project filters!\nERROR.\n");
+              u8"\003Out of order engine.h in VS project filters!\nERROR.\n");
             step = 100500;
             break;
           }
@@ -1047,13 +1071,18 @@ bool ShowUpdateProgress() {
     snprintf(text, sizeof(text), welcome,
              g_project_name.c_str(), g_current_directory.c_str(),
              g_progress.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop);
+    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
+                easy::kColorize, easy::kFilterNearest, g_palete);
     ShowFrame();
   }
   return false;
 }
 
 void EasyMain() {
+  g_palete.emplace_back((Ui32)0xffffffff);
+  g_palete.emplace_back((Ui32)0xffff9999);
+  g_palete.emplace_back((Ui32)0xffffffff);
+  g_palete.emplace_back((Ui32)0xff6666ff);
   g_font.Load("data/arctic_one_bmf.fnt");
   if (!GetCurrentPath(&g_current_directory)) {
     //
