@@ -1177,7 +1177,7 @@ struct GeometryImpl : Geometry
 		};
 
 		int in_polygon_idx = 0;
-		for (int i = 0; i < old_indices.size(); ++i)
+		for (int i = 0; i < (int)old_indices.size(); ++i)
 		{
 			int idx = getIdx(i);
 			if (in_polygon_idx <= 2)
@@ -1433,7 +1433,7 @@ struct Scene : IScene
 	const AnimationStack* getAnimationStack(int index) const override
 	{
 		assert(index >= 0);
-		assert(index < m_animation_stacks.size());
+		assert(index < (int)m_animation_stacks.size());
 		return m_animation_stacks[index];
 	}
 
@@ -1441,7 +1441,7 @@ struct Scene : IScene
 	const Mesh* getMesh(int index) const override
 	{
 		assert(index >= 0);
-		assert(index < m_meshes.size());
+		assert(index < (int)m_meshes.size());
 		return m_meshes[index];
 	}
 
@@ -1563,7 +1563,7 @@ struct AnimationLayerImpl : AnimationLayer
 
 	const AnimationCurveNode* getCurveNode(int index) const override
 	{
-		if (index >= curve_nodes.size() || index < 0) return nullptr;
+		if (index >= (int)curve_nodes.size() || index < 0) return nullptr;
 		return curve_nodes[index];
 	}
 

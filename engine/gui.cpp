@@ -547,7 +547,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               text_.erase(selection_begin_, selection_end_ - selection_begin_);
               selection_end_ = selection_begin_;
               cursor_pos_ = selection_begin_;
-            } else if (cursor_pos_ >= 0 && cursor_pos_ < text_.length()) {
+            } else if (cursor_pos_ >= 0 && cursor_pos_ < (Si32)text_.length()) {
               text_.erase(cursor_pos_, 1);
               // cursor_pos_;
             }
@@ -578,7 +578,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         } else if (key == kKeyRight) {
           *in_out_is_applied = true;
           if (message.keyboard.state[kKeyShift]) {
-            if (cursor_pos_ < text_.length()) {
+            if (cursor_pos_ < (Si32)text_.length()) {
               if (selection_begin_ == selection_end_) {
                 selection_begin_ = cursor_pos_;
                 cursor_pos_++;
@@ -592,7 +592,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               }
             }
           } else {
-            if (cursor_pos_ < text_.length()) {
+            if (cursor_pos_ < (Si32)text_.length()) {
               cursor_pos_++;
               selection_begin_ = cursor_pos_;
               selection_end_ = cursor_pos_;
