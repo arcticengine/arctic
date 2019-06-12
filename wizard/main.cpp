@@ -329,6 +329,35 @@ bool GetProjectName() {
   return false;
 }
 
+std::deque<std::string> GetDirectoryProjects(std::string project_directory) {
+  std::deque<std::string> candidates;
+  // List selected folder content
+  std::deque<DirectoryEntry> entries;
+  GetDirectoryEntries(g_project_directory.c_str(), &entries);
+
+  // find *.xcodeproj folder and *.vcxproj files
+  std::string xcode_ending = ".xcodeproj";
+  std::string vcx_ending = ".vcxproj";
+  for (Ui32 idx = 0; idx < entries.size(); ++idx) {
+    auto &file = entries[idx];
+    if (file.is_directory == kTrivalentTrue) {
+      if (EndsWith(file.title, xcode_ending)) {
+        std::string project_name =
+        file.title.substr(0, file.title.size() - xcode_ending.size());
+        for (Ui32 i = 0; i < entries.size(); ++i) {
+          std::string vcx = project_name + vcx_ending;
+          // make sure that names match
+          if (entries[i].title == vcx
+              && entries[i].is_file == kTrivalentTrue) {
+            candidates.push_back(project_name);
+          }
+        }
+      }
+    }
+  }
+  return candidates;
+}
+
 bool SelectProject() {
   std::deque<DirectoryEntry> entries;
   Ui32 selected_idx = 0;
@@ -365,14 +394,16 @@ bool SelectProject() {
     } else if (IsKeyUpward("S")) {
       is_done = true;
     }
-    
 
 
+    bool is_project_dir =
+      (GetDirectoryProjects(g_project_directory).size() == 1);
     std::stringstream str;
     str << u8"The Snow Wizard\n\n"
     "Select an existing Arctic Engine project to update.\n\n"
     "Press arrow keys and ENTER to navigate.\n"
-    "Press S while in a project directory to select it.\n"
+    "Press " << (is_project_dir ? u8"\001S\002" : u8"S")
+      << u8" while in a project directory to select it.\n"
     "Press ESC to leave the Snow Wizard.\n\n";
     str << "Path: " << g_project_directory << "\n\n";
     
@@ -619,36 +650,13 @@ bool ShowUpdateProgress() {
       case 3: {
         // find *.xcodeproj folder and *.vcxproj files, make sure that
         // names match and there are no other xcodeproj and vcxproj pairs
-        
-        // List selected folder content
-        std::deque<DirectoryEntry> entries;
-        GetDirectoryEntries(g_project_directory.c_str(), &entries);
-        bool is_ok = false;
-        Si32 candidate_count = 0;
-        // find *.xcodeproj folder and *.vcxproj files
-        std::string xcode_ending = ".xcodeproj";
-        std::string vcx_ending = ".vcxproj";
-        for (Ui32 idx = 0; idx < entries.size(); ++idx) {
-          auto &file = entries[idx];
-          if (file.is_directory == kTrivalentTrue) {
-            if (EndsWith(file.title, xcode_ending)) {
-              std::string project_name =
-                file.title.substr(0, file.title.size() - xcode_ending.size());
-              for (Ui32 i = 0; i < entries.size(); ++i) {
-                std::string vcx = project_name + vcx_ending;
-                // make sure that names match
-                if (entries[i].title == vcx
-                    && entries[i].is_file == kTrivalentTrue) {
-                  candidate_count++;
-                  is_ok = true;
-                  g_project_name = project_name;
-                  g_progress.append(u8"Project name candidate \"");
-                  g_progress.append(project_name);
-                  g_progress.append(u8"\"\n");
-                }
-              }
-            }
-          }
+        std::deque<std::string> candidates =
+          GetDirectoryProjects(g_project_directory);
+        Si32 candidate_count = (Si32)candidates.size();
+        for (Si32 i = 0; i < candidate_count; ++i) {
+          g_progress.append(u8"Project name candidate \"");
+          g_progress.append(candidates[i]);
+          g_progress.append(u8"\"\n");
         }
         
         // make sure that there are no other xcodeproj and vcxproj pairs
@@ -662,6 +670,8 @@ bool ShowUpdateProgress() {
           g_progress.append(g_project_directory);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
+        } else {
+          g_project_name = candidates[0];
         }
       }
         break;
