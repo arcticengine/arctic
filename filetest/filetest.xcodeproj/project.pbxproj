@@ -21,7 +21,6 @@
 		34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FBE1F68AD73005ACF7B /* engine.cpp */; };
 		34A37FE21F68AD73005ACF7B /* easy_sound_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FBF1F68AD73005ACF7B /* easy_sound_instance.cpp */; };
 		34A37FE31F68AD73005ACF7B /* easy_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FC11F68AD73005ACF7B /* easy_sound.cpp */; };
-		34A37FE41F68AD73005ACF7B /* byte_array.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FCA1F68AD73005ACF7B /* byte_array.cpp */; };
 		34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD21F68AD73005ACF7B /* arctic_input.cpp */; };
 		34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD81F68AD73005ACF7B /* arctic_math.cpp */; };
 		34C1595A200199EF0029160F /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C15959200199EF0029160F /* font.cpp */; };
@@ -78,7 +77,6 @@
 		34A37FC71F68AD73005ACF7B /* easy_sprite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sprite.h; path = ../engine/easy_sprite.h; sourceTree = SOURCE_ROOT; };
 		34A37FC81F68AD73005ACF7B /* bound2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bound2f.h; path = ../engine/bound2f.h; sourceTree = SOURCE_ROOT; };
 		34A37FC91F68AD73005ACF7B /* easy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy.h; path = ../engine/easy.h; sourceTree = SOURCE_ROOT; };
-		34A37FCA1F68AD73005ACF7B /* byte_array.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = byte_array.cpp; path = ../engine/byte_array.cpp; sourceTree = SOURCE_ROOT; };
 		34A37FCB1F68AD73005ACF7B /* rgba.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rgba.h; path = ../engine/rgba.h; sourceTree = SOURCE_ROOT; };
 		34A37FCC1F68AD73005ACF7B /* rgb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rgb.h; path = ../engine/rgb.h; sourceTree = SOURCE_ROOT; };
 		34A37FCD1F68AD73005ACF7B /* engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = engine.h; path = ../engine/engine.h; sourceTree = SOURCE_ROOT; };
@@ -89,7 +87,6 @@
 		34A37FD21F68AD73005ACF7B /* arctic_input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_input.cpp; path = ../engine/arctic_input.cpp; sourceTree = SOURCE_ROOT; };
 		34A37FD31F68AD73005ACF7B /* easy_sprite_instance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sprite_instance.h; path = ../engine/easy_sprite_instance.h; sourceTree = SOURCE_ROOT; };
 		34A37FD41F68AD73005ACF7B /* arctic_math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_math.h; path = ../engine/arctic_math.h; sourceTree = SOURCE_ROOT; };
-		34A37FD51F68AD73005ACF7B /* byte_array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = byte_array.h; path = ../engine/byte_array.h; sourceTree = SOURCE_ROOT; };
 		34A37FD61F68AD73005ACF7B /* scalar_math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = scalar_math.h; path = ../engine/scalar_math.h; sourceTree = SOURCE_ROOT; };
 		34A37FD71F68AD73005ACF7B /* opengl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = opengl.h; path = ../engine/opengl.h; sourceTree = SOURCE_ROOT; };
 		34A37FD81F68AD73005ACF7B /* arctic_math.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_math.cpp; path = ../engine/arctic_math.cpp; sourceTree = SOURCE_ROOT; };
@@ -199,8 +196,6 @@
 				34A37FD91F68AD73005ACF7B /* arctic_types.h */,
 				34A37FC81F68AD73005ACF7B /* bound2f.h */,
 				34A37FBC1F68AD73005ACF7B /* bound3f.h */,
-				34A37FCA1F68AD73005ACF7B /* byte_array.cpp */,
-				34A37FD51F68AD73005ACF7B /* byte_array.h */,
 				34A37FBF1F68AD73005ACF7B /* easy_sound_instance.cpp */,
 				34A37FD01F68AD73005ACF7B /* easy_sound_instance.h */,
 				34A37FC11F68AD73005ACF7B /* easy_sound.cpp */,
@@ -341,7 +336,6 @@
 				5E3D84C5D0AE12BE3B7CD3A4 /* arctic_platform_pi_sound.cpp in Sources */,
 				34A37FDF1F68AD73005ACF7B /* easy_sprite.cpp in Sources */,
 				34A37FE01F68AD73005ACF7B /* easy_sprite_instance.cpp in Sources */,
-				34A37FE41F68AD73005ACF7B /* byte_array.cpp in Sources */,
 				34A37FDB1F68AD73005ACF7B /* stb_vorbis.inc in Sources */,
 				34C5F3131FD4E22300A03FA2 /* arctic_platform_pi.cpp in Sources */,
 				34C1595A200199EF0029160F /* font.cpp in Sources */,

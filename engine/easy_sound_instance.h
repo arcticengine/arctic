@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "engine/arctic_types.h"
-#include "engine/byte_array.h"
 
 namespace arctic {
 namespace easy {
@@ -41,7 +40,7 @@ enum SoundDataFormat {
 class SoundInstance {
   double duration_;
   SoundDataFormat format_;
-  ByteArray data_;
+  std::vector<Ui8> data_;
   std::atomic<Si32> playing_count_;
  public:
   explicit SoundInstance(Ui32 wav_samples);

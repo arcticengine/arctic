@@ -47,10 +47,10 @@ class Engine {
   Ui32 backbuffer_texture_name_ = 0;
   easy::Sprite backbuffer_texture_;
 
-  ByteArray visible_verts_;
-  ByteArray visible_normals_;
-  ByteArray tex_coords_;
-  ByteArray visible_indices_;
+  std::vector<Ui8> visible_verts_;
+  std::vector<Ui8> visible_normals_;
+  std::vector<Ui8> tex_coords_;
+  std::vector<Ui8> visible_indices_;
 
   Si32 verts_ = 0;
   Si32 normals_ = 0;

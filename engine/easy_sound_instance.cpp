@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,26 +66,26 @@ struct WaveHeader {
 SoundInstance::SoundInstance(Ui32 wav_samples) {
   format_ = kSoundDataWav;
   playing_count_ = 0;
-  data_.Resize(wav_samples * 2 * sizeof(Si16));
+  data_.resize(wav_samples * 2 * sizeof(Si16));
 }
 
 SoundInstance::SoundInstance(std::vector<Ui8> vorbis_file) {
   format_ = kSoundDataVorbis;
   playing_count_ = 0;
-  data_.Resize(vorbis_file.size());
+  data_.resize(vorbis_file.size());
   std::memcpy(data_.data(), vorbis_file.data(), vorbis_file.size());
 }
 
 Si16* SoundInstance::GetWavData() {
   if (format_ == kSoundDataWav) {
-    return static_cast<Si16*>(data_.GetVoidData());
+    return static_cast<Si16*>((void*)data_.data());
   } else {
     return nullptr;
   }
 }
 
 Ui8* SoundInstance::GetVorbisData() const {
-  return static_cast<Ui8*>(data_.GetVoidData());
+  return static_cast<Ui8*>((void*)data_.data());
 }
 
 Si32 SoundInstance::GetVorbisSize() const {

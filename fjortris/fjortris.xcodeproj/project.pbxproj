@@ -20,23 +20,24 @@
 		34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FBE1F68AD73005ACF7B /* engine.cpp */; };
 		34A37FE21F68AD73005ACF7B /* easy_sound_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FBF1F68AD73005ACF7B /* easy_sound_instance.cpp */; };
 		34A37FE31F68AD73005ACF7B /* easy_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FC11F68AD73005ACF7B /* easy_sound.cpp */; };
-		34A37FE41F68AD73005ACF7B /* byte_array.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FCA1F68AD73005ACF7B /* byte_array.cpp */; };
 		34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD21F68AD73005ACF7B /* arctic_input.cpp */; };
 		34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD81F68AD73005ACF7B /* arctic_math.cpp */; };
 		34C1595A200199EF0029160F /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C15959200199EF0029160F /* font.cpp */; };
 		34C1597B20019B5C0029160F /* data in Resources */ = {isa = PBXBuildFile; fileRef = 34C1597920019B5C0029160F /* data */; };
 		34C1597C20019B5C0029160F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C1597A20019B5C0029160F /* main.cpp */; };
 		34C5F3131FD4E22300A03FA2 /* arctic_platform_pi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */; };
+		569219576B83A0D29F589766 /* arctic_platform_windows_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAC279DF6F11956B1EF7E173 /* arctic_platform_windows_sound.cpp */; };
+		5B3AFE686E53E488C5859A02 /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9D98E59189B45A95F5F6566C /* arctic_platform_macosx_sound.mm */; };
+		8988E7DBA2FE5C0C04A5793D /* arctic_mixer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E0CA9024A16B6B89D47C01E3 /* arctic_mixer.cpp */; };
 		8E0CE915AFCA9744987BE246 /* miniz.c in Sources */ = {isa = PBXBuildFile; fileRef = 40522918510E55CC354BE528 /* miniz.c */; };
 		B2199835FADB95A9E1FFA19B /* csv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 54FDFAF25820A19F9F8AD657 /* csv.cpp */; };
-		8988E7DBA2FE5C0C04A5793D /* arctic_mixer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E0CA9024A16B6B89D47C01E3 /* arctic_mixer.cpp */; };
-		FDA23DB7778532464B191FAD /* gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFAEC52EE79E156AC09D8980 /* gui.cpp */; };
-		5B3AFE686E53E488C5859A02 /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 9D98E59189B45A95F5F6566C /* arctic_platform_macosx_sound.mm */; };
 		BB3A75CE15C307246DFD117A /* ofbx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FEE9CBB30E4AF819C48AE7CA /* ofbx.cpp */; };
-		569219576B83A0D29F589766 /* arctic_platform_windows_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FAC279DF6F11956B1EF7E173 /* arctic_platform_windows_sound.cpp */; };
+		FDA23DB7778532464B191FAD /* gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFAEC52EE79E156AC09D8980 /* gui.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1C7D944BD25E949C45508A42 /* ofbx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofbx.h; path = ../engine/ofbx.h; sourceTree = SOURCE_ROOT; };
+		29A95195486F6A3C6D5CFDC2 /* test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test.h; path = ../engine/test.h; sourceTree = SOURCE_ROOT; };
 		34436CF11F642A66004DD16E /* fjortris.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fjortris.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34436CFD1F642A66004DD16E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = fjortris/Assets.xcassets; sourceTree = "<group>"; };
 		34436D021F642A66004DD16E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = fjortris/Info.plist; sourceTree = "<group>"; };
@@ -67,7 +68,6 @@
 		34A37FC71F68AD73005ACF7B /* easy_sprite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sprite.h; path = ../engine/easy_sprite.h; sourceTree = SOURCE_ROOT; };
 		34A37FC81F68AD73005ACF7B /* bound2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bound2f.h; path = ../engine/bound2f.h; sourceTree = SOURCE_ROOT; };
 		34A37FC91F68AD73005ACF7B /* easy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy.h; path = ../engine/easy.h; sourceTree = SOURCE_ROOT; };
-		34A37FCA1F68AD73005ACF7B /* byte_array.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = byte_array.cpp; path = ../engine/byte_array.cpp; sourceTree = SOURCE_ROOT; };
 		34A37FCB1F68AD73005ACF7B /* rgba.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rgba.h; path = ../engine/rgba.h; sourceTree = SOURCE_ROOT; };
 		34A37FCC1F68AD73005ACF7B /* rgb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rgb.h; path = ../engine/rgb.h; sourceTree = SOURCE_ROOT; };
 		34A37FCD1F68AD73005ACF7B /* engine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = engine.h; path = ../engine/engine.h; sourceTree = SOURCE_ROOT; };
@@ -78,7 +78,6 @@
 		34A37FD21F68AD73005ACF7B /* arctic_input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_input.cpp; path = ../engine/arctic_input.cpp; sourceTree = SOURCE_ROOT; };
 		34A37FD31F68AD73005ACF7B /* easy_sprite_instance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_sprite_instance.h; path = ../engine/easy_sprite_instance.h; sourceTree = SOURCE_ROOT; };
 		34A37FD41F68AD73005ACF7B /* arctic_math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_math.h; path = ../engine/arctic_math.h; sourceTree = SOURCE_ROOT; };
-		34A37FD51F68AD73005ACF7B /* byte_array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = byte_array.h; path = ../engine/byte_array.h; sourceTree = SOURCE_ROOT; };
 		34A37FD61F68AD73005ACF7B /* scalar_math.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = scalar_math.h; path = ../engine/scalar_math.h; sourceTree = SOURCE_ROOT; };
 		34A37FD71F68AD73005ACF7B /* opengl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = opengl.h; path = ../engine/opengl.h; sourceTree = SOURCE_ROOT; };
 		34A37FD81F68AD73005ACF7B /* arctic_math.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_math.cpp; path = ../engine/arctic_math.cpp; sourceTree = SOURCE_ROOT; };
@@ -89,21 +88,19 @@
 		34C1597A20019B5C0029160F /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
 		34C5F3111FD4E22300A03FA2 /* font.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = font.h; path = ../engine/font.h; sourceTree = SOURCE_ROOT; };
 		34C5F3121FD4E22300A03FA2 /* arctic_platform_pi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi.cpp; path = ../engine/arctic_platform_pi.cpp; sourceTree = SOURCE_ROOT; };
-		D4CCF0F44A3174E5792F0B1D /* csv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = csv.h; path = ../engine/csv.h; sourceTree = SOURCE_ROOT; };
 		40522918510E55CC354BE528 /* miniz.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = miniz.c; path = ../engine/miniz.c; sourceTree = SOURCE_ROOT; };
 		54FDFAF25820A19F9F8AD657 /* csv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = csv.cpp; path = ../engine/csv.cpp; sourceTree = SOURCE_ROOT; };
-		E85D09095CEE1C270363656A /* test_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test_main.h; path = ../engine/test_main.h; sourceTree = SOURCE_ROOT; };
-		84B0190C5712B546B653A44A /* stb_vorbis.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stb_vorbis.inc; path = ../engine/stb_vorbis.inc; sourceTree = SOURCE_ROOT; };
-		29A95195486F6A3C6D5CFDC2 /* test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test.h; path = ../engine/test.h; sourceTree = SOURCE_ROOT; };
-		E0CA9024A16B6B89D47C01E3 /* arctic_mixer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_mixer.cpp; path = ../engine/arctic_mixer.cpp; sourceTree = SOURCE_ROOT; };
-		869D99B8F3B1535146596587 /* miniz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = miniz.h; path = ../engine/miniz.h; sourceTree = SOURCE_ROOT; };
 		61E2FD1E9C65B1C47CE06782 /* gui.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gui.h; path = ../engine/gui.h; sourceTree = SOURCE_ROOT; };
-		F8E018CD5FFACCCA87ED4249 /* arctic_mixer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_mixer.h; path = ../engine/arctic_mixer.h; sourceTree = SOURCE_ROOT; };
-		BFAEC52EE79E156AC09D8980 /* gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gui.cpp; path = ../engine/gui.cpp; sourceTree = SOURCE_ROOT; };
+		84B0190C5712B546B653A44A /* stb_vorbis.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = stb_vorbis.inc; path = ../engine/stb_vorbis.inc; sourceTree = SOURCE_ROOT; };
+		869D99B8F3B1535146596587 /* miniz.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = miniz.h; path = ../engine/miniz.h; sourceTree = SOURCE_ROOT; };
 		9D98E59189B45A95F5F6566C /* arctic_platform_macosx_sound.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = arctic_platform_macosx_sound.mm; path = ../engine/arctic_platform_macosx_sound.mm; sourceTree = SOURCE_ROOT; };
-		1C7D944BD25E949C45508A42 /* ofbx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofbx.h; path = ../engine/ofbx.h; sourceTree = SOURCE_ROOT; };
-		FEE9CBB30E4AF819C48AE7CA /* ofbx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofbx.cpp; path = ../engine/ofbx.cpp; sourceTree = SOURCE_ROOT; };
+		BFAEC52EE79E156AC09D8980 /* gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gui.cpp; path = ../engine/gui.cpp; sourceTree = SOURCE_ROOT; };
+		D4CCF0F44A3174E5792F0B1D /* csv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = csv.h; path = ../engine/csv.h; sourceTree = SOURCE_ROOT; };
+		E0CA9024A16B6B89D47C01E3 /* arctic_mixer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_mixer.cpp; path = ../engine/arctic_mixer.cpp; sourceTree = SOURCE_ROOT; };
+		E85D09095CEE1C270363656A /* test_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test_main.h; path = ../engine/test_main.h; sourceTree = SOURCE_ROOT; };
+		F8E018CD5FFACCCA87ED4249 /* arctic_mixer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_mixer.h; path = ../engine/arctic_mixer.h; sourceTree = SOURCE_ROOT; };
 		FAC279DF6F11956B1EF7E173 /* arctic_platform_windows_sound.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_windows_sound.cpp; path = ../engine/arctic_platform_windows_sound.cpp; sourceTree = SOURCE_ROOT; };
+		FEE9CBB30E4AF819C48AE7CA /* ofbx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofbx.cpp; path = ../engine/ofbx.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -187,8 +184,6 @@
 				34A37FD91F68AD73005ACF7B /* arctic_types.h */,
 				34A37FC81F68AD73005ACF7B /* bound2f.h */,
 				34A37FBC1F68AD73005ACF7B /* bound3f.h */,
-				34A37FCA1F68AD73005ACF7B /* byte_array.cpp */,
-				34A37FD51F68AD73005ACF7B /* byte_array.h */,
 				34A37FBF1F68AD73005ACF7B /* easy_sound_instance.cpp */,
 				34A37FD01F68AD73005ACF7B /* easy_sound_instance.h */,
 				34A37FC11F68AD73005ACF7B /* easy_sound.cpp */,
@@ -261,7 +256,7 @@
 		34436CE91F642A66004DD16E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0910;
+				LastUpgradeCheck = 1020;
 				ORGANIZATIONNAME = Arctic;
 				TargetAttributes = {
 					34436CF01F642A66004DD16E = {
@@ -272,7 +267,7 @@
 			};
 			buildConfigurationList = 34436CEC1F642A66004DD16E /* Build configuration list for PBXProject "fjortris" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
@@ -317,7 +312,6 @@
 				BB3A75CE15C307246DFD117A /* ofbx.cpp in Sources */,
 				34A37FDF1F68AD73005ACF7B /* easy_sprite.cpp in Sources */,
 				34A37FE01F68AD73005ACF7B /* easy_sprite_instance.cpp in Sources */,
-				34A37FE41F68AD73005ACF7B /* byte_array.cpp in Sources */,
 				34C5F3131FD4E22300A03FA2 /* arctic_platform_pi.cpp in Sources */,
 				34C1595A200199EF0029160F /* font.cpp in Sources */,
 				34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */,
@@ -337,6 +331,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -347,6 +342,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -354,6 +350,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
@@ -393,6 +390,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -403,6 +401,7 @@
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_COMMA = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_EMPTY_BODY = YES;
@@ -410,6 +409,7 @@
 				CLANG_WARN_INFINITE_RECURSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;

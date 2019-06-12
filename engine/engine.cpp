@@ -84,20 +84,20 @@ void Engine::Draw2d() {
   glClear(GL_COLOR_BUFFER_BIT);
   // draw quad
 
-  visible_verts_.Resize(16 << 20);
-  visible_normals_.Resize(16 << 20);
-  visible_indices_.Resize(16 << 20);
-  tex_coords_.Resize(16 << 20);
+  visible_verts_.resize(16 << 20);
+  visible_normals_.resize(16 << 20);
+  visible_indices_.resize(16 << 20);
+  tex_coords_.resize(16 << 20);
 
   verts_ = 0;
   normals_ = 0;
   tex_ = 0;
   indices_ = 0;
 
-  Vec3F *vertex = static_cast<Vec3F*>(visible_verts_.GetVoidData());
-  Vec3F *normal = static_cast<Vec3F*>(visible_normals_.GetVoidData());
-  Vec2F *tex = static_cast<Vec2F*>(tex_coords_.GetVoidData());
-  Ui32 *index = static_cast<Ui32*>(visible_indices_.GetVoidData());
+  Vec3F *vertex = static_cast<Vec3F*>((void*)visible_verts_.data());
+  Vec3F *normal = static_cast<Vec3F*>((void*)visible_normals_.data());
+  Vec2F *tex = static_cast<Vec2F*>((void*)tex_coords_.data());
+  Ui32 *index = static_cast<Ui32*>((void*)visible_indices_.data());
 
   float aspect = static_cast<float>(width_) / static_cast<float>(height_);
   float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
@@ -163,11 +163,11 @@ void Engine::Draw2d() {
   glLoadIdentity();
   glOrtho(-1, 1, -1, 1, 1, -1);
 
-  glVertexPointer(3, GL_FLOAT, 0, visible_verts_.GetVoidData());
-  glNormalPointer(GL_FLOAT, 0, visible_normals_.GetVoidData());
-  glTexCoordPointer(2, GL_FLOAT, 0, tex_coords_.GetVoidData());
+  glVertexPointer(3, GL_FLOAT, 0, (void*)visible_verts_.data());
+  glNormalPointer(GL_FLOAT, 0, (void*)visible_normals_.data());
+  glTexCoordPointer(2, GL_FLOAT, 0, (void*)tex_coords_.data());
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
-      visible_indices_.GetVoidData());
+      (void*)visible_indices_.data());
 
   glDisableClientState(GL_TEXTURE_COORD_ARRAY);
   glDisableClientState(GL_NORMAL_ARRAY);

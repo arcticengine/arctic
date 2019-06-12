@@ -46,7 +46,7 @@ void SpriteInstance::UpdateOpaqueSpans() {
   }
   opaque_.resize(height_);
   for (Si32 y = 0; y < height_; ++y) {
-    const Rgba *line = reinterpret_cast<Rgba*>(data_.GetVoidData()) +
+    const Rgba *line = reinterpret_cast<Rgba*>((void*)data_.data()) +
       width_ * y;
     SpanSi32 &span = opaque_[y];
     span.begin = 0;

@@ -53,7 +53,6 @@
 #include "engine/arctic_input.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_mixer.h"
-#include "engine/byte_array.h"
 #include "engine/log.h"
 #include "engine/rgb.h"
 #include "engine/vec3f.h"

@@ -26,7 +26,6 @@
 #include <memory>
 #include <vector>
 #include "engine/arctic_types.h"
-#include "engine/byte_array.h"
 
 namespace arctic {
 namespace easy {
@@ -40,7 +39,7 @@ class SpriteInstance {
  private:
   Si32 width_;
   Si32 height_;
-  ByteArray data_;
+  std::vector<Ui8> data_;
   std::vector<SpanSi32> opaque_;
 
  public:
