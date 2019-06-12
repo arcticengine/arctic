@@ -32,8 +32,9 @@
 #include <string>
 
 
-namespace ofbx
-{
+namespace arctic {
+
+namespace ofbx {
 
 
 struct Error
@@ -108,7 +109,7 @@ struct Cursor
 };
 
 
-static void setTranslation(const Vec3& t, Matrix* mtx)
+static void setTranslation(const Vec3D& t, Matrix44D* mtx)
 {
 	mtx->m[12] = t.x;
 	mtx->m[13] = t.y;
@@ -116,15 +117,15 @@ static void setTranslation(const Vec3& t, Matrix* mtx)
 }
 
 
-static Vec3 operator-(const Vec3& v)
+static Vec3D operator-(const Vec3D& v)
 {
 	return {-v.x, -v.y, -v.z};
 }
 
 
-static Matrix operator*(const Matrix& lhs, const Matrix& rhs)
+static Matrix44D operator*(const Matrix44D& lhs, const Matrix44D& rhs)
 {
-	Matrix res;
+	Matrix44D res;
 	for (int j = 0; j < 4; ++j)
 	{
 		for (int i = 0; i < 4; ++i)
@@ -141,15 +142,15 @@ static Matrix operator*(const Matrix& lhs, const Matrix& rhs)
 }
 
 
-static Matrix makeIdentity()
+static Matrix44D makeIdentity()
 {
 	return {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 }
 
 
-static Matrix rotationX(double angle)
+static Matrix44D rotationX(double angle)
 {
-	Matrix m = makeIdentity();
+	Matrix44D m = makeIdentity();
 	double c = cos(angle);
 	double s = sin(angle);
 
@@ -161,9 +162,9 @@ static Matrix rotationX(double angle)
 }
 
 
-static Matrix rotationY(double angle)
+static Matrix44D rotationY(double angle)
 {
-	Matrix m = makeIdentity();
+	Matrix44D m = makeIdentity();
 	double c = cos(angle);
 	double s = sin(angle);
 
@@ -175,9 +176,9 @@ static Matrix rotationY(double angle)
 }
 
 
-static Matrix rotationZ(double angle)
+static Matrix44D rotationZ(double angle)
 {
-	Matrix m = makeIdentity();
+	Matrix44D m = makeIdentity();
 	double c = cos(angle);
 	double s = sin(angle);
 
@@ -189,12 +190,12 @@ static Matrix rotationZ(double angle)
 }
 
 
-static Matrix getRotationMatrix(const Vec3& euler, RotationOrder order)
+static Matrix44D getRotationMatrix(const Vec3D& euler, RotationOrder order)
 {
 	const double TO_RAD = 3.1415926535897932384626433832795028 / 180.0;
-	Matrix rx = rotationX(euler.x * TO_RAD);
-	Matrix ry = rotationY(euler.y * TO_RAD);
-	Matrix rz = rotationZ(euler.z * TO_RAD);
+	Matrix44D rx = rotationX(euler.x * TO_RAD);
+	Matrix44D ry = rotationY(euler.y * TO_RAD);
+	Matrix44D rz = rotationZ(euler.z * TO_RAD);
 	switch (order) {
 		default:
 		case RotationOrder::SPHERIC_XYZ:
@@ -443,7 +444,7 @@ static int resolveEnumProperty(const Object& object, const char* name, int defau
 }
 
 
-static Vec3 resolveVec3Property(const Object& object, const char* name, const Vec3& default_value)
+static Vec3D resolveVec3Property(const Object& object, const char* name, const Vec3D& default_value)
 {
 	Element* element = (Element*)resolveProperty(object, name);
 	if (!element) return default_value;
@@ -1016,17 +1017,17 @@ struct MeshImpl : Mesh
 	}
 
 
-	Matrix getGeometricMatrix() const override
+	Matrix44D getGeometricMatrix() const override
 	{
-		Vec3 translation = resolveVec3Property(*this, "GeometricTranslation", {0, 0, 0});
-		Vec3 rotation = resolveVec3Property(*this, "GeometricRotation", {0, 0, 0});
-		Vec3 scale = resolveVec3Property(*this, "GeometricScaling", {1, 1, 1});
+		Vec3D translation = resolveVec3Property(*this, "GeometricTranslation", {0, 0, 0});
+		Vec3D rotation = resolveVec3Property(*this, "GeometricRotation", {0, 0, 0});
+		Vec3D scale = resolveVec3Property(*this, "GeometricScaling", {1, 1, 1});
 
-		Matrix scale_mtx = makeIdentity();
+		Matrix44D scale_mtx = makeIdentity();
 		scale_mtx.m[0] = (float)scale.x;
 		scale_mtx.m[5] = (float)scale.y;
 		scale_mtx.m[10] = (float)scale.z;
-		Matrix mtx = getRotationMatrix(rotation, RotationOrder::EULER_XYZ);
+		Matrix44D mtx = getRotationMatrix(rotation, RotationOrder::EULER_XYZ);
 		setTranslation(translation, &mtx);
 
 		return scale_mtx * mtx;
@@ -1065,10 +1066,10 @@ struct MaterialImpl : Material
 
 
 	const Texture* getTexture(Texture::TextureType type) const override { return textures[type]; }
-	Color getDiffuseColor() const override { return diffuse_color; }
+	RgbF getDiffuseColor() const override { return diffuse_color; }
 
 	const Texture* textures[Texture::TextureType::COUNT];
-	Color diffuse_color;
+	RgbF diffuse_color;
 };
 
 
@@ -1137,11 +1138,11 @@ struct GeometryImpl : Geometry
 		NewVertex* next = nullptr;
 	};
 
-	std::vector<Vec3> vertices;
-	std::vector<Vec3> normals;
-	std::vector<Vec2> uvs[s_uvs_max];
-	std::vector<Vec4> colors;
-	std::vector<Vec3> tangents;
+	std::vector<Vec3D> vertices;
+	std::vector<Vec3D> normals;
+	std::vector<Vec2D> uvs[s_uvs_max];
+	std::vector<Vec4D> colors;
+	std::vector<Vec3D> tangents;
 	std::vector<int> materials;
 
 	const Skin* skin = nullptr;
@@ -1157,11 +1158,11 @@ struct GeometryImpl : Geometry
 
 	Type getType() const override { return Type::GEOMETRY; }
 	int getVertexCount() const override { return (int)vertices.size(); }
-	const Vec3* getVertices() const override { return &vertices[0]; }
-	const Vec3* getNormals() const override { return normals.empty() ? nullptr : &normals[0]; }
-	const Vec2* getUVs(int index = 0) const override { return index < 0 || index >= s_uvs_max || uvs[index].empty() ? nullptr : &uvs[index][0]; }
-	const Vec4* getColors() const override { return colors.empty() ? nullptr : &colors[0]; }
-	const Vec3* getTangents() const override { return tangents.empty() ? nullptr : &tangents[0]; }
+	const Vec3D* getVertices() const override { return &vertices[0]; }
+	const Vec3D* getNormals() const override { return normals.empty() ? nullptr : &normals[0]; }
+	const Vec2D* getUVs(int index = 0) const override { return index < 0 || index >= s_uvs_max || uvs[index].empty() ? nullptr : &uvs[index][0]; }
+	const Vec4D* getColors() const override { return colors.empty() ? nullptr : &colors[0]; }
+	const Vec3D* getTangents() const override { return tangents.empty() ? nullptr : &tangents[0]; }
 	const Skin* getSkin() const override { return skin; }
 	const int* getMaterials() const override { return materials.empty() ? nullptr : &materials[0]; }
 
@@ -1221,8 +1222,8 @@ struct ClusterImpl : Cluster
 	int getIndicesCount() const override { return (int)indices.size(); }
 	const double* getWeights() const override { return &weights[0]; }
 	int getWeightsCount() const override { return (int)weights.size(); }
-	Matrix getTransformMatrix() const override { return transform_matrix; }
-	Matrix getTransformLinkMatrix() const override { return transform_link_matrix; }
+	Matrix44D getTransformMatrix() const override { return transform_matrix; }
+	Matrix44D getTransformLinkMatrix() const override { return transform_link_matrix; }
 	Object* getLink() const override { return link; }
 
 
@@ -1275,8 +1276,8 @@ struct ClusterImpl : Cluster
 	Skin* skin = nullptr;
 	std::vector<int> indices;
 	std::vector<double> weights;
-	Matrix transform_matrix;
-	Matrix transform_link_matrix;
+	Matrix44D transform_matrix;
+	Matrix44D transform_link_matrix;
 	Type getType() const override { return Type::CLUSTER; }
 };
 
@@ -1502,7 +1503,7 @@ struct AnimationCurveNodeImpl : AnimationCurveNode
 	}
 
 
-	Vec3 getNodeLocalTransform(double time) const override
+	Vec3D getNodeLocalTransform(double time) const override
 	{
 		i64 fbx_time = secondsToFbxTime(time);
 
@@ -1810,25 +1811,25 @@ const char* fromString(const char* str, const char* end, double* val, int count)
 }
 
 
-template <> const char* fromString<Vec2>(const char* str, const char* end, Vec2* val)
+template <> const char* fromString<Vec2D>(const char* str, const char* end, Vec2D* val)
 {
 	return fromString(str, end, &val->x, 2);
 }
 
 
-template <> const char* fromString<Vec3>(const char* str, const char* end, Vec3* val)
+template <> const char* fromString<Vec3D>(const char* str, const char* end, Vec3D* val)
 {
 	return fromString(str, end, &val->x, 3);
 }
 
 
-template <> const char* fromString<Vec4>(const char* str, const char* end, Vec4* val)
+template <> const char* fromString<Vec4D>(const char* str, const char* end, Vec4D* val)
 {
 	return fromString(str, end, &val->x, 4);
 }
 
 
-template <> const char* fromString<Matrix>(const char* str, const char* end, Matrix* val)
+template <> const char* fromString<Matrix44D>(const char* str, const char* end, Matrix44D* val)
 {
 	return fromString(str, end, &val->m[0], 16);
 }
@@ -2116,7 +2117,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene, const Element& e
 
 	std::unique_ptr<GeometryImpl> geom(new GeometryImpl(scene, element));
 
-	std::vector<Vec3> vertices;
+	std::vector<Vec3D> vertices;
 	if (!parseDoubleVecData(*vertices_element->first_property, &vertices)) return Error("Failed to parse vertices");
 	std::vector<int> original_indices;
 	if (!parseBinaryArray(*polys_element->first_property, &original_indices)) return Error("Failed to parse indices");
@@ -2181,9 +2182,9 @@ static OptionalError<Object*> parseGeometry(const Scene& scene, const Element& e
         const int uv_index = layer_uv_element->first_property ? layer_uv_element->first_property->getValue().toInt() : 0;
         if (uv_index >= 0 && uv_index < Geometry::s_uvs_max)
         {
-            std::vector<Vec2>& uvs = geom->uvs[uv_index];
+            std::vector<Vec2D>& uvs = geom->uvs[uv_index];
 
-            std::vector<Vec2> tmp;
+            std::vector<Vec2D> tmp;
             std::vector<int> tmp_indices;
             GeometryImpl::VertexDataMapping mapping;
             if (!parseVertexData(*layer_uv_element, "UV", "UVIndex", &tmp, &tmp_indices, &mapping)) return Error("Invalid UVs");
@@ -2204,7 +2205,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene, const Element& e
 	const Element* layer_tangent_element = findChild(element, "LayerElementTangents");
 	if (layer_tangent_element)
 	{
-		std::vector<Vec3> tmp;
+		std::vector<Vec3D> tmp;
 		std::vector<int> tmp_indices;
 		GeometryImpl::VertexDataMapping mapping;
 		if (findChild(*layer_tangent_element, "Tangents"))
@@ -2225,7 +2226,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene, const Element& e
 	const Element* layer_color_element = findChild(element, "LayerElementColor");
 	if (layer_color_element)
 	{
-		std::vector<Vec4> tmp;
+		std::vector<Vec4D> tmp;
 		std::vector<int> tmp_indices;
 		GeometryImpl::VertexDataMapping mapping;
 		if (!parseVertexData(*layer_color_element, "Colors", "ColorIndex", &tmp, &tmp_indices, &mapping)) return Error("Invalid colors");
@@ -2239,7 +2240,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene, const Element& e
 	const Element* layer_normal_element = findChild(element, "LayerElementNormal");
 	if (layer_normal_element)
 	{
-		std::vector<Vec3> tmp;
+		std::vector<Vec3D> tmp;
 		std::vector<int> tmp_indices;
 		GeometryImpl::VertexDataMapping mapping;
 		if (!parseVertexData(*layer_normal_element, "Normals", "NormalsIndex", &tmp, &tmp_indices, &mapping)) return Error("Invalid normals");
@@ -2754,76 +2755,76 @@ RotationOrder Object::getRotationOrder() const
 }
 
 
-Vec3 Object::getRotationOffset() const
+Vec3D Object::getRotationOffset() const
 {
 	return resolveVec3Property(*this, "RotationOffset", {0, 0, 0});
 }
 
 
-Vec3 Object::getRotationPivot() const
+Vec3D Object::getRotationPivot() const
 {
 	return resolveVec3Property(*this, "RotationPivot", {0, 0, 0});
 }
 
 
-Vec3 Object::getPostRotation() const
+Vec3D Object::getPostRotation() const
 {
 	return resolveVec3Property(*this, "PostRotation", {0, 0, 0});
 }
 
 
-Vec3 Object::getScalingOffset() const
+Vec3D Object::getScalingOffset() const
 {
 	return resolveVec3Property(*this, "ScalingOffset", {0, 0, 0});
 }
 
 
-Vec3 Object::getScalingPivot() const
+Vec3D Object::getScalingPivot() const
 {
 	return resolveVec3Property(*this, "ScalingPivot", {0, 0, 0});
 }
 
 
-Matrix Object::evalLocal(const Vec3& translation, const Vec3& rotation) const
+Matrix44D Object::evalLocal(const Vec3D& translation, const Vec3D& rotation) const
 {
 	return evalLocal(translation, rotation, getLocalScaling());
 }
 
 
-Matrix Object::evalLocal(const Vec3& translation, const Vec3& rotation, const Vec3& scaling) const
+Matrix44D Object::evalLocal(const Vec3D& translation, const Vec3D& rotation, const Vec3D& scaling) const
 {
-	Vec3 rotation_pivot = getRotationPivot();
-	Vec3 scaling_pivot = getScalingPivot();
+	Vec3D rotation_pivot = getRotationPivot();
+	Vec3D scaling_pivot = getScalingPivot();
 	RotationOrder rotation_order = getRotationOrder();
 
-	Matrix s = makeIdentity();
+	Matrix44D s = makeIdentity();
 	s.m[0] = scaling.x;
 	s.m[5] = scaling.y;
 	s.m[10] = scaling.z;
 
-	Matrix t = makeIdentity();
+	Matrix44D t = makeIdentity();
 	setTranslation(translation, &t);
 
-	Matrix r = getRotationMatrix(rotation, rotation_order);
-	Matrix r_pre = getRotationMatrix(getPreRotation(), RotationOrder::EULER_XYZ);
-	Matrix r_post_inv = getRotationMatrix(-getPostRotation(), RotationOrder::EULER_ZYX);
+	Matrix44D r = getRotationMatrix(rotation, rotation_order);
+	Matrix44D r_pre = getRotationMatrix(getPreRotation(), RotationOrder::EULER_XYZ);
+	Matrix44D r_post_inv = getRotationMatrix(-getPostRotation(), RotationOrder::EULER_ZYX);
 
-	Matrix r_off = makeIdentity();
+	Matrix44D r_off = makeIdentity();
 	setTranslation(getRotationOffset(), &r_off);
 
-	Matrix r_p = makeIdentity();
+	Matrix44D r_p = makeIdentity();
 	setTranslation(rotation_pivot, &r_p);
 
-	Matrix r_p_inv = makeIdentity();
+	Matrix44D r_p_inv = makeIdentity();
 	setTranslation(-rotation_pivot, &r_p_inv);
 
-	Matrix s_off = makeIdentity();
+	Matrix44D s_off = makeIdentity();
 	setTranslation(getScalingOffset(), &s_off);
 
-	Matrix s_p = makeIdentity();
+	Matrix44D s_p = makeIdentity();
 	setTranslation(scaling_pivot, &s_p);
 
-	Matrix s_p_inv = makeIdentity();
+	Matrix44D s_p_inv = makeIdentity();
 	setTranslation(-scaling_pivot, &s_p_inv);
 
 	// http://help.autodesk.com/view/FBX/2017/ENU/?guid=__files_GUID_10CDD63C_79C1_4F2D_BB28_AD2BE65A02ED_htm
@@ -2831,31 +2832,31 @@ Matrix Object::evalLocal(const Vec3& translation, const Vec3& rotation, const Ve
 }
 
 
-Vec3 Object::getLocalTranslation() const
+Vec3D Object::getLocalTranslation() const
 {
 	return resolveVec3Property(*this, "Lcl Translation", {0, 0, 0});
 }
 
 
-Vec3 Object::getPreRotation() const
+Vec3D Object::getPreRotation() const
 {
 	return resolveVec3Property(*this, "PreRotation", {0, 0, 0});
 }
 
 
-Vec3 Object::getLocalRotation() const
+Vec3D Object::getLocalRotation() const
 {
 	return resolveVec3Property(*this, "Lcl Rotation", {0, 0, 0});
 }
 
 
-Vec3 Object::getLocalScaling() const
+Vec3D Object::getLocalScaling() const
 {
 	return resolveVec3Property(*this, "Lcl Scaling", {1, 1, 1});
 }
 
 
-Matrix Object::getGlobalTransform() const
+Matrix44D Object::getGlobalTransform() const
 {
 	const Object* parent = getParent();
 	if (!parent) return evalLocal(getLocalTranslation(), getLocalRotation());
@@ -2864,7 +2865,7 @@ Matrix Object::getGlobalTransform() const
 }
 
 
-Matrix Object::getLocalTransform() const
+Matrix44D Object::getLocalTransform() const
 {
     return evalLocal(getLocalTranslation(), getLocalRotation(), getLocalScaling());
 }
@@ -2990,3 +2991,5 @@ const char* getError()
 
 
 } // namespace ofbx
+
+} // namespace arctic

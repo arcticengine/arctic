@@ -24,9 +24,9 @@
 
 #pragma once
 
+namespace arctic {
 
-namespace ofbx
-{
+namespace ofbx {
 
 
 typedef unsigned char u8;
@@ -41,44 +41,32 @@ static_assert(sizeof(u64) == 8, "u64 is not 8 bytes");
 static_assert(sizeof(i64) == 8, "i64 is not 8 bytes");
 
 
-struct Vec2
-{
+struct Vec2D {
 	double x, y;
 };
 
-
-struct Vec3
-{
+struct Vec3D {
 	double x, y, z;
 };
 
-
-struct Vec4
-{
+struct Vec4D {
 	double x, y, z, w;
 };
 
-
-struct Matrix
-{
-	double m[16]; // last 4 are translation
+struct Matrix44D {
+	double m[16]; //!< last 4 are translation
 };
 
-
-struct Quat
-{
+struct QuatD {
 	double x, y, z, w;
 };
 
-
-struct Color
-{
+struct RgbF {
 	float r, g, b;
 };
 
 
-struct DataView
-{
+struct DataView {
 	const u8* begin = nullptr;
 	const u8* end = nullptr;
 	bool is_binary = true;
@@ -109,8 +97,7 @@ struct DataView
 };
 
 
-struct IElementProperty
-{
+struct IElementProperty {
 	enum Type : unsigned char
 	{
 		LONG = 'L',
@@ -135,15 +122,12 @@ struct IElementProperty
 	virtual bool getValues(i64* values, int max_size) const = 0;
 };
 
-
-struct IElement
-{
+struct IElement {
 	virtual IElement* getFirstChild() const = 0;
 	virtual IElement* getSibling() const = 0;
 	virtual DataView getID() const = 0;
 	virtual IElementProperty* getFirstProperty() const = 0;
 };
-
 
 enum class RotationOrder {
 	EULER_XYZ,
@@ -152,20 +136,16 @@ enum class RotationOrder {
 	EULER_YXZ,
 	EULER_ZXY,
 	EULER_ZYX,
-    SPHERIC_XYZ // Currently unsupported. Treated as EULER_XYZ.
+    SPHERIC_XYZ //!< Currently unsupported. Treated as EULER_XYZ.
 };
-
 
 struct AnimationCurveNode;
 struct AnimationLayer;
 struct Scene;
 struct IScene;
 
-
-struct Object
-{
-	enum class Type
-	{
+struct Object {
+	enum class Type {
 		ROOT,
 		GEOMETRY,
 		MATERIAL,
@@ -194,24 +174,23 @@ struct Object
 	Object* getParent() const;
 
     RotationOrder getRotationOrder() const;
-	Vec3 getRotationOffset() const;
-	Vec3 getRotationPivot() const;
-	Vec3 getPostRotation() const;
-	Vec3 getScalingOffset() const;
-	Vec3 getScalingPivot() const;
-	Vec3 getPreRotation() const;
-	Vec3 getLocalTranslation() const;
-	Vec3 getLocalRotation() const;
-	Vec3 getLocalScaling() const;
-	Matrix getGlobalTransform() const;
-	Matrix getLocalTransform() const;
-	Matrix evalLocal(const Vec3& translation, const Vec3& rotation) const;
-	Matrix evalLocal(const Vec3& translation, const Vec3& rotation, const Vec3& scaling) const;
+	Vec3D getRotationOffset() const;
+	Vec3D getRotationPivot() const;
+	Vec3D getPostRotation() const;
+	Vec3D getScalingOffset() const;
+	Vec3D getScalingPivot() const;
+	Vec3D getPreRotation() const;
+	Vec3D getLocalTranslation() const;
+	Vec3D getLocalRotation() const;
+	Vec3D getLocalScaling() const;
+	Matrix44D getGlobalTransform() const;
+	Matrix44D getLocalTransform() const;
+	Matrix44D evalLocal(const Vec3D& translation, const Vec3D& rotation) const;
+	Matrix44D evalLocal(const Vec3D& translation, const Vec3D& rotation, const Vec3D& scaling) const;
 	bool isNode() const { return is_node; }
 
 
-	template <typename T> T* resolveObjectLink(int idx) const
-	{
+	template <typename T> T* resolveObjectLink(int idx) const {
 		return static_cast<T*>(resolveObjectLink(T::s_type, nullptr, idx));
 	}
 
@@ -226,10 +205,8 @@ protected:
 };
 
 
-struct Texture : Object
-{
-	enum TextureType
-	{
+struct Texture : Object {
+	enum TextureType {
 		DIFFUSE,
 		NORMAL,
 
@@ -244,19 +221,17 @@ struct Texture : Object
 };
 
 
-struct Material : Object
-{
+struct Material : Object {
 	static const Type s_type = Type::MATERIAL;
 
 	Material(const Scene& _scene, const IElement& _element);
 
-	virtual Color getDiffuseColor() const = 0;
+	virtual RgbF getDiffuseColor() const = 0;
 	virtual const Texture* getTexture(Texture::TextureType type) const = 0;
 };
 
 
-struct Cluster : Object
-{
+struct Cluster : Object {
 	static const Type s_type = Type::CLUSTER;
 
 	Cluster(const Scene& _scene, const IElement& _element);
@@ -265,14 +240,13 @@ struct Cluster : Object
 	virtual int getIndicesCount() const = 0;
 	virtual const double* getWeights() const = 0;
 	virtual int getWeightsCount() const = 0;
-	virtual Matrix getTransformMatrix() const = 0;
-	virtual Matrix getTransformLinkMatrix() const = 0;
+	virtual Matrix44D getTransformMatrix() const = 0;
+	virtual Matrix44D getTransformLinkMatrix() const = 0;
 	virtual const Object* getLink() const = 0;
 };
 
 
-struct Skin : Object
-{
+struct Skin : Object {
 	static const Type s_type = Type::SKIN;
 
 	Skin(const Scene& _scene, const IElement& _element);
@@ -282,8 +256,7 @@ struct Skin : Object
 };
 
 
-struct NodeAttribute : Object
-{
+struct NodeAttribute : Object {
 	static const Type s_type = Type::NODE_ATTRIBUTE;
 
 	NodeAttribute(const Scene& _scene, const IElement& _element);
@@ -292,40 +265,37 @@ struct NodeAttribute : Object
 };
 
 
-struct Geometry : Object
-{
+struct Geometry : Object {
 	static const Type s_type = Type::GEOMETRY;
     static const int s_uvs_max = 4;
 
 	Geometry(const Scene& _scene, const IElement& _element);
 
-	virtual const Vec3* getVertices() const = 0;
+	virtual const Vec3D* getVertices() const = 0;
 	virtual int getVertexCount() const = 0;
 
-	virtual const Vec3* getNormals() const = 0;
-	virtual const Vec2* getUVs(int index = 0) const = 0;
-	virtual const Vec4* getColors() const = 0;
-	virtual const Vec3* getTangents() const = 0;
+	virtual const Vec3D* getNormals() const = 0;
+	virtual const Vec2D* getUVs(int index = 0) const = 0;
+	virtual const Vec4D* getColors() const = 0;
+	virtual const Vec3D* getTangents() const = 0;
 	virtual const Skin* getSkin() const = 0;
 	virtual const int* getMaterials() const = 0;
 };
 
 
-struct Mesh : Object
-{
+struct Mesh : Object {
 	static const Type s_type = Type::MESH;
 
 	Mesh(const Scene& _scene, const IElement& _element);
 
 	virtual const Geometry* getGeometry() const = 0;
-	virtual Matrix getGeometricMatrix() const = 0;
+	virtual Matrix44D getGeometricMatrix() const = 0;
 	virtual const Material* getMaterial(int idx) const = 0;
 	virtual int getMaterialCount() const = 0;
 };
 
 
-struct AnimationStack : Object
-{
+struct AnimationStack : Object {
 	static const Type s_type = Type::ANIMATION_STACK;
 
 	AnimationStack(const Scene& _scene, const IElement& _element);
@@ -333,8 +303,7 @@ struct AnimationStack : Object
 };
 
 
-struct AnimationLayer : Object
-{
+struct AnimationLayer : Object {
 	static const Type s_type = Type::ANIMATION_LAYER;
 
 	AnimationLayer(const Scene& _scene, const IElement& _element);
@@ -344,8 +313,7 @@ struct AnimationLayer : Object
 };
 
 
-struct AnimationCurve : Object
-{
+struct AnimationCurve : Object {
 	static const Type s_type = Type::ANIMATION_CURVE;
 
 	AnimationCurve(const Scene& _scene, const IElement& _element);
@@ -356,19 +324,17 @@ struct AnimationCurve : Object
 };
 
 
-struct AnimationCurveNode : Object
-{
+struct AnimationCurveNode : Object {
 	static const Type s_type = Type::ANIMATION_CURVE_NODE;
 
 	AnimationCurveNode(const Scene& _scene, const IElement& _element);
 
-	virtual Vec3 getNodeLocalTransform(double time) const = 0;
+	virtual Vec3D getNodeLocalTransform(double time) const = 0;
 	virtual const Object* getBone() const = 0;
 };
 
 
-struct TakeInfo
-{
+struct TakeInfo {
 	DataView name;
 	DataView filename;
 	double local_time_from;
@@ -378,34 +344,30 @@ struct TakeInfo
 };
 
 
-// Specifies which canonical axis represents up in the system (typically Y or Z).
-enum UpVector
-{
+//! Specifies which canonical axis represents up in the system (typically Y or Z).
+enum UpVector {
 	UpVector_AxisX = 1,
 	UpVector_AxisY = 2,
 	UpVector_AxisZ = 3
 };
 
 
-// Vector with origin at the screen pointing toward the camera.
-enum FrontVector
-{
+//! Vector with origin at the screen pointing toward the camera.
+enum FrontVector {
 	FrontVector_ParityEven = 1,
 	FrontVector_ParityOdd = 2
 };
 
 
-// Specifies the third vector of the system.
-enum CoordSystem
-{
+//! Specifies the third vector of the system.
+enum CoordSystem {
 	CoordSystem_RightHanded = 0,
 	CoordSystem_LeftHanded = 1
 };
 
 
-// http://docs.autodesk.com/FBX/2014/ENU/FBX-SDK-Documentation/index.html?url=cpp_ref/class_fbx_time.html,topicNumber=cpp_ref_class_fbx_time_html29087af6-8c2c-4e9d-aede-7dc5a1c2436c,hash=a837590fd5310ff5df56ffcf7c394787e
-enum FrameRate
-{
+//! http://docs.autodesk.com/FBX/2014/ENU/FBX-SDK-Documentation/index.html?url=cpp_ref/class_fbx_time.html,topicNumber=cpp_ref_class_fbx_time_html29087af6-8c2c-4e9d-aede-7dc5a1c2436c,hash=a837590fd5310ff5df56ffcf7c394787e
+enum FrameRate {
 	FrameRate_DEFAULT = 0,
 	FrameRate_120 = 1,
 	FrameRate_100 = 2,
@@ -423,9 +385,7 @@ enum FrameRate
 	FrameRate_CUSTOM = 14,
 };
 
-
-struct GlobalSettings
-{
+struct GlobalSettings {
 	UpVector UpAxis = UpVector_AxisX;
 	int UpAxisSign = 1;
 	FrontVector FrontAxis = FrontVector_ParityOdd;
@@ -443,8 +403,7 @@ struct GlobalSettings
 };
 
 
-struct IScene
-{
+struct IScene {
 	virtual void destroy() = 0;
 	virtual const IElement* getRootElement() const = 0;
 	virtual const Object* getRoot() const = 0;
@@ -468,3 +427,5 @@ const char* getError();
 
 
 } // namespace ofbx
+
+} // namespace arctic
