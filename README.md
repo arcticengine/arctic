@@ -14,7 +14,6 @@ Main discussion forum (in Russian): http://arcticengine.com/
 Windows:
 antarctica pyramids [![Windows build status](https://ci.appveyor.com/api/projects/status/69n7xslx9f3tcoy3?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 wizard [![Windows build status](https://ci.appveyor.com/api/projects/status/sa5a1rng94yb4w4o?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
-template [![Windows build status](https://ci.appveyor.com/api/projects/status/nelacdfwhihmnjx0?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 fjortris [![Windows build status](https://ci.appveyor.com/api/projects/status/av1nhi147xf7ye6d?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 filetest [![Windows build status](https://ci.appveyor.com/api/projects/status/7tb6wk4xdwhp4dlq?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 
