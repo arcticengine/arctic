@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['rgb',['Rgb',['../structarctic_1_1_rgb.html',1,'arctic']]],
-  ['rgba',['Rgba',['../structarctic_1_1easy_1_1_rgba.html',1,'arctic::easy']]]
+  ['font',['Font',['../structarctic_1_1_font.html',1,'arctic']]],
+  ['frustum3f',['Frustum3F',['../structarctic_1_1_frustum3_f.html',1,'arctic']]]
 ];
