@@ -20,10 +20,17 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/engine.h"
+#include <sstream>
+
 #include "engine/opengl.h"
+#include "engine/engine.h"
+#include "engine/log.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_math.h"
+
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
 
 namespace arctic {
 
@@ -37,6 +44,38 @@ void MathTables::Init() {
     Si32 x = Si32(xx * 65536.0);
     circle_16_16[y] = x;
   }
+}
+
+GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
+	// Create the shader object
+	GLuint shader = glCreateShader(type);
+	if (shader == 0) {
+    GLenum errCode = glGetError();
+    std::stringstream info;
+    info << "Can't create shader, code: " << (Ui64)errCode;
+    Fatal(info.str().c_str());
+		return 0;
+	}
+	// Load the shader source
+	glShaderSource(shader, 1, &shaderSrc, NULL);
+	// Compile the shader
+	glCompileShader(shader);
+	// Check the compile status
+	GLint compiled;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		GLint infoLen = 0;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+		if (infoLen > 1) {
+			char* infoLog = (char*)malloc(sizeof(char) * infoLen);
+			glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
+			Fatal("Error compiling shader: ", infoLog);
+			free(infoLog);
+		}
+		glDeleteShader(shader);
+		return 0;
+	}
+	return shader;
 }
   
 void Engine::Init(Si32 width, Si32 height) {
@@ -58,6 +97,56 @@ void Engine::Init(Si32 width, Si32 height) {
   rnd_64_.seed(static_cast<Ui64>(ms + 3));
   
   math_tables_.Init();
+
+
+  const char vShaderStr[] =
+		  "attribute vec4 vPosition; \n"
+		  "attribute vec2 vTex; \n"
+      "varying vec2 v_texCoord; \n"
+		  "void main() { \n"
+		  " gl_Position = vPosition; \n"
+      " v_texCoord = vTex; \n"
+		  "} \n";
+
+  const char fShaderStr[] =
+		  "precision mediump float; \n"
+      "varying vec2 v_texCoord; \n"
+      "uniform sampler2D s_texture; \n"
+		  "void main() { \n"
+      " gl_FragColor = texture2D(s_texture, v_texCoord); \n"
+		  "} \n";
+
+  // Load the vertex/fragment shaders
+  GLuint vertexShader = LoadShader(vShaderStr, GL_VERTEX_SHADER);
+  GLuint fragmentShader = LoadShader(fShaderStr, GL_FRAGMENT_SHADER);
+  // Create the program object
+  g_programObject = glCreateProgram();
+  if (g_programObject == 0) {
+    Fatal("Unknown error creating program");
+  }
+  glAttachShader(g_programObject, vertexShader);
+  glAttachShader(g_programObject, fragmentShader);
+  // Bind vPosition to attribute 0
+  glBindAttribLocation(g_programObject, 0, "vPosition");
+  glBindAttribLocation(g_programObject, 1, "vTex");
+  // Link the program
+  glLinkProgram(g_programObject);
+  // Check the link status
+  GLint linked;
+  glGetProgramiv(g_programObject, GL_LINK_STATUS, &linked);
+  if (!linked) {
+    GLint infoLen = 0;
+    glGetProgramiv(g_programObject, GL_INFO_LOG_LENGTH, &infoLen);
+    if (infoLen > 1) {
+      char* infoLog = (char*)malloc(sizeof(char) * infoLen);
+      glGetProgramInfoLog(g_programObject, infoLen, NULL, infoLog);
+      Fatal("Error linking program: ", infoLog);
+      free(infoLog);
+    }
+    glDeleteProgram(g_programObject);
+    Fatal("Unknown error linking program");
+  }
+
 }
 
 void Engine::Draw2d() {
@@ -66,19 +155,7 @@ void Engine::Draw2d() {
       GL_UNSIGNED_BYTE, static_cast<GLvoid*>(backbuffer_texture_.RawData()));
 
   // render
-  glDisable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
 
-  glDisable(GL_BLEND);
-  glDisable(GL_LIGHTING);
-  glEnable(GL_TEXTURE);
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-
-  glEnable(GL_TEXTURE_2D);
-  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
 
   glClearColor(0.f, 0.f, 0.f, 0.f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -152,26 +229,28 @@ void Engine::Draw2d() {
   index[indices_] = idx;
   indices_++;
 
-  glEnableClientState(GL_VERTEX_ARRAY);
-  glEnableClientState(GL_NORMAL_ARRAY);
-  glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+  glViewport (0, 0, width_, height_);
 
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  glViewport(0, 0, width_, height_);
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  glOrtho(-1, 1, -1, 1, 1, -1);
+  glVertexAttribPointer ( 0, 3, GL_FLOAT, GL_FALSE, 0, (void*)visible_verts_.data());
+  glEnableVertexAttribArray ( 0 );
+  glVertexAttribPointer ( 1, 2, GL_FLOAT, GL_FALSE, 0, (void*)tex_coords_.data());
+  glEnableVertexAttribArray ( 1 );
 
-  glVertexPointer(3, GL_FLOAT, 0, (void*)visible_verts_.data());
-  glNormalPointer(GL_FLOAT, 0, (void*)visible_normals_.data());
-  glTexCoordPointer(2, GL_FLOAT, 0, (void*)tex_coords_.data());
+  GLint loc = glGetUniformLocation(g_programObject, "s_texture");
+  Check(loc >= 0, "s_texture not found");
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
+
+
+  glUniform1i(loc, 0);
+  glUseProgram(g_programObject);
+
+  GLint ufs;
+  glGetProgramiv(g_programObject, GL_ACTIVE_UNIFORMS, &ufs);
+  Check(ufs == 1, "no ufs");
+
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
       (void*)visible_indices_.data());
-
-  glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-  glDisableClientState(GL_NORMAL_ARRAY);
-  glDisableClientState(GL_VERTEX_ARRAY);
 
   Swap();
 }
@@ -179,21 +258,28 @@ void Engine::Draw2d() {
 void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
   backbuffer_texture_.Create(width, height);
 
-  glEnable(GL_TEXTURE);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
   glGenTextures(1, &backbuffer_texture_name_);
   // generate a texture handler really reccomanded (mandatory in openGL 3.0)
   glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
   // tell openGL that we are using the texture
+  Check(glIsTexture(backbuffer_texture_name_), "no texture");
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
   glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGBA,
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
       GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
+	{
+    GLenum errCode = glGetError();
+    std::stringstream info;
+    info << "code: " << (Ui64)errCode;
+    Log(info.str().c_str());
+	}
   // send the texture data
 }
 

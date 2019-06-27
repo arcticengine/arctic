@@ -43,9 +43,12 @@ IF (APPLE)
   FIND_LIBRARY(OPENGL OpenGL)
 ELSE (APPLE)
   find_package(ALSA REQUIRED)
-  find_package(OpenGL REQUIRED)
   find_package(X11 REQUIRED)
   find_package(Threads REQUIRED)
+  #  find_path(EGL_INCLUDE_DIR EGL/egl.h)
+  #  find_library(EGL_LIBRARY NAMES EGL)
+  #  find_path(GLES_INCLUDE_DIR GLES/gl.h)
+  #  find_library(GLES_LIBRARY NAMES GLESv2)
 ENDIF (APPLE)
 
 
@@ -60,6 +63,7 @@ ELSE (APPLE)
 add_definitions(
    -DGLX
    -DPLATFORM_RPI 
+   -DGL_GLEXT_PROTOTYPES
 )
 ENDIF (APPLE)
 
@@ -76,6 +80,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" 
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
     set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGLESv2 -lEGL")
 
 ################ Files ################
 #   --   Add files to project.   --   #
@@ -130,5 +135,7 @@ target_link_libraries(
   ${X11_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
   ${ALSA_LIBRARY}
+  #  ${EGL_LIBRARY}
+  #  ${GLES_LIBRARY}
 )
 ENDIF (APPLE)

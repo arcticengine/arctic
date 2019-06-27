@@ -38,9 +38,14 @@
 #include <OpenGL/glu.h>
 #endif  // ARCTIC_PLATFORM_MACOSX
 
-#ifdef ARCTIC_PLATFORM_PI
+#ifdef ARCTIC_PLATFORM_LINUX
 #include <GL/gl.h>
 #include <GL/glu.h>
+#endif  // ARCTIC_PLATFORM_LINUX
+
+#ifdef ARCTIC_PLATFORM_PI
+#include <GLES/gl.h>
+#include <GLES/glext.h>
 #endif  // ARCTIC_PLATFORM_PI
 
 #endif  // ENGINE_OPENGL_H_

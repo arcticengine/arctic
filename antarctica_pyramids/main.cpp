@@ -638,6 +638,7 @@ void GenerateMaze() {
 }
 
 void Init() {
+  SetVSync(false);
   g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
   g_music.Play();
   

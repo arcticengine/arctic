@@ -30,9 +30,17 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#ifdef ARCTIC_PLATFORM_LINUX
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
+#endif  // ARCTIC_PLATFORM_LINUX
+
+#ifdef ARCTIC_PLATFORM_PI
+#include <GLES/gl.h>
+#include <GLES/glext.h>
+#include <EGL/egl.h>
+#endif  // ARCTIC_PLATFORM_PI
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -48,13 +56,6 @@ extern void EasyMain();
 
 namespace arctic {
 
-static int glx_config[] = {
-  GLX_DOUBLEBUFFER,
-  GLX_RGBA,
-  GLX_DEPTH_SIZE,
-  16,
-  None
-};
 
 struct SystemInfo {
   Si32 screen_width;
@@ -72,7 +73,21 @@ static XVisualInfo *g_glx_visual;
 static const int kXEventMask = KeyPressMask | KeyReleaseMask | ButtonPressMask
   | ButtonReleaseMask | PointerMotionMask | ExposureMask
   | StructureNotifyMask;
-static GLXContext g_glx_context;
+
+
+static EGLint const attribute_list[] = {
+  EGL_RED_SIZE, 8,
+  EGL_GREEN_SIZE, 8,
+  EGL_BLUE_SIZE, 8,
+  EGL_ALPHA_SIZE, 8,
+  EGL_NONE
+};
+
+const EGLint contextAttributes[] = { 
+  EGL_CONTEXT_CLIENT_VERSION, 2, 
+  EGL_NONE
+};
+
 
 KeyCode TranslateKeyCode(KeySym ks) {
   if (ks >= XK_a && ks <= XK_z) {
@@ -424,6 +439,10 @@ void PumpMessages() {
 }
 
 
+EGLDisplay g_egl_display;
+EGLSurface g_egl_surface;
+
+
 void CreateMainWindow(SystemInfo *system_info) {
   const char *title = "Arctic Engine";
 
@@ -438,34 +457,24 @@ void CreateMainWindow(SystemInfo *system_info) {
   g_window_width = window_attributes.width;
   g_window_height = window_attributes.height;
 
-  Bool is_ok = glXQueryExtension(g_x_display, NULL, NULL);
-  Check(is_ok, "Can't find OpenGL via glXQueryExtension.");
 
-  g_glx_visual = glXChooseVisual(g_x_display,
-      DefaultScreen(g_x_display), glx_config);
-  Check(g_glx_visual != NULL, "Can't choose visual via glXChooseVisual.");
 
-  g_x_color_map = XCreateColormap(g_x_display,
-      RootWindow(g_x_display, g_glx_visual->screen),
-      g_glx_visual->visual,
-      AllocNone);
 
-  g_glx_context = glXCreateContext(
-      g_x_display, g_glx_visual, None, GL_TRUE);
-  Check(g_glx_context != NULL, "Can't create context via glXCreateContext.");
+
+
 
   XSetWindowAttributes swa;
   swa.colormap = g_x_color_map;
   swa.border_pixel = 0;
   swa.event_mask = kXEventMask;
 
+  Window root = DefaultRootWindow(g_x_display);
   g_x_window = XCreateWindow(g_x_display,
-      RootWindow(g_x_display, g_glx_visual->screen),
-      0, 0, g_window_width, g_window_height,
-      1,
-      g_glx_visual->depth,
+      root,//RootWindow(g_x_display, g_glx_visual->screen),
+      0, 0, g_window_width, g_window_height, 0,
+      CopyFromParent,//g_glx_visual->depth,
       InputOutput,
-      g_glx_visual->visual,
+      CopyFromParent,//g_glx_visual->visual,
       CWEventMask | CWBorderPixel | CWColormap, &swa);
 
 
@@ -482,7 +491,33 @@ void CreateMainWindow(SystemInfo *system_info) {
   XSetIconName(g_x_display, g_x_window, title);
   XMapWindow(g_x_display, g_x_window);
 
-  glXMakeCurrent(g_x_display, g_x_window, g_glx_context);
+
+  EGLConfig config = 0;
+  EGLContext context = 0;
+  EGLint num_config = 0;
+
+  g_egl_display = eglGetDisplay((EGLNativeDisplayType)g_x_display);
+  eglInitialize(g_egl_display, NULL, NULL);
+  eglChooseConfig(g_egl_display, attribute_list, &config, 1, &num_config);
+  Check(num_config == 1, "Error in eglChooseConfig, unexpected num_config.");
+  context = eglCreateContext(g_egl_display, config, EGL_NO_CONTEXT, contextAttributes);
+  if (context == EGL_NO_CONTEXT) {
+    std::stringstream info;
+    info << "Unable to create EGL context (eglError: " << eglGetError() << ")" << std::endl;
+    Log(info.str().c_str());
+    Check(false, info.str().c_str());
+  }
+  //native_window = createNativeWindow();
+  g_egl_surface = eglCreateWindowSurface(g_egl_display, config, (EGLNativeWindowType)g_x_window, NULL);
+  if ( g_egl_surface == EGL_NO_SURFACE ) {
+    std::stringstream info;
+    info << "Unable to create EGL surface (eglError: " << eglGetError() << ")" << std::endl;
+    Log(info.str().c_str());
+    Check(false, info.str().c_str());
+  }
+  EGLBoolean mcr = eglMakeCurrent(g_egl_display, g_egl_surface, g_egl_surface, context);
+  Check(mcr, "Error in eglMakeCurrent");
+  //glXMakeCurrent(g_x_display, g_x_window, g_glx_context);
 
   glClearColor(1.0F, 1.0F, 1.0F, 0.0F);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -496,16 +531,18 @@ void ExitProgram() {
 
 void Swap() {
   glFlush();
-  glXSwapBuffers(g_x_display, g_x_window);
+  eglSwapBuffers(g_egl_display, g_egl_surface);
   PumpMessages();
   arctic::easy::GetEngine()->OnWindowResize(g_window_width, g_window_height);
 }
 
 bool IsVSyncSupported() {
+  /*
   const char *extensions = (const char*)glGetString(GL_EXTENSIONS);
   if (strstr(extensions, "GLX_SGI_swap_control") == nullptr) {
     return false;
   }
+  */
   return true;
 }
 
@@ -513,11 +550,16 @@ bool SetVSync(bool is_enable) {
   if (!IsVSyncSupported()) {
     return false;
   }
-  PFNGLXSWAPINTERVALSGIPROC glXSwapIntervalSGI =
+/*  PFNGLXSWAPINTERVALSGIPROC glXSwapIntervalSGI =
     (PFNGLXSWAPINTERVALSGIPROC)glXGetProcAddress(
         (const GLubyte*)"glXSwapIntervalSGI");
   if (glXSwapIntervalSGI != NULL) {
     glXSwapIntervalSGI(is_enable ? 1 : 0);
+    return true;
+  }
+  */
+  EGLBoolean result = eglSwapInterval(g_egl_display, is_enable ? 1 : 0);
+  if (result == EGL_TRUE) {
     return true;
   }
   return false;

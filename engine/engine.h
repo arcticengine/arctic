@@ -29,6 +29,7 @@
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
 #include "engine/vec2f.h"
+#include "engine/opengl.h"
 
 namespace arctic {
 
@@ -71,6 +72,10 @@ class Engine {
   bool is_inverse_y_ = false;
   
   MathTables math_tables_;
+
+  GLuint g_programObject;
+
+  GLuint LoadShader(const char *shaderSrc, GLenum type);
 
  public:
   void Init(Si32 width, Si32 height);
