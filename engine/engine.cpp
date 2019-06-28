@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,6 @@
 #include "engine/log.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_math.h"
-
-//#include <GLES2/gl2.h>
-//#include <GLES2/gl2ext.h>
-
 
 namespace arctic {
 
@@ -101,7 +97,6 @@ void Engine::Init(Si32 width, Si32 height) {
 
   const char vShaderStr[] = R"SHADER(
 #ifdef GL_ES
-#version 100
 #endif
 attribute vec4 vPosition;
 attribute vec2 vTex;
@@ -114,7 +109,6 @@ void main() {
 
   const char fShaderStr[] = R"SHADER(
 #ifdef GL_ES
-#version 100
 precision mediump float;
 #endif
 varying vec2 v_texCoord;
@@ -279,7 +273,6 @@ void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
       GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
 	{
