@@ -99,24 +99,30 @@ void Engine::Init(Si32 width, Si32 height) {
   math_tables_.Init();
 
 
-  const char vShaderStr[] =
-	  "#version 100 \n"
-		  "attribute vec4 vPosition; \n"
-		  "attribute vec2 vTex; \n"
-      "varying vec2 v_texCoord; \n"
-		  "void main() { \n"
-		  " gl_Position = vPosition; \n"
-      " v_texCoord = vTex; \n"
-		  "} \n";
+  const char vShaderStr[] = R"SHADER(
+#ifdef GL_ES
+#version 100
+#endif
+attribute vec4 vPosition;
+attribute vec2 vTex;
+varying vec2 v_texCoord;
+void main() {
+  gl_Position = vPosition;
+  v_texCoord = vTex;
+}
+)SHADER";
 
-  const char fShaderStr[] =
-	  "#version 100 \n"
-		  "precision mediump float; \n"
-      "varying vec2 v_texCoord; \n"
-      "uniform sampler2D s_texture; \n"
-		  "void main() { \n"
-      " gl_FragColor = texture2D(s_texture, v_texCoord); \n"
-		  "} \n";
+  const char fShaderStr[] = R"SHADER(
+#ifdef GL_ES
+#version 100
+precision mediump float;
+#endif
+varying vec2 v_texCoord;
+uniform sampler2D s_texture;
+void main() {
+  gl_FragColor = texture2D(s_texture, v_texCoord);
+}
+)SHADER";
 
   // Load the vertex/fragment shaders
   GLuint vertexShader = LoadShader(vShaderStr, GL_VERTEX_SHADER);
