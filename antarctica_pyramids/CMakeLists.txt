@@ -47,19 +47,22 @@ ELSE (APPLE)
   find_library(EGL_LIBRARY NAMES EGL)
   find_path(EGL_INCLUDE_DIR EGL/egl.h)
   find_library(GLES_LIBRARY NAMES GLESv2)
-  IF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
-	  message(STATUS "GLES EGL mode")
-  ELSE (EGL_LIBRARY AND EGL_INCLUDE_DIR)
-	  message(STATUS "OPENGL GLX mode")
+  find_path(GLES_INCLUDE_DIR GLES/gl.h)
+  IF (EGL_LIBRARY AND EGL_INCLUDE_DIR AND GLES_LIBRARY AND GLES_INCLUDE_DIR)
+    message(STATUS "GLES EGL mode")
+    set(EGL_MODE "EGL")
+  ELSE ()
+    message(STATUS "OPENGL GLX mode")
+  ENDIF()
+
+  IF (NOT EGL_MODE)
     #only for opengl glx
     set (OpenGL_GL_PREFERENCE "LEGACY")
     find_package(OpenGL REQUIRED)
-  ENDIF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+  ENDIF (NOT EGL_MODE)
 
   find_package(X11 REQUIRED)
   find_package(Threads REQUIRED)
-  #  find_path(EGL_INCLUDE_DIR EGL/egl.h)
-  #  find_path(GLES_INCLUDE_DIR GLES/gl.h)
 ENDIF (APPLE)
 
 
@@ -71,17 +74,17 @@ IF (APPLE)
     -DGL_SILENCE_DEPRECATION
   )
 ELSE (APPLE)
-  IF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+	IF (EGL_MODE)
     #only for es egl
     add_definitions(
        -DPLATFORM_RPI 
     )
-  ELSE (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+  ELSE (EGL_MODE)
     #only for opengl glx
     add_definitions(
        -DPLATFORM_LINUX
     )
-  ENDIF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+  ENDIF (EGL_MODE)
   add_definitions(
    -DGLX
    -DGL_GLEXT_PROTOTYPES
@@ -102,11 +105,10 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" 
     set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
-IF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+IF (EGL_MODE)
   #only for  es egl
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGLESv2 -lEGL")
-ELSE (EGL_LIBRARY AND EGL_INCLUDE_DIR)
-ENDIF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+ENDIF (EGL_MODE)
 
 ################ Files ################
 #   --   Add files to project.   --   #
