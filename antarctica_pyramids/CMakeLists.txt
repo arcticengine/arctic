@@ -43,12 +43,23 @@ IF (APPLE)
   FIND_LIBRARY(OPENGL OpenGL)
 ELSE (APPLE)
   find_package(ALSA REQUIRED)
+
+  find_library(EGL_LIBRARY NAMES EGL)
+  find_path(EGL_INCLUDE_DIR EGL/egl.h)
+  find_library(GLES_LIBRARY NAMES GLESv2)
+  IF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+	  message(STATUS "GLES EGL mode")
+  ELSE (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+	  message(STATUS "OPENGL GLX mode")
+    #only for opengl glx
+    set (OpenGL_GL_PREFERENCE "LEGACY")
+    find_package(OpenGL REQUIRED)
+  ENDIF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+
   find_package(X11 REQUIRED)
   find_package(Threads REQUIRED)
   #  find_path(EGL_INCLUDE_DIR EGL/egl.h)
-  #  find_library(EGL_LIBRARY NAMES EGL)
   #  find_path(GLES_INCLUDE_DIR GLES/gl.h)
-  #  find_library(GLES_LIBRARY NAMES GLESv2)
 ENDIF (APPLE)
 
 
@@ -56,15 +67,25 @@ ENDIF (APPLE)
 
 #-D_DEBUG 
 IF (APPLE)
-add_definitions(
-  -DGL_SILENCE_DEPRECATION
-)
+  add_definitions(
+    -DGL_SILENCE_DEPRECATION
+  )
 ELSE (APPLE)
-add_definitions(
+  IF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+    #only for es egl
+    add_definitions(
+       -DPLATFORM_RPI 
+    )
+  ELSE (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+    #only for opengl glx
+    add_definitions(
+       -DPLATFORM_LINUX
+    )
+  ENDIF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+  add_definitions(
    -DGLX
-   -DPLATFORM_RPI 
    -DGL_GLEXT_PROTOTYPES
-)
+  )
 ENDIF (APPLE)
 
 include_directories(${CMAKE_SOURCE_DIR}/..)
@@ -80,7 +101,12 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" 
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
     set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGLESv2 -lEGL")
+
+IF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+  #only for  es egl
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGLESv2 -lEGL")
+ELSE (EGL_LIBRARY AND EGL_INCLUDE_DIR)
+ENDIF (EGL_LIBRARY AND EGL_INCLUDE_DIR)
 
 ################ Files ################
 #   --   Add files to project.   --   #

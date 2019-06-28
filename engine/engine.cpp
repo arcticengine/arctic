@@ -28,8 +28,8 @@
 #include "engine/arctic_platform.h"
 #include "engine/arctic_math.h"
 
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
+//#include <GLES2/gl2.h>
+//#include <GLES2/gl2ext.h>
 
 
 namespace arctic {
@@ -100,6 +100,7 @@ void Engine::Init(Si32 width, Si32 height) {
 
 
   const char vShaderStr[] =
+	  "#version 100 \n"
 		  "attribute vec4 vPosition; \n"
 		  "attribute vec2 vTex; \n"
       "varying vec2 v_texCoord; \n"
@@ -109,6 +110,7 @@ void Engine::Init(Si32 width, Si32 height) {
 		  "} \n";
 
   const char fShaderStr[] =
+	  "#version 100 \n"
 		  "precision mediump float; \n"
       "varying vec2 v_texCoord; \n"
       "uniform sampler2D s_texture; \n"

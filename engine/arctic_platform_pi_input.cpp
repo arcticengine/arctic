@@ -30,18 +30,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef ARCTIC_PLATFORM_LINUX
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glx.h>
-#endif  // ARCTIC_PLATFORM_LINUX
-
-#ifdef ARCTIC_PLATFORM_PI
-#include <GLES/gl.h>
-#include <GLES/glext.h>
-#include <EGL/egl.h>
-#endif  // ARCTIC_PLATFORM_PI
-
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/XKBlib.h>
@@ -56,38 +44,14 @@ extern void EasyMain();
 
 namespace arctic {
 
-
-struct SystemInfo {
-  Si32 screen_width;
-  Si32 screen_height;
-};
-
-static Si32 g_window_width = 0;
-static Si32 g_window_height = 0;
 static Si32 g_last_mouse_x = 0;
 static Si32 g_last_mouse_y = 0;
-static Display *g_x_display;
-static Window g_x_window;
-static Colormap g_x_color_map;
-static XVisualInfo *g_glx_visual;
-static const int kXEventMask = KeyPressMask | KeyReleaseMask | ButtonPressMask
-  | ButtonReleaseMask | PointerMotionMask | ExposureMask
-  | StructureNotifyMask;
 
-
-static EGLint const attribute_list[] = {
-  EGL_RED_SIZE, 8,
-  EGL_GREEN_SIZE, 8,
-  EGL_BLUE_SIZE, 8,
-  EGL_ALPHA_SIZE, 8,
-  EGL_NONE
-};
-
-const EGLint contextAttributes[] = { 
-  EGL_CONTEXT_CLIENT_VERSION, 2, 
-  EGL_NONE
-};
-
+extern Display *g_x_display;
+extern Si32 g_window_width;
+extern Si32 g_window_height;
+extern Display *g_x_display;
+extern Window g_x_window;
 
 KeyCode TranslateKeyCode(KeySym ks) {
   if (ks >= XK_a && ks <= XK_z) {
@@ -310,7 +274,6 @@ KeyCode TranslateKeyCode(KeySym ks) {
   return kKeyUnknown;
 }
 
-
 void OnMouse(KeyCode key, Si32 mouse_x, Si32 mouse_y, bool is_down) {
   Check(g_window_width != 0, "Could not obtain window width in OnMouse");
   Check(g_window_height != 0, "Could not obtain window height in OnMouse");
@@ -357,7 +320,6 @@ void OnKey(KeyCode key, bool is_down) {
   msg.keyboard.key_state = (is_down ? 1 : 2);
   PushInputMessage(msg);
 }
-
 
 void PumpMessages() {
   XEvent ev;
@@ -438,278 +400,6 @@ void PumpMessages() {
   return;
 }
 
-
-EGLDisplay g_egl_display;
-EGLSurface g_egl_surface;
-
-
-void CreateMainWindow(SystemInfo *system_info) {
-  const char *title = "Arctic Engine";
-
-  g_x_display = XOpenDisplay(NULL);
-  Check(g_x_display != NULL, "Can't open display.");
-
-  XWindowAttributes window_attributes;
-  Status is_good = XGetWindowAttributes(g_x_display,
-      RootWindow(g_x_display, DefaultScreen(g_x_display)),
-      &window_attributes);
-  Check(is_good != 0, "Can't get window attributes.");
-  g_window_width = window_attributes.width;
-  g_window_height = window_attributes.height;
-
-
-
-
-
-
-
-  XSetWindowAttributes swa;
-  swa.colormap = g_x_color_map;
-  swa.border_pixel = 0;
-  swa.event_mask = kXEventMask;
-
-  Window root = DefaultRootWindow(g_x_display);
-  g_x_window = XCreateWindow(g_x_display,
-      root,//RootWindow(g_x_display, g_glx_visual->screen),
-      0, 0, g_window_width, g_window_height, 0,
-      CopyFromParent,//g_glx_visual->depth,
-      InputOutput,
-      CopyFromParent,//g_glx_visual->visual,
-      CWEventMask | CWBorderPixel | CWColormap, &swa);
-
-
-  system_info->screen_width = g_window_width;
-  system_info->screen_height = g_window_height;
-
-  XStoreName(g_x_display, g_x_window, title);
-
-  XWMHints wmHints;
-  wmHints.flags = 0;
-  wmHints.initial_state = NormalState;
-  XSetWMHints(g_x_display, g_x_window, &wmHints);
-
-  XSetIconName(g_x_display, g_x_window, title);
-  XMapWindow(g_x_display, g_x_window);
-
-
-  EGLConfig config = 0;
-  EGLContext context = 0;
-  EGLint num_config = 0;
-
-  g_egl_display = eglGetDisplay((EGLNativeDisplayType)g_x_display);
-  eglInitialize(g_egl_display, NULL, NULL);
-  eglChooseConfig(g_egl_display, attribute_list, &config, 1, &num_config);
-  Check(num_config == 1, "Error in eglChooseConfig, unexpected num_config.");
-  context = eglCreateContext(g_egl_display, config, EGL_NO_CONTEXT, contextAttributes);
-  if (context == EGL_NO_CONTEXT) {
-    std::stringstream info;
-    info << "Unable to create EGL context (eglError: " << eglGetError() << ")" << std::endl;
-    Log(info.str().c_str());
-    Check(false, info.str().c_str());
-  }
-  //native_window = createNativeWindow();
-  g_egl_surface = eglCreateWindowSurface(g_egl_display, config, (EGLNativeWindowType)g_x_window, NULL);
-  if ( g_egl_surface == EGL_NO_SURFACE ) {
-    std::stringstream info;
-    info << "Unable to create EGL surface (eglError: " << eglGetError() << ")" << std::endl;
-    Log(info.str().c_str());
-    Check(false, info.str().c_str());
-  }
-  EGLBoolean mcr = eglMakeCurrent(g_egl_display, g_egl_surface, g_egl_surface, context);
-  Check(mcr, "Error in eglMakeCurrent");
-  //glXMakeCurrent(g_x_display, g_x_window, g_glx_context);
-
-  glClearColor(1.0F, 1.0F, 1.0F, 0.0F);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glFlush();
-  return;
-}
-
-void ExitProgram() {
-  exit(0);
-}
-
-void Swap() {
-  glFlush();
-  eglSwapBuffers(g_egl_display, g_egl_surface);
-  PumpMessages();
-  arctic::easy::GetEngine()->OnWindowResize(g_window_width, g_window_height);
-}
-
-bool IsVSyncSupported() {
-  /*
-  const char *extensions = (const char*)glGetString(GL_EXTENSIONS);
-  if (strstr(extensions, "GLX_SGI_swap_control") == nullptr) {
-    return false;
-  }
-  */
-  return true;
-}
-
-bool SetVSync(bool is_enable) {
-  if (!IsVSyncSupported()) {
-    return false;
-  }
-/*  PFNGLXSWAPINTERVALSGIPROC glXSwapIntervalSGI =
-    (PFNGLXSWAPINTERVALSGIPROC)glXGetProcAddress(
-        (const GLubyte*)"glXSwapIntervalSGI");
-  if (glXSwapIntervalSGI != NULL) {
-    glXSwapIntervalSGI(is_enable ? 1 : 0);
-    return true;
-  }
-  */
-  EGLBoolean result = eglSwapInterval(g_egl_display, is_enable ? 1 : 0);
-  if (result == EGL_TRUE) {
-    return true;
-  }
-  return false;
-}
-
-bool IsFullScreen() {
-  return false;
-}
-
-void SetFullScreen(bool/* is_enable*/) {
-  return;
-}
-
-Trivalent DoesDirectoryExist(const char *path) {
-  struct stat info;
-  if (stat(path, &info) != 0) {
-    return kTrivalentFalse;
-  } else if (info.st_mode & S_IFDIR) {
-    return kTrivalentTrue;
-  } else {
-    return kTrivalentUnknown;
-  }
-}
-
-bool MakeDirectory(const char *path) {
-  Si32 result = mkdir(path,
-      S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IXOTH);
-  return (result == 0);
-}
-
-bool GetCurrentPath(std::string *out_dir) {
-  char cwd[1 << 20];
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    out_dir->assign(cwd);
-    return true;
-  }
-  return false;
-}
-  
-bool GetDirectoryEntries(const char *path,
-     std::deque<DirectoryEntry> *out_entries) {
-  Check(out_entries,
-    "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
-  out_entries->clear();
-  DIR *dir = opendir(path);
-  if (dir == nullptr) {
-    std::stringstream info;
-    info << "Error errno: " << errno
-      << " while opening path: \"" << path << "\"" << std::endl;
-    Log(info.str().c_str());
-    return false;
-  }
-  char full_path[1 << 20];
-  while (true) {
-    struct dirent *dir_entry = readdir(dir);
-    if (dir_entry == nullptr) {
-      break;
-    }
-    DirectoryEntry entry;
-    entry.title = dir_entry->d_name;
-    sprintf(full_path, "%s/%s", path, dir_entry->d_name);
-    struct stat info;
-    if (stat(full_path, &info) != 0) {
-      return false;
-    }
-    if (info.st_mode & S_IFDIR) {
-      entry.is_directory = kTrivalentTrue;
-    }
-    if (info.st_mode & S_IFREG) {
-      entry.is_file = kTrivalentTrue;
-    }
-    out_entries->push_back(entry);
-  }
-  closedir(dir);
-  return true;
-}
-
-  
-std::string CanonicalizePath(const char *path) {
-  Check(path, "CanonicalizePath error, path can't be nullptr");
-  char *canonic_path = realpath(path, nullptr);
-  std::string result;
-  if (canonic_path) {
-    result.assign(canonic_path);
-    free(canonic_path);
-  }
-  return result;
-}
-
-std::string RelativePathFromTo(const char *from, const char *to) {
-  std::string from_abs = CanonicalizePath(from);
-  if (from && from[strlen(from) - 1] == '/' &&
-      from_abs.size() && from_abs[from_abs.size() - 1] != '/') {
-    from_abs = from_abs + '/';
-  }
-  std::string to_abs = CanonicalizePath(to);
-  if (to && to[strlen(to) - 1] == '/' &&
-      to_abs.size() && to_abs[to_abs.size() - 1] != '/') {
-    to_abs = to_abs + '/';
-  }
-  Ui32 matching = 0;
-  while (matching < from_abs.size() && matching < to_abs.size()) {
-    if (from_abs[matching] == to_abs[matching]) {
-      ++matching;
-    } else {
-      break;
-    }
-  }
-  if (matching == from_abs.size() && matching == to_abs.size()) {
-    return "./";
-  }
-  while (matching && from_abs[matching - 1] != '/') {
-    --matching;
-  }
-  const char *from_part = from_abs.c_str() + matching;
-  std::stringstream res;
-  while (*from_part != 0) {
-    res << "../";
-    ++from_part;
-    while (*from_part != 0 && *from_part != '/') {
-      ++from_part;
-    }
-  }
-  const char *to_part = to_abs.c_str() + matching;
-  res << to_part;
-  return res.str();
-}
-
-
 }  // namespace arctic
-
-
-int main() {
-  arctic::SystemInfo system_info;
-
-  arctic::StartLogger();
-  arctic::SoundPlayer soundPlayer;
-  soundPlayer.Initialize();
-  CreateMainWindow(&system_info);
-  arctic::easy::GetEngine();
-  arctic::easy::GetEngine()->Init(system_info.screen_width,
-      system_info.screen_height);
-
-  EasyMain();
-
-  XCloseDisplay(arctic::g_x_display);
-  soundPlayer.Deinitialize();
-  arctic::StopLogger();
-
-  return 0;
-}
 
 #endif  // ARCTIC_PLATFORM_PI

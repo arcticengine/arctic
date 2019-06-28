@@ -35,7 +35,13 @@
 
 #ifdef PLATFORM_RPI
 #define ARCTIC_PLATFORM_PI
+#define ARCTIC_PLATFORM_PI_ES_EGL
 #endif  // PLATFORM_RPI
+
+#ifdef PLATFORM_LINUX
+#define ARCTIC_PLATFORM_PI
+#define ARCTIC_PLATFORM_PI_OPENGL_GLX
+#endif  // PLATFORM_LINUX
 
 namespace arctic {
 
