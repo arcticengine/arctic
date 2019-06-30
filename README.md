@@ -23,7 +23,8 @@ Scrum board: https://gitlab.com/huldra/arctic/boards?=
 
 Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
-Arctic Engine follows Google C++ Style Guide: [https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html)
+Arctic Engine follows a bit modified Google C++ Style Guide: [https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html)
+See [STYLE.md](STYLE.md) for the details.
 
 ## License
 Licensed under the MIT license, see License.txt for details.
