@@ -843,7 +843,7 @@ void Sleep(double duration_seconds) {
 }
 
 std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
-    std::ifstream in(file_name, std::ios_base::in | std::ios_base::binary);
+  std::ifstream in(file_name, std::ios_base::in | std::ios_base::binary);
   std::vector<Ui8> data;
   if (in.rdstate() & std::ios_base::failbit) {
     if (is_bulletproof) {

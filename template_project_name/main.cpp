@@ -4,7 +4,24 @@ using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
 Sprite g_blocks[3];
-Si32 g_field[16][8] = {0};
+Si32 g_field[16][8] = {
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{0,0,0,0,0,0,0,0},
+	{2,0,0,0,0,0,0,2},
+	{2,0,0,0,0,0,2,2},
+	{2,0,0,0,0,2,2,2},
+	{2,0,0,0,2,2,2,2},
+	{2,0,0,0,2,2,2,2},
+	{2,0,0,0,2,2,2,2},
+};
 Si32 g_tetraminoes[5][5 * 7] = {
 	{0,0,1,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0,  0,0,0,0,0},
 	{0,0,1,0,0,  0,0,1,0,0,  0,0,1,0,0,  0,0,0,0,0,  0,0,1,1,0,  0,1,1,0,0,  0,0,1,1,0},
@@ -111,11 +128,13 @@ void Update() {
 		StartNewTetramino();
 		return;
 	}
-	if (time - g_prev_time < 0.5) {
-		return;
-	}
-	g_prev_time = time;
-	g_dy = 1;
+	if (time - g_prev_time >= 0.5) {
+    g_dy = 1;
+    g_prev_time = time;
+  } else {
+    g_dy = 0;
+  }
+
 	if (g_dx && IsPositionOk(g_current_x + g_dx, g_current_y, g_current_orientation)) {
 		g_current_x += g_dx;
 		g_dy = 0;
