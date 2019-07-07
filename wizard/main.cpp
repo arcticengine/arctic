@@ -42,7 +42,8 @@ std::string g_path;  // NOLINT
 std::string g_current_directory;  // NOLINT
 std::string g_template;  // NOLINT
 std::string g_project_directory;  // NOLINT
-std::string g_engine;  //NOLINT
+std::string g_engine;  // NOLINT
+std::vector<std::string> g_deprecated_files;  // NOLINT
 
 std::vector<Rgba> g_palete;
 
@@ -53,6 +54,8 @@ enum MainMode {
 };
 
 MainMode g_mode_of_operation = kModeCreate;
+
+
 
 std::string MakeUid() {
   char uid[25];
@@ -116,6 +119,21 @@ std::string CutStringBetween(std::string const &full_string,
   }
   std::size_t size = end - begin_after.size() - begin;
   return full_string.substr(begin + begin_after.size(), size);
+}
+
+void AppendDeprecated(std::unordered_set<std::string> *in_out_data) {
+  Check(in_out_data, "Unexpected in_out_data = nullptr");
+  for (size_t i = 0; i < g_deprecated_files.size(); ++i) {
+    std::string path = g_deprecated_files[i];
+    ReplaceAll("\\", "/", &path);
+    std::string full_path =
+      CanonicalizePath((g_engine + "/" + path).c_str());
+    std::string rel_path = RelativePathFromTo(
+      (g_engine + "/").c_str(), full_path.c_str());
+    if (rel_path.size() && rel_path[0] != '.') {
+      in_out_data->insert(rel_path);
+    }
+  }
 }
 
 void UpdateResolution() {
@@ -705,6 +723,7 @@ bool ShowUpdateProgress() {
           }
           next++;
         }
+        AppendDeprecated(&existing_files);
         // find missing engine files
         std::stringstream new_buildfiles;  // PBXBuildFile
         std::stringstream new_files;  // PBXFileReference
@@ -913,6 +932,7 @@ bool ShowUpdateProgress() {
             next++;
           }
         }
+        AppendDeprecated(&existing_files);
         // find missing engine files
         std::stringstream new_h;
         std::stringstream new_cpp;
@@ -1094,6 +1114,15 @@ void EasyMain() {
   g_palete.emplace_back((Ui32)0xffffffff);
   g_palete.emplace_back((Ui32)0xff6666ff);
   g_font.Load("data/arctic_one_bmf.fnt");
+
+  CsvTable csv;
+  csv.LoadFile("data/deprecations.csv");
+  size_t row_count = csv.RowCount();;
+  for (size_t i = 0; i < row_count; ++i) {
+    g_deprecated_files.push_back(csv.GetRow(i)->GetValue(0, std::string("")));
+  }
+
+
   if (!GetCurrentPath(&g_current_directory)) {
     //
   }
