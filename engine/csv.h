@@ -44,12 +44,12 @@ class CsvRow {
   CsvRow(const std::vector<std::string> &);
   ~CsvRow();
 
-  Ui32 Size() const;
+  Ui64 Size() const;
   void Push(const std::string &);
   bool Set(const std::string &, const std::string &);
 
   template<typename T>
-  const T GetValue(Ui32 pos, T default_value) const {
+  const T GetValue(Ui64 pos, T default_value) const {
     if (pos < values_.size()) {
       T res;
       std::stringstream ss;
@@ -72,7 +72,7 @@ class CsvRow {
     }
     return res;
   }
-  const std::string operator[](Ui32) const;
+  const std::string operator[](Ui64) const;
   const std::string operator[](const std::string &value_name) const;
   friend std::ostream& operator<<(std::ostream& os, const CsvRow &row);
   friend std::ofstream& operator<<(std::ofstream& os, const CsvRow &row);
@@ -89,16 +89,16 @@ class CsvTable {
   bool LoadFile(const std::string &filename, char sep = ',');
   bool LoadString(const std::string &input, char sep = ',');
   ~CsvTable();
-  CsvRow *GetRow(Ui32 row) const;
-  Ui32 RowCount() const;
-  Ui32 ColumnCount() const;
+  CsvRow *GetRow(Ui64 row) const;
+  Ui64 RowCount() const;
+  Ui64 ColumnCount() const;
   std::vector<std::string> GetHeader() const;
-  const std::string GetHeaderElement(Ui32 pos) const;
+  const std::string GetHeaderElement(Ui64 pos) const;
   const std::string &GetFileName() const;
-  bool DeleteRow(Ui32 row);
-  bool AddRow(Ui32 pos, const std::vector<std::string> &);
+  bool DeleteRow(Ui64 row);
+  bool AddRow(Ui64 pos, const std::vector<std::string> &);
   void SaveFile() const;
-  CsvRow &operator[](Ui32 row) const;
+  CsvRow &operator[](Ui64 row) const;
 
  protected:
   bool ParseHeader();

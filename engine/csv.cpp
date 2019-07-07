@@ -102,11 +102,11 @@ bool CsvTable::ParseHeader() {
 bool CsvTable::ParseContent() {
   std::deque<std::string>::iterator it = original_file_.begin();
   ++it; // skip header
-  Si32 line_idx = 1;
+  Ui64 line_idx = 1;
   for (; it != original_file_.end(); ++it) {
     bool quoted = false;
-    Si32 token_start = 0;
-    Ui32 i = 0;
+    Ui64 token_start = 0;
+    Ui64 i = 0;
     
     CsvRow *row = new CsvRow(header_);
     
@@ -136,39 +136,39 @@ bool CsvTable::ParseContent() {
   return true;
 }
 
-CsvRow *CsvTable::GetRow(Ui32 row_position) const {
+CsvRow *CsvTable::GetRow(Ui64 row_position) const {
   if (row_position < content_.size()) {
     return content_[row_position];
   }
   return nullptr;
 }
 
-CsvRow &CsvTable::operator[](Ui32 row_position) const {
+CsvRow &CsvTable::operator[](Ui64 row_position) const {
   CsvRow *row = CsvTable::GetRow(row_position);
   // Check(row, "row_position out of bounds in CvsTable");
   return *row;
 }
 
-Ui32 CsvTable::RowCount() const {
-  return static_cast<Ui32>(content_.size());
+Ui64 CsvTable::RowCount() const {
+  return static_cast<Ui64>(content_.size());
 }
 
-Ui32 CsvTable::ColumnCount() const {
-  return static_cast<Ui32>(header_.size());
+Ui64 CsvTable::ColumnCount() const {
+  return static_cast<Ui64>(header_.size());
 }
 
 std::vector<std::string> CsvTable::GetHeader() const {
   return header_;
 }
 
-const std::string CsvTable::GetHeaderElement(Ui32 pos) const {
+const std::string CsvTable::GetHeaderElement(Ui64 pos) const {
   if (pos >= header_.size()) {
     return nullptr;
   }
   return header_[pos];
 }
 
-bool CsvTable::DeleteRow(Ui32 pos) {
+bool CsvTable::DeleteRow(Ui64 pos) {
   if (pos < content_.size()) {
     delete *(content_.begin() + pos);
     content_.erase(content_.begin() + pos);
@@ -177,7 +177,7 @@ bool CsvTable::DeleteRow(Ui32 pos) {
   return false;
 }
 
-bool CsvTable::AddRow(Ui32 pos, const std::vector<std::string> &r) {
+bool CsvTable::AddRow(Ui64 pos, const std::vector<std::string> &r) {
   CsvRow *row = new CsvRow(header_);
   
   for (auto it = r.begin(); it != r.end(); ++it) {
@@ -198,7 +198,7 @@ void CsvTable::SaveFile() const {
     f.open(file_, std::ios::out | std::ios::trunc);
     
     // header
-    Ui32 i = 0;
+    Ui64 i = 0;
     for (auto it = header_.begin(); it != header_.end(); ++it) {
       f << *it;
       if (i < header_.size() - 1) {
@@ -227,8 +227,8 @@ CsvRow::CsvRow(const std::vector<std::string> &header)
 
 CsvRow::~CsvRow() {}
 
-Ui32 CsvRow::Size() const {
-  return static_cast<Ui32>(values_.size());
+Ui64 CsvRow::Size() const {
+  return static_cast<Ui64>(values_.size());
 }
 
 void CsvRow::Push(const std::string &value) {
@@ -237,7 +237,7 @@ void CsvRow::Push(const std::string &value) {
 
 bool CsvRow::Set(const std::string &key, const std::string &value) {
   std::vector<std::string>::const_iterator it;
-  Si32 pos = 0;
+  Ui64 pos = 0;
   for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
       values_[pos] = value;
@@ -248,7 +248,7 @@ bool CsvRow::Set(const std::string &key, const std::string &value) {
   return false;
 }
 
-const std::string CsvRow::operator[](Ui32 value_position) const {
+const std::string CsvRow::operator[](Ui64 value_position) const {
   if (value_position < values_.size()) {
     return values_[value_position];
   }
@@ -257,7 +257,7 @@ const std::string CsvRow::operator[](Ui32 value_position) const {
 
 const std::string CsvRow::operator[](const std::string &key) const {
   std::vector<std::string>::const_iterator it;
-  Si32 pos = 0;
+  Ui64 pos = 0;
   for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
       return values_[pos];
@@ -268,14 +268,14 @@ const std::string CsvRow::operator[](const std::string &key) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const CsvRow &row) {
-  for (Ui32 i = 0; i != row.values_.size(); ++i) {
+  for (Ui64 i = 0; i != row.values_.size(); ++i) {
     os << row.values_[i] << " | ";
   }
   return os;
 }
 
 std::ofstream &operator<<(std::ofstream &os, const CsvRow &row) {
-  for (Ui32 i = 0; i != row.values_.size(); ++i) {
+  for (Ui64 i = 0; i != row.values_.size(); ++i) {
     os << row.values_[i];
     if (i + 1 < row.values_.size()) {
       os << ",";
