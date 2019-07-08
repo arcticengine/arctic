@@ -9,12 +9,6 @@ done
 for filename in ./antarctica_pyramids/*.cpp; do
     python ./tools/cpplint.py ${filename}
 done
-for filename in ./fjortris/*.h; do
-python ./tools/cpplint.py ${filename}
-done
-for filename in ./fjortris/*.cpp; do
-python ./tools/cpplint.py ${filename}
-done
 for filename in ./template_project_name/*.h; do
 python ./tools/cpplint.py ${filename}
 done

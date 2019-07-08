@@ -7,7 +7,4 @@ rmdir intermediate /S /Q
 rmdir demo\Debug /S /Q
 rmdir demo\Release /S /Q
 rmdir demo\x64 /S /Q
-rmdir fjortris\Debug /S /Q
-rmdir fjortris\Release /S /Q
-rmdir fjortris\x64 /S /Q
 del demo.VC.db
