@@ -242,6 +242,10 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_es_egl.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_filesystem.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_input.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_opengl_glx.cpp" />
     <ClCompile Include="..\engine\miniz.c" />
     <ClCompile Include="..\engine\csv.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_byteorder.cpp" />
@@ -250,7 +254,6 @@
     <ClCompile Include="..\engine\gui.cpp" />
     <ClCompile Include="..\engine\ofbx.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_sound.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_pi.cpp" />
     <ClCompile Include="..\engine\font.cpp" />
     <ClCompile Include="..\engine\log.cpp" />
     <ClCompile Include="main.cpp">

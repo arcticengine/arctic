@@ -30,7 +30,29 @@
 #define NOMINMAX
 #include <windows.h>
 #include <GL/gl.h>
+#include "engine/glext.h"
 #include <GL/glu.h>
+
+extern PFNGLACTIVETEXTUREPROC glActiveTexture;
+extern PFNGLATTACHSHADERPROC glAttachShader;
+extern PFNGLBINDATTRIBLOCATIONPROC glBindAttribLocation;
+extern PFNGLCOMPILESHADERPROC glCompileShader;
+extern PFNGLCREATEPROGRAMPROC glCreateProgram;
+extern PFNGLCREATESHADERPROC glCreateShader;
+extern PFNGLDELETEPROGRAMPROC glDeleteProgram;
+extern PFNGLDELETESHADERPROC glDeleteShader;
+extern PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
+extern PFNGLGETPROGRAMIVPROC glGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
+extern PFNGLGETSHADERIVPROC glGetShaderiv;
+extern PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog;
+extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
+extern PFNGLLINKPROGRAMPROC glLinkProgram;
+extern PFNGLSHADERSOURCEPROC glShaderSource;
+extern PFNGLUSEPROGRAMPROC glUseProgram;
+extern PFNGLUNIFORM1IPROC glUniform1i;
+extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+
 #endif  // ARCTIC_PLATFORM_WINDOWS
 
 #ifdef ARCTIC_PLATFORM_MACOSX

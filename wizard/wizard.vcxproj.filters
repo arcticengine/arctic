@@ -32,6 +32,18 @@
     <ClCompile Include="..\engine\engine.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_es_egl.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_filesystem.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_input.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_opengl_glx.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
     <ClCompile Include="..\engine\miniz.c">
       <Filter>engine</Filter>
     </ClCompile>
@@ -60,9 +72,6 @@
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\log.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
-    <ClCompile Include="..\engine\arctic_platform_pi.cpp">
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp">

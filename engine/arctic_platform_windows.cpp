@@ -66,6 +66,27 @@
 
 extern void EasyMain();
 
+
+PFNGLACTIVETEXTUREPROC glActiveTexture = nullptr;
+PFNGLATTACHSHADERPROC glAttachShader = nullptr;
+PFNGLBINDATTRIBLOCATIONPROC glBindAttribLocation = nullptr;
+PFNGLCOMPILESHADERPROC glCompileShader = nullptr;
+PFNGLCREATEPROGRAMPROC glCreateProgram = nullptr;
+PFNGLCREATESHADERPROC glCreateShader = nullptr;
+PFNGLDELETEPROGRAMPROC glDeleteProgram = nullptr;
+PFNGLDELETESHADERPROC glDeleteShader = nullptr;
+PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray = nullptr;
+PFNGLGETPROGRAMIVPROC glGetProgramiv = nullptr;
+PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog = nullptr;
+PFNGLGETSHADERIVPROC glGetShaderiv = nullptr;
+PFNGLGETSHADERINFOLOGPROC glGetShaderInfoLog = nullptr;
+PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation = nullptr;
+PFNGLLINKPROGRAMPROC glLinkProgram = nullptr;
+PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
+PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
+PFNGLUNIFORM1IPROC glUniform1i = nullptr;
+PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
+
 namespace arctic {
 
 Ui16 FromBe(Ui16 x) {
@@ -477,6 +498,34 @@ LRESULT CALLBACK InnerWndProc(HWND inner_window_handle, UINT message,
 
 HBRUSH g_black_brush;
 
+template<class T>
+void LoadGlFunction(const char* name, T *out_ptr) {
+  *out_ptr = reinterpret_cast<T>(wglGetProcAddress(name));
+  Check(*out_ptr != nullptr, "Error loading function: ", name);
+}
+
+void LoadGl() {
+  LoadGlFunction("glActiveTexture", &glActiveTexture);
+  LoadGlFunction("glAttachShader", &glAttachShader);
+  LoadGlFunction("glBindAttribLocation", &glBindAttribLocation);
+  LoadGlFunction("glCompileShader", &glCompileShader);
+  LoadGlFunction("glCreateProgram", &glCreateProgram);
+  LoadGlFunction("glCreateShader", &glCreateShader);
+  LoadGlFunction("glDeleteProgram", &glDeleteProgram);
+  LoadGlFunction("glDeleteShader", &glDeleteShader);
+  LoadGlFunction("glEnableVertexAttribArray", &glEnableVertexAttribArray);
+  LoadGlFunction("glGetProgramiv", &glGetProgramiv);
+  LoadGlFunction("glGetProgramInfoLog", &glGetProgramInfoLog);
+  LoadGlFunction("glGetShaderiv", &glGetShaderiv);
+  LoadGlFunction("glGetShaderInfoLog", &glGetShaderInfoLog);
+  LoadGlFunction("glGetUniformLocation", &glGetUniformLocation);
+  LoadGlFunction("glLinkProgram", &glLinkProgram);
+  LoadGlFunction("glShaderSource", &glShaderSource);
+  LoadGlFunction("glUseProgram", &glUseProgram);
+  LoadGlFunction("glUniform1i", &glUniform1i);
+  LoadGlFunction("glVertexAttribPointer", &glVertexAttribPointer);
+}
+
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   SystemInfo *system_info) {
   char title_bar_text[] = {"Arctic Engine"};
@@ -593,6 +642,8 @@ void EngineThreadFunction(SystemInfo system_info) {
 
   is_ok = wglMakeCurrent(hdc, hrc);
   Check(!!is_ok, "Can't make the GL Context current. Code: WIN05.");
+
+  LoadGl();
 
   arctic::easy::GetEngine()->Init(system_info.screen_width,
     system_info.screen_height);
