@@ -32,6 +32,27 @@
     <ClCompile Include="..\engine\engine.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_byteorder.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_es_egl.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_fatal.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_filesystem.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_input.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_opengl_glx.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\arctic_platform_pi_sound.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
     <ClCompile Include="..\engine\arctic_mixer.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -103,6 +124,21 @@
       <Filter>..%255cengine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\arctic_platform_byteorder.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\arctic_platform_fatal.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\arctic_platform_sound.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\glcorearb.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\glext.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\arctic_mixer.h">
