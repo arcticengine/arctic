@@ -162,7 +162,7 @@ target_link_libraries(
   ${OPENGL_gl_LIBRARY}
   ${X11_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
-  ${ALSA_LIBRARY
+  ${ALSA_LIBRARY}
   #  ${EGL_LIBRARY}
   #  ${GLES_LIBRARY}
 )
