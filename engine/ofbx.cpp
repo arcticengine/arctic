@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -311,7 +312,7 @@ bool DataView::operator==(const char* rhs) const {
 
 struct Property;
 template <typename T> static bool parseArrayRaw(const Property& property,
-    T* out, size_t max_size);
+    T* out, std::size_t max_size);
 template <typename T> static bool parseBinaryArray(const Property& property,
     std::vector<T>* out);
 
@@ -335,23 +336,23 @@ struct Property : IElementProperty {
     return count;
   }
 
-  bool getValues(double* values, size_t max_size) const override {
+  bool getValues(double* values, std::size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
-  bool getValues(float* values, size_t max_size) const override {
+  bool getValues(float* values, std::size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
-  bool getValues(Ui64* values, size_t max_size) const override {
+  bool getValues(Ui64* values, std::size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
-  bool getValues(Si64* values, size_t max_size) const override {
+  bool getValues(Si64* values, std::size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
-  bool getValues(int* values, size_t max_size) const override {
+  bool getValues(int* values, std::size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
@@ -457,8 +458,8 @@ Object::Object(const Scene& _scene, const IElement& _element)
 }
 
 
-static bool decompress(const Ui8* in, size_t in_size, Ui8* out,
-    size_t out_size) {
+static bool decompress(const Ui8* in, std::size_t in_size, Ui8* out,
+    std::size_t out_size) {
   mz_stream stream = {};
   mz_inflateInit(&stream);
 
@@ -870,7 +871,7 @@ static OptionalError<Element*> readTextElement(Cursor* cursor) {
 }
 
 
-static OptionalError<Element*> tokenizeText(const Ui8* data, size_t size) {
+static OptionalError<Element*> tokenizeText(const Ui8* data, std::size_t size) {
   Cursor cursor;
   cursor.begin = data;
   cursor.current = data;
@@ -907,7 +908,7 @@ static OptionalError<Element*> tokenizeText(const Ui8* data, size_t size) {
 
 
 static OptionalError<Element*> tokenize(const Ui8* data,
-    size_t size, Ui32 *version) {
+    std::size_t size, Ui32 *version) {
   Cursor cursor;
   cursor.begin = data;
   cursor.current = data;
@@ -1255,7 +1256,7 @@ struct ClusterImpl : Cluster {
     weights.reserve(old_indices.size());
     int* ir = old_indices.empty() ? nullptr : &old_indices[0];
     double* wr = old_weights.empty() ? nullptr : &old_weights[0];
-    for (size_t i = 0, c = old_indices.size(); i < c; ++i) {
+    for (std::size_t i = 0, c = old_indices.size(); i < c; ++i) {
       int old_idx = ir[i];
       double w = wr[i];
       GeometryImpl::NewVertex* n = &geom->to_new_vertices[old_idx];
@@ -1699,10 +1700,10 @@ static OptionalError<Object*> parseMaterial(const Scene& scene,
 
 
 template<typename T> static bool parseTextArrayRaw(const Property& property,
-    T* out, size_t max_size);
+    T* out, std::size_t max_size);
 
 template <typename T> static bool parseArrayRaw(const Property& property,
-    T* out, size_t max_size) {
+    T* out, std::size_t max_size) {
   if (property.value.is_binary) {
     assert(out);
 
@@ -1850,7 +1851,7 @@ template<typename T> static void parseTextArray(const Property& property,
 
 
 template<typename T> static bool parseTextArrayRaw(const Property& property,
-    T* out_raw, size_t max_size) {
+    T* out_raw, std::size_t max_size) {
   const Ui8* iter = property.value.begin;
 
   T* out = out_raw;
@@ -1909,7 +1910,7 @@ template <typename T> static bool parseDoubleVecData(
   int elem_count = sizeof((*out_vec)[0]) / sizeof((*out_vec)[0].x);
   out_vec->resize(tmp.size() / elem_count);
   double* out = &(*out_vec)[0].x;
-  for (size_t i = 0, c = tmp.size(); i < c; ++i) {
+  for (std::size_t i = 0, c = tmp.size(); i < c; ++i) {
     out[i] = tmp[i];
   }
   return true;
@@ -1977,7 +1978,7 @@ static void splat(std::vector<T>* out,
     } else {
       out->resize(indices.size());
       int data_size = static_cast<int>(data.size());
-      for (size_t i = 0, c = indices.size(); i < c; ++i) {
+      for (std::size_t i = 0, c = indices.size(); i < c; ++i) {
         if (indices[i] < data_size)
           (*out)[i] = data[indices[i]];
         else
@@ -1992,7 +1993,7 @@ static void splat(std::vector<T>* out,
     out->resize(original_indices.size());
 
     int data_size = static_cast<int>(data.size());
-    for (size_t i = 0, c = original_indices.size(); i < c; ++i) {
+    for (std::size_t i = 0, c = original_indices.size(); i < c; ++i) {
       int idx = original_indices[i];
       if (idx < 0)
         idx = -idx - 1;
@@ -2015,7 +2016,7 @@ template <typename T> static void remap(std::vector<T>* out,
   std::vector<T> old;
   old.swap(*out);
   int old_size = static_cast<int>(old.size());
-  for (size_t i = 0, c = map.size(); i < c; ++i) {
+  for (std::size_t i = 0, c = map.size(); i < c; ++i) {
     if (map[i] < old_size)
       out->push_back(old[map[i]]);
     else
@@ -2104,7 +2105,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene,
   geom->triangulate(original_indices, &geom->to_old_vertices, &to_old_indices);
   geom->vertices.resize(geom->to_old_vertices.size());
 
-  for (size_t i = 0, c = geom->to_old_vertices.size(); i < c; ++i) {
+  for (std::size_t i = 0, c = geom->to_old_vertices.size(); i < c; ++i) {
     geom->vertices[i] = vertices[geom->to_old_vertices[i]];
   }
 
@@ -2113,7 +2114,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene,
   // so this isn't necessarily the same size as to_old_vertices.
   const int* to_old_vertices = geom->to_old_vertices.empty() ?
     nullptr : &geom->to_old_vertices[0];
-  for (size_t i = 0, c = geom->to_old_vertices.size(); i < c; ++i) {
+  for (std::size_t i = 0, c = geom->to_old_vertices.size(); i < c; ++i) {
     int old = to_old_vertices[i];
     add(&geom->to_new_vertices[old], static_cast<int>(i));
   }
@@ -2145,7 +2146,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene,
         return Error("Failed to parse material indices");
 
       int tmp_i = 0;
-      for (size_t poly = 0, c = tmp.size(); poly < c; ++poly) {
+      for (std::size_t poly = 0, c = tmp.size(); poly < c; ++poly) {
         int tri_count = getTriCountFromPoly(original_indices, &tmp_i);
         for (int i = 0; i < tri_count; ++i) {
           geom->materials.push_back(tmp[poly]);

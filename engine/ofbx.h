@@ -27,6 +27,8 @@
 
 #include "engine/arctic_types.h"
 
+#include <cstddef>
+
 namespace arctic {
 
 namespace ofbx {
@@ -103,11 +105,11 @@ struct IElementProperty {
   virtual IElementProperty* getNext() const = 0;
   virtual DataView getValue() const = 0;
   virtual int getCount() const = 0;
-  virtual bool getValues(double* values, size_t max_size) const = 0;
-  virtual bool getValues(int* values, size_t max_size) const = 0;
-  virtual bool getValues(float* values, size_t max_size) const = 0;
-  virtual bool getValues(Ui64* values, size_t max_size) const = 0;
-  virtual bool getValues(Si64* values, size_t max_size) const = 0;
+  virtual bool getValues(double* values, std::size_t max_size) const = 0;
+  virtual bool getValues(int* values, std::size_t max_size) const = 0;
+  virtual bool getValues(float* values, std::size_t max_size) const = 0;
+  virtual bool getValues(Ui64* values, std::size_t max_size) const = 0;
+  virtual bool getValues(Si64* values, std::size_t max_size) const = 0;
 };
 
 struct IElement {
