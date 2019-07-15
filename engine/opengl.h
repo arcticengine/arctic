@@ -30,8 +30,9 @@
 #define NOMINMAX
 #include <windows.h>
 #include <GL/gl.h>
-#include "engine/glext.h"
 #include <GL/glu.h>
+#include "engine/glext.h"
+
 
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLATTACHSHADERPROC glAttachShader;

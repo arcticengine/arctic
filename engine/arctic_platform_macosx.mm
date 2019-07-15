@@ -761,7 +761,7 @@ bool GetDirectoryEntries(const char *path,
     }
     DirectoryEntry entry;
     entry.title = dir_entry->d_name;
-    sprintf(full_path, "%s/%s", path, dir_entry->d_name);
+    snprintf(full_path, sizeof(full_path), "%s/%s", path, dir_entry->d_name);
     struct stat info;
     if (stat(full_path, &info) != 0) {
       return false;

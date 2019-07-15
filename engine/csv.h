@@ -41,7 +41,7 @@ class CsvRow {
   std::vector<std::string> values_;
 
  public:
-  CsvRow(const std::vector<std::string> &);
+  explicit CsvRow(const std::vector<std::string> &);
   ~CsvRow();
 
   Ui64 Size() const;

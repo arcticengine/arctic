@@ -72,7 +72,7 @@ void Panel::SetPos(Vec2Si32 pos) {
   pos_ = pos;
 }
 
-void Panel::SetBackground(easy::Sprite &background) {
+void Panel::SetBackground(const easy::Sprite &background) {
   background_ = background;
 }
 
@@ -458,7 +458,7 @@ void Progressbar::UpdateText() {
     p = Si32(current_value_ / total_value_ * 100);
   }
   char str[32];
-  sprintf(str, "%d%% Done", p);
+  snprintf(str, sizeof(str), "%d%% Done", p);
   text_->SetText(str);
 }
 

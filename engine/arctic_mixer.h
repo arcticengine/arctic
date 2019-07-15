@@ -58,7 +58,7 @@ struct SoundMixerState {
   std::deque<SoundBuffer> tasks;
   // Mutex-protected state end
 
-  void AddSoundTask(SoundBuffer &buffer) {
+  void AddSoundTask(const SoundBuffer &buffer) {
     while (true) {
       Si64 starts = task_pushers.load();
       if (starts >= 0) {

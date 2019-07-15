@@ -25,9 +25,11 @@
 #ifndef ENGINE_OFBX_H_
 #define ENGINE_OFBX_H_
 
+#include <cstddef>
+
 #include "engine/arctic_types.h"
 
-#include <cstddef>
+
 
 namespace arctic {
 

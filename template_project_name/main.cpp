@@ -1,3 +1,5 @@
+// Copyright (c) <year> Your name
+
 #include "engine/easy.h"
 
 using namespace arctic;  // NOLINT

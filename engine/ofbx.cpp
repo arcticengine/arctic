@@ -1892,7 +1892,7 @@ template <typename T> static bool parseBinaryArray(const Property& property,
 
 
 template <typename T> static bool parseDoubleVecData(
-    Property& property, std::vector<T>* out_vec) {
+    const Property& property, std::vector<T>* out_vec) {
   assert(out_vec);
   if (!property.value.is_binary) {
     parseTextArray(property, out_vec);
@@ -1906,7 +1906,8 @@ template <typename T> static bool parseDoubleVecData(
   assert(property.type == 'f');
   assert(sizeof((*out_vec)[0].x) == sizeof(double));
   std::vector<float> tmp;
-  if (!parseBinaryArray(property, &tmp)) return false;
+  if (!parseBinaryArray(property, &tmp))
+    return false;
   int elem_count = sizeof((*out_vec)[0]) / sizeof((*out_vec)[0].x);
   out_vec->resize(tmp.size() / elem_count);
   double* out = &(*out_vec)[0].x;
