@@ -53,7 +53,7 @@ class CsvRow {
     if (pos < values_.size()) {
       T res;
       std::stringstream ss;
-      ss << values_[pos];
+      ss << values_[static_cast<size_t>(pos)];
       ss >> res;
       if (ss.fail()) {
         return default_value;

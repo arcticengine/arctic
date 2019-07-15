@@ -103,11 +103,11 @@ struct IElementProperty {
   virtual IElementProperty* getNext() const = 0;
   virtual DataView getValue() const = 0;
   virtual int getCount() const = 0;
-  virtual bool getValues(double* values, int max_size) const = 0;
-  virtual bool getValues(int* values, int max_size) const = 0;
-  virtual bool getValues(float* values, int max_size) const = 0;
-  virtual bool getValues(Ui64* values, int max_size) const = 0;
-  virtual bool getValues(Si64* values, int max_size) const = 0;
+  virtual bool getValues(double* values, size_t max_size) const = 0;
+  virtual bool getValues(int* values, size_t max_size) const = 0;
+  virtual bool getValues(float* values, size_t max_size) const = 0;
+  virtual bool getValues(Ui64* values, size_t max_size) const = 0;
+  virtual bool getValues(Si64* values, size_t max_size) const = 0;
 };
 
 struct IElement {

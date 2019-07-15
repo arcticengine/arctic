@@ -105,8 +105,8 @@ bool CsvTable::ParseContent() {
   Ui64 line_idx = 1;
   for (; it != original_file_.end(); ++it) {
     bool quoted = false;
-    Ui64 token_start = 0;
-    Ui64 i = 0;
+    size_t token_start = 0;
+    size_t i = 0;
 
     CsvRow *row = new CsvRow(header_);
 
@@ -138,7 +138,7 @@ bool CsvTable::ParseContent() {
 
 CsvRow *CsvTable::GetRow(Ui64 row_position) const {
   if (row_position < content_.size()) {
-    return content_[row_position];
+    return content_[static_cast<size_t>(row_position)];
   }
   return nullptr;
 }
@@ -165,13 +165,13 @@ const std::string CsvTable::GetHeaderElement(Ui64 pos) const {
   if (pos >= header_.size()) {
     return nullptr;
   }
-  return header_[pos];
+  return header_[static_cast<size_t>(pos)];
 }
 
 bool CsvTable::DeleteRow(Ui64 pos) {
-  if (pos < content_.size()) {
-    delete *(content_.begin() + pos);
-    content_.erase(content_.begin() + pos);
+  if (static_cast<size_t>(pos) < content_.size()) {
+    delete *(content_.begin() + static_cast<int>(pos));
+    content_.erase(content_.begin() + static_cast<int>(pos));
     return true;
   }
   return false;
@@ -185,7 +185,7 @@ bool CsvTable::AddRow(Ui64 pos, const std::vector<std::string> &r) {
   }
 
   if (pos <= content_.size()) {
-    content_.insert(content_.begin() + pos, row);
+    content_.insert(content_.begin() + static_cast<int>(pos), row);
     return true;
   }
   delete row;
@@ -237,7 +237,7 @@ void CsvRow::Push(const std::string &value) {
 
 bool CsvRow::Set(const std::string &key, const std::string &value) {
   std::vector<std::string>::const_iterator it;
-  Ui64 pos = 0;
+  size_t pos = 0;
   for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
       values_[pos] = value;
@@ -250,14 +250,14 @@ bool CsvRow::Set(const std::string &key, const std::string &value) {
 
 const std::string CsvRow::operator[](Ui64 value_position) const {
   if (value_position < values_.size()) {
-    return values_[value_position];
+    return values_[static_cast<size_t>(value_position)];
   }
   return nullptr;
 }
 
 const std::string CsvRow::operator[](const std::string &key) const {
   std::vector<std::string>::const_iterator it;
-  Ui64 pos = 0;
+  size_t pos = 0;
   for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
       return values_[pos];
@@ -268,14 +268,14 @@ const std::string CsvRow::operator[](const std::string &key) const {
 }
 
 std::ostream &operator<<(std::ostream &os, const CsvRow &row) {
-  for (Ui64 i = 0; i != row.values_.size(); ++i) {
+  for (size_t i = 0; i != row.values_.size(); ++i) {
     os << row.values_[i] << " | ";
   }
   return os;
 }
 
 std::ofstream &operator<<(std::ofstream &os, const CsvRow &row) {
-  for (Ui64 i = 0; i != row.values_.size(); ++i) {
+  for (size_t i = 0; i != row.values_.size(); ++i) {
     os << row.values_[i];
     if (i + 1 < row.values_.size()) {
       os << ",";

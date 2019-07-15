@@ -1127,7 +1127,7 @@ void EasyMain() {
 
   CsvTable csv;
   csv.LoadFile("data/deprecations.csv");
-  size_t row_count = csv.RowCount();;
+  size_t row_count = static_cast<size_t>(csv.RowCount());
   for (size_t i = 0; i < row_count; ++i) {
     g_deprecated_files.push_back(csv.GetRow(i)->GetValue(0, std::string("")));
   }

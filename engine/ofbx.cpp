@@ -311,7 +311,7 @@ bool DataView::operator==(const char* rhs) const {
 
 struct Property;
 template <typename T> static bool parseArrayRaw(const Property& property,
-    T* out, int max_size);
+    T* out, size_t max_size);
 template <typename T> static bool parseBinaryArray(const Property& property,
     std::vector<T>* out);
 
@@ -335,22 +335,23 @@ struct Property : IElementProperty {
     return count;
   }
 
-  bool getValues(double* values, int max_size) const override {
-    return parseArrayRaw(*this, values, max_size); }
-
-  bool getValues(float* values, int max_size) const override {
+  bool getValues(double* values, size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
-  bool getValues(Ui64* values, int max_size) const override {
+  bool getValues(float* values, size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
-  bool getValues(Si64* values, int max_size) const override {
+  bool getValues(Ui64* values, size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
-  bool getValues(int* values, int max_size) const override {
+  bool getValues(Si64* values, size_t max_size) const override {
+    return parseArrayRaw(*this, values, max_size);
+  }
+
+  bool getValues(int* values, size_t max_size) const override {
     return parseArrayRaw(*this, values, max_size);
   }
 
@@ -1698,10 +1699,10 @@ static OptionalError<Object*> parseMaterial(const Scene& scene,
 
 
 template<typename T> static bool parseTextArrayRaw(const Property& property,
-    T* out, int max_size);
+    T* out, size_t max_size);
 
 template <typename T> static bool parseArrayRaw(const Property& property,
-    T* out, int max_size) {
+    T* out, size_t max_size) {
   if (property.value.is_binary) {
     assert(out);
 
@@ -1849,7 +1850,7 @@ template<typename T> static void parseTextArray(const Property& property,
 
 
 template<typename T> static bool parseTextArrayRaw(const Property& property,
-    T* out_raw, int max_size) {
+    T* out_raw, size_t max_size) {
   const Ui8* iter = property.value.begin;
 
   T* out = out_raw;
@@ -1881,7 +1882,7 @@ template <typename T> static bool parseBinaryArray(const Property& property,
     if (count == 0)
       return true;
     return parseArrayRaw(property, &(*out)[0],
-        static_cast<int>(sizeof((*out)[0]) * out->size()));
+        sizeof((*out)[0]) * out->size());
   } else {
     parseTextArray(property, out);
     return true;
@@ -2114,7 +2115,7 @@ static OptionalError<Object*> parseGeometry(const Scene& scene,
     nullptr : &geom->to_old_vertices[0];
   for (size_t i = 0, c = geom->to_old_vertices.size(); i < c; ++i) {
     int old = to_old_vertices[i];
-    add(&geom->to_new_vertices[old], i);
+    add(&geom->to_new_vertices[old], static_cast<int>(i));
   }
 
   const Element* layer_material_element = findChild(
