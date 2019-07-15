@@ -41,17 +41,18 @@
 
 #include <algorithm>
 #include <cmath>
+#include <deque>
 #include <fstream>
 #include <memory>
 #include <mutex>  // NOLINT
 #include <sstream>
+#include <string>
 #include <thread>  // NOLINT
 #include <vector>
 
 #include "engine/engine.h"
 #include "engine/easy.h"
 #include "engine/arctic_input.h"
-#include "engine/arctic_platform.h"
 #include "engine/arctic_mixer.h"
 #include "engine/log.h"
 #include "engine/rgb.h"
@@ -841,9 +842,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   // remove quotes from command line
   if (command_line) {
-    if (command_line[0] == L'"' ) {
+    if (command_line[0] == L'"') {
       arctic::Si32 i;
-      for (i = 0; command_line[i]; i++ ) {
+      for (i = 0; command_line[i]; i++) {
       }
       command_line[i - 1] = 0;
       command_line++;
@@ -877,7 +878,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   arctic::SoundPlayer soundPlayer;
   soundPlayer.Initialize();
- 
+
 
   std::thread engine_thread(arctic::EngineThreadFunction,
     arctic::g_system_info);

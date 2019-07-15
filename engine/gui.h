@@ -24,6 +24,9 @@
 #define ENGINE_GUI_H_
 
 #include <deque>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "engine/arctic_types.h"
 #include "engine/arctic_input.h"
@@ -43,7 +46,7 @@ enum GuiMessageKind {
 class Panel;
 
 class GuiMessage {
-public:
+ public:
   std::shared_ptr<Panel> panel;
   GuiMessageKind kind;
 
@@ -51,7 +54,7 @@ public:
 };
 
 class Panel : public std::enable_shared_from_this<Panel> {
-protected:
+ protected:
   Ui64 tag_;
   Vec2Si32 pos_;
   Vec2Si32 size_;
@@ -60,8 +63,8 @@ protected:
   easy::Sprite background_;
   std::deque<std::shared_ptr<Panel>> children_;
   bool is_clickable_;
-public:
 
+ public:
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
     easy::Sprite background = easy::Sprite(), bool is_clickable = false);
   Vec2Si32 GetSize();
@@ -91,14 +94,15 @@ public:
 };
 
 class Button : public Panel {
-public:
+ public:
   enum ButtonState {
     kHidden = 0,
     kNormal = 1,
     kHovered = 2,
     kDown = 3
   };
-protected:
+
+ protected:
   easy::Sprite normal_;
   easy::Sprite down_;
   easy::Sprite hovered_;
@@ -106,13 +110,17 @@ protected:
   easy::Sound up_sound_;
   KeyCode hotkey_;
   ButtonState state_ = kNormal;
-public:
 
+ public:
   Button(Ui64 tag, Vec2Si32 pos,
-    easy::Sprite normal, easy::Sprite down = easy::Sprite(), easy::Sprite hovered = easy::Sprite(),
-    easy::Sound down_sound = easy::Sound(), easy::Sound up_sound = easy::Sound(),
+    easy::Sprite normal,
+    easy::Sprite down = easy::Sprite(),
+    easy::Sprite hovered = easy::Sprite(),
+    easy::Sound down_sound = easy::Sound(),
+    easy::Sound up_sound = easy::Sound(),
     KeyCode hotkey = kKeyNone, Ui32 tab_order = 0);
-  void Draw(Vec2Si32 parent_absolute_pos) override;
+  void Draw(Vec2Si32 parent_absolute_pos)
+    override;
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       bool is_top_level,
       bool *in_out_is_applied,
@@ -128,14 +136,15 @@ enum TextAlignment {
 };
 
 class Text : public Panel {
-protected:
+ protected:
   Font font_;
   TextOrigin origin_;
   Rgba color_;
   std::vector<Rgba> palete_;
   std::string text_;
   TextAlignment alignment_;
-public:
+
+ public:
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     Font font, TextOrigin origin, Rgba color, std::string text,
     TextAlignment alignment = kAlignLeft);
@@ -147,14 +156,14 @@ public:
 };
 
 class Progressbar: public Panel {
-protected:
+ protected:
   easy::Sprite incomplete_;
   easy::Sprite complete_;
   float total_value_;
   float current_value_;
   std::shared_ptr<Text> text_;
-public:
 
+ public:
   Progressbar(Ui64 tag, Vec2Si32 pos,
     easy::Sprite incomplete, easy::Sprite complete,
     std::vector<Rgba> palete, Font font,
@@ -166,7 +175,7 @@ public:
 };
 
 class Editbox: public Panel {
-protected:
+ protected:
   Font font_;
   TextOrigin origin_;
   Rgba color_;
@@ -179,7 +188,8 @@ protected:
   Si32 selection_begin_;
   Si32 selection_end_;
   bool is_digits_;
-public:
+
+ public:
   Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     easy::Sprite normal, easy::Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
@@ -196,7 +206,7 @@ public:
 };
 
 class HorizontalScroll : public Panel {
-public:
+ public:
   enum ScrollState {
     kHidden = 0,
     kNormal = 1,
@@ -207,7 +217,8 @@ public:
     kLeftFast = 6,
     kRightFast = 7
   };
-protected:
+
+ protected:
   easy::Sprite normal_background_;
   easy::Sprite focused_background_;
   easy::Sprite normal_button_left_;
@@ -225,7 +236,8 @@ protected:
   ScrollState state_ = kNormal;
   Si32 start_x_;
   Si32 start_value_;
-public:
+
+ public:
   HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     easy::Sprite normal_background,
     easy::Sprite focused_background, easy::Sprite normal_button_left,

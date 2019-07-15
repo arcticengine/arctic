@@ -199,7 +199,7 @@ inline Si32 Contains(bound3 const &a, bound3 const &b) {
   if (nAinB == 0 && nBinA != 0) {
     return 2;
   }
-  /*if( nAinB!=0 && nBinA==0 )*/ return 3;
+  /*if ( nAinB!=0 && nBinA==0 )*/ return 3;
 }
 #endif  // 0
 

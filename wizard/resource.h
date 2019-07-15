@@ -13,5 +13,5 @@
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110
-#endif
-#endif
+#endif  // APSTUDIO_READONLY_SYMBOLS
+#endif  // APSTUDIO_INVOKED

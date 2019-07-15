@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Huldra
+// Copyright (c) 2016 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,8 +20,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef  GAME_TARGETVER_H_
-#define  GAME_TARGETVER_H_
+#ifndef TESTS_TARGETVER_H_
+#define TESTS_TARGETVER_H_
 
 // Including SDKDDKVer.h defines the highest available Windows platform.
 
@@ -31,4 +31,4 @@
 
 #include <SDKDDKVer.h>
 
-#endif  // GAME_TARGETVER_H_
+#endif  // TESTS_TARGETVER_H_

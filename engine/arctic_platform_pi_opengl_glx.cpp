@@ -42,7 +42,6 @@
 #include <X11/Xatom.h>
 
 #include "engine/easy.h"
-#include "engine/arctic_platform.h"
 
 extern void EasyMain();
 
@@ -75,7 +74,8 @@ static GLXContext g_glx_context;
 
 void PumpMessages();
 
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*,
+    GLXFBConfig, GLXContext, Bool, const int*);
 
 void CreateMainWindow(SystemInfo *system_info) {
   const char *title = "Arctic Engine";
@@ -105,34 +105,33 @@ void CreateMainWindow(SystemInfo *system_info) {
 
   glXCreateContextAttribsARBProc glXCreateContextAttribsARB = 0;
   glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)
-	  glXGetProcAddressARB( (const GLubyte *) "glXCreateContextAttribsARB" );
+    glXGetProcAddressARB((const GLubyte *)"glXCreateContextAttribsARB");
 
-  int context_attribs[] =
-  {
-	  GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-	  GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-	  //GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-	  None
+  int context_attribs[] = {
+    GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+    GLX_CONTEXT_MINOR_VERSION_ARB, 0,
+    // GLX_CONTEXT_FLAGS_ARB        , GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+    None
   };
 
   static int visual_attribs[] = {
-	  GLX_RENDER_TYPE, GLX_RGBA_BIT,
-	  GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
-	  GLX_DOUBLEBUFFER, true,
-	  GLX_RED_SIZE, 1,
-	  GLX_GREEN_SIZE, 1,
-	  GLX_BLUE_SIZE, 1,
-	  None
+    GLX_RENDER_TYPE, GLX_RGBA_BIT,
+    GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+    GLX_DOUBLEBUFFER, true,
+    GLX_RED_SIZE, 1,
+    GLX_GREEN_SIZE, 1,
+    GLX_BLUE_SIZE, 1,
+    None
   };
 
 
   int num_fbc = 0;
   GLXFBConfig *fbc = glXChooseFBConfig(g_x_display,
-		  DefaultScreen(g_x_display),
-		  visual_attribs, &num_fbc);
+      DefaultScreen(g_x_display),
+      visual_attribs, &num_fbc);
   if (!fbc) {
-	  printf("glXChooseFBConfig() failed\n");
-	  exit(1);
+    printf("glXChooseFBConfig() failed\n");
+    exit(1);
   }
 
   g_glx_context = glXCreateContextAttribsARB(

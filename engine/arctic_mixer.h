@@ -23,8 +23,9 @@
 #ifndef ENGINE_ARCTIC_MIXER_H_
 #define ENGINE_ARCTIC_MIXER_H_
 
-#include <mutex>  // NOLINT
 #include <deque>  // NOLINT
+#include <mutex>  // NOLINT
+#include <vector>
 
 #include "engine/arctic_types.h"
 #include "engine/easy_sound.h"

@@ -27,4 +27,4 @@
 #define TEST_NO_MAIN
 #include "engine/test_main.h"
 
-#endif  // #ifndef ENGINE_TEST_H_
+#endif  // ENGINE_TEST_H_

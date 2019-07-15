@@ -47,7 +47,7 @@ Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
 Vec2Si32 Panel::GetSize() {
   return size_;
 }
-  
+
 Ui32 Panel::GetTabOrder() {
   return tab_order_;
 }
@@ -177,11 +177,11 @@ void Panel::FindNeighbors(Ui32 current_tab_order,
     if (order != 0 && current_tab_order != order) {
       if (*in_out_prev) {
         Ui32 prev = (*in_out_prev)->GetTabOrder();
-        if (current_tab_order > prev) { // prev .?. current
+        if (current_tab_order > prev) {  // prev .?. current
           if (order > prev && order < current_tab_order) {
             *in_out_prev = (*it).get();
           }
-        } else if (current_tab_order < prev) { // .?. current ... prev .?.
+        } else if (current_tab_order < prev) {  // .?. current ... prev .?.
           if (order > prev || order < current_tab_order) {
             *in_out_prev = (*it).get();
           }
@@ -189,14 +189,14 @@ void Panel::FindNeighbors(Ui32 current_tab_order,
       } else {
         *in_out_prev = (*it).get();
       }
-      
+
       if (*in_out_next) {
         Ui32 next = (*in_out_next)->GetTabOrder();
-        if (current_tab_order < next) { // current .?. next
+        if (current_tab_order < next) {  // current .?. next
           if (order < next && order > current_tab_order) {
             *in_out_next = (*it).get();
           }
-        } else if (current_tab_order > next) { // .?. next ... current .?.
+        } else if (current_tab_order > next) {  // .?. next ... current .?.
           if (order < next || order > current_tab_order) {
             *in_out_next = (*it).get();
           }
@@ -364,7 +364,7 @@ void Button::SetCurrentTab(bool is_current_tab) {
   }
   is_current_tab_ = is_current_tab;
 }
-  
+
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       Font font, TextOrigin origin, Rgba color, std::string text,
@@ -393,13 +393,13 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
 void Text::SetText(std::string text) {
   text_ = text;
 }
-  
+
 void Text::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
   Vec2Si32 offset = (size_ - size) / 2;
   if (offset.x < 0) {
     offset.x = 0;
-  } 
+  }
   if (offset.y < 0) {
     offset.y = 0;
   }
@@ -436,20 +436,25 @@ Progressbar::Progressbar(Ui64 tag, Vec2Si32 pos,
 void Progressbar::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
   Si32 w1 = GetSize().x;
-  if (current_value_ >= 0.0f && total_value_ > 0.0f && current_value_ <= total_value_) {
+  if (current_value_ >= 0.0f
+      && total_value_ > 0.0f
+      && current_value_ <= total_value_) {
     w1 = Si32(current_value_ / total_value_ * GetSize().x);
   }
   Si32 w2 = GetSize().x - w1;
   complete_.Draw(absolute_pos.x, absolute_pos.y, w1, complete_.Size().y,
     0, 0, w1, complete_.Size().y);
-  incomplete_.Draw(absolute_pos.x + w1, absolute_pos.y, w2, incomplete_.Size().y,
+  incomplete_.Draw(absolute_pos.x + w1, absolute_pos.y,
+      w2, incomplete_.Size().y,
     w1, 0, w2, incomplete_.Size().y);
   Panel::Draw(parent_absolute_pos);
 }
 
 void Progressbar::UpdateText() {
   Si32 p = 100;
-  if (current_value_ >= 0.0f && total_value_ > 0.0f && current_value_ <= total_value_) {
+  if (current_value_ >= 0.0f
+      && total_value_ > 0.0f
+      && current_value_ <= total_value_) {
     p = Si32(current_value_ / total_value_ * 100);
   }
   char str[32];
@@ -603,7 +608,8 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     }
   }
   cursor_pos_ = std::min(std::max(0, cursor_pos_), (Si32)text_.length());
-  selection_begin_ = std::min(std::max(0, selection_begin_), (Si32)text_.length());
+  selection_begin_ = std::min(std::max(0, selection_begin_),
+      (Si32)text_.length());
   selection_end_ = std::min(std::max(0, selection_end_), (Si32)text_.length());
 }
 
@@ -626,7 +632,8 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   Si32 available_width = size_.x - border * 2 - space_width;
   Si32 displayable_width = size_.x - border * 2;
 
-  // Update display_pos_ so that both display_pos_ and cursor_pos_ are both visible.
+  // Update display_pos_ so that both display_pos_
+  // and cursor_pos_ are both visible.
   Si32 end_pos = (Si32)text_.length();
   if (cursor_pos_ <= display_pos_) {
     // Move display pos to the left when cursor is at the left border.
@@ -646,7 +653,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   }
   // Display part of text with start at the display_pos_.
 
-  //const char *visible = text_.c_str();
+  // const char *visible = text_.c_str();
 
   std::string display_text = text_.substr(display_pos_, end_pos - display_pos_);
   Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
@@ -670,7 +677,8 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   std::string left_part = text_.substr(0, cursor_pos);
   Si32 cursor_x = font_.EvaluateSize(left_part.c_str(), false).x;
 
-  Si32 skip_x = font_.EvaluateSize(text_.substr(0, display_pos_).c_str(), false).x;
+  Si32 skip_x = font_.EvaluateSize(
+      text_.substr(0, display_pos_).c_str(), false).x;
 
   Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
   a.x = std::max(pos.x + border, a.x - skip_x);
@@ -692,8 +700,10 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     Si32 y2 = pos.y + border + font_.line_height_;
     easy::Sprite backbuffer = easy::GetEngine()->GetBackbuffer();
 
-    x1 = std::min(std::max(pos.x + border, x1 - skip_x), pos.x + border + displayable_width);
-    x2 = std::min(std::max(pos.x + border, x2 - skip_x), pos.x + border + displayable_width);
+    x1 = std::min(std::max(pos.x + border, x1 - skip_x),
+        pos.x + border + displayable_width);
+    x2 = std::min(std::max(pos.x + border, x2 - skip_x),
+        pos.x + border + displayable_width);
 
     for (Si32 y = y1; y < y2; ++y) {
       Rgba *p = backbuffer.RgbaData() + backbuffer.StridePixels() * y;
@@ -747,7 +757,8 @@ HorizontalScroll::HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
   , value_(value) {
 }
 
-void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
+    const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
     std::deque<GuiMessage> *out_gui_messages,
@@ -807,18 +818,21 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos, const InputMessage &messa
           Si32 drag_x = relative_pos.x - start_x_;
           Si32 value_diff = drag_x * (max_value_ - min_value_) / w;
           value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
-          out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          out_gui_messages->emplace_back(
+              shared_from_this(), kGuiScrollChange);
         } else if (relative_pos.x < x1) {
           state_ = kLeftDown;
           if (prev_state != state_) {
             value_ = std::max(min_value_, value_ - 1);
-            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            out_gui_messages->emplace_back(
+                shared_from_this(), kGuiScrollChange);
           }
         } else if (relative_pos.x < x2) {
           state_ = kLeftFast;
           if (prev_state != state_) {
             value_ = std::max(min_value_, value_ - 5);
-            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            out_gui_messages->emplace_back(
+                shared_from_this(), kGuiScrollChange);
           }
         } else if (relative_pos.x < x3) {
           state_ = kMiddleDragged;
@@ -830,13 +844,15 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos, const InputMessage &messa
           state_ = kRightFast;
           if (prev_state != state_) {
             value_ = std::min(max_value_, value_ + 5);
-            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            out_gui_messages->emplace_back(
+                shared_from_this(), kGuiScrollChange);
           }
         } else {
           state_ = kRightDown;
           if (prev_state != state_) {
             value_ = std::min(max_value_, value_ + 1);
-            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            out_gui_messages->emplace_back(
+                shared_from_this(), kGuiScrollChange);
           }
         }
       } else {

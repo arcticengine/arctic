@@ -42,7 +42,6 @@
 #include <X11/Xatom.h>
 
 #include "engine/easy.h"
-#include "engine/arctic_platform.h"
 
 extern void EasyMain();
 
@@ -72,8 +71,8 @@ static EGLint const attribute_list[] = {
   EGL_NONE
 };
 
-const EGLint context_attributes[] = { 
-  EGL_CONTEXT_CLIENT_VERSION, 2, 
+const EGLint context_attributes[] = {
+  EGL_CONTEXT_CLIENT_VERSION, 2,
   EGL_NONE
 };
 
@@ -132,21 +131,26 @@ void CreateMainWindow(SystemInfo *system_info) {
   eglInitialize(g_egl_display, NULL, NULL);
   eglChooseConfig(g_egl_display, attribute_list, &config, 1, &num_config);
   Check(num_config == 1, "Error in eglChooseConfig, unexpected num_config.");
-  context = eglCreateContext(g_egl_display, config, EGL_NO_CONTEXT, context_attributes);
+  context = eglCreateContext(g_egl_display, config,
+      EGL_NO_CONTEXT, context_attributes);
   if (context == EGL_NO_CONTEXT) {
     std::stringstream info;
-    info << "Unable to create EGL context (eglError: " << eglGetError() << ")" << std::endl;
+    info << "Unable to create EGL context (eglError: "
+      << eglGetError() << ")" << std::endl;
     Log(info.str().c_str());
     Check(false, info.str().c_str());
   }
-  g_egl_surface = eglCreateWindowSurface(g_egl_display, config, (EGLNativeWindowType)g_x_window, NULL);
+  g_egl_surface = eglCreateWindowSurface(g_egl_display, config,
+      (EGLNativeWindowType)g_x_window, NULL);
   if ( g_egl_surface == EGL_NO_SURFACE ) {
     std::stringstream info;
-    info << "Unable to create EGL surface (eglError: " << eglGetError() << ")" << std::endl;
+    info << "Unable to create EGL surface (eglError: "
+      << eglGetError() << ")" << std::endl;
     Log(info.str().c_str());
     Check(false, info.str().c_str());
   }
-  EGLBoolean mcr = eglMakeCurrent(g_egl_display, g_egl_surface, g_egl_surface, context);
+  EGLBoolean mcr = eglMakeCurrent(g_egl_display, g_egl_surface,
+      g_egl_surface, context);
   Check(mcr, "Error in eglMakeCurrent");
 
   glClearColor(1.0F, 1.0F, 1.0F, 0.0F);

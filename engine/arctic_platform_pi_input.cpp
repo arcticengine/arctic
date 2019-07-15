@@ -38,7 +38,6 @@
 #include <X11/Xatom.h>
 
 #include "engine/easy.h"
-#include "engine/arctic_platform.h"
 
 extern void EasyMain();
 

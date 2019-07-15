@@ -27,9 +27,11 @@
 #include <alsa/asoundlib.h>
 #include <alsa/control.h>
 
+#include <algorithm>
 #include <deque>
 #include <mutex>  // NOLINT
 #include <thread>  // NOLINT
+#include <vector>
 
 #include "engine/arctic_platform_sound.h"
 #include "engine/arctic_platform_fatal.h"
@@ -40,7 +42,7 @@ namespace arctic {
 static std::mutex g_sound_mixer_mutex;
 
 class SoundPlayerImpl {
-public:
+ public:
   bool is_initialized = false;
 
   std::deque<AudioDeviceInfo> GetDeviceList();

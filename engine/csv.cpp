@@ -32,7 +32,7 @@ namespace arctic {
 
 CsvTable::CsvTable() {
 }
-  
+
 bool CsvTable::LoadFile(const std::string &filename, char sep) {
   type_ = kCsvSourceFile;
   sep_ = sep;
@@ -47,7 +47,7 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
       }
     }
     ifile.close();
-    
+
     if (original_file_.size() == 0) {
       error_description = std::string("No Data in ").append(file_);
       return false;
@@ -76,7 +76,7 @@ bool CsvTable::LoadString(const std::string &data, char sep) {
     error_description = std::string("No Data in pure content");
     return false;
   }
-  
+
   bool is_ok = true;
   is_ok = is_ok && ParseHeader();
   is_ok = is_ok && ParseContent();
@@ -101,15 +101,15 @@ bool CsvTable::ParseHeader() {
 
 bool CsvTable::ParseContent() {
   std::deque<std::string>::iterator it = original_file_.begin();
-  ++it; // skip header
+  ++it;  // skip header
   Ui64 line_idx = 1;
   for (; it != original_file_.end(); ++it) {
     bool quoted = false;
     Ui64 token_start = 0;
     Ui64 i = 0;
-    
+
     CsvRow *row = new CsvRow(header_);
-    
+
     for (; i != it->length(); ++i) {
       if (it->at(i) == '"') {
         quoted = ((quoted) ? (false) : (true));
@@ -118,9 +118,9 @@ bool CsvTable::ParseContent() {
         token_start = i + 1;
       }
     }
-    //end
+    // end
     row->Push(it->substr(token_start, it->length() - token_start));
-    
+
     // if value(s) missing
     if (row->Size() != header_.size()) {
       delete row;
@@ -130,7 +130,7 @@ bool CsvTable::ParseContent() {
       return false;
     }
     content_.push_back(row);
-    
+
     line_idx++;
   }
   return true;
@@ -179,11 +179,11 @@ bool CsvTable::DeleteRow(Ui64 pos) {
 
 bool CsvTable::AddRow(Ui64 pos, const std::vector<std::string> &r) {
   CsvRow *row = new CsvRow(header_);
-  
+
   for (auto it = r.begin(); it != r.end(); ++it) {
     row->Push(*it);
   }
-  
+
   if (pos <= content_.size()) {
     content_.insert(content_.begin() + pos, row);
     return true;
@@ -196,7 +196,7 @@ void CsvTable::SaveFile() const {
   if (type_ == CsvSourceType::kCsvSourceFile) {
     std::ofstream f;
     f.open(file_, std::ios::out | std::ios::trunc);
-    
+
     // header
     Ui64 i = 0;
     for (auto it = header_.begin(); it != header_.end(); ++it) {
@@ -208,7 +208,7 @@ void CsvTable::SaveFile() const {
       }
       i++;
     }
-    
+
     for (auto it = content_.begin(); it != content_.end(); ++it) {
       f << **it << std::endl;
     }

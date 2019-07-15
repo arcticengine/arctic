@@ -131,7 +131,6 @@ struct Vec2Si32 {
   Vec2Si32 oy() const {
     return Vec2Si32(0, y);
   }
-
 };
 
 inline Vec2Si32 operator+(Vec2Si32  const &v, Si32 const &s) {

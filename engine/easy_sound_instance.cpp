@@ -78,14 +78,14 @@ SoundInstance::SoundInstance(std::vector<Ui8> vorbis_file) {
 
 Si16* SoundInstance::GetWavData() {
   if (format_ == kSoundDataWav) {
-    return static_cast<Si16*>((void*)data_.data());
+    return static_cast<Si16*>(static_cast<void*>(data_.data()));
   } else {
     return nullptr;
   }
 }
 
 Ui8* SoundInstance::GetVorbisData() const {
-  return static_cast<Ui8*>((void*)data_.data());
+  return const_cast<Ui8*>(data_.data());
 }
 
 Si32 SoundInstance::GetVorbisSize() const {
@@ -133,7 +133,8 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
 
   std::shared_ptr<easy::SoundInstance> sound;
   Ui32 in_sample_count = wav->subchunk_2_size / wav->block_align;
-  Ui32 sample_count = (Ui32)(44100ull * (Ui64)in_sample_count / (Ui64)wav->sample_rate);
+  Ui32 sample_count = (Ui32)(44100ull * (Ui64)in_sample_count
+      / (Ui64)wav->sample_rate);
   sound.reset(new easy::SoundInstance(sample_count));
   const Ui8 *in_data = data + 44;
   Si16 *out_data = sound->GetWavData();
@@ -189,25 +190,29 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
       const Ui8 *in_block = in_data + in_sample_idx * block_align;
       Si16 value1 = 0;
       Si16 value2 = 0;
-      
+
       if (wav->bits_per_sample == 8) {
-        value1 = static_cast<Si16>(*static_cast<const Si8*>(static_cast<const void*>(in_block))) * 256;
+        value1 = static_cast<Si16>(*static_cast<const Si8*>(
+              static_cast<const void*>(in_block))) * 256;
         if (wav->channels == 1) {
           value2 = value1;
         } else {
-          value2 = static_cast<Si16>(*static_cast<const Si8*>(static_cast<const void*>(in_block + sizeof(Ui16)))) * 256;
+          value2 = static_cast<Si16>(*static_cast<const Si8*>(
+                static_cast<const void*>(in_block + sizeof(Ui16)))) * 256;
         }
       } else if (wav->bits_per_sample == 16) {
-        value1 = *static_cast<const Si16*>(static_cast<const void*>(in_block));
+        value1 = *static_cast<const Si16*>(static_cast<const void*>(
+              in_block));
         if (wav->channels == 1) {
           value2 = value1;
         } else {
-          value2 = *static_cast<const Si16*>(static_cast<const void*>(in_block + sizeof(Si16)));
+          value2 = *static_cast<const Si16*>(static_cast<const void*>(
+                in_block + sizeof(Si16)));
         }
       } else {
         Fatal("Error in LoadWav, unsupported bits_per_sample");
       }
-      
+
       out_data[idx * 2] = value1;
       out_data[idx * 2 + 1] = value2;
     }

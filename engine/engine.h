@@ -25,6 +25,7 @@
 
 #include <chrono>  // NOLINT
 #include <random>
+#include <vector>
 
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
@@ -37,10 +38,10 @@ struct MathTables {
   std::vector<Si32> circle_16_16;
   Si32 cicrle_16_16_size_bits = 0;
   Si32 cicrle_16_16_mask = 0;
-  
+
   void Init();
 };
-  
+
 class Engine {
  private:
   Si32 width_ = 0;
@@ -70,7 +71,7 @@ class Engine {
 
 
   bool is_inverse_y_ = false;
-  
+
   MathTables math_tables_;
 
   GLuint g_programObject;

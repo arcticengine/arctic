@@ -36,7 +36,7 @@ typedef uint8_t Ui8;
 typedef uint16_t Ui16;
 typedef uint32_t Ui32;
 typedef uint64_t Ui64;
-  
+
 enum Trivalent {
   kTrivalentFalse = 0,
   kTrivalentTrue = 1,

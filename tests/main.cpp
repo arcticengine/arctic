@@ -22,7 +22,6 @@ void test_rgb() {
   TEST_CHECK(u.r == 0xcc);
   TEST_CHECK(u.g == 0xbb);
   TEST_CHECK(u.b == 0xaa);
-  
 }
 
 TEST_LIST = {

@@ -22,7 +22,7 @@
 
 #include "engine/log.h"
 
-#include <condition_variable>
+#include <condition_variable>  // NOLINT
 #include <deque>
 #include <fstream>
 #include <iostream>

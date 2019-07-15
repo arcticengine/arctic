@@ -33,45 +33,46 @@
 namespace arctic {
 namespace easy {
 
-SpriteInstance::SpriteInstance(Si32 width, Si32 height)
-  : width_(width)
-    , height_(height)
-    , data_(width * height * sizeof(Rgba)) {
-    }
-
-void SpriteInstance::UpdateOpaqueSpans() {
-  if (!height_) {
-    opaque_.clear();
-    return;
-  }
-  opaque_.resize(height_);
-  for (Si32 y = 0; y < height_; ++y) {
-    const Rgba *line = reinterpret_cast<Rgba*>((void*)data_.data()) +
-      width_ * y;
-    SpanSi32 &span = opaque_[y];
-    span.begin = 0;
-    span.end = 0;
-    Si32 x = 0;
-    for (; x < width_; ++x) {
-      if (line[x].a != 0) {
-        span.begin = x;
-        break;
+  SpriteInstance::SpriteInstance(Si32 width, Si32 height)
+    : width_(width)
+      , height_(height)
+      , data_(width * height * sizeof(Rgba)) {
       }
+
+  void SpriteInstance::UpdateOpaqueSpans() {
+    if (!height_) {
+      opaque_.clear();
+      return;
     }
-    if (x < width_) {
+    opaque_.resize(height_);
+    for (Si32 y = 0; y < height_; ++y) {
+      const Rgba *line = reinterpret_cast<Rgba*>(
+          reinterpret_cast<void*>(data_.data())) +
+        width_ * y;
+      SpanSi32 &span = opaque_[y];
+      span.begin = 0;
+      span.end = 0;
+      Si32 x = 0;
       for (; x < width_; ++x) {
         if (line[x].a != 0) {
-          span.end = x;
+          span.begin = x;
+          break;
         }
       }
-      span.end++;
+      if (x < width_) {
+        for (; x < width_; ++x) {
+          if (line[x].a != 0) {
+            span.end = x;
+          }
+        }
+        span.end++;
+      }
     }
   }
-}
 
-void SpriteInstance::ClearOpaqueSpans() {
-  opaque_.clear();
-}
+  void SpriteInstance::ClearOpaqueSpans() {
+    opaque_.clear();
+  }
 
 }  // namespace easy
 
@@ -93,197 +94,207 @@ struct TgaHeader {
 #pragma pack()
 
 
-std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
-    const Si64 size) {
-  std::shared_ptr<easy::SpriteInstance> sprite;
-  Check(size >= sizeof(TgaHeader), "Error in LoadTga, size is too small.");
-  const TgaHeader *tga = static_cast<const TgaHeader*>(
-      static_cast<const void*>(data));
+  std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
+      const Si64 size) {
+    std::shared_ptr<easy::SpriteInstance> sprite;
+    Check(size >= sizeof(TgaHeader), "Error in LoadTga, size is too small.");
+    const TgaHeader *tga = static_cast<const TgaHeader*>(
+        static_cast<const void*>(data));
 #ifdef BIGENDIAN
-  tga->image_width = ((tga->image_width & 255) << 8)
-    | (tga->image_width >> 8);
-  tga->image_height = ((tga->image_height & 255) << 8)
-    | (tga->image_height >> 8);
-  tga->color_map_origin = ((tga->color_map_origin & 255) << 8)
-    | (tga->color_map_origin >> 8);
-  tga->color_map_length = ((tga->color_map_length & 255) << 8)
-    | (tga->color_map_length >> 8);
+    tga->image_width = ((tga->image_width & 255) << 8)
+      | (tga->image_width >> 8);
+    tga->image_height = ((tga->image_height & 255) << 8)
+      | (tga->image_height >> 8);
+    tga->color_map_origin = ((tga->color_map_origin & 255) << 8)
+      | (tga->color_map_origin >> 8);
+    tga->color_map_length = ((tga->color_map_length & 255) << 8)
+      | (tga->color_map_length >> 8);
 #endif  // BIGENDIAN
-  Check(tga->image_width >= 2, "Error in LoadTga, tga.xres is too small.");
-  Check(tga->image_height >= 2, "Error in LoadTga, tga.yres is too small.");
-  Check((tga->pixel_depth == 24) || (tga->pixel_depth == 32)
-      || (tga->pixel_depth == 16) || (tga->pixel_depth == 15)
-      || (tga->pixel_depth == 8),
-    "Error in LoadTga, unsupported bpp.");
-  const Si32 colormap_bytes_per_entry = ((tga->color_map_entry_size + 7) / 8);
-  const Ui8 *id_field = data + sizeof(TgaHeader);
-  const Ui8 *colormap = id_field + tga->id_field_length;
-  const Ui8 *p = colormap
-    + tga->color_map_length * colormap_bytes_per_entry;
+    Check(tga->image_width >= 2, "Error in LoadTga, tga.xres is too small.");
+    Check(tga->image_height >= 2, "Error in LoadTga, tga.yres is too small.");
+    Check((tga->pixel_depth == 24) || (tga->pixel_depth == 32)
+        || (tga->pixel_depth == 16) || (tga->pixel_depth == 15)
+        || (tga->pixel_depth == 8),
+        "Error in LoadTga, unsupported bpp.");
+    const Si32 colormap_bytes_per_entry = ((tga->color_map_entry_size + 7) / 8);
+    const Ui8 *id_field = data + sizeof(TgaHeader);
+    const Ui8 *colormap = id_field + tga->id_field_length;
+    const Ui8 *p = colormap
+      + tga->color_map_length * colormap_bytes_per_entry;
 
-  bool is_origin_upper_left = !!(tga->image_descriptor & (1 << 5));
+    bool is_origin_upper_left = !!(tga->image_descriptor & (1 << 5));
 
-  sprite.reset(new easy::SpriteInstance(tga->image_width, tga->image_height));
+    sprite.reset(new easy::SpriteInstance(tga->image_width, tga->image_height));
 
-  const bool is_rle = (tga->image_type == 9 || tga->image_type == 10
-    || tga->image_type == 11);
-  const bool is_gray = (tga->image_type == 3 || tga->image_type == 11);
-  const bool is_palette = (tga->image_type == 1 || tga->image_type == 9);
-  const bool is_with_alpha = ((!is_palette && tga->pixel_depth == 32)
-    || (!is_palette && tga->pixel_depth == 16)
-    || (is_palette && tga->color_map_entry_size == 32)
-    || (is_palette && tga->color_map_entry_size == 16));
- 
-  const Si32 colormap_origin = tga->color_map_origin;
-  const Si32 colormap_size = tga->color_map_length;
-  const Si32 src_bytes_per_pixel =
-    (is_palette ? 1 : ((tga->pixel_depth + 7) / 8));
-  const Si32 dst_bytes_per_pixel = sizeof(Rgba);
-  const Si32 entry_bytes_per_pixel =
-    (is_palette ? colormap_bytes_per_entry : src_bytes_per_pixel);
-  if (is_palette) {
-    Check(tga->color_map_type == 1, "Error in LoadTga, no palette included.");
+    const bool is_rle = (tga->image_type == 9 || tga->image_type == 10
+        || tga->image_type == 11);
+    const bool is_gray = (tga->image_type == 3 || tga->image_type == 11);
+    const bool is_palette = (tga->image_type == 1 || tga->image_type == 9);
+    const bool is_with_alpha = ((!is_palette && tga->pixel_depth == 32)
+        || (!is_palette && tga->pixel_depth == 16)
+        || (is_palette && tga->color_map_entry_size == 32)
+        || (is_palette && tga->color_map_entry_size == 16));
+
+    const Si32 colormap_origin = tga->color_map_origin;
+    const Si32 colormap_size = tga->color_map_length;
+    const Si32 src_bytes_per_pixel =
+      (is_palette ? 1 : ((tga->pixel_depth + 7) / 8));
+    const Si32 dst_bytes_per_pixel = sizeof(Rgba);
+    const Si32 entry_bytes_per_pixel =
+      (is_palette ? colormap_bytes_per_entry : src_bytes_per_pixel);
+    if (is_palette) {
+      Check(tga->color_map_type == 1, "Error in LoadTga, no palette included.");
+    }
+
+    switch (tga->image_type) {
+      case 0:  // no image data included
+        break;
+      case 1:  // uncompressed palette
+      case 2:  // uncommpressed rgb
+      case 3:  // uncommpressed gray
+      case 9:   // run-length encoded palette
+      case 10:  // run-length encoded rgb
+      case 11: {  // run-length encoded gray
+                 const Ui8 *from_line = p;
+                 const Ui8 *from_end = data + size;
+                 Si64 to_line_size = sprite->width() * dst_bytes_per_pixel;
+                 Ui8 *to_line = sprite->RawData() +
+                   (is_origin_upper_left ?
+                    tga->image_height - 1 : 0) * to_line_size;
+                 const Si64 to_line_step =
+                   (is_origin_upper_left ? -to_line_size : to_line_size);
+                 for (Si64 y = 0; y < tga->image_height; ++y) {
+                   Ui8 *to = to_line + y * to_line_step;
+                   Ui8 *to_end = to + to_line_size;
+
+                   while (to < to_end) {
+                     Check(from_line < from_end,
+                         "Error in LoadTga, unexpected end of file.");
+                     Si32 repetitions = tga->image_width;
+                     bool is_rle_packet = false;
+                     if (is_rle) {
+                       Ui8 repetitionCount = *(from_line + 0);
+                       repetitions = (Si32)(repetitionCount & 0x7f) + 1;
+                       is_rle_packet = !!(repetitionCount & 0x80);
+                       from_line++;
+                     }
+                     if (is_rle_packet) {  // run length packet
+                       Check(from_line + src_bytes_per_pixel <= from_end,
+                           "Error in LoadTga, unexpected end of file.");
+                     } else {
+                       Check(from_line + src_bytes_per_pixel * repetitions
+                           <= from_end,
+                           "Error in LoadTga,"
+                           " unexpected end of file.");
+                       Check(to + dst_bytes_per_pixel * repetitions <= to_end,
+                           "Error in LoadTga,"
+                           " overflow in data format of file.");
+                     }
+                     for (Si32 idx = 0; idx < repetitions; ++idx) {
+                       // <= is intended
+                       if (is_rle_packet) {
+                         Check(to + dst_bytes_per_pixel <= to_end,
+                             "Error in LoadTga,"
+                             " overflow in data format of file.");
+                       }
+                       const Ui8 *entry = from_line;
+                       if (is_gray) {
+                         to[0] = *entry;
+                         to[1] = *entry;
+                         to[2] = *entry;
+                       } else {
+                         if (is_palette) {
+                           Si32 entry_idx = static_cast<Si32>(*from_line)
+                             - colormap_origin;
+                           Check(entry_idx >= 0,
+                               "Error in LoadTga,"
+                               " entry_idx underflow in data fromat.");
+                           Check(entry_idx < colormap_size,
+                               "Error in LoadTga,"
+                               " entry_idx overflow in data fromat.");
+                           entry = colormap
+                             + entry_idx * colormap_bytes_per_entry;
+                         }
+                         if (entry_bytes_per_pixel == 2) {
+                           Ui8 b = (entry[0] & 0x1f);
+                           Ui8 g = ((entry[1] << 3) & 0x1c)
+                             | ((entry[0] >> 5) & 0x07);
+                           Ui8 r = (entry[1] >> 2) & 0x1f;
+                           to[0] = (r << 3) | (r >> 2);
+                           to[1] = (g << 3) | (g >> 2);
+                           to[2] = (b << 3) | (b >> 2);
+                         } else {
+                           to[0] = entry[2];
+                           to[1] = entry[1];
+                           to[2] = entry[0];
+                         }
+                         if (is_with_alpha) {
+                           if (entry_bytes_per_pixel == 2) {
+                             to[3] = ((entry[1] & 0x80) >> 7) * 255;
+                           } else {
+                             to[3] = entry[3];
+                           }
+                         } else {
+                           to[3] = 255;
+                         }
+                       }
+                       to += dst_bytes_per_pixel;
+                       if (!is_rle_packet) {
+                         from_line += src_bytes_per_pixel;
+                       }
+                     }
+                     if (is_rle_packet) {
+                       from_line += src_bytes_per_pixel;
+                     }
+                   }
+                 }
+                 break;
+               }
+      default: {
+                 std::stringstream str;
+                 str << "Error in LoadTga, unexpected file type: "
+                   << (Ui32)tga->image_type;
+                 Fatal(str.str().c_str());
+                 break;
+               }
+    }
+    return sprite;
   }
 
-  switch (tga->image_type) {
-    case 0:  // no image data included
-      break;
-    case 1:  // uncompressed palette
-    case 2:  // uncommpressed rgb
-    case 3:  // uncommpressed gray
-    case 9:   // run-length encoded palette
-    case 10:  // run-length encoded rgb
-    case 11: {  // run-length encoded gray
-      const Ui8 *from_line = p;
-      const Ui8 *from_end = data + size;
-      Si64 to_line_size = sprite->width() * dst_bytes_per_pixel;
-      Ui8 *to_line = sprite->RawData() +
-        (is_origin_upper_left ? tga->image_height - 1 : 0) * to_line_size;
-      const Si64 to_line_step =
-        (is_origin_upper_left ? -to_line_size : to_line_size);
-      for (Si64 y = 0; y < tga->image_height; ++y) {
-        Ui8 *to = to_line + y * to_line_step;
-        Ui8 *to_end = to + to_line_size;
-        
-        while (to < to_end) {
-          Check(from_line < from_end,
-                "Error in LoadTga, unexpected end of file.");
-          Si32 repetitions = tga->image_width;
-          bool is_rle_packet = false;
-          if (is_rle) {
-            Ui8 repetitionCount = *(from_line + 0);
-            repetitions = (Si32)(repetitionCount & 0x7f) + 1;
-            is_rle_packet = !!(repetitionCount & 0x80);
-            from_line++;
-          }
-          if (is_rle_packet) { // run length packet
-            Check(from_line + src_bytes_per_pixel <= from_end,
-              "Error in LoadTga, unexpected end of file.");
-          } else {
-            Check(from_line + src_bytes_per_pixel * repetitions <= from_end,
-              "Error in LoadTga, unexpected end of file.");
-            Check(to + dst_bytes_per_pixel * repetitions <= to_end,
-              "Error in LoadTga, overflow in data format of file.");
-          }
-          for (Si32 idx = 0; idx < repetitions; ++idx) {  // <= is intended
-            if (is_rle_packet) {
-              Check(to + dst_bytes_per_pixel <= to_end,
-                "Error in LoadTga, overflow in data format of file.");
-            }
-            const Ui8 *entry = from_line;
-            if (is_gray) {
-              to[0] = *entry;
-              to[1] = *entry;
-              to[2] = *entry;
-            } else {
-              if (is_palette) {
-                Si32 entry_idx = static_cast<Si32>(*from_line)
-                  - colormap_origin;
-                Check(entry_idx >= 0,
-                  "Error in LoadTga, entry_idx underflow in data fromat.");
-                Check(entry_idx < colormap_size,
-                  "Error in LoadTga, entry_idx overflow in data fromat.");
-                entry = colormap
-                  + entry_idx * colormap_bytes_per_entry;
-              }
-              if (entry_bytes_per_pixel == 2) {
-                Ui8 b = (entry[0] & 0x1f);
-                Ui8 g = ((entry[1] << 3) & 0x1c)
-                  | ((entry[0] >> 5) & 0x07);
-                Ui8 r = (entry[1] >> 2) & 0x1f;
-                to[0] = (r << 3) | (r >> 2);
-                to[1] = (g << 3) | (g >> 2);
-                to[2] = (b << 3) | (b >> 2);
-              } else {
-                to[0] = entry[2];
-                to[1] = entry[1];
-                to[2] = entry[0];
-              }
-              if (is_with_alpha) {
-                if (entry_bytes_per_pixel == 2) {
-                  to[3] = ((entry[1] & 0x80) >> 7) * 255;
-                } else {
-                  to[3] = entry[3];
-                }
-              } else {
-                to[3] = 255;
-              }
-            }
-            to += dst_bytes_per_pixel;
-            if (!is_rle_packet) {
-              from_line += src_bytes_per_pixel;
-            }
-          }
-          if (is_rle_packet) {
-            from_line += src_bytes_per_pixel;
-          }
-        }
+  void SaveTga(std::shared_ptr<easy::SpriteInstance> sprite,
+      std::vector<Ui8> *data) {
+    TgaHeader tga;
+    memset(&tga, 0, sizeof(tga));
+    tga.image_width = sprite->width();
+    tga.image_height = sprite->height();
+#ifdef BIGENDIAN
+    tga.image_width = ((tga.image_width & 255) << 8)
+      | (tga.image_width >> 8);
+    tga.image_height = ((tga.image_height & 255) << 8)
+      | (tga.image_height >> 8);
+#endif  // BIGENDIAN
+    tga.pixel_depth = 32;
+    tga.image_type = 2;  // uncommpressed rgb
+
+    Si64 length = sizeof(tga) + 4 * tga.image_width * tga.image_height;
+    data->resize(static_cast<size_t>(length));
+    memcpy(data->data(), &tga, sizeof(tga));
+
+    const Ui8 *from = sprite->RawData();
+    Ui8 *to = data->data() + sizeof(tga);
+
+    for (Si64 y = 0; y < tga.image_height; ++y) {
+      for (Si64 x = 0; x < tga.image_width; ++x) {
+        to[0] = from[2];
+        to[1] = from[1];
+        to[2] = from[0];
+        to[3] = from[3];
+        from += sizeof(Rgba);
+        to += sizeof(Rgba);
       }
-      break;
     }
-    default: {
-      std::stringstream str;
-      str << "Error in LoadTga, unexpected file type: "
-        << (Ui32)tga->image_type;
-      Fatal(str.str().c_str());
-      break;
-    }
+    return;
   }
-  return sprite;
-}
-  
-void SaveTga(std::shared_ptr<easy::SpriteInstance> sprite,
-     std::vector<Ui8> *data) {
-  TgaHeader tga;
-  memset(&tga, 0, sizeof(tga));
-  tga.image_width = sprite->width();
-  tga.image_height = sprite->height();
-#ifdef BIGENDIAN
-  tga.image_width = ((tga.image_width & 255) << 8) | (tga.image_width >> 8);
-  tga.image_height = ((tga.image_height & 255) << 8) | (tga.image_height >> 8);
-#endif  // BIGENDIAN
-  tga.pixel_depth = 32;
-  tga.image_type = 2; // uncommpressed rgb
-  
-  Si64 length = sizeof(tga) + 4 * tga.image_width * tga.image_height;
-  data->resize(static_cast<size_t>(length));
-  memcpy(data->data(), &tga, sizeof(tga));
-
-  const Ui8 *from = sprite->RawData();
-  Ui8 *to = data->data() + sizeof(tga);
-
-  for (Si64 y = 0; y < tga.image_height; ++y) {
-    for (Si64 x = 0; x < tga.image_width; ++x) {
-      to[0] = from[2];
-      to[1] = from[1];
-      to[2] = from[0];
-      to[3] = from[3];
-      from += sizeof(Rgba);
-      to += sizeof(Rgba);
-    }
-  }
-  return;
-}
 
 
 }  // namespace arctic

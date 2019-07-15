@@ -20,8 +20,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef  GAME_TARGETVER_H_
-#define  GAME_TARGETVER_H_
+#ifndef  ANTARCTICA_PYRAMIDS_TARGETVER_H_
+#define  ANTARCTICA_PYRAMIDS_TARGETVER_H_
 
 // Including SDKDDKVer.h defines the highest available Windows platform.
 
@@ -31,4 +31,4 @@
 
 #include <SDKDDKVer.h>
 
-#endif  // GAME_TARGETVER_H_
+#endif  // ANTARCTICA_PYRAMIDS_TARGETVER_H_

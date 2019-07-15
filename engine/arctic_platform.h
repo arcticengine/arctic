@@ -24,6 +24,7 @@
 #define ENGINE_ARCTIC_PLATFORM_H_
 
 #include <deque>
+#include <string>
 #include "engine/arctic_types.h"
 
 #include "engine/arctic_platform_byteorder.h"
@@ -33,7 +34,7 @@
 namespace arctic {
 
 struct DirectoryEntry {
-  std::string title; // entries own full name, like "pet" or "font.tga"
+  std::string title;  // entries own full name, like "pet" or "font.tga"
   Trivalent is_directory = kTrivalentUnknown;
   Trivalent is_file = kTrivalentUnknown;
 };

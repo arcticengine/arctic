@@ -20,11 +20,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <algorithm>
 #include <cstring>
-#include <regex>
-#include <unordered_set>
+#include <deque>
+#include <regex>  // NOLINT
 #include <string>
 #include <sstream>
+#include <unordered_set>
 #include <vector>
 
 #include <iostream>
@@ -158,9 +160,10 @@ bool GetOperationMode() {
       g_mode_of_operation = kModeUpdate;
       is_done = true;
     }
-    
+
     const char *welcome = u8"The Snow Wizard\n\n"
-    "This wizard can create a new Arctic Engine project for you or update an existing one.\n\n"
+    "This wizard can create a new Arctic Engine project"
+      "for you or update an existing one.\n\n"
     "Press C to Create a new project.\n"
     "Press U to Update an existing project.\n"
     "Press ESC to leave the Snow Wizard.";
@@ -332,7 +335,7 @@ bool GetProjectName() {
         }
       }
     }
-    
+
     const char *welcome = u8"The Snow Wizard\n\n"
     "This wizard will create a new Arctic Engine project for you.\n\n"
     "Enter the project name:  \"%s\"\n\n"
@@ -424,7 +427,7 @@ bool SelectProject() {
       << u8" while in a project directory to select it.\n"
     "Press ESC to leave the Snow Wizard.\n\n";
     str << "Path: " << g_project_directory << "\n\n";
-    
+
     Si32 begin_i = std::max(0, Si32(selected_idx) - 5);
     for (Ui32 i = (Ui32)begin_i; i < entries.size(); ++i) {
       if (selected_idx == i) {
@@ -439,7 +442,7 @@ bool SelectProject() {
       str << "\x02";
       str << "\n";
     }
-    
+
     g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop,
       easy::kColorize, easy::kFilterNearest, g_palete);
     ShowFrame();
@@ -676,7 +679,7 @@ bool ShowUpdateProgress() {
           g_progress.append(candidates[i]);
           g_progress.append(u8"\"\n");
         }
-        
+
         // make sure that there are no other xcodeproj and vcxproj pairs
         if (candidate_count == 0) {
           g_progress.append(u8"\003Can't find project files in\"");
@@ -695,7 +698,7 @@ bool ShowUpdateProgress() {
         break;
       case 4: {
         // update xcodeproj
-        
+
         // parse xcodeproj extracting the list of engine files
         std::unordered_set<std::string> existing_files;
         std::string name =
@@ -739,7 +742,7 @@ bool ShowUpdateProgress() {
               // generate 2 random uids
               std::string uid_file = MakeUid();
               std::string uid_buildfile = MakeUid();
-              
+
               // make sure the uid is not used in the xcodeproj
               if (full_content.find(uid_file) == std::string::npos &&
                   new_hashes.find(uid_file) == new_hashes.end() &&
@@ -750,7 +753,7 @@ bool ShowUpdateProgress() {
                 // save hashes
                 new_hashes.insert(uid_file);
                 new_hashes.insert(uid_buildfile);
-                
+
                 // add to PBXBuildFile
                 if (EndsWith(entry.title, std::string(".cpp")) ||
                     EndsWith(entry.title, std::string(".c")) ||
@@ -780,11 +783,11 @@ bool ShowUpdateProgress() {
                   << " path = " << rel_path << ";";
                 new_files << " sourceTree = SOURCE_ROOT;";
                 new_files << " };\n";
-                
+
                 // add to PBXGroup engine children
                 new_engine_children << "\n\t\t\t\t" << uid_file <<
                   " /* " << entry.title << " */,";
-                
+
                 // add to PBXSourcesBuildPhase
                 if (EndsWith(entry.title, std::string(".cpp")) ||
                     EndsWith(entry.title, std::string(".c")) ||
@@ -796,7 +799,7 @@ bool ShowUpdateProgress() {
             }  // while (!is_inserted)
           }  // if .. entry is a file AND is missing from references
         }  // for ... entries
-        
+
         // save the resulting file
         std::stringstream resulting_file;
         std::size_t cursor = 0;
@@ -810,7 +813,7 @@ bool ShowUpdateProgress() {
         }
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_buildfiles.str();
-        
+
         cursor = next_item;
         next_item = full_content.find("/* End PBXFileReference section */");
         if (next_item == std::string::npos) {
@@ -827,7 +830,7 @@ bool ShowUpdateProgress() {
         }
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_files.str();
-        
+
         std::string engine_group_entry("/* engine.cpp */,");
         cursor = next_item;
         next_item = full_content.find(engine_group_entry);
@@ -839,15 +842,16 @@ bool ShowUpdateProgress() {
         }
         if (next_item < cursor) {
           g_progress.append(
-            u8"\003Out of order engine_group_entry in xcode project!\nERROR.\n");
+            u8"\003Out of order engine_group_entry in xcode project!\n"
+            u8"ERROR.\n");
           step = 100500;
           break;
         }
         next_item += engine_group_entry.size();
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_engine_children.str();
-        
-        
+
+
         std::string buildphase_entry("/* engine.cpp in Sources */,");
         cursor = next_item;
         next_item = full_content.find(buildphase_entry);
@@ -866,10 +870,10 @@ bool ShowUpdateProgress() {
         next_item += buildphase_entry.size();
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_buildphase.str();
-        
+
         cursor = next_item;
         resulting_file << full_content.substr(cursor, std::string::npos);
-        
+
         WriteFile(xcode_project_full_name.c_str(),
           reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
           resulting_file.str().size());
@@ -878,7 +882,7 @@ bool ShowUpdateProgress() {
         break;
       case 5: {
         // update vcxproj
-        
+
         // parse xcodeproj extracting the list of engine files
         std::unordered_set<std::string> existing_files;
         std::string name = "template_project_name.vcxproj";
@@ -887,10 +891,11 @@ bool ShowUpdateProgress() {
         std::vector<Ui8> data = ReadFile(vs_project_full_name.c_str());
         data.push_back(0);
         std::string full_content(reinterpret_cast<char*>(data.data()));
-       
+
         std::string filter_name = "template_project_name.vcxproj.filters";
         ReplaceAll("template_project_name", g_project_name, &filter_name);
-        std::string vs_filter_full_name = g_project_directory + "/" + filter_name;
+        std::string vs_filter_full_name =
+          g_project_directory + "/" + filter_name;
         std::vector<Ui8> filter_data = ReadFile(vs_filter_full_name.c_str());
         filter_data.push_back(0);
         std::string full_filter_content(
@@ -963,7 +968,7 @@ bool ShowUpdateProgress() {
             }
           }  // if .. entry is a file AND is missing from references
         }  // for ... entries
-        
+
         std::string rel_engine_h_path = RelativePathFromTo(
           (g_project_directory).c_str(),
           (g_engine + "/engine.h").c_str());
@@ -1044,12 +1049,14 @@ bool ShowUpdateProgress() {
           std::size_t next_item =
             full_filter_content.find(engine_cpp_pattern);
           if (next_item == std::string::npos) {
-            g_progress.append(u8"\003No engine.cpp in VS project filters!\nERROR.\n");
+            g_progress.append(u8"\003No engine.cpp in VS project filters!"
+                u8"\nERROR.\n");
             step = 100500;
             break;
           }
           next_item += engine_cpp_pattern.size();
-          resulting_file << full_filter_content.substr(cursor, next_item - cursor);
+          resulting_file << full_filter_content.substr(cursor,
+              next_item - cursor);
           resulting_file << new_filter_cpp.str();
 
           cursor = next_item;
@@ -1058,9 +1065,10 @@ bool ShowUpdateProgress() {
             ReplaceAll("/", "\\", &engine_h_pattern);
             next_item = full_content.find(engine_h_pattern);
           }
-          
+
           if (next_item == std::string::npos) {
-            g_progress.append(u8"\003No engine.h in VS project filters!\nERROR.\n");
+            g_progress.append(u8"\003No engine.h in VS project filters!\n"
+                u8"ERROR.\n");
             step = 100500;
             break;
           }
@@ -1071,11 +1079,13 @@ bool ShowUpdateProgress() {
             break;
           }
           next_item += engine_h_pattern.size();
-          resulting_file << full_filter_content.substr(cursor, next_item - cursor);
+          resulting_file << full_filter_content.substr(cursor,
+              next_item - cursor);
           resulting_file << new_filter_h.str();
 
           cursor = next_item;
-          resulting_file << full_filter_content.substr(cursor, std::string::npos);
+          resulting_file << full_filter_content.substr(cursor,
+              std::string::npos);
 
           WriteFile(vs_filter_full_name.c_str(),
             reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
@@ -1089,7 +1099,7 @@ bool ShowUpdateProgress() {
         break;
     }
     step++;
-    
+
     UpdateResolution();
     Clear();
     const char *welcome = u8"The Snow Wizard\n\n"
@@ -1097,7 +1107,7 @@ bool ShowUpdateProgress() {
     "Current directory: %s\n"
     "%s\n\n"
     "Press ESC to leave the Snow Wizard";
-    
+
     snprintf(text, sizeof(text), welcome,
              g_project_name.c_str(), g_current_directory.c_str(),
              g_progress.c_str());

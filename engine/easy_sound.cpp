@@ -38,7 +38,7 @@ namespace arctic {
 namespace easy {
 
 void Sound::Load(const char *file_name) {
-  Load(file_name, true); 
+  Load(file_name, true);
 }
 
 void Sound::Load(const char *file_name, bool do_unpack) {

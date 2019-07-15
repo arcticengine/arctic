@@ -23,6 +23,9 @@
 #ifndef ENGINE_ARCTIC_PLATFORM_SOUND_H_
 #define ENGINE_ARCTIC_PLATFORM_SOUND_H_
 
+#include <deque>
+#include <string>
+
 #include "engine/easy_sound.h"
 
 namespace arctic {
@@ -30,7 +33,7 @@ namespace arctic {
 class SoundPlayerImpl;
 
 class AudioDeviceInfo {
-public:
+ public:
   std::string system_name = "";
   std::string description_for_human = "";
   bool is_input = false;
@@ -48,14 +51,14 @@ public:
 };
 
 class SoundPlayer {
-public:
+ public:
   std::deque<AudioDeviceInfo> GetDeviceList();
   void Initialize();
   void Initialize(const char *input_device_system_name,
     const char *output_device_system_name);
   void Deinitialize();
   ~SoundPlayer();
-protected:
+ protected:
   SoundPlayerImpl *impl = nullptr;
 };
 

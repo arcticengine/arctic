@@ -40,7 +40,7 @@ enum DrawBlendingMode {
   kAlphaBlend,
   kColorize
 };
-  
+
 enum DrawFilterMode {
   kFilterNearest,
   kFilterBilinear
@@ -69,7 +69,7 @@ class Sprite {
   void Save(const char *file_name);
   void Save(const std::string &file_name);
   void Create(const Si32 width, const Si32 height);
-  void Reference(Sprite &from, const Si32 from_x, const Si32 from_y,
+  void Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height);
   void Clear();
   void Clear(Rgba color);
@@ -159,6 +159,7 @@ class Sprite {
   bool IsRef() const;
   Ui8* RawData();
   Rgba* RgbaData();
+  const Rgba* RgbaData() const;
   const std::vector<SpanSi32> &Opaque() const;
   void UpdateOpaqueSpans();
   void ClearOpaqueSpans();

@@ -29,9 +29,10 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <deque>
+#include <string>
 
 #include "engine/easy.h"
-#include "engine/arctic_platform.h"
 
 extern void EasyMain();
 
@@ -62,7 +63,7 @@ bool GetCurrentPath(std::string *out_dir) {
   }
   return false;
 }
-  
+
 bool GetDirectoryEntries(const char *path,
      std::deque<DirectoryEntry> *out_entries) {
   Check(out_entries,
@@ -101,7 +102,7 @@ bool GetDirectoryEntries(const char *path,
   return true;
 }
 
-  
+
 std::string CanonicalizePath(const char *path) {
   Check(path, "CanonicalizePath error, path can't be nullptr");
   char *canonic_path = realpath(path, nullptr);

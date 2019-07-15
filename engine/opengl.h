@@ -61,8 +61,8 @@ extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 #endif  // ARCTIC_PLATFORM_MACOSX
 
 #ifdef ARCTIC_PLATFORM_PI_OPENGL_GLX
-#include <GL/gl.h>
-#include <GL/glu.h>
+#include <GL/gl.h>  // NOLINT
+#include <GL/glu.h>  // NOLINT
 #endif  // ARCTIC_PLATFORM_PI_OPENGL_GLX
 
 #ifdef ARCTIC_PLATFORM_PI_ES_EGL

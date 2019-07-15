@@ -65,7 +65,7 @@ struct Rgba {
     b = s;
     a = 255;
   }
-  
+
   /// rgba_in is 32 bits containing 0xAABBGGRR. 0xff00ff00 is opaque green.
   explicit Rgba(Ui32 rgba_in) {
     rgba = rgba_in;
@@ -89,7 +89,7 @@ struct Rgba {
     return rgba != v.rgba;
   }
 };
-  
+
 
 inline Rgba Mix(Rgba const a, Rgba const b, float const f) {
   return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
@@ -124,12 +124,12 @@ inline Rgba Mix(Rgba c1, Rgba c2, Ui32 alpha_1_8) {
   Ui32 b = c2.rgba & MASK_LO;
   Ui32 d = a + (((b - a) * alpha_1_8) >> 8);
   d = d & MASK_LO;
-  
+
   Ui32 m = (c1.rgba & MASK_HI) >> 8;
   Ui32 n = (c2.rgba & MASK_HI) >> 8;
   Ui32 e = (c1.rgba & MASK_HI) + ((n - m) * alpha_1_8);
   e = e & MASK_HI;
-  
+
   return Rgba(d | e);
 }
 
@@ -137,11 +137,11 @@ inline Rgba Scale(Rgba c, Ui32 alpha_1_8) {
   Ui32 a = c.rgba & MASK_LO;
   Ui32 d = (a * alpha_1_8) >> 8;
   d = d & MASK_LO;
-  
+
   a = (c.rgba & MASK_HI) >> 8;
   Ui32 e = a * alpha_1_8;
   e = e & MASK_HI;
-  
+
   return Rgba(d | e);
 }
 
@@ -150,12 +150,12 @@ inline Rgba Lerp(Rgba c1, Rgba c2, Si32 alpha_1_8) {
   Ui32 b = c2.rgba & MASK_LO;
   Ui32 d = a + (((b - a) * alpha_1_8) >> 8);
   d = d & MASK_LO;
-  
+
   a = (c1.rgba & MASK_HI) >> 8;
   b = (c2.rgba & MASK_HI) >> 8;
   Ui32 e = (c1.rgba & MASK_HI) + ((b - a) * alpha_1_8);
   e = e & MASK_HI;
-  
+
   return Rgba(d | e);
 }
 
@@ -166,14 +166,14 @@ inline Rgba GetGray(Rgba c) {
   return Rgba(res >> 16);
 }
 
-//   ^y
-//256+ c      d
-//   |
-// ay+.....P
-//   |     .
-//  0+ a   .  b
-//   +-+---+--+-->x
-//     0   ax 256
+//    ^y
+// 256+ c      d
+//    |
+//  ay+.....P
+//    |     .
+//   0+ a   .  b
+//    +-+---+--+-->x
+//      0   ax 256
 // Calculate color at point P
 inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   const Si32 axy = (ax * ay) >> 8;
@@ -181,20 +181,20 @@ inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   Ui32 bb = b.rgba & MASK_LO;
   Ui32 cc = c.rgba & MASK_LO;
   Ui32 dd = d.rgba & MASK_LO;
-  
+
   Ui32 rb = (aa + ((
-      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy
-    ) >> 8)) & MASK_LO;
-  
+      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy) >> 8))
+    & MASK_LO;
+
   aa = (a.rgba & MASK_HI) >> 8;
   bb = (b.rgba & MASK_HI) >> 8;
   cc = (c.rgba & MASK_HI) >> 8;
   dd = (d.rgba & MASK_HI) >> 8;
-  
+
   Ui32 gg = ((a.rgba & MASK_HI) + (
-      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy
-    )) & MASK_HI;
-  
+      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy))
+    & MASK_HI;
+
   return Rgba(rb | gg);
 }
 

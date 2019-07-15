@@ -35,7 +35,8 @@ void MathTables::Init() {
   cicrle_16_16_mask = (Si32)(1 << (cicrle_16_16_size_bits - 1)) - 1;
   circle_16_16.resize(size_t(1ull << (cicrle_16_16_size_bits - 1)));
   for (Si32 y = 0; y < (Si32)circle_16_16.size(); ++y) {
-    double yy = double(y) / double(circle_16_16.size() - 1);
+    double yy = static_cast<double>(y)
+      / static_cast<double>(circle_16_16.size() - 1);
     double xx = std::sqrt(1.0 - yy * yy);
     Si32 x = Si32(xx * 65536.0);
     circle_16_16[y] = x;
@@ -43,37 +44,37 @@ void MathTables::Init() {
 }
 
 GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
-	// Create the shader object
-	GLuint shader = glCreateShader(type);
-	if (shader == 0) {
+  // Create the shader object
+  GLuint shader = glCreateShader(type);
+  if (shader == 0) {
     GLenum errCode = glGetError();
     std::stringstream info;
     info << "Can't create shader, code: " << (Ui64)errCode;
     Fatal(info.str().c_str());
-		return 0;
-	}
-	// Load the shader source
-	glShaderSource(shader, 1, &shaderSrc, NULL);
-	// Compile the shader
-	glCompileShader(shader);
-	// Check the compile status
-	GLint compiled;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-	if (!compiled) {
-		GLint infoLen = 0;
-		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-		if (infoLen > 1) {
-			char* infoLog = (char*)malloc(sizeof(char) * infoLen);
-			glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
-			Fatal("Error compiling shader: ", infoLog);
-			free(infoLog);
-		}
-		glDeleteShader(shader);
-		return 0;
-	}
-	return shader;
+    return 0;
+  }
+  // Load the shader source
+  glShaderSource(shader, 1, &shaderSrc, NULL);
+  // Compile the shader
+  glCompileShader(shader);
+  // Check the compile status
+  GLint compiled;
+  glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+  if (!compiled) {
+    GLint infoLen = 0;
+    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+    if (infoLen > 1) {
+      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * infoLen));
+      glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
+      Fatal("Error compiling shader: ", infoLog);
+      free(infoLog);
+    }
+    glDeleteShader(shader);
+    return 0;
+  }
+  return shader;
 }
-  
+
 void Engine::Init(Si32 width, Si32 height) {
   width_ = width;
   height_ = height;
@@ -91,7 +92,7 @@ void Engine::Init(Si32 width, Si32 height) {
   rnd_16_.seed(static_cast<Ui64>(ms + 1));
   rnd_32_.seed(static_cast<Ui64>(ms + 2));
   rnd_64_.seed(static_cast<Ui64>(ms + 3));
-  
+
   math_tables_.Init();
 
 
@@ -140,7 +141,7 @@ void main() {
     GLint infoLen = 0;
     glGetProgramiv(g_programObject, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
-      char* infoLog = (char*)malloc(sizeof(char) * infoLen);
+      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * infoLen));
       glGetProgramInfoLog(g_programObject, infoLen, NULL, infoLog);
       Fatal("Error linking program: ", infoLog);
       free(infoLog);
@@ -148,7 +149,6 @@ void main() {
     glDeleteProgram(g_programObject);
     Fatal("Unknown error linking program");
   }
-
 }
 
 void Engine::Draw2d() {
@@ -173,10 +173,14 @@ void Engine::Draw2d() {
   tex_ = 0;
   indices_ = 0;
 
-  Vec3F *vertex = static_cast<Vec3F*>((void*)visible_verts_.data());
-  Vec3F *normal = static_cast<Vec3F*>((void*)visible_normals_.data());
-  Vec2F *tex = static_cast<Vec2F*>((void*)tex_coords_.data());
-  Ui32 *index = static_cast<Ui32*>((void*)visible_indices_.data());
+  Vec3F *vertex = static_cast<Vec3F*>(reinterpret_cast<void*>(
+        visible_verts_.data()));
+  Vec3F *normal = static_cast<Vec3F*>(reinterpret_cast<void*>(
+        visible_normals_.data()));
+  Vec2F *tex = static_cast<Vec2F*>(reinterpret_cast<void*>(
+        tex_coords_.data()));
+  Ui32 *index = static_cast<Ui32*>(reinterpret_cast<void*>(
+        visible_indices_.data()));
 
   float aspect = static_cast<float>(width_) / static_cast<float>(height_);
   float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
@@ -231,12 +235,14 @@ void Engine::Draw2d() {
   index[indices_] = idx;
   indices_++;
 
-  glViewport (0, 0, width_, height_);
+  glViewport(0, 0, width_, height_);
 
-  glVertexAttribPointer ( 0, 3, GL_FLOAT, GL_FALSE, 0, (void*)visible_verts_.data());
-  glEnableVertexAttribArray ( 0 );
-  glVertexAttribPointer ( 1, 2, GL_FLOAT, GL_FALSE, 0, (void*)tex_coords_.data());
-  glEnableVertexAttribArray ( 1 );
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,
+      visible_verts_.data());
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
+      tex_coords_.data());
+  glEnableVertexAttribArray(1);
 
   GLint loc = glGetUniformLocation(g_programObject, "s_texture");
   Check(loc >= 0, "s_texture not found");
@@ -252,7 +258,7 @@ void Engine::Draw2d() {
   Check(ufs == 1, "no ufs");
 
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
-      (void*)visible_indices_.data());
+      visible_indices_.data());
 
   Swap();
 }
@@ -275,12 +281,12 @@ void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
 
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
       GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
-	{
+  {
     GLenum errCode = glGetError();
     std::stringstream info;
     info << "code: " << (Ui64)errCode;
     Log(info.str().c_str());
-	}
+  }
   // send the texture data
 }
 

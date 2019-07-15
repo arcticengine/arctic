@@ -45,6 +45,7 @@
 #include <mutex>  // NOLINT
 #include <sstream>
 #include <thread>  // NOLINT
+#include <utility>
 #include <vector>
 
 #include "engine/engine.h"
@@ -68,7 +69,7 @@ namespace arctic {
 SoundMixerState g_sound_mixer_state;
 
 class SoundPlayerImpl {
-public:
+ public:
   bool is_initialized = false;
   std::thread sound_thread;
 
@@ -151,7 +152,8 @@ void SoundMixerThreadFunction() {
 
   HWAVEOUT wave_out_handle;
   MMRESULT result = waveOutOpen(&wave_out_handle, WAVE_MAPPER,
-    &format, (DWORD_PTR)(void*)hEvent, 0, CALLBACK_EVENT | WAVE_FORMAT_DIRECT);
+    &format, reinterpret_cast<DWORD_PTR>(hEvent), 0,
+    CALLBACK_EVENT | WAVE_FORMAT_DIRECT);
 
   Ui32 buffer_count = 10ull;
   Ui64 buffer_duration_us = 5000ull;
@@ -169,9 +171,9 @@ void SoundMixerThreadFunction() {
   memset(&(mix[0]), 0, 2 * buffer_bytes);
   for (Ui32 i = 0; i < wave_headers.size(); ++i) {
     wave_buffers[i].resize(buffer_samples_total);
-    memset((char*)&(wave_buffers[i][0]), 0, buffer_bytes);
+    memset(reinterpret_cast<char*>(&(wave_buffers[i][0])), 0, buffer_bytes);
 
-    memset((char*)&wave_headers[i], 0, sizeof(WAVEHDR));
+    memset(reinterpret_cast<char*>(&wave_headers[i]), 0, sizeof(WAVEHDR));
     wave_headers[i].dwBufferLength = buffer_bytes;
     wave_headers[i].lpData = reinterpret_cast<char*>(&(wave_buffers[i][0]));
     waveOutPrepareHeader(wave_out_handle,
@@ -184,10 +186,11 @@ void SoundMixerThreadFunction() {
 
   int cur_buffer_idx = 0;
   while (!g_sound_mixer_state.do_quit) {
-    memset((char*)mix.data(), 0, 2 * buffer_bytes);
+    memset(reinterpret_cast<char*>(mix.data()), 0, 2 * buffer_bytes);
     MMTIME mmt;
     waveOutGetPosition(wave_out_handle, &mmt, sizeof(mmt));
-    while (!(*(volatile DWORD*)&wave_headers[cur_buffer_idx].dwFlags & WHDR_DONE)) {
+    while (!(*(volatile DWORD*)&wave_headers[cur_buffer_idx].dwFlags
+          & WHDR_DONE)) {
       WaitForSingleObject(hEvent, INFINITE);
       waveOutGetPosition(wave_out_handle, &mmt, sizeof(mmt));
     }
@@ -265,6 +268,6 @@ void SoundPlayerImpl::Deinitialize() {
 }
 
 
-}
+}  // namespace arctic
 
 #endif  // ARCTIC_PLATFORM_WINDOWS

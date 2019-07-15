@@ -25,6 +25,7 @@
 #include <cstring>
 #include <deque>
 #include <utility>
+#include <string>
 #include <vector>
 #include "engine/easy.h"
 #include "engine/font.h"
@@ -259,7 +260,7 @@ void InitHero() {
   for (Ui32 idx = 0; idx < hero.items.size(); ++idx) {
     hero.items[idx] = 0;
   }
-  
+
   Action offhand_shot;
   offhand_shot.name = "Offhand shot";
   offhand_shot.cost_action_units = 40;
@@ -267,7 +268,7 @@ void InitHero() {
   offhand_shot.damage_hitpoints = 45;
   offhand_shot.damage_distance = 5;
   hero.innate_actions.push_back(offhand_shot);
-  
+
   Action aimed_shot;
   aimed_shot.name = "Aimed shot";
   aimed_shot.cost_action_units = 100;
@@ -275,7 +276,7 @@ void InitHero() {
   aimed_shot.damage_hitpoints = 75;
   aimed_shot.damage_distance = 5;
   hero.innate_actions.push_back(aimed_shot);
-  
+
   Action quick_kick;
   quick_kick.name = "Quick kick";
   quick_kick.cost_action_units = 20;
@@ -284,7 +285,7 @@ void InitHero() {
   quick_kick.damage_hitpoints = 10;
   quick_kick.damage_distance = 1;
   hero.innate_actions.push_back(quick_kick);
-  
+
   Action hard_kick;
   hard_kick.name = "Hard kick";
   hard_kick.cost_action_units = 60;
@@ -550,7 +551,7 @@ void FillMaze() {
 
 void GenerateLineMaze() {
   FillMaze();
-  
+
   Vec2Si32 pos;
   pos.y = g_maze_size.y / 2;
   for (pos.x = 1; pos.x < g_maze_size.x - 1; ++pos.x) {
@@ -558,9 +559,9 @@ void GenerateLineMaze() {
     Maze(pos).is_visible = false;
     Maze(pos).is_known = false;
   }
-  
+
   Hero().pos = Vec2Si32(1, pos.y);
-  
+
   Creature enemy;
   enemy.kind = static_cast<CreatureKind>(
       Random(kCreatureMonsterBegin, kCreatureMonsterEnd - 1));
@@ -641,7 +642,7 @@ void Init() {
   SetVSync(false);
   g_music.Load("data/snowflake_-_Living_Nightmare.ogg", false);
   g_music.Play();
-  
+
   g_font.Load("data/arctic_one_bmf.fnt");
 
   g_blood[0].Load("data/blood_0.tga");
@@ -691,8 +692,8 @@ void Init() {
 
   InitCreatures();
   InitHero();
-  
-  //GenerateMaze();
+
+  // GenerateMaze();
   GenerateLineMaze();
 }
 
@@ -725,7 +726,7 @@ void LookAround() {
   }
 }
 
-bool IsActionPossible(Creature &hero, Action &action) {
+bool IsActionPossible(const Creature &hero, const Action &action) {
   bool is_ok = true;
   if (hero.ammo < action.cost_ammo ||
       hero.endurance < action.cost_endurance ||
@@ -735,19 +736,19 @@ bool IsActionPossible(Creature &hero, Action &action) {
   return is_ok;
 }
 
-void PerformAction(Creature &hero, Action &action) {
-  hero.is_acting = true;
-  hero.action_start_at = Time();
-  hero.action_part = 0.0;
-  
-  hero.ammo -= action.cost_ammo;
-  hero.endurance -= action.cost_endurance;
-  hero.action_units -= action.cost_action_units;
-  hero.warmth += action.produce_warmth - action.cost_action_units;
-  
+void PerformAction(Creature *hero, const Action &action) {
+  hero->is_acting = true;
+  hero->action_start_at = Time();
+  hero->action_part = 0.0;
+
+  hero->ammo -= action.cost_ammo;
+  hero->endurance -= action.cost_endurance;
+  hero->action_units -= action.cost_action_units;
+  hero->warmth += action.produce_warmth - action.cost_action_units;
+
   for (Ui32 idx = 0; idx < g_creatures.size(); ++idx) {
     Creature &enemy = g_creatures[idx];
-    if (&enemy != &hero) {
+    if (&enemy != hero) {
       enemy.hitpoints = std::max(enemy.hitpoints - action.damage_hitpoints, 0);
       break;
     }
@@ -776,10 +777,9 @@ void Update() {
     step.x = 1;
     step.y = 0;
   }
-  
+
   for (Ui32 idx = 0; idx < g_creatures.size(); ++idx) {
     if (idx == g_hero_idx) {
-      
     } else {
       if (g_creatures[idx].hitpoints == 0) {
         g_kills++;
@@ -792,7 +792,7 @@ void Update() {
       }
     }
   }
-  
+
   static bool g_musicDisabled = false;
 
   if (!g_musicDisabled) {
@@ -836,14 +836,14 @@ void Update() {
     SetMasterVolume(Clamp(GetMasterVolume() - 0.01f, 0.f, 1.f));
   }
   // End of cheats
-  
+
   if (!Hero().is_moving && !Hero().is_acting) {
     for (Ui32 idx = 0; idx < Hero().innate_actions.size(); ++idx) {
       if (IsKeyDown(kKey0 + idx)) {
         Action &action = Hero().innate_actions[idx];
         if (IsActionPossible(Hero(), action)) {
           if (!Hero().is_acting) {
-            PerformAction(Hero(), action);
+            PerformAction(&Hero(), action);
           }
         }
       }
@@ -854,7 +854,7 @@ void Update() {
         hero.is_acting = true;
         hero.action_start_at = Time();
         hero.action_part = 0.0;
-        
+
         hero.warmth -= hero.action_units;
         hero.action_units = 0;
       }
@@ -881,7 +881,7 @@ void Update() {
       Hero().action_part = duration / kMoveDuration;
     }
   }
-  
+
   if (!Hero().is_moving && !Hero().is_acting) {
     if (Hero().action_units == 0) {
       Hero().action_units = Hero().full_action_units;
@@ -1010,7 +1010,7 @@ void Render() {
   char fps_text[128];
   snprintf(fps_text, sizeof(fps_text), u8"FPS: %.1F", smooth_fps);
   g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop);
-  
+
 /*  const char *long_text = u8"Длинный текст на русском языке по центру!\n"
   u8"Second line !@#$%^&*()_+ with \\r at the end\r"
   u8"Third line ,./<>?;'\\:\"| with \\n at the end\n"
@@ -1022,7 +1022,7 @@ void Render() {
   Si64 ltoffset = (ScreenSize().x - ltw) / 2;
   g_font.Draw(long_text, static_cast<Si32>(ltoffset),
       ScreenSize().y, kTextOriginTop);
-  
+
   g_font.Draw("first base at 0\ninvisible line 2",
       0, 0, kTextOriginFirstBase);
   g_font.Draw("line 1\nlast base at 0",
@@ -1030,10 +1030,10 @@ void Render() {
   g_font.Draw("line 1\nbottom at 0",
       ScreenSize().x * 2 / 3, 0, kTextOriginBottom);
   */
-  
+
   Creature &hero = Hero();
   char text[65536];
-  
+
   snprintf(text, sizeof(text),
     u8"Hitpoints: %d (%d)\n"
     u8"Warmth: %d (%d)\n"
@@ -1046,14 +1046,14 @@ void Render() {
     hero.action_units, hero.full_action_units,
     hero.ammo);
   g_font.Draw(text, 0, ScreenSize().y - 25 , kTextOriginTop);
-  
+
   Creature *enemy = nullptr;
   for (Ui32 idx = 0; idx < g_creatures.size(); ++idx) {
     if (idx != g_hero_idx) {
       enemy = &g_creatures[idx];
     }
   }
-  
+
   int length = 0;
   length += snprintf(text + length, sizeof(text) - length,
            u8"Kills: %d\n",
@@ -1067,7 +1067,7 @@ void Render() {
   g_font.Draw(text,
     ScreenSize().x - g_font.EvaluateSize(text, false).x,
     ScreenSize().y - 50, kTextOriginTop);
-  
+
   length = 0;
   for (Ui32 idx = 0; idx < hero.innate_actions.size(); ++idx) {
     Action &action = hero.innate_actions[idx];
@@ -1077,7 +1077,7 @@ void Render() {
     } else {
       length += snprintf(text + length, sizeof(text) - length, u8" ");
     }
-                       
+
     length += snprintf(text + length, sizeof(text) - length,
         u8" - %s (%d dmg, -%d au", action.name.c_str(),
         action.damage_hitpoints, action.cost_action_units);
@@ -1098,7 +1098,7 @@ void Render() {
          u8")%s", (idx == hero.innate_actions.size() - 1 ? "" : "\n"));
   }
   g_font.Draw(text, 0, 0);
-  
+
   ShowFrame();
 }
 

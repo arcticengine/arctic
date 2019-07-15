@@ -461,7 +461,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
         }
     }
 }
-  
+
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   Sprite back = GetEngine()->GetBackbuffer();
   Vec2Si32 limit = back.Size();
@@ -514,10 +514,10 @@ void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color) {
   Sprite back = GetEngine()->GetBackbuffer();
   Vec2Si32 limit = back.Size();
   MathTables &tables = GetEngine()->GetMathTables();
-  
+
   Rgba *data = back.RgbaData();
   Si32 stride = back.StridePixels();
-  
+
   if (r.x >= 0) {
     // from c up
     {
@@ -537,7 +537,7 @@ void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color) {
         }
       }
     }
-    
+
     // from bottom to c
     {
       Si32 y1 = std::max(c.y - r.y, 0);

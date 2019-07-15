@@ -179,12 +179,12 @@ inline Vec2F Mix(Vec2F const &a, Vec2F const &b, float const f) {
   return Vec2F(a.x * (1.0f - f) + f * b.x,
     a.y * (1.0f - f) + f * b.y);
 }
-  
+
 
 inline float Length(Vec2F const &v) {
   return sqrtf(v.x * v.x + v.y * v.y);
 }
-  
+
 inline float LengthSquared(Vec2F const &v) {
   return v.x * v.x + v.y * v.y;
 }

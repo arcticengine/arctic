@@ -160,7 +160,7 @@ Ui32 Utf32Reader::ReadOne() {
     p++;
   }
 }
-  
+
 void Font::CreateEmpty(Si32 base_to_top, Si32 line_height) {
   codepoint_.clear();
   glyph_.clear();
@@ -172,7 +172,7 @@ void Font::CreateEmpty(Si32 base_to_top, Si32 line_height) {
 void Font::AddGlyph(const Glyph &glyph) {
   AddGlyph(glyph.codepoint, glyph.xadvance, glyph.sprite);
 }
-  
+
 void Font::AddGlyph(Ui32 codepoint, Si32 xadvance, easy::Sprite sprite) {
   glyph_.emplace_back(codepoint, xadvance, sprite);
   if (codepoint >= codepoint_.size()) {
@@ -187,8 +187,8 @@ void Font::Load(const char *file_name) {
 
   std::vector<Ui8> file = easy::ReadFile(file_name);
   Si32 pos = 0;
-  //BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
-  //header->Log();
+  // BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
+  // header->Log();
   pos += sizeof(BmFontBinHeader);
 
   Si8 block_type = file[pos];
@@ -204,7 +204,7 @@ void Font::Load(const char *file_name) {
   memcpy(&info, &file[pos], sizeof(info) - sizeof(info.font_name));
   info.font_name = reinterpret_cast<char*>(
     &file[pos + sizeof(info) - sizeof(info.font_name)]);
-  //info.Log();
+  // info.Log();
   pos += block_size;
 
   block_type = file[pos];
@@ -214,7 +214,7 @@ void Font::Load(const char *file_name) {
   Check(block_type == kBlockCommon, "Unexpected block type 2");
   Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
   BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[pos]);
-  //common->Log();
+  // common->Log();
 
   base_to_top_ = common->base;
   base_to_bottom_ = common->line_height - common->base;
@@ -235,7 +235,7 @@ void Font::Load(const char *file_name) {
   for (Si32 id = 0; id < common->pages; ++id) {
     BmFontBinPages page;
     page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
-    //page.Log(id);
+    // page.Log(id);
 
     char path[65536];
     const char *p = file_name;
@@ -270,7 +270,7 @@ void Font::Load(const char *file_name) {
   for (Si32 id = 0; id < block_size / 20; ++id) {
     BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(
       &file[inner_pos]);
-    //chars->Log();
+    // chars->Log();
 
     easy::Sprite sprite0;
     sprite0.Reference(page_images[chars->page],
@@ -297,9 +297,9 @@ void Font::Load(const char *file_name) {
       "KerningPair block is too small");
     inner_pos = pos;
     for (Si32 id = 0; id < block_size / 10; ++id) {
-      //BmFontBinKerningPair *kerning_pair =
+      // BmFontBinKerningPair *kerning_pair =
       //  reinterpret_cast<BmFontBinKerningPair*>(&file[inner_pos]);
-      //kerning_pair->Log();
+      // kerning_pair->Log();
       inner_pos += 10;
     }
     pos += block_size;
@@ -426,7 +426,8 @@ Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
   return size;
 }
 
-void Font::Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
+void Font::Draw(easy::Sprite to_sprite, const char *text,
+    const Si32 x, const Si32 y,
     const TextOrigin origin,
     const easy::DrawBlendingMode blending_mode,
     const easy::DrawFilterMode filter_mode,
@@ -436,7 +437,8 @@ void Font::Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si
     std::vector<Rgba>(), true, nullptr);
 }
 
-void Font::Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si32 y,
+void Font::Draw(easy::Sprite to_sprite, const char *text,
+    const Si32 x, const Si32 y,
     const TextOrigin origin,
     const easy::DrawBlendingMode blending_mode,
     const easy::DrawFilterMode filter_mode,
@@ -445,7 +447,7 @@ void Font::Draw(easy::Sprite to_sprite, const char *text, const Si32 x, const Si
     text, false, x, y, origin, blending_mode, filter_mode, palete[0],
     palete, true, nullptr);
 }
-  
+
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
       const easy::DrawBlendingMode blending_mode,

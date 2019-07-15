@@ -180,7 +180,7 @@ struct InputMessage {
   };
   struct Mouse {
     Vec2F pos;
-    Vec2Si32 backbuffer_pos; // Not set by the engine
+    Vec2Si32 backbuffer_pos;  // Not set by the engine
     Si32 wheel_delta;
   };
   Kind kind;
