@@ -429,7 +429,7 @@ extern "C" {
     // Try exact match.
     for (i = 0; i < test_list_size__; i++) {
       if (strcmp(test_list__[i].name, pattern) == 0) {
-        test_remember__(i);
+        test_remember__(static_cast<int>(i));
         n++;
         break;
       }
@@ -441,7 +441,7 @@ extern "C" {
     // Try word match.
     for (i = 0; i < test_list_size__; i++) {
       if (test_name_contains_word__(test_list__[i].name, pattern)) {
-        test_remember__(i);
+        test_remember__(static_cast<int>(i));
         n++;
       }
     }
@@ -452,7 +452,7 @@ extern "C" {
     // Try relaxed match.
     for (i = 0; i < test_list_size__; i++) {
       if (strstr(test_list__[i].name, pattern) != NULL) {
-        test_remember__(i);
+        test_remember__(static_cast<int>(i));
         n++;
       }
     }
@@ -478,7 +478,7 @@ extern "C" {
           test->name);
       memset(spaces, ' ', sizeof(spaces));
       if (n < static_cast<int>(sizeof(spaces))) {
-        printf("%.*s", static_cast<int>(sizeof(spaces) - n, spaces));
+        printf("%.*s", static_cast<int>(sizeof(spaces)) - n, spaces);
       }
     } else {
       test_current_already_logged__ = 1;
@@ -643,7 +643,7 @@ extern "C" {
       DWORD exitCode;
 
       // Windows has no fork(). So we propagate all info into the child
-      * through a command line arguments.
+      // * through a command line arguments.
         _snprintf(buffer, sizeof(buffer)-1,
             "%s --no-exec --no-summary --verbose=%d --color=%s -- \"%s\"",
             test_argv0__, test_verbose_level__,
