@@ -2,7 +2,7 @@ arctic_wizard:
  image: gcc
  before_script:
   - apt-get update --yes
-  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
  script:
 
   - cd antarctica_pyramids
