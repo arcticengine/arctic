@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 // Ogg Vorbis audio decoder - v1.10 - public domain
 // http://nothings.org/stb_vorbis/
 //
@@ -1058,17 +1061,21 @@ static int compute_codewords(Codebook *c, uint8 *len, int n, uint32 *values)
    for (i=k+1; i < n; ++i) {
       uint32 res;
       int z = len[i], y;
-      if (z == NO_CODE) continue;
+      if (z == NO_CODE)
+        continue;
       // find lowest available leaf (should always be earliest,
       // which is what the specification calls for)
       // note that this property, and the fact we can never have
       // more than one free leaf at a given level, isn't totally
       // trivial to prove, but it seems true and the assert never
       // fires, so!
-      while (z > 0 && !available[z]) --z;
-      if (z == 0) { return FALSE; }
-      res = available[z];
+      while (z > 0 && !available[z])
+        --z;
+      if (z == 0) {
+        return FALSE;
+      }
       assert(z >= 0 && z < 32);
+      res = available[z];
       available[z] = 0;
       add_entry(c, bit_reverse(res), i, m++, len[i], values);
       // propogate availability up the tree
@@ -1542,7 +1549,8 @@ static uint32 get_bits(vorb *f, int n)
 {
    uint32 z;
 
-   if (f->valid_bits < 0) return 0;
+   if (f->valid_bits < 0)
+     return 0;
    if (f->valid_bits < n) {
       if (n > 24) {
          // the accumulator technique below would not work correctly in this case
@@ -1561,7 +1569,8 @@ static uint32 get_bits(vorb *f, int n)
          f->valid_bits += 8;
       }
    }
-   if (f->valid_bits < 0) return 0;
+   if (f->valid_bits < 0)
+     return 0;
    z = f->acc & ((1 << n)-1);
    f->acc >>= n;
    f->valid_bits -= n;
@@ -1575,27 +1584,28 @@ static uint32 get_bits(vorb *f, int n)
 static __forceinline void prep_huffman(vorb *f)
 {
    if (f->valid_bits <= 24) {
-      if (f->valid_bits == 0) f->acc = 0;
+      if (f->valid_bits == 0)
+        f->acc = 0;
       do {
          int z;
-         if (f->last_seg && !f->bytes_in_seg) return;
+         if (f->last_seg && !f->bytes_in_seg)
+           return;
          z = get8_packet_raw(f);
-         if (z == EOP) return;
+         if (z == EOP)
+           return;
          f->acc += (unsigned) z << f->valid_bits;
          f->valid_bits += 8;
       } while (f->valid_bits <= 24);
    }
 }
 
-enum
-{
+enum {
    VORBIS_packet_id = 1,
    VORBIS_packet_comment = 3,
    VORBIS_packet_setup = 5
 };
 
-static int codebook_decode_scalar_raw(vorb *f, Codebook *c)
-{
+static int codebook_decode_scalar_raw(vorb *f, Codebook *c) {
    int i;
    prep_huffman(f);
 
@@ -1671,8 +1681,7 @@ static int codebook_decode_scalar_raw(vorb *f, Codebook *c)
 
 #else
 
-static int codebook_decode_scalar(vorb *f, Codebook *c)
-{
+static int codebook_decode_scalar(vorb *f, Codebook *c) {
    int i;
    if (f->valid_bits < STB_VORBIS_FAST_HUFFMAN_LENGTH)
       prep_huffman(f);
@@ -1713,8 +1722,7 @@ static int codebook_decode_scalar(vorb *f, Codebook *c)
 #define CODEBOOK_ELEMENT_FAST(c,off)     (c->multiplicands[off])
 #define CODEBOOK_ELEMENT_BASE(c)         (0)
 
-static int codebook_decode_start(vorb *f, Codebook *c)
-{
+static int codebook_decode_start(vorb *f, Codebook *c) {
    int z = -1;
 
    // type 0 is only legal in a scalar context
@@ -1733,8 +1741,7 @@ static int codebook_decode_start(vorb *f, Codebook *c)
    return z;
 }
 
-static int codebook_decode(vorb *f, Codebook *c, float *output, int len)
-{
+static int codebook_decode(vorb *f, Codebook *c, float *output, int len) {
    int i,z = codebook_decode_start(f,c);
    if (z < 0) return FALSE;
    if (len > c->dimensions) len = c->dimensions;
@@ -1772,8 +1779,7 @@ static int codebook_decode(vorb *f, Codebook *c, float *output, int len)
    return TRUE;
 }
 
-static int codebook_decode_step(vorb *f, Codebook *c, float *output, int len, int step)
-{
+static int codebook_decode_step(vorb *f, Codebook *c, float *output, int len, int step) {
    int i,z = codebook_decode_start(f,c);
    float last = CODEBOOK_ELEMENT_BASE(c);
    if (z < 0) return FALSE;
@@ -1803,8 +1809,7 @@ static int codebook_decode_step(vorb *f, Codebook *c, float *output, int len, in
    return TRUE;
 }
 
-static int codebook_decode_deinterleave_repeat(vorb *f, Codebook *c, float **outputs, int ch, int *c_inter_p, int *p_inter_p, int len, int total_decode)
-{
+static int codebook_decode_deinterleave_repeat(vorb *f, Codebook *c, float **outputs, int ch, int *c_inter_p, int *p_inter_p, int len, int total_decode) {
    int c_inter = *c_inter_p;
    int p_inter = *p_inter_p;
    int i,z, effective = c->dimensions;
@@ -1873,8 +1878,7 @@ static int codebook_decode_deinterleave_repeat(vorb *f, Codebook *c, float **out
    return TRUE;
 }
 
-static int predict_point(int x, int x0, int x1, int y0, int y1)
-{
+static int predict_point(int x, int x0, int x1, int y0, int y1) {
    int dy = y1 - y0;
    int adx = x1 - x0;
    // @OPTIMIZE: force int division to round in the right direction... is this necessary on x86?
@@ -1972,8 +1976,7 @@ static float inverse_db_table[256] =
 int8 integer_divide_table[DIVTAB_NUMER][DIVTAB_DENOM]; // 2KB
 #endif
 
-static __forceinline void draw_line(float *output, int x0, int y0, int x1, int y1, int n)
-{
+static __forceinline void draw_line(float *output, int x0, int y0, int x1, int y1, int n) {
    int dy = y1 - y0;
    int adx = x1 - x0;
    int ady = abs(dy);
@@ -2021,8 +2024,7 @@ static __forceinline void draw_line(float *output, int x0, int y0, int x1, int y
    }
 }
 
-static int residue_decode(vorb *f, Codebook *book, float *target, int offset, int n, int rtype)
-{
+static int residue_decode(vorb *f, Codebook *book, float *target, int offset, int n, int rtype) {
    int k;
    if (rtype == 0) {
       int step = n / book->dimensions;
@@ -2040,8 +2042,7 @@ static int residue_decode(vorb *f, Codebook *book, float *target, int offset, in
    return TRUE;
 }
 
-static void decode_residue(vorb *f, float *residue_buffers[], int ch, int n, int rn, uint8 *do_not_decode)
-{
+static void decode_residue(vorb *f, float *residue_buffers[], int ch, int n, int rn, uint8 *do_not_decode) {
    int i,j,pass;
    Residue *r = f->residue_config + rn;
    int rtype = f->residue_types[rn];
@@ -2262,8 +2263,7 @@ static void decode_residue(vorb *f, float *residue_buffers[], int ch, int n, int
 
 #if 0
 // slow way for debugging
-void inverse_mdct_slow(float *buffer, int n)
-{
+void inverse_mdct_slow(float *buffer, int n) {
    int i,j;
    int n2 = n >> 1;
    float *x = (float *) malloc(sizeof(*x) * n2);
@@ -2306,8 +2306,7 @@ void inverse_mdct_slow(float *buffer, int n, vorb *f, int blocktype)
 #elif 0
 // transform to use a slow dct-iv; this is STILL basically trivial,
 // but only requires half as many ops
-void dct_iv_slow(float *buffer, int n)
-{
+void dct_iv_slow(float *buffer, int n) {
    float mcos[16384];
    float x[2048];
    int i,j;
@@ -2323,8 +2322,7 @@ void dct_iv_slow(float *buffer, int n)
    }
 }
 
-void inverse_mdct_slow(float *buffer, int n, vorb *f, int blocktype)
-{
+void inverse_mdct_slow(float *buffer, int n, vorb *f, int blocktype) {
    int i, n4 = n >> 2, n2 = n >> 1, n3_4 = n - n4;
    float temp[4096];
 
@@ -2344,8 +2342,7 @@ void inverse_mdct_slow(float *buffer, int n, vorb *f, int blocktype)
 #if LIBVORBIS_MDCT
 // directly call the vorbis MDCT using an interface documented
 // by Jeff Roberts... useful for performance comparison
-typedef struct 
-{
+typedef struct {
   int n;
   int log2n;
   
@@ -2361,8 +2358,7 @@ extern void mdct_backward(mdct_lookup *init, float *in, float *out);
 
 mdct_lookup M1,M2;
 
-void inverse_mdct(float *buffer, int n, vorb *f, int blocktype)
-{
+void inverse_mdct(float *buffer, int n, vorb *f, int blocktype) {
    mdct_lookup *M;
    if (M1.n == n) M = &M1;
    else if (M2.n == n) M = &M2;
@@ -2381,8 +2377,7 @@ void inverse_mdct(float *buffer, int n, vorb *f, int blocktype)
 // the following were split out into separate functions while optimizing;
 // they could be pushed back up but eh. __forceinline showed no change;
 // they're probably already being inlined.
-static void imdct_step3_iter0_loop(int n, float *e, int i_off, int k_off, float *A)
-{
+static void imdct_step3_iter0_loop(int n, float *e, int i_off, int k_off, float *A) {
    float *ee0 = e + i_off;
    float *ee2 = ee0 + k_off;
    int i;
@@ -2426,8 +2421,7 @@ static void imdct_step3_iter0_loop(int n, float *e, int i_off, int k_off, float 
    }
 }
 
-static void imdct_step3_inner_r_loop(int lim, float *e, int d0, int k_off, float *A, int k1)
-{
+static void imdct_step3_inner_r_loop(int lim, float *e, int d0, int k_off, float *A, int k1) {
    int i;
    float k00_20, k01_21;
 
@@ -2476,8 +2470,7 @@ static void imdct_step3_inner_r_loop(int lim, float *e, int d0, int k_off, float
    }
 }
 
-static void imdct_step3_inner_s_loop(int n, float *e, int i_off, int k_off, float *A, int a_off, int k0)
-{
+static void imdct_step3_inner_s_loop(int n, float *e, int i_off, int k_off, float *A, int a_off, int k0) {
    int i;
    float A0 = A[0];
    float A1 = A[0+1];
@@ -3811,8 +3804,7 @@ static int start_decoder(vorb *f)
                unsigned int div=1;
                for (k=0; k < c->dimensions; ++k) {
                   int off = (z / div) % c->lookup_values;
-                  float val = mults[off];
-                  val = mults[off]*c->delta_value + c->minimum_value + last;
+                  float val = mults[off]*c->delta_value + c->minimum_value + last;
                   c->multiplicands[j*c->dimensions + k] = val;
                   if (c->sequence_p)
                      last = val;

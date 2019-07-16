@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 // The MIT License (MIT)
 //
 // Copyright (c) 2018 Huldra
@@ -279,9 +282,9 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
-  Vec2Si32 pos = parent_pos + pos_;
   ButtonState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 pos = parent_pos + pos_;
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
     bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
       relative_pos.x < size_.x && relative_pos.y < size_.y;
@@ -501,8 +504,8 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     std::shared_ptr<Panel> *out_current_tab) {
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
-  Vec2Si32 pos = parent_pos + pos_;
   if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 pos = parent_pos + pos_;
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
     bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
       relative_pos.x < size_.x && relative_pos.y < size_.y;
@@ -772,7 +775,6 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
     "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
-  Vec2Si32 pos = parent_pos + pos_;
   //    x1    x2  x3    x4
   // |--|-----|---|-----|--|
   // |<<|     | @ |     |>>|
@@ -785,6 +787,7 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
 
   ScrollState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 pos = parent_pos + pos_;
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
     bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
       relative_pos.x < size_.x && relative_pos.y < size_.y;

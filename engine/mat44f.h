@@ -373,7 +373,6 @@ inline Vec3F ExtractRotationEuler(const Mat44F &m) {
     res.x = atan2f(m.m[2], m.m[11]);
     res.y = 0.0f;
     res.z = 0.0f;
-
   } else if (m.m[0] == -1.0f) {
     res.x = atan2f(m.m[2], m.m[11]);
     res.y = 0.0f;

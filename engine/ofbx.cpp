@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 // The MIT License (MIT)
 //
 // Copyright (c) 2019 Huldra
@@ -561,7 +564,7 @@ static OptionalError<Property*> readProperty(Cursor* cursor) {
       OptionalError<Ui32> length = read<Ui32>(cursor);
       OptionalError<Ui32> encoding = read<Ui32>(cursor);
       OptionalError<Ui32> comp_len = read<Ui32>(cursor);
-      if (length.isError() | encoding.isError() | comp_len.isError())
+      if (length.isError() || encoding.isError() || comp_len.isError())
         return Error();
       if (cursor->current + comp_len.getValue() > cursor->end)
         return Error("Reading past the end");
@@ -2786,10 +2789,10 @@ Matrix44D Object::getLocalTransform() const {
 
 
 Object* Object::resolveObjectLinkReverse(Object::Type type) const {
-  Ui64 id = element.getFirstProperty() ?
+  Ui64 link_id = element.getFirstProperty() ?
     element.getFirstProperty()->getValue().toU64() : 0;
   for (auto& connection : scene.m_connections) {
-    if (connection.from == id && connection.to != 0) {
+    if (connection.from == link_id && connection.to != 0) {
       Object* obj = scene.m_object_map.find(connection.to)->second.object;
       if (obj && obj->getType() == type)
         return obj;
@@ -2823,10 +2826,10 @@ Object* Object::resolveObjectLink(int idx) const {
 
 Object* Object::resolveObjectLink(Object::Type type,
     const char* property, int idx) const {
-  Ui64 id = element.getFirstProperty() ?
+  Ui64 link_id = element.getFirstProperty() ?
     element.getFirstProperty()->getValue().toU64() : 0;
   for (auto& connection : scene.m_connections) {
-    if (connection.to == id && connection.from != 0) {
+    if (connection.to == link_id && connection.from != 0) {
       Object* obj = scene.m_object_map.find(connection.from)->second.object;
       if (obj && obj->getType() == type) {
         if (property == nullptr || connection.property == property) {

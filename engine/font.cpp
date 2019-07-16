@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2018 Huldra
@@ -232,6 +235,8 @@ void Font::Load(const char *file_name) {
   std::vector<easy::Sprite> page_images;
   page_images.resize(common->pages);
 
+  size_t file_name_len = strlen(file_name);
+
   for (Si32 id = 0; id < common->pages; ++id) {
     BmFontBinPages page;
     page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
@@ -239,7 +244,7 @@ void Font::Load(const char *file_name) {
 
     char path[65536];
     const char *p = file_name;
-    Check(strlen(file_name) < sizeof(path) / 2, "File name is too long: ",
+    Check(file_name_len < sizeof(path) / 2, "File name is too long: ",
       file_name);
     Check(strlen(page.page_name) < sizeof(path) / 2,
       "File name is too long: ", page.page_name);

@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 /**************************************************************************
  *
  * The MIT License (MIT)
@@ -1243,27 +1246,20 @@ extern "C" {
     d->m_total_lz_bytes = 0;
     d->m_block_index++;
 
-    if ((n = (int)(d->m_pOutput_buf - pOutput_buf_start)) != 0)
-    {
-      if (d->m_pPut_buf_func)
-      {
+    if ((n = (int)(d->m_pOutput_buf - pOutput_buf_start)) != 0) {
+      if (d->m_pPut_buf_func) {
         *d->m_pIn_buf_size = d->m_pSrc - (const uint8_t *)d->m_pIn_buf;
         if (!(*d->m_pPut_buf_func)(d->m_output_buf, n, d->m_pPut_buf_user))
           return (d->m_prev_return_status = TDEFL_STATUS_PUT_BUF_FAILED);
-      }
-      else if (pOutput_buf_start == d->m_output_buf)
-      {
+      } else if (pOutput_buf_start == d->m_output_buf) {
         int bytes_to_copy = (int)MZ_MIN((size_t)n, (size_t)(*d->m_pOut_buf_size - d->m_out_buf_ofs));
         memcpy((uint8_t *)d->m_pOut_buf + d->m_out_buf_ofs, d->m_output_buf, bytes_to_copy);
         d->m_out_buf_ofs += bytes_to_copy;
-        if ((n -= bytes_to_copy) != 0)
-        {
+        if ((n -= bytes_to_copy) != 0) {
           d->m_output_flush_ofs = bytes_to_copy;
           d->m_output_flush_remaining = n;
         }
-      }
-      else
-      {
+      } else {
         d->m_out_buf_ofs += n;
       }
     }
@@ -1298,18 +1294,16 @@ extern "C" {
     MZ_ASSERT(max_match_len <= TDEFL_MAX_MATCH_LEN);
     if (max_match_len <= match_len)
       return;
-    for (;;)
-    {
-      for (;;)
-      {
+    for (;;) {
+      for (;;) {
         if (--num_probes_left == 0)
           return;
 #define TDEFL_PROBE                                                                             \
-        next_probe_pos = d->m_next[probe_pos];                                                      \
+        next_probe_pos = d->m_next[probe_pos];                                                     \
         if ((!next_probe_pos) || ((dist = (uint16_t)(lookahead_pos - next_probe_pos)) > max_dist)) \
         return;                                                                                 \
-        probe_pos = next_probe_pos & TDEFL_LZ_DICT_SIZE_MASK;                                       \
-        if (TDEFL_READ_UNALIGNED_WORD(&d->m_dict[probe_pos + match_len - 1]) == c01)                \
+        probe_pos = next_probe_pos & TDEFL_LZ_DICT_SIZE_MASK;                                      \
+        if (TDEFL_READ_UNALIGNED_WORD(&d->m_dict[probe_pos + match_len - 1]) == c01)               \
         break;
         TDEFL_PROBE;
         TDEFL_PROBE;
@@ -1322,18 +1316,14 @@ extern "C" {
         continue;
       p = s;
       probe_len = 32;
-      do
-      {
+      do {
       } while ((TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) && (TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) &&
           (TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) && (TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) && (--probe_len > 0));
-      if (!probe_len)
-      {
+      if (!probe_len) {
         *pMatch_dist = dist;
         *pMatch_len = MZ_MIN(max_match_len, (mz_uint)TDEFL_MAX_MATCH_LEN);
         break;
-      }
-      else if ((probe_len = ((mz_uint)(p - s) * 2) + (mz_uint)(*(const uint8_t *)p == *(const uint8_t *)q)) > match_len)
-      {
+      } else if ((probe_len = ((mz_uint)(p - s) * 2) + (mz_uint)(*(const uint8_t *)p == *(const uint8_t *)q)) > match_len) {
         *pMatch_dist = dist;
         if ((*pMatch_len = match_len = MZ_MIN(max_match_len, probe_len)) == max_match_len)
           break;
@@ -1342,8 +1332,7 @@ extern "C" {
     }
   }
 #else
-  static MZ_FORCEINLINE void tdefl_find_match(tdefl_compressor *d, mz_uint lookahead_pos, mz_uint max_dist, mz_uint max_match_len, mz_uint *pMatch_dist, mz_uint *pMatch_len)
-  {
+  static MZ_FORCEINLINE void tdefl_find_match(tdefl_compressor *d, mz_uint lookahead_pos, mz_uint max_dist, mz_uint max_match_len, mz_uint *pMatch_dist, mz_uint *pMatch_len) {
     mz_uint dist, pos = lookahead_pos & TDEFL_LZ_DICT_SIZE_MASK, match_len = *pMatch_len, probe_pos = pos, next_probe_pos, probe_len;
     mz_uint num_probes_left = d->m_max_probes[match_len >= 32];
     const uint8_t *s = d->m_dict + pos, *p, *q;
@@ -1351,10 +1340,8 @@ extern "C" {
     MZ_ASSERT(max_match_len <= TDEFL_MAX_MATCH_LEN);
     if (max_match_len <= match_len)
       return;
-    for (;;)
-    {
-      for (;;)
-      {
+    for (;;) {
+      for (;;) {
         if (--num_probes_left == 0)
           return;
 #define TDEFL_PROBE                                                                               \
@@ -1375,8 +1362,7 @@ extern "C" {
       for (probe_len = 0; probe_len < max_match_len; probe_len++)
         if (*p++ != *q++)
           break;
-      if (probe_len > match_len)
-      {
+      if (probe_len > match_len) {
         *pMatch_dist = dist;
         if ((*pMatch_len = match_len = probe_len) == max_match_len)
           return;
@@ -1389,8 +1375,7 @@ extern "C" {
 
 #if MINIZ_USE_UNALIGNED_LOADS_AND_STORES && MINIZ_LITTLE_ENDIAN
 #ifdef MINIZ_UNALIGNED_USE_MEMCPY
-  static uint32_t TDEFL_READ_UNALIGNED_WORD32(const uint8_t* p)
-  {
+  static uint32_t TDEFL_READ_UNALIGNED_WORD32(const uint8_t* p) {
     uint32_t ret;
     memcpy(&ret, p, sizeof(uint32_t));
     return ret;
@@ -1398,23 +1383,20 @@ extern "C" {
 #else
 #define TDEFL_READ_UNALIGNED_WORD32(p) *(const uint32_t *)(p)
 #endif
-  static mz_bool tdefl_compress_fast(tdefl_compressor *d)
-  {
+  static mz_bool tdefl_compress_fast(tdefl_compressor *d) {
     /* Faster, minimally featured LZRW1-style match+parse loop with better register utilization. Intended for applications where raw throughput is valued more highly than ratio. */
     mz_uint lookahead_pos = d->m_lookahead_pos, lookahead_size = d->m_lookahead_size, dict_size = d->m_dict_size, total_lz_bytes = d->m_total_lz_bytes, num_flags_left = d->m_num_flags_left;
     uint8_t *pLZ_code_buf = d->m_pLZ_code_buf, *pLZ_flags = d->m_pLZ_flags;
     mz_uint cur_pos = lookahead_pos & TDEFL_LZ_DICT_SIZE_MASK;
 
-    while ((d->m_src_buf_left) || ((d->m_flush) && (lookahead_size)))
-    {
+    while ((d->m_src_buf_left) || ((d->m_flush) && (lookahead_size))) {
       const mz_uint TDEFL_COMP_FAST_LOOKAHEAD_SIZE = 4096;
       mz_uint dst_pos = (lookahead_pos + lookahead_size) & TDEFL_LZ_DICT_SIZE_MASK;
       mz_uint num_bytes_to_process = (mz_uint)MZ_MIN(d->m_src_buf_left, TDEFL_COMP_FAST_LOOKAHEAD_SIZE - lookahead_size);
       d->m_src_buf_left -= num_bytes_to_process;
       lookahead_size += num_bytes_to_process;
 
-      while (num_bytes_to_process)
-      {
+      while (num_bytes_to_process) {
         uint32_t n = MZ_MIN(TDEFL_LZ_DICT_SIZE - dst_pos, num_bytes_to_process);
         memcpy(d->m_dict + dst_pos, d->m_pSrc, n);
         if (dst_pos < (TDEFL_MAX_MATCH_LEN - 1))
@@ -1428,8 +1410,7 @@ extern "C" {
       if ((!d->m_flush) && (lookahead_size < TDEFL_COMP_FAST_LOOKAHEAD_SIZE))
         break;
 
-      while (lookahead_size >= 4)
-      {
+      while (lookahead_size >= 4) {
         mz_uint cur_match_dist, cur_match_len = 1;
         uint8_t *pCur_dict = d->m_dict + cur_pos;
         mz_uint first_trigram = TDEFL_READ_UNALIGNED_WORD32(pCur_dict) & 0xFFFFFF;
@@ -1437,28 +1418,23 @@ extern "C" {
         mz_uint probe_pos = d->m_hash[hash];
         d->m_hash[hash] = (uint16_t)lookahead_pos;
 
-        if (((cur_match_dist = (uint16_t)(lookahead_pos - probe_pos)) <= dict_size) && ((TDEFL_READ_UNALIGNED_WORD32(d->m_dict + (probe_pos &= TDEFL_LZ_DICT_SIZE_MASK)) & 0xFFFFFF) == first_trigram))
-        {
+        if (((cur_match_dist = (uint16_t)(lookahead_pos - probe_pos)) <= dict_size) && ((TDEFL_READ_UNALIGNED_WORD32(d->m_dict + (probe_pos &= TDEFL_LZ_DICT_SIZE_MASK)) & 0xFFFFFF) == first_trigram)) {
           const uint16_t *p = (const uint16_t *)pCur_dict;
           const uint16_t *q = (const uint16_t *)(d->m_dict + probe_pos);
           uint32_t probe_len = 32;
-          do
-          {
+          do {
           } while ((TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) && (TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) &&
               (TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) && (TDEFL_READ_UNALIGNED_WORD2(++p) == TDEFL_READ_UNALIGNED_WORD2(++q)) && (--probe_len > 0));
           cur_match_len = ((mz_uint)(p - (const uint16_t *)pCur_dict) * 2) + (mz_uint)(*(const uint8_t *)p == *(const uint8_t *)q);
           if (!probe_len)
             cur_match_len = cur_match_dist ? TDEFL_MAX_MATCH_LEN : 0;
 
-          if ((cur_match_len < TDEFL_MIN_MATCH_LEN) || ((cur_match_len == TDEFL_MIN_MATCH_LEN) && (cur_match_dist >= 8U * 1024U)))
-          {
+          if ((cur_match_len < TDEFL_MIN_MATCH_LEN) || ((cur_match_len == TDEFL_MIN_MATCH_LEN) && (cur_match_dist >= 8U * 1024U))) {
             cur_match_len = 1;
             *pLZ_code_buf++ = (uint8_t)first_trigram;
             *pLZ_flags = (uint8_t)(*pLZ_flags >> 1);
             d->m_huff_count[0][(uint8_t)first_trigram]++;
-          }
-          else
-          {
+          } else {
             uint32_t s0, s1;
             cur_match_len = MZ_MIN(cur_match_len, lookahead_size);
 
@@ -1481,16 +1457,13 @@ extern "C" {
 
             d->m_huff_count[0][s_tdefl_len_sym[cur_match_len - TDEFL_MIN_MATCH_LEN]]++;
           }
-        }
-        else
-        {
+        } else {
           *pLZ_code_buf++ = (uint8_t)first_trigram;
           *pLZ_flags = (uint8_t)(*pLZ_flags >> 1);
           d->m_huff_count[0][(uint8_t)first_trigram]++;
         }
 
-        if (--num_flags_left == 0)
-        {
+        if (--num_flags_left == 0) {
           num_flags_left = 8;
           pLZ_flags = pLZ_code_buf++;
         }
@@ -1502,8 +1475,7 @@ extern "C" {
         MZ_ASSERT(lookahead_size >= cur_match_len);
         lookahead_size -= cur_match_len;
 
-        if (pLZ_code_buf > &d->m_lz_code_buf[TDEFL_LZ_CODE_BUF_SIZE - 8])
-        {
+        if (pLZ_code_buf > &d->m_lz_code_buf[TDEFL_LZ_CODE_BUF_SIZE - 8]) {
           int n;
           d->m_lookahead_pos = lookahead_pos;
           d->m_lookahead_size = lookahead_size;
@@ -1521,15 +1493,13 @@ extern "C" {
         }
       }
 
-      while (lookahead_size)
-      {
+      while (lookahead_size) {
         uint8_t lit = d->m_dict[cur_pos];
 
         total_lz_bytes++;
         *pLZ_code_buf++ = lit;
         *pLZ_flags = (uint8_t)(*pLZ_flags >> 1);
-        if (--num_flags_left == 0)
-        {
+        if (--num_flags_left == 0) {
           num_flags_left = 8;
           pLZ_flags = pLZ_code_buf++;
         }
@@ -1541,8 +1511,7 @@ extern "C" {
         cur_pos = (cur_pos + 1) & TDEFL_LZ_DICT_SIZE_MASK;
         lookahead_size--;
 
-        if (pLZ_code_buf > &d->m_lz_code_buf[TDEFL_LZ_CODE_BUF_SIZE - 8])
-        {
+        if (pLZ_code_buf > &d->m_lz_code_buf[TDEFL_LZ_CODE_BUF_SIZE - 8]) {
           int n;
           d->m_lookahead_pos = lookahead_pos;
           d->m_lookahead_size = lookahead_size;
@@ -1572,21 +1541,18 @@ extern "C" {
   }
 #endif /* MINIZ_USE_UNALIGNED_LOADS_AND_STORES && MINIZ_LITTLE_ENDIAN */
 
-  static MZ_FORCEINLINE void tdefl_record_literal(tdefl_compressor *d, uint8_t lit)
-  {
+  static MZ_FORCEINLINE void tdefl_record_literal(tdefl_compressor *d, uint8_t lit) {
     d->m_total_lz_bytes++;
     *d->m_pLZ_code_buf++ = lit;
     *d->m_pLZ_flags = (uint8_t)(*d->m_pLZ_flags >> 1);
-    if (--d->m_num_flags_left == 0)
-    {
+    if (--d->m_num_flags_left == 0) {
       d->m_num_flags_left = 8;
       d->m_pLZ_flags = d->m_pLZ_code_buf++;
     }
     d->m_huff_count[0][lit]++;
   }
 
-  static MZ_FORCEINLINE void tdefl_record_match(tdefl_compressor *d, mz_uint match_len, mz_uint match_dist)
-  {
+  static MZ_FORCEINLINE void tdefl_record_match(tdefl_compressor *d, mz_uint match_len, mz_uint match_dist) {
     uint32_t s0, s1;
 
     MZ_ASSERT((match_len >= TDEFL_MIN_MATCH_LEN) && (match_dist >= 1) && (match_dist <= TDEFL_LZ_DICT_SIZE));
@@ -1601,8 +1567,7 @@ extern "C" {
     d->m_pLZ_code_buf += 3;
 
     *d->m_pLZ_flags = (uint8_t)((*d->m_pLZ_flags >> 1) | 0x80);
-    if (--d->m_num_flags_left == 0)
-    {
+    if (--d->m_num_flags_left == 0) {
       d->m_num_flags_left = 8;
       d->m_pLZ_flags = d->m_pLZ_code_buf++;
     }
@@ -1615,26 +1580,22 @@ extern "C" {
       d->m_huff_count[0][s_tdefl_len_sym[match_len - TDEFL_MIN_MATCH_LEN]]++;
   }
 
-  static mz_bool tdefl_compress_normal(tdefl_compressor *d)
-  {
+  static mz_bool tdefl_compress_normal(tdefl_compressor *d) {
     const uint8_t *pSrc = d->m_pSrc;
     size_t src_buf_left = d->m_src_buf_left;
     tdefl_flush flush = d->m_flush;
 
-    while ((src_buf_left) || ((flush) && (d->m_lookahead_size)))
-    {
+    while ((src_buf_left) || ((flush) && (d->m_lookahead_size))) {
       mz_uint len_to_move, cur_match_dist, cur_match_len, cur_pos;
       /* Update dictionary and hash chains. Keeps the lookahead size equal to TDEFL_MAX_MATCH_LEN. */
-      if ((d->m_lookahead_size + d->m_dict_size) >= (TDEFL_MIN_MATCH_LEN - 1))
-      {
+      if ((d->m_lookahead_size + d->m_dict_size) >= (TDEFL_MIN_MATCH_LEN - 1)) {
         mz_uint dst_pos = (d->m_lookahead_pos + d->m_lookahead_size) & TDEFL_LZ_DICT_SIZE_MASK, ins_pos = d->m_lookahead_pos + d->m_lookahead_size - 2;
         mz_uint hash = (d->m_dict[ins_pos & TDEFL_LZ_DICT_SIZE_MASK] << TDEFL_LZ_HASH_SHIFT) ^ d->m_dict[(ins_pos + 1) & TDEFL_LZ_DICT_SIZE_MASK];
         mz_uint num_bytes_to_process = (mz_uint)MZ_MIN(src_buf_left, TDEFL_MAX_MATCH_LEN - d->m_lookahead_size);
         const uint8_t *pSrc_end = pSrc + num_bytes_to_process;
         src_buf_left -= num_bytes_to_process;
         d->m_lookahead_size += num_bytes_to_process;
-        while (pSrc != pSrc_end)
-        {
+        while (pSrc != pSrc_end) {
           uint8_t c = *pSrc++;
           d->m_dict[dst_pos] = c;
           if (dst_pos < (TDEFL_MAX_MATCH_LEN - 1))
@@ -1645,19 +1606,15 @@ extern "C" {
           dst_pos = (dst_pos + 1) & TDEFL_LZ_DICT_SIZE_MASK;
           ins_pos++;
         }
-      }
-      else
-      {
-        while ((src_buf_left) && (d->m_lookahead_size < TDEFL_MAX_MATCH_LEN))
-        {
+      } else {
+        while ((src_buf_left) && (d->m_lookahead_size < TDEFL_MAX_MATCH_LEN)) {
           uint8_t c = *pSrc++;
           mz_uint dst_pos = (d->m_lookahead_pos + d->m_lookahead_size) & TDEFL_LZ_DICT_SIZE_MASK;
           src_buf_left--;
           d->m_dict[dst_pos] = c;
           if (dst_pos < (TDEFL_MAX_MATCH_LEN - 1))
             d->m_dict[TDEFL_LZ_DICT_SIZE + dst_pos] = c;
-          if ((++d->m_lookahead_size + d->m_dict_size) >= TDEFL_MIN_MATCH_LEN)
-          {
+          if ((++d->m_lookahead_size + d->m_dict_size) >= TDEFL_MIN_MATCH_LEN) {
             mz_uint ins_pos = d->m_lookahead_pos + (d->m_lookahead_size - 1) - 2;
             mz_uint hash = ((d->m_dict[ins_pos & TDEFL_LZ_DICT_SIZE_MASK] << (TDEFL_LZ_HASH_SHIFT * 2)) ^ (d->m_dict[(ins_pos + 1) & TDEFL_LZ_DICT_SIZE_MASK] << TDEFL_LZ_HASH_SHIFT) ^ c) & (TDEFL_LZ_HASH_SIZE - 1);
             d->m_next[ins_pos & TDEFL_LZ_DICT_SIZE_MASK] = d->m_hash[hash];
@@ -1674,14 +1631,11 @@ extern "C" {
       cur_match_dist = 0;
       cur_match_len = d->m_saved_match_len ? d->m_saved_match_len : (TDEFL_MIN_MATCH_LEN - 1);
       cur_pos = d->m_lookahead_pos & TDEFL_LZ_DICT_SIZE_MASK;
-      if (d->m_flags & (TDEFL_RLE_MATCHES | TDEFL_FORCE_ALL_RAW_BLOCKS))
-      {
-        if ((d->m_dict_size) && (!(d->m_flags & TDEFL_FORCE_ALL_RAW_BLOCKS)))
-        {
+      if (d->m_flags & (TDEFL_RLE_MATCHES | TDEFL_FORCE_ALL_RAW_BLOCKS)) {
+        if ((d->m_dict_size) && (!(d->m_flags & TDEFL_FORCE_ALL_RAW_BLOCKS))) {
           uint8_t c = d->m_dict[(cur_pos - 1) & TDEFL_LZ_DICT_SIZE_MASK];
           cur_match_len = 0;
-          while (cur_match_len < d->m_lookahead_size)
-          {
+          while (cur_match_len < d->m_lookahead_size) {
             if (d->m_dict[cur_pos + cur_match_len] != c)
               break;
             cur_match_len++;
@@ -1691,49 +1645,35 @@ extern "C" {
           else
             cur_match_dist = 1;
         }
-      }
-      else
-      {
+      } else {
         tdefl_find_match(d, d->m_lookahead_pos, d->m_dict_size, d->m_lookahead_size, &cur_match_dist, &cur_match_len);
       }
-      if (((cur_match_len == TDEFL_MIN_MATCH_LEN) && (cur_match_dist >= 8U * 1024U)) || (cur_pos == cur_match_dist) || ((d->m_flags & TDEFL_FILTER_MATCHES) && (cur_match_len <= 5)))
-      {
+      if (((cur_match_len == TDEFL_MIN_MATCH_LEN) && (cur_match_dist >= 8U * 1024U)) || (cur_pos == cur_match_dist) || ((d->m_flags & TDEFL_FILTER_MATCHES) && (cur_match_len <= 5))) {
         cur_match_dist = cur_match_len = 0;
       }
-      if (d->m_saved_match_len)
-      {
-        if (cur_match_len > d->m_saved_match_len)
-        {
+      if (d->m_saved_match_len) {
+        if (cur_match_len > d->m_saved_match_len) {
           tdefl_record_literal(d, (uint8_t)d->m_saved_lit);
-          if (cur_match_len >= 128)
-          {
+          if (cur_match_len >= 128) {
             tdefl_record_match(d, cur_match_len, cur_match_dist);
             d->m_saved_match_len = 0;
             len_to_move = cur_match_len;
-          }
-          else
-          {
+          } else {
             d->m_saved_lit = d->m_dict[cur_pos];
             d->m_saved_match_dist = cur_match_dist;
             d->m_saved_match_len = cur_match_len;
           }
-        }
-        else
-        {
+        } else {
           tdefl_record_match(d, d->m_saved_match_len, d->m_saved_match_dist);
           len_to_move = d->m_saved_match_len - 1;
           d->m_saved_match_len = 0;
         }
-      }
-      else if (!cur_match_dist)
+      } else if (!cur_match_dist)
         tdefl_record_literal(d, d->m_dict[MZ_MIN(cur_pos, sizeof(d->m_dict) - 1)]);
-      else if ((d->m_greedy_parsing) || (d->m_flags & TDEFL_RLE_MATCHES) || (cur_match_len >= 128))
-      {
+      else if ((d->m_greedy_parsing) || (d->m_flags & TDEFL_RLE_MATCHES) || (cur_match_len >= 128)) {
         tdefl_record_match(d, cur_match_len, cur_match_dist);
         len_to_move = cur_match_len;
-      }
-      else
-      {
+      } else {
         d->m_saved_lit = d->m_dict[MZ_MIN(cur_pos, sizeof(d->m_dict) - 1)];
         d->m_saved_match_dist = cur_match_dist;
         d->m_saved_match_len = cur_match_len;
@@ -1745,8 +1685,7 @@ extern "C" {
       d->m_dict_size = MZ_MIN(d->m_dict_size + len_to_move, (mz_uint)TDEFL_LZ_DICT_SIZE);
       /* Check if it's time to flush the current LZ codes to the internal output buffer. */
       if ((d->m_pLZ_code_buf > &d->m_lz_code_buf[TDEFL_LZ_CODE_BUF_SIZE - 8]) ||
-          ((d->m_total_lz_bytes > 31 * 1024) && (((((mz_uint)(d->m_pLZ_code_buf - d->m_lz_code_buf) * 115) >> 7) >= d->m_total_lz_bytes) || (d->m_flags & TDEFL_FORCE_ALL_RAW_BLOCKS))))
-      {
+          ((d->m_total_lz_bytes > 31 * 1024) && (((((mz_uint)(d->m_pLZ_code_buf - d->m_lz_code_buf) * 115) >> 7) >= d->m_total_lz_bytes) || (d->m_flags & TDEFL_FORCE_ALL_RAW_BLOCKS)))) {
         int n;
         d->m_pSrc = pSrc;
         d->m_src_buf_left = src_buf_left;
@@ -1760,10 +1699,8 @@ extern "C" {
     return MZ_TRUE;
   }
 
-  static tdefl_status tdefl_flush_output_buffer(tdefl_compressor *d)
-  {
-    if (d->m_pIn_buf_size)
-    {
+  static tdefl_status tdefl_flush_output_buffer(tdefl_compressor *d) {
+    if (d->m_pIn_buf_size) {
       *d->m_pIn_buf_size = d->m_pSrc - (const uint8_t *)d->m_pIn_buf;
     }
 
@@ -2324,7 +2261,8 @@ extern "C" {
           TINFL_GET_BYTE(2, r->m_zhdr1);
           counter = (((r->m_zhdr0 * 256 + r->m_zhdr1) % 31 != 0) || (r->m_zhdr1 & 32) || ((r->m_zhdr0 & 15) != 8));
           if (!(decomp_flags & TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF))
-            counter |= (((1U << (8U + (r->m_zhdr0 >> 4))) > 32768U) || ((out_buf_size_mask + 1) < (size_t)(1U << (8U + (r->m_zhdr0 >> 4)))));
+            counter |= (((1U << (8U + (r->m_zhdr0 >> 4))) > 32768U)
+              || ((out_buf_size_mask + 1) < (size_t)(1U << (8U + (r->m_zhdr0 >> 4)))));
           if (counter)
           {
             TINFL_CR_RETURN_FOREVER(36, TINFL_STATUS_FAILED);
@@ -5982,9 +5920,13 @@ handle_failure:
       mz_uint level_and_flags, uint64_t uncomp_size, uint32_t uncomp_crc32, MZ_TIME_T *last_modified,
       const char *user_extra_data, mz_uint user_extra_data_len, const char *user_extra_data_central, mz_uint user_extra_data_central_len)
   {
+    if (!pZip)
+      return mz_zip_set_error(pZip, MZ_ZIP_INVALID_PARAMETER);
     uint16_t method = 0, dos_time = 0, dos_date = 0;
     mz_uint level, ext_attributes = 0, num_alignment_padding_bytes;
-    uint64_t local_dir_header_ofs = pZip->m_archive_size, cur_archive_file_ofs = pZip->m_archive_size, comp_size = 0;
+    uint64_t local_dir_header_ofs = pZip->m_archive_size;
+    uint64_t cur_archive_file_ofs = pZip->m_archive_size;
+    uint64_t comp_size = 0;
     size_t archive_name_size;
     uint8_t local_dir_header[MZ_ZIP_LOCAL_DIR_HEADER_SIZE];
     tdefl_compressor *pComp = NULL;
@@ -6267,10 +6209,15 @@ handle_failure:
   mz_bool mz_zip_writer_add_read_buf_callback(mz_zip_archive *pZip, const char *pArchive_name, mz_file_read_func read_callback, void* callback_opaque, uint64_t size_to_add, const MZ_TIME_T *pFile_time, const void *pComment, uint16_t comment_size, mz_uint level_and_flags,
       const char *user_extra_data, mz_uint user_extra_data_len, const char *user_extra_data_central, mz_uint user_extra_data_central_len)
   {
+    if (!pZip)
+      return mz_zip_set_error(pZip, MZ_ZIP_INVALID_PARAMETER);
     uint16_t gen_flags = MZ_ZIP_LDH_BIT_FLAG_HAS_LOCATOR;
     mz_uint uncomp_crc32 = MZ_CRC32_INIT, level, num_alignment_padding_bytes;
     uint16_t method = 0, dos_time = 0, dos_date = 0, ext_attributes = 0;
-    uint64_t local_dir_header_ofs, cur_archive_file_ofs = pZip->m_archive_size, uncomp_size = size_to_add, comp_size = 0;
+    uint64_t local_dir_header_ofs;
+    uint64_t cur_archive_file_ofs = pZip->m_archive_size;
+    uint64_t uncomp_size = size_to_add;
+    uint64_t comp_size = 0;
     size_t archive_name_size;
     uint8_t local_dir_header[MZ_ZIP_LOCAL_DIR_HEADER_SIZE];
     uint8_t *pExtra_data = NULL;

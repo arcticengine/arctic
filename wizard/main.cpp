@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 // The MIT License (MIT)
 //
 // Copyright (c) 2016 - 2019 Huldra
@@ -101,7 +104,7 @@ void SplitString(std::string const &full_string, std::string const &splitter,
   std::size_t found = full_string.find(splitter);
   if (found == std::string::npos) {
     *out_prefix = full_string;
-    *out_suffix = "";
+    out_suffix->clear();
     return;
   }
   *out_prefix = full_string.substr(0, found);
