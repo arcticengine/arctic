@@ -80,18 +80,18 @@ GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
 }
 
 void Engine::SetArgcArgv(Si64 argc, const char **argv) {
-  cmd_line_arguments_.resize(argc);
-  cmd_line_argv_.resize(argc);
-  for (Si64 i = 0; i < argc; ++i) {
+  cmd_line_arguments_.resize(static_cast<size_t>(argc));
+  cmd_line_argv_.resize(static_cast<size_t>(argc));
+  for (size_t i = 0; i < static_cast<size_t>(argc); ++i) {
     cmd_line_arguments_[i].assign(argv[i]);
     cmd_line_argv_[i] = cmd_line_arguments_[i].c_str();
   }
 }
 
 void Engine::SetArgcArgvW(Si64 argc, const wchar_t **argv) {
-  cmd_line_arguments_.resize(argc);
-  cmd_line_argv_.resize(argc);
-  for (Si64 i = 0; i < argc; ++i) {
+  cmd_line_arguments_.resize(static_cast<size_t>(argc));
+  cmd_line_argv_.resize(static_cast<size_t>(argc));
+  for (size_t i = 0; i < static_cast<size_t>(argc); ++i) {
     if (sizeof(wchar_t) == sizeof(Ui16)) {
       cmd_line_arguments_[i] = Utf16ToUtf8(reinterpret_cast<const void*>(argv[i]));
     } else {

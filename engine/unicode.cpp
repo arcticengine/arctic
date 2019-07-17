@@ -175,7 +175,7 @@ std::string Utf32ToUtf8(const void* data) {
     }
   }
   std::string buf;
-  buf.resize(size);
+  buf.resize(static_cast<size_t>(size));
   Ui32 pos = 0;
 
   data_cursor = reinterpret_cast<const Ui8*>(data);
@@ -212,7 +212,7 @@ std::string Utf16ToUtf8(const void* data) {
     }
   }
   std::string buf;
-  buf.resize(size);
+  buf.resize(static_cast<size_t>(size));
   Ui32 pos = 0;
 
   converter.Reset(reinterpret_cast<const Ui8*>(data));
