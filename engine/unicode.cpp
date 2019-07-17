@@ -134,14 +134,14 @@ void Utf8Codepoint::WriteUtf32(Ui32 codepoint) {
     return;
   }
   if (codepoint <= 0x07FFul) {
-    // 110xxxxx	10xxxxxx
+    // 110xxxxx 10xxxxxx
     buffer[0] = static_cast<Ui8>((codepoint >> 6) | 0xC0ul);
     buffer[1] = static_cast<Ui8>((codepoint & 0x3Ful) | 0x80ul);
     size = 2;
     return;
   }
   if (codepoint <= 0xFFFFul) {
-    // 1110xxxx	10xxxxxx	10xxxxxx
+    // 1110xxxx 10xxxxxx 10xxxxxx
     buffer[0] = static_cast<Ui8>((codepoint >> 12) | 0xE0ul);
     buffer[1] = static_cast<Ui8>(((codepoint >> 6) & 0x3Ful) | 0x80ul);
     buffer[2] = static_cast<Ui8>((codepoint & 0x3Ful) | 0x80ul);
@@ -149,7 +149,7 @@ void Utf8Codepoint::WriteUtf32(Ui32 codepoint) {
     return;
   }
   if (codepoint <= 0x10FFFFul) {
-    // 11110xxx	10xxxxxx	10xxxxxx	10xxxxxx
+    // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
     buffer[0] = static_cast<Ui8>((codepoint >> 18) | 0xF0ul);
     buffer[1] = static_cast<Ui8>(((codepoint >> 12) & 0x3Ful) | 0x80ul);
     buffer[2] = static_cast<Ui8>(((codepoint >> 6) & 0x3Ful) | 0x80ul);

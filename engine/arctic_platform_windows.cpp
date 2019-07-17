@@ -802,7 +802,8 @@ std::string CanonicalizePath(const char *path) {
   SlashesToBackslashes(&path_string);
   char canonic_path[MAX_PATH];
 
-  DWORD res = GetFullPathName(path_string.c_str(), MAX_PATH, canonic_path, NULL);
+  DWORD res = GetFullPathName(path_string.c_str(),
+    MAX_PATH, canonic_path, NULL);
 
   BOOL is_ok = (res > 0 && res <= MAX_PATH);
   std::string result;
@@ -901,9 +902,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     }
   }
 
-
   soundPlayer.Deinitialize();
- 
+
   arctic::StopLogger();
   LocalFree(args);
   ExitProcess(0);

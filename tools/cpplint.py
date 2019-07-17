@@ -4316,6 +4316,7 @@ def CheckStyle(filename, clean_lines, linenum, file_extension, nesting_state,
   if (not line.startswith('#include') and not is_header_guard and
       not Match(r'^\s*//.*http(s?)://\S*$', line) and
       not Match(r'^\s*//\s*[^\s]*$', line) and
+      not Match(r'^\s*//.*Dear.PVS.Studio.*$', line) and
       not Match(r'^// \$Id:.*#[0-9]+ \$$', line)):
     line_width = GetLineWidth(line)
     if line_width > _line_length:

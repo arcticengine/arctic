@@ -24,6 +24,7 @@
 #define ENGINE_ENGINE_H_
 
 #include <chrono>  // NOLINT
+#include <string>
 #include <random>
 #include <vector>
 

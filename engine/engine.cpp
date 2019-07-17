@@ -93,9 +93,11 @@ void Engine::SetArgcArgvW(Si64 argc, const wchar_t **argv) {
   cmd_line_argv_.resize(static_cast<size_t>(argc));
   for (size_t i = 0; i < static_cast<size_t>(argc); ++i) {
     if (sizeof(wchar_t) == sizeof(Ui16)) {
-      cmd_line_arguments_[i] = Utf16ToUtf8(reinterpret_cast<const void*>(argv[i]));
+      cmd_line_arguments_[i] = Utf16ToUtf8(
+        reinterpret_cast<const void*>(argv[i]));
     } else {
-      cmd_line_arguments_[i] = Utf32ToUtf8(reinterpret_cast<const void*>(argv[i]));
+      cmd_line_arguments_[i] = Utf32ToUtf8(
+        reinterpret_cast<const void*>(argv[i]));
     }
     cmd_line_argv_[i] = cmd_line_arguments_[i].c_str();
   }

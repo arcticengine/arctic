@@ -23,9 +23,9 @@
 #ifndef ENGINE_UNICODE_H_
 #define ENGINE_UNICODE_H_
 
-#include "engine/arctic_types.h"
-
 #include <string>
+
+#include "engine/arctic_types.h"
 
 namespace arctic {
 
@@ -35,14 +35,14 @@ struct Utf32Reader {
 
   void Reset(const Ui8 *data);
   void Rewind();
-  Ui32 ReadOne(); // Read one Utf32 character while converting it from Utf8
+  Ui32 ReadOne();  // Read one Utf32 character while converting it from Utf8
 };
 
 class Utf32FromUtf16 {
  public:
-   void Reset(const Ui8 *data);
-   void Rewind();
-   Ui32 ReadOne();
+  void Reset(const Ui8 *data);
+  void Rewind();
+  Ui32 ReadOne();
 
  protected:
   const Ui8 *begin_ = nullptr;
