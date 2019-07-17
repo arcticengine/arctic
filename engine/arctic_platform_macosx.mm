@@ -838,13 +838,16 @@ std::string RelativePathFromTo(const char *from, const char *to) {
 
 }  // namespace arctic
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
   [[NSFileManager defaultManager] changeCurrentDirectoryPath:
     [NSString stringWithFormat:@"%@/Contents/Resources",
     [[NSBundle mainBundle] bundlePath]]];
 
   arctic::StartLogger();
   arctic::CreateMainWindow();
+
+  arctic::easy::GetEngine()->SetArgcArgv(argc,
+    const_cast<const char **>(argv));
 
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
   arctic::easy::GetEngine()->Init((arctic::Si32)rect.size.width,

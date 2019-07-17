@@ -223,7 +223,7 @@ void SetFullScreen(bool/* is_enable*/) {
 }  // namespace arctic
 
 
-int main() {
+int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   arctic::StartLogger();
@@ -231,6 +231,8 @@ int main() {
   soundPlayer.Initialize();
   CreateMainWindow(&system_info);
   arctic::easy::GetEngine();
+  arctic::easy::GetEngine()->SetArgcArgv(argc,
+    const_cast<const char **>(argv));
   arctic::easy::GetEngine()->Init(system_info.screen_width,
       system_info.screen_height);
 
