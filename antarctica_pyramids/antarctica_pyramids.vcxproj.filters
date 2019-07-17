@@ -32,6 +32,9 @@
     <ClCompile Include="..\engine\engine.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\unicode.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
     <ClCompile Include="..\engine\arctic_platform_pi_byteorder.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -124,6 +127,9 @@
       <Filter>..%255cengine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\unicode.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\arctic_platform_byteorder.h">

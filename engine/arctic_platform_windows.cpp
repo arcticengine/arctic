@@ -761,7 +761,7 @@ bool GetDirectoryEntries(const char *path,
   if (find_handle == INVALID_HANDLE_VALUE) {
     std::stringstream info;
     info << "GetDirectoryEntires error in FindFirstFile, path: \""
-      << path << "\"" << std::endl;
+      << path << "\", canonic path: \"" << canonic_path << "\"" << std::endl;
     Log(info.str().c_str());
     return false;
   }
@@ -801,7 +801,10 @@ std::string CanonicalizePath(const char *path) {
   std::string path_string(path);
   SlashesToBackslashes(&path_string);
   char canonic_path[MAX_PATH];
-  BOOL is_ok = PathCanonicalize(canonic_path, path_string.c_str());
+
+  DWORD res = GetFullPathName(path_string.c_str(), MAX_PATH, canonic_path, NULL);
+
+  BOOL is_ok = (res > 0 && res <= MAX_PATH);
   std::string result;
   if (is_ok) {
     result.assign(canonic_path);
@@ -876,12 +879,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     &arctic::g_system_info);
   arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
 
-  arctic::easy::GetEngine();
-
+  arctic::easy::GetEngine()->SetArgcArgvW(num_args,
+    const_cast<const wchar_t **>(args));
 
   arctic::SoundPlayer soundPlayer;
   soundPlayer.Initialize();
-
 
   std::thread engine_thread(arctic::EngineThreadFunction,
     arctic::g_system_info);
@@ -899,11 +901,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     }
   }
 
-  LocalFree(args);
 
   soundPlayer.Deinitialize();
-
+ 
   arctic::StopLogger();
+  LocalFree(args);
   ExitProcess(0);
   //    engine_thread.join();
   return 0;

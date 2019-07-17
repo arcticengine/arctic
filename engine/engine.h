@@ -76,9 +76,21 @@ class Engine {
 
   GLuint g_programObject;
 
+  std::vector<const char*> cmd_line_argv_;
+  std::vector<std::string> cmd_line_arguments_;
+
   GLuint LoadShader(const char *shaderSrc, GLenum type);
 
  public:
+  void SetArgcArgv(Si64 argc, const char **argv);
+  void SetArgcArgvW(Si64 argc, const wchar_t **argv);
+
+  Si64 GetArgc() const {
+    return cmd_line_arguments_.size();
+  }
+  const char *const * GetArgv() const {
+    return cmd_line_argv_.data();
+  }
   void Init(Si32 width, Si32 height);
   void Draw2d();
   easy::Sprite GetBackbuffer() {

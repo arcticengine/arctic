@@ -30,6 +30,7 @@
 #include "engine/log.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_math.h"
+#include "engine/unicode.h"
 
 namespace arctic {
 
@@ -76,6 +77,28 @@ GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
     return 0;
   }
   return shader;
+}
+
+void Engine::SetArgcArgv(Si64 argc, const char **argv) {
+  cmd_line_arguments_.resize(argc);
+  cmd_line_argv_.resize(argc);
+  for (Si64 i = 0; i < argc; ++i) {
+    cmd_line_arguments_[i].assign(argv[i]);
+    cmd_line_argv_[i] = cmd_line_arguments_[i].c_str();
+  }
+}
+
+void Engine::SetArgcArgvW(Si64 argc, const wchar_t **argv) {
+  cmd_line_arguments_.resize(argc);
+  cmd_line_argv_.resize(argc);
+  for (Si64 i = 0; i < argc; ++i) {
+    if (sizeof(wchar_t) == sizeof(Ui16)) {
+      cmd_line_arguments_[i] = Utf16ToUtf8(reinterpret_cast<const void*>(argv[i]));
+    } else {
+      cmd_line_arguments_[i] = Utf32ToUtf8(reinterpret_cast<const void*>(argv[i]));
+    }
+    cmd_line_argv_[i] = cmd_line_arguments_[i].c_str();
+  }
 }
 
 void Engine::Init(Si32 width, Si32 height) {

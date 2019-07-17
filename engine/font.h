@@ -138,15 +138,6 @@ struct BmFontBinKerningPair {
 };
 #pragma pack(pop)
 
-struct Utf32Reader {
-  const Ui8 *begin = nullptr;
-  const Ui8 *p = nullptr;
-
-  void Reset(const Ui8 *data);
-  void Rewind();
-  Ui32 ReadOne();
-};
-
 struct Glyph {
   Ui32 codepoint;
   Si32 xadvance;

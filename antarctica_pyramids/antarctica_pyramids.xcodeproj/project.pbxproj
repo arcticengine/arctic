@@ -41,6 +41,7 @@
 		67E9453CB37D801EB08305C8 /* arctic_platform_pi_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B0FF7DE574C0E1420E82A946 /* arctic_platform_pi_input.cpp */; };
 		A99EB2575ADFE95141D17E6D /* arctic_platform_pi_opengl_glx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E967EB445E904EBC87B55D27 /* arctic_platform_pi_opengl_glx.cpp */; };
 		33B02FC7265C1FFE9E93FAD1 /* arctic_platform_pi_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 442AB8F9DB1B561E0AC748A1 /* arctic_platform_pi_sound.cpp */; };
+		E0A9D3AA6EF6E09E7B0C16A0 /* unicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2429AB496DB984263605DDE /* unicode.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -123,6 +124,9 @@
 		CA7917BD386D447EF8547CEA /* arctic_platform_sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_sound.h; path = ../engine/arctic_platform_sound.h; sourceTree = SOURCE_ROOT; };
 		F48B81094946EBF63589D76B /* glcorearb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glcorearb.h; path = ../engine/glcorearb.h; sourceTree = SOURCE_ROOT; };
 		AB29803F4C8337C6B1EAE20E /* glext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glext.h; path = ../engine/glext.h; sourceTree = SOURCE_ROOT; };
+		A5D3543D78EAED0CE35B060D /* cpplint.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cpplint.cfg; path = ../engine/cpplint.cfg; sourceTree = SOURCE_ROOT; };
+		B2429AB496DB984263605DDE /* unicode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = unicode.cpp; path = ../engine/unicode.cpp; sourceTree = SOURCE_ROOT; };
+		2C11721850B70FF3B4C05348 /* unicode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = unicode.h; path = ../engine/unicode.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -219,6 +223,9 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				A5D3543D78EAED0CE35B060D /* cpplint.cfg */,
+				B2429AB496DB984263605DDE /* unicode.cpp */,
+				2C11721850B70FF3B4C05348 /* unicode.h */,
 				6975EE593C671A433EC2D352 /* arctic_platform_byteorder.h */,
 				39F7A4475A21E21A6A733B31 /* arctic_platform_fatal.h */,
 				6572349E4970A55917261B3B /* arctic_platform_pi_byteorder.cpp */,
@@ -339,6 +346,7 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				E0A9D3AA6EF6E09E7B0C16A0 /* unicode.cpp in Sources */,
 				0A086F9C823A6A8B6A8B09D3 /* arctic_platform_pi_byteorder.cpp in Sources */,
 				8CE8137655CD17C740BD350C /* arctic_platform_pi_es_egl.cpp in Sources */,
 				670BB020562580B8739A5080 /* arctic_platform_pi_fatal.cpp in Sources */,

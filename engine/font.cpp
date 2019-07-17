@@ -32,6 +32,7 @@
 #include "engine/font.h"
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
+#include "engine/unicode.h"
 
 namespace arctic {
 
@@ -113,55 +114,6 @@ void BmFontBinKerningPair::Log() {
   std::cerr << "\tsecond=" << second;
   std::cerr << "\tamount=" << amount;
   std::cerr << std::endl;
-}
-
-void Utf32Reader::Reset(const Ui8 *data) {
-  begin = data;
-  p = data;
-}
-
-void Utf32Reader::Rewind() {
-  p = begin;
-}
-
-Ui32 Utf32Reader::ReadOne() {
-  while (true) {
-    Ui32 u = 0;
-    if ((p[0] & 0x80) == 0) {
-      // 0xxxxxxx
-      u = Ui32(p[0]);
-      if (p[0] == 0) {
-        return 0;
-      }
-      p++;
-      return u;
-    } else if ((p[0] & 0xe0) == 0xc0) {
-      // 110xxxxx 10xxxxxx
-      if ((p[1] & 0xc0) == 0x80) {
-        u = (Ui32(p[0] & 0x1f) << 6) | (Ui32(p[1] & 0x3f));
-        p += 2;
-        return u;
-      }
-    } else if ((p[0] & 0xf0) == 0xe0) {
-      // 1110xxxx 10xxxxxx 10xxxxxx
-      if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80) {
-        u = (Ui32(p[0] & 0x0f) << 12) | (Ui32(p[1] & 0x3f) << 6) |
-          (Ui32(p[2] & 0x3f));
-        p += 3;
-        return u;
-      }
-    } else if ((p[0] & 0xf8) == 0xf0) {
-      // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-      if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80 &&
-        (p[3] & 0xc0) == 0x80) {
-        u = (Ui32(p[0] & 0x07) << 18) | (Ui32(p[1] & 0x3f) << 12) |
-          (Ui32(p[2] & 0x3f) << 6) | (Ui32(p[3] & 0x3f));
-        p += 4;
-        return u;
-      }
-    }
-    p++;
-  }
 }
 
 void Font::CreateEmpty(Si32 base_to_top, Si32 line_height) {

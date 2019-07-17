@@ -197,6 +197,9 @@
     <ClInclude Include="..\engine\easy_sprite.h" />
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\glcorearb.h" />
+    <ClInclude Include="..\engine\glext.h" />
+    <ClInclude Include="..\engine\unicode.h" />
     <ClInclude Include="..\engine\csv.h" />
     <ClInclude Include="..\engine\arctic_platform_fatal.h" />
     <ClInclude Include="..\engine\test_main.h" />
@@ -241,6 +244,11 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_es_egl.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_filesystem.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_input.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_opengl_glx.cpp" />
+    <ClCompile Include="..\engine\unicode.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi.cpp" />
     <ClCompile Include="..\engine\miniz.c" />
     <ClCompile Include="..\engine\csv.cpp" />

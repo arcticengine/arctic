@@ -59,6 +59,7 @@ enum MainMode {
 };
 
 MainMode g_mode_of_operation = kModeCreate;
+bool g_pause_when_done = true;
 
 
 
@@ -357,7 +358,7 @@ std::deque<std::string> GetDirectoryProjects(std::string project_directory) {
   std::deque<std::string> candidates;
   // List selected folder content
   std::deque<DirectoryEntry> entries;
-  GetDirectoryEntries(g_project_directory.c_str(), &entries);
+  GetDirectoryEntries(project_directory.c_str(), &entries);
 
   // find *.xcodeproj folder and *.vcxproj files
   std::string xcode_ending = ".xcodeproj";
@@ -593,6 +594,10 @@ bool ShowProgress() {
               reinterpret_cast<const Ui8*>(content.data()), content.size());
         }
         g_progress.append(u8"Project created OK\n");
+
+        if (!g_pause_when_done) {
+          return false;
+        }
       }
         break;
       case 9:
@@ -1096,6 +1101,10 @@ bool ShowUpdateProgress() {
         }
         g_progress.append(u8"Visual Studio project updated OK\n");
         g_progress.append(u8"All Done\n");
+
+        if (!g_pause_when_done) {
+          return false;
+        }
       }
         break;
       default:
@@ -1135,24 +1144,61 @@ void EasyMain() {
     g_deprecated_files.push_back(csv.GetRow(i)->GetValue(0, std::string("")));
   }
 
+  for (Si64 i = 0; i < GetEngine()->GetArgc(); ++i) {
+    Log("Argument: ", GetEngine()->GetArgv()[i]);
+  }
+
+  bool is_mode_of_operation_set = false;
+  bool is_project_name_set = false;
+  bool is_project_directory_set = false;
+  if (GetEngine()->GetArgc() == 3) {
+    if (GetEngine()->GetArgv()[1] == std::string("create")) {
+      g_mode_of_operation = kModeCreate;
+      is_mode_of_operation_set = true;
+      
+      if (strlen(GetEngine()->GetArgv()[2]) > 0) {
+        g_project_name.assign(GetEngine()->GetArgv()[2]);
+        // TODO(Huldra): validate g_project_name
+        is_project_name_set = true;
+        g_pause_when_done = false;
+      }
+    }
+    if (GetEngine()->GetArgv()[1] == std::string("update")) {
+      g_mode_of_operation = kModeUpdate;
+      is_mode_of_operation_set = true;
+
+      if (strlen(GetEngine()->GetArgv()[2]) > 0) {
+        g_project_directory.assign(GetEngine()->GetArgv()[2]);
+        // TODO(Huldra): validate g_project_directory
+        is_project_directory_set = true;
+        g_pause_when_done = false;
+      }
+    }
+  }
 
   if (!GetCurrentPath(&g_current_directory)) {
     //
   }
 
-  if (!GetOperationMode()) {
-    return;
+  if (!is_mode_of_operation_set) {
+    if (!GetOperationMode()) {
+      return;
+    }
   }
   if (g_mode_of_operation == kModeCreate) {
-    if (!GetProjectName()) {
-      return;
+    if (!is_project_name_set) {
+      if (!GetProjectName()) {
+        return;
+      }
     }
     if (!ShowProgress()) {
       return;
     }
   } else if (g_mode_of_operation == kModeUpdate) {
-    if (!SelectProject()) {
-      return;
+    if (!is_project_directory_set) {
+      if (!SelectProject()) {
+        return;
+      }
     }
   }
   if (!ShowUpdateProgress()) {
