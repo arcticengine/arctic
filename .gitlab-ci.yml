@@ -31,3 +31,10 @@ arctic_wizard:
   - make all
   - ./tests
   - cd ..
+  - cd wizard
+  - ./wizard create test_project
+  - cd ../../test_project
+  - cmake .
+  - make all
+
+
