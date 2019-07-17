@@ -24,6 +24,9 @@
 // IN THE SOFTWARE.
 
 #include "engine/unicode.h"
+
+#include <cstring>
+
 #include "engine/arctic_types.h"
 
 namespace arctic {
