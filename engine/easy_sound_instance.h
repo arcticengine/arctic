@@ -38,7 +38,6 @@ enum SoundDataFormat {
 };
 
 class SoundInstance {
-  double duration_;
   SoundDataFormat format_;
   std::vector<Ui8> data_;
   std::atomic<Si32> playing_count_;
