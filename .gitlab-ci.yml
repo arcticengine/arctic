@@ -1,29 +1,14 @@
 image: gcc
 
 stages:
-  - prepare
   - build
   - test
 
-prepare_packages:
-  stage: prepare
-  script:
-    - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
-
-build_ap:
-  stage: build
-  script:
-    - cd antarctica_pyramids
-    - cmake .
-    - make all
-    - cmake -DCMAKE_BUILD_TYPE=Debug .
-    - make all
-    - cd ..
-
-
 build_wizard:
   stage: build
+  before_script:
+    - apt-get update --yes
+    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
   script:
     - cd wizard
     - cmake .
@@ -32,8 +17,24 @@ build_wizard:
     - make all
     - cd ..
 
+build_ap:
+  stage: build
+  before_script:
+    - apt-get update --yes
+    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
+  script:
+    - cd antarctica_pyramids
+    - cmake .
+    - make all
+    - cmake -DCMAKE_BUILD_TYPE=Debug .
+    - make all
+    - cd ..
+
 build_filetest:
   stage: build
+  before_script:
+    - apt-get update --yes
+    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
   script:
     - cd filetest
     - cmake .
@@ -44,6 +45,9 @@ build_filetest:
 
 build_tests:
   stage: build
+  before_script:
+    - apt-get update --yes
+    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
   script:
     - cd tests
     - cmake .
@@ -55,6 +59,9 @@ build_tests:
 
 run_tests:
   stage: test
+  before_script:
+    - apt-get update --yes
+    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
   script:
     - cd tests
     - cmake .
@@ -67,6 +74,9 @@ run_tests:
 
 create_project:
   stage: test
+  before_script:
+    - apt-get update --yes
+    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
   script:
     - cd wizard
     - ./wizard create test_project
