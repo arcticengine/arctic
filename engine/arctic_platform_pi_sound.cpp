@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <iostream>
 #include <mutex>  // NOLINT
 #include <thread>  // NOLINT
 #include <vector>
@@ -110,12 +111,12 @@ bool SoundCheck(bool condition, const char *error_message,
     return true;
   }
   size_t size = 1 +
-    strlen(message) +
-    (message_postfix ? strlen(message_postfix) : 0);
+    strlen(error_message) +
+    (error_message_postfix ? strlen(error_message_postfix) : 0);
   char *full_message = static_cast<char *>(malloc(size));
   memset(full_message, 0, size);
-  snprintf(full_message, size, "%s%s", message,
-      (message_postfix ? message_postfix : ""));
+  snprintf(full_message, size, "%s%s", error_message,
+      (error_message_postfix ? error_message_postfix : ""));
   std::cerr << "Arctic Engine Sound ERROR: " << full_message << std::endl;
   // Signal error and stop the mixer
   g_sound_mixer_state.is_operational = false;
@@ -241,8 +242,8 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
 
     unsigned char *out_buffer = (unsigned char *)data->samples.data();
     int err = snd_pcm_writei(handle, out_buffer, data->period_size);
-    is_ok &&= SoundCheck(err >= 0, "Sound write error: ", snd_strerror(err));
-    is_ok &&= SoundCheck(err == data->period_size,
+    is_ok = is_ok && SoundCheck(err >= 0, "Sound write error: ", snd_strerror(err));
+    is_ok = is_ok && SoundCheck(err == data->period_size,
         "Sound write error: written != expected.");
   }
 }
@@ -260,7 +261,7 @@ void SoundMixerThreadFunction() {
         continue;
       } else if (err == -EPIPE) {
         err = snd_pcm_prepare(g_data.handle);
-        is_ok &&= SoundCheck(err >= 0, "Can't recover sound from underrun: ",
+        is_ok = is_ok && SoundCheck(err >= 0, "Can't recover sound from underrun: ",
             snd_strerror(err));
       } else if (err == -ESTRPIPE) {
         while (true) {
@@ -272,11 +273,11 @@ void SoundMixerThreadFunction() {
         }
         if (err < 0) {
           err = snd_pcm_prepare(g_data.handle);
-          is_ok &&= SoundCheck(err >= 0, "Can't recover sound from suspend: ",
+          is_ok = is_ok && SoundCheck(err >= 0, "Can't recover sound from suspend: ",
               snd_strerror(err));
         }
       } else {
-        is_ok &&= SoundCheck(err >= 0, "Can't write sound data: ",
+        is_ok = is_ok && SoundCheck(err >= 0, "Can't write sound data: ",
             snd_strerror(err));
       }
       out_buffer += err * 2;
@@ -305,16 +306,16 @@ void StartSoundMixer(const char* output_device_name) {
     if (err == -ENOENT) {
       err = snd_pcm_open(&g_data.handle, "plughw:0,0",
           SND_PCM_STREAM_PLAYBACK, 0);
-      is_ok &&= SoundCheck(err >= 0, "Can't open 'plughw:0,0' sound device: ",
+      is_ok = is_ok && SoundCheck(err >= 0, "Can't open 'plughw:0,0' sound device: ",
           snd_strerror(err));
     } else {
-      is_ok &&= SoundCheck(err >= 0, "Can't open 'default' sound device: ",
+      is_ok = is_ok && SoundCheck(err >= 0, "Can't open 'default' sound device: ",
           snd_strerror(err));
     }
   } else {
     err = snd_pcm_open(&g_data.handle, output_device_name,
         SND_PCM_STREAM_PLAYBACK, 0);
-    is_ok &&= SoundCheck(err >= 0, "Can't open the specified sound device: ",
+    is_ok = is_ok && SoundCheck(err >= 0, "Can't open the specified sound device: ",
         snd_strerror(err));
   }
   if (!is_ok) {
@@ -322,42 +323,42 @@ void StartSoundMixer(const char* output_device_name) {
   }
 
   err = snd_pcm_hw_params_any(g_data.handle, hwparams);
-  is_ok &&= SoundCheck(err >= 0, "Can't get sound configuration space: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't get sound configuration space: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_hw_params_set_rate_resample(g_data.handle, hwparams, 1);
-  is_ok &&= SoundCheck(err >= 0, "Can't set sound resampling: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set sound resampling: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_hw_params_set_access(g_data.handle, hwparams,
       SND_PCM_ACCESS_RW_INTERLEAVED);
-  is_ok &&= SoundCheck(err >= 0, "Can't set access type for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set access type for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_hw_params_set_format(g_data.handle, hwparams,
       SND_PCM_FORMAT_S16);
-  is_ok &&= SoundCheck(err >= 0, "Can't set sample format for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set sample format for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_hw_params_set_channels(g_data.handle, hwparams, 2);
-  is_ok &&= SoundCheck(err >= 0, "Can't set 2 channels for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set 2 channels for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   unsigned int rate = 44100;
   err = snd_pcm_hw_params_set_rate_near(g_data.handle, hwparams, &rate, 0);
-  is_ok &&= SoundCheck(err >= 0, "Can't set 44100 Hz rate for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set 44100 Hz rate for sound: ",
       snd_strerror(err));
-  is_ok &&= SoundCheck(rate == 44100,
+  is_ok = is_ok && SoundCheck(rate == 44100,
       "Sound output rate doesn't match requested 44100 Hz.");
   if (!is_ok) {
     return;
@@ -365,14 +366,14 @@ void StartSoundMixer(const char* output_device_name) {
   int dir;
   err = snd_pcm_hw_params_set_buffer_time_near(g_data.handle, hwparams,
       &g_buffer_time_us, &dir);
-  is_ok &&= SoundCheck(err >= 0, "Can't set buffer time for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set buffer time for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   snd_pcm_uframes_t size;
   err = snd_pcm_hw_params_get_buffer_size(hwparams, &size);
-  is_ok &&= SoundCheck(err >= 0, "Can't get buffer size for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't get buffer size for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
@@ -380,46 +381,46 @@ void StartSoundMixer(const char* output_device_name) {
   g_data.buffer_size = size;
   err = snd_pcm_hw_params_set_period_time_near(g_data.handle, hwparams,
       &g_period_time_us, &dir);
-  is_ok &&= SoundCheck(err >= 0, "Can't set period time for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set period time for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_hw_params_get_period_size(hwparams, &size, &dir);
-  is_ok &&= SoundCheck(err >= 0, "Can't get period size for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't get period size for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   g_data.period_size = size;
   err = snd_pcm_hw_params(g_data.handle, hwparams);
-  is_ok &&= SoundCheck(err >= 0, "Can't set hw params for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set hw params for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
 
   err = snd_pcm_sw_params_current(g_data.handle, swparams);
-  is_ok &&= SoundCheck(err >= 0,
+  is_ok = is_ok && SoundCheck(err >= 0,
       "Can't determine current sw params for sound: ", snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams, 512);
-  is_ok &&= SoundCheck(err >= 0, "Can't set start threshold mode for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set start threshold mode for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_sw_params_set_avail_min(g_data.handle, swparams,
       512);
-  is_ok &&= SoundCheck(err >= 0, "Can't set avail min for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set avail min for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_sw_params(g_data.handle, swparams);
-  is_ok &&= SoundCheck(err >= 0, "Can't set sw params for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0, "Can't set sw params for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
@@ -434,7 +435,7 @@ void StartSoundMixer(const char* output_device_name) {
   if (err == -ENOSYS) {
     sound_thread = std::thread(arctic::SoundMixerThreadFunction);
   } else {
-    is_ok &&= SoundCheck(err >= 0,
+    is_ok = is_ok && SoundCheck(err >= 0,
         "Can't register async pcm handler for sound:",
         snd_strerror(err));
     if (!is_ok) {
@@ -443,9 +444,9 @@ void StartSoundMixer(const char* output_device_name) {
     for (int count = 0; count < 3; count++) {
       err = snd_pcm_writei(g_data.handle, g_data.samples.data(),
           g_data.period_size);
-      is_ok &&= SoundCheck(err >= 0, "Sound pcm write error: ",
+      is_ok = is_ok && SoundCheck(err >= 0, "Sound pcm write error: ",
           snd_strerror(err));
-      is_ok &&= SoundCheck(err == g_data.period_size,
+      is_ok = is_ok && SoundCheck(err == g_data.period_size,
           "Sound pcm write error: written != expected");
       if (!is_ok) {
         return;
@@ -453,7 +454,7 @@ void StartSoundMixer(const char* output_device_name) {
     }
     if (snd_pcm_state(g_data.handle) == SND_PCM_STATE_PREPARED) {
       err = snd_pcm_start(g_data.handle);
-      is_ok &&= SoundCheck(err >= 0, "Sound pcm start error: ",
+      is_ok = is_ok && SoundCheck(err >= 0, "Sound pcm start error: ",
           snd_strerror(err));
       if (!is_ok) {
         return;
@@ -496,7 +497,7 @@ std::deque<AudioDeviceInfo> SoundPlayerImpl::GetDeviceList() {
   std::deque<AudioDeviceInfo> list;
   void **hints;
   int err = snd_device_name_hint(-1, "pcm", &hints);
-  is_ok &&= SoundCheck(err >= 0, "Can't list sound devices: ",
+  bool is_ok = SoundCheck(err >= 0, "Can't list sound devices: ",
       snd_strerror(err));
   if (!is_ok) {
     return list;
