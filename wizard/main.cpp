@@ -457,6 +457,18 @@ bool SelectProject() {
   return false;
 }
 
+void PatchAndCopyTemplateFile(std::string file_name) {
+  std::vector<Ui8> data = ReadFile(
+      (g_template + "/" + file_name).c_str());
+  std::string name = file_name;
+  ReplaceAll("template_project_name", g_project_name, &name);
+  data.push_back('\0');
+  std::string content = reinterpret_cast<char*>(data.data());
+  ReplaceAll("template_project_name", g_project_name, &content);
+  WriteFile((g_project_directory + "/" + name).c_str(),
+      reinterpret_cast<const Ui8*>(content.data()), content.size());
+}
+
 bool ShowProgress() {
   Si32 step = 0;
   char text[1 << 20];
@@ -538,7 +550,7 @@ bool ShowProgress() {
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
           std::string name = files[idx];
           ReplaceAll("template_project_name", g_project_name, &name);
-          MakeDirectory((g_path + "/" + name).c_str());
+          MakeDirectory((g_project_directory + "/" + name).c_str());
         }
         g_progress.append(u8"Project structure created OK\n");
       }
@@ -556,7 +568,7 @@ bool ShowProgress() {
           auto data = ReadFile((g_template + "/" + files[idx]).c_str());
           std::string name = files[idx];
           ReplaceAll("template_project_name", g_project_name, &name);
-          WriteFile((g_path + "/" + name).c_str(), data.data(), data.size());
+          WriteFile((g_project_directory + "/" + name).c_str(), data.data(), data.size());
         }
         g_progress.append(u8"Data files copied OK\n");
       }
@@ -583,17 +595,10 @@ bool ShowProgress() {
                 "xcshareddata/xcschemes/Release.xcscheme"
         };
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
-          std::vector<Ui8> data = ReadFile(
-              (g_template + "/" + files[idx]).c_str());
-          std::string name = files[idx];
-          ReplaceAll("template_project_name", g_project_name, &name);
-          data.push_back('\0');
-          std::string content = reinterpret_cast<char*>(data.data());
-          ReplaceAll("template_project_name", g_project_name, &content);
-          WriteFile((g_path + "/" + name).c_str(),
-              reinterpret_cast<const Ui8*>(content.data()), content.size());
+          PatchAndCopyTemplateFile(files[idx]);
         }
         g_progress.append(u8"Project created OK\n");
+
 
         if (!g_pause_when_done) {
           return false;
@@ -1100,12 +1105,28 @@ bool ShowUpdateProgress() {
             resulting_file.str().size());
         }
         g_progress.append(u8"Visual Studio project updated OK\n");
-        g_progress.append(u8"All Done\n");
-
-        if (!g_pause_when_done) {
-          return false;
-        }
       }
+        break;
+      case 6:
+        g_template = g_current_directory + "/template_project_name";
+        if (DoesDirectoryExist(g_template.c_str()) == 1) {
+          g_progress.append(u8"Template found OK\n");
+        } else {
+          g_progress.append(u8"\003Can't find template directory \"");
+          g_progress.append(g_template);
+          g_progress.append(u8"\". ERROR.\n");
+          step = 100500;
+        }
+        break;
+      case 7: {
+          PatchAndCopyTemplateFile("CMakeLists.txt");
+          g_progress.append(u8"Latest CMakeLists.txt applied OK\n");
+          g_progress.append(u8"All Done\n");
+          if (!g_pause_when_done) {
+            return false;
+          }
+        }
+
         break;
       default:
         break;
