@@ -54,6 +54,8 @@ extern Si32 g_window_width;
 extern Si32 g_window_height;
 extern Display *g_x_display;
 extern Window g_x_window;
+extern XIM g_x_im;
+extern XIC g_x_ic;
 
 KeyCode TranslateKeyCode(KeySym ks) {
   if (ks >= XK_a && ks <= XK_z) {
@@ -315,11 +317,13 @@ void OnMouseWheel(bool is_down) {
   PushInputMessage(msg);
 }
 
-void OnKey(KeyCode key, bool is_down) {
+void OnKey(KeyCode key, bool is_down, char *characters) {
   InputMessage msg;
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = key;
   msg.keyboard.key_state = (is_down ? 1 : 2);
+  strncpy(msg.keyboard.characters, characters, sizeof(msg.keyboard.characters));
+  msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
   PushInputMessage(msg);
 }
 
@@ -339,7 +343,13 @@ void PumpMessages() {
         }
       }
       bool is_down = (ev.type == KeyPress);
-      OnKey(key, is_down);
+      Status status = 0;
+      KeySym keysym = 0;
+      char buf[20];
+      memset(buf, 0, sizeof(buf));
+      int count = Xutf8LookupString(g_x_ic, (XKeyPressedEvent*)&ev, buf, 20, &keysym, &status);
+      buf[std::min(count, 19)] = '\0';
+      OnKey(key, is_down, buf);
     }
   }
 

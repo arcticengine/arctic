@@ -67,6 +67,8 @@ Si32 g_window_width = 0;
 Si32 g_window_height = 0;
 Display *g_x_display;
 Window g_x_window;
+XIM g_x_im;
+XIC g_x_ic;
 
 static Colormap g_x_color_map;
 static XVisualInfo *g_glx_visual;
@@ -170,6 +172,16 @@ void CreateMainWindow(SystemInfo *system_info) {
   XSetIconName(g_x_display, g_x_window, title);
   XMapWindow(g_x_display, g_x_window);
 
+
+  g_x_im = XOpenIM(g_x_display, NULL, NULL, NULL);
+  Check(g_x_im != NULL, "Could not open input method");
+  g_x_ic = XCreateIC(g_x_im, XNInputStyle,
+      XIMPreeditNothing | XIMStatusNothing, XNClientWindow,
+      g_x_window, NULL);
+  Check(g_x_ic != NULL, "Could not open IC");
+  XSetICFocus(g_x_ic);
+
+
   glXMakeCurrent(g_x_display, g_x_window, g_glx_context);
 
   glClearColor(1.0F, 1.0F, 1.0F, 0.0F);
@@ -219,6 +231,9 @@ void SetFullScreen(bool/* is_enable*/) {
   return;
 }
 
+void SetCursorVisible(bool/* is_enable*/) {
+  return;
+}
 
 }  // namespace arctic
 

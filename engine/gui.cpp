@@ -26,6 +26,7 @@
 #include "engine/gui.h"
 
 #include <algorithm>
+#include <cstring>
 #include "engine/easy.h"
 #include "engine/arctic_platform.h"
 
