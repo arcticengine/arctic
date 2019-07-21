@@ -167,7 +167,7 @@ bool GetOperationMode() {
 
     const char *welcome = u8"The Snow Wizard\n\n"
     "This wizard can create a new Arctic Engine project"
-      "for you or update an existing one.\n\n"
+      " for you or update an existing one.\n\n"
     "Press C to Create a new project.\n"
     "Press U to Update an existing project.\n"
     "Press ESC to leave the Snow Wizard.";

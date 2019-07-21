@@ -1,4 +1,4 @@
-![Arctic Engine](doc/logo_black_on_transparent.png)
+﻿![Arctic Engine](doc/logo_black_on_transparent.png)
 ### Designed to give you control and not take anything away.
 
 Arctic Engine is an open-source free game engine released under the MIT license. Arctic Engine is implemented in C++ and focuses on simplicity.
@@ -45,8 +45,9 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 #### ArcticOne font:
 
-* Huldra
 * Barry Schwartz
+* Huldra
+* Vitaliy Manushkin
 
 #### Third-party data:
 
