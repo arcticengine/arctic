@@ -609,7 +609,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           }
           if (message.keyboard.characters[0]) {
             text_.insert(cursor_pos_, message.keyboard.characters);
-            cursor_pos_ += strlen(message.keyboard.characters);
+            cursor_pos_ += static_cast<Si32>(strlen(message.keyboard.characters));
           } else {
             //text_.insert(cursor_pos_, 1, static_cast<char>(key));
             //cursor_pos_++;

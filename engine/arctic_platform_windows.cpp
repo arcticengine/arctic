@@ -60,6 +60,7 @@
 #include "engine/log.h"
 #include "engine/rgb.h"
 #include "engine/vec3f.h"
+#include "engine/unicode.h"
 
 #pragma comment(lib, "glu32.lib")
 #pragma comment(lib, "OpenGL32.lib")
@@ -335,6 +336,7 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = key;
   msg.keyboard.key_state = (is_down ? 1 : 2);
+  msg.keyboard.characters[0] = '\0';
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = 0;
   PushInputMessage(msg);
@@ -360,6 +362,7 @@ void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = kKeyCount;
   msg.keyboard.key_state = 0;
+  msg.keyboard.characters[0] = '\0';
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = z_delta;
   PushInputMessage(msg);
@@ -420,6 +423,35 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = key;
   msg.keyboard.key_state = (is_down ? 1 : 2);
+  msg.keyboard.characters[0] = '\0';
+  PushInputMessage(msg);
+}
+
+void OnChar(WPARAM word_param, LPARAM long_param) {
+  switch (word_param) {
+  case 0x08:  // backspace
+    return;
+  case 0x0A:  // linefeed 
+    return;
+  case 0x1B:  // escape
+    return;
+  case 0x09:  // tab
+    break;
+  case 0x0D:  // carriage return
+    return;
+  default:  // isplayable characters
+    break;
+  }
+  InputMessage msg;
+  msg.kind = InputMessage::kKeyboard;
+  msg.keyboard.key = kKeyUnknown;
+  msg.keyboard.key_state = 1;
+  char utf16[16];
+  memset(utf16, 0, sizeof(utf16));
+  memcpy(utf16, &word_param, sizeof(word_param));
+  memset(msg.keyboard.characters, 0, sizeof(msg.keyboard.characters));
+  strncpy(msg.keyboard.characters, Utf16ToUtf8(utf16).c_str(), sizeof(msg.keyboard.characters));
+  msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
   PushInputMessage(msg);
 }
 
@@ -441,6 +473,9 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
     break;
   case WM_KEYDOWN:
     arctic::OnKey(word_param, long_param, true);
+    break;
+  case WM_CHAR:
+    arctic::OnChar(word_param, long_param);
     break;
   case WM_SYSKEYDOWN:
     if (word_param == VK_RETURN && (HIWORD(long_param) & KF_ALTDOWN)) {
