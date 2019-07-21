@@ -520,23 +520,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (message.kind == InputMessage::kKeyboard) {
       if (message.keyboard.key_state == 1) {
         Ui32 key = message.keyboard.key;
-        if (is_digits_ ?
-            (key >= kKey0 && key <= kKey9) :
-            (key >= kKeySpace && key <= kKeyGraveAccent)) {
-          *in_out_is_applied = true;
-          if (key >= kKeyA && key <= kKeyZ) {
-            if (!message.keyboard.state[kKeyShift]) {
-              key = key - kKeyA + Ui32('a');
-            }
-          }
-          if (selection_begin_ != selection_end_) {
-            text_.erase(selection_begin_, selection_end_ - selection_begin_);
-            cursor_pos_ = selection_begin_;
-            selection_end_ = selection_begin_;
-          }
-          text_.insert(cursor_pos_, 1, static_cast<char>(key));
-          cursor_pos_++;
-        } else if (key == kKeyBackspace) {
+        if (key == kKeyBackspace) {
           *in_out_is_applied = true;
           if (text_.length()) {
             if (selection_begin_ != selection_end_) {
@@ -605,6 +589,30 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               selection_begin_ = cursor_pos_;
               selection_end_ = cursor_pos_;
             }
+          }
+        } else if (key == kKeyEnter) {
+          // skip
+        } else if (is_digits_ ? (key >= kKey0 && key <= kKey9) : true) {
+            //(key >= kKeySpace && key <= kKeyGraveAccent)) {
+          *in_out_is_applied = true;
+          if (!message.keyboard.characters[0]) {
+            if (key >= kKeyA && key <= kKeyZ) {
+              if (!message.keyboard.state[kKeyShift]) {
+                key = key - kKeyA + Ui32('a');
+              }
+            }
+          }
+          if (selection_begin_ != selection_end_) {
+            text_.erase(selection_begin_, selection_end_ - selection_begin_);
+            cursor_pos_ = selection_begin_;
+            selection_end_ = selection_begin_;
+          }
+          if (message.keyboard.characters[0]) {
+            text_.insert(cursor_pos_, message.keyboard.characters);
+            cursor_pos_ += strlen(message.keyboard.characters);
+          } else {
+            //text_.insert(cursor_pos_, 1, static_cast<char>(key));
+            //cursor_pos_++;
           }
         }
       }

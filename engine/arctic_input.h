@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 - 2017 Huldra
+// Copyright (c) 2016 - 2019 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -175,6 +175,7 @@ struct InputMessage {
     Ui32 state[kKeyCount];
     Ui32 key;
     Ui32 key_state;
+    char characters[16];
     Ui32 queue[1024];
     Ui32 queueLen;
   };

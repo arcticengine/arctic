@@ -58,7 +58,7 @@ extern void EasyMain();
 
 namespace arctic {
   KeyCode TranslateKeyCode(Ui32 key_unicode);
-  void PushInputKey(KeyCode key, bool is_down);
+  void PushInputKey(KeyCode key, bool is_down, std::string characters);
 }  // namespace arctic
 
 @interface ArcticAppDelegate : NSObject {
@@ -204,16 +204,16 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
   //bool is_command = (modifier_flags & NSEventModifierFlagCommand);
 
   if (is_caps_lock != was_caps_lock) {
-    arctic::PushInputKey(arctic::kKeyCapsLock, is_caps_lock);
+    arctic::PushInputKey(arctic::kKeyCapsLock, is_caps_lock, "");
   }
   if (is_shift != was_shift) {
-    arctic::PushInputKey(arctic::kKeyShift, is_shift);
+    arctic::PushInputKey(arctic::kKeyShift, is_shift, "");
   }
   if (is_control != was_control) {
-    arctic::PushInputKey(arctic::kKeyControl, is_control);
+    arctic::PushInputKey(arctic::kKeyControl, is_control, "");
   }
   if (is_option != was_option) {
-    arctic::PushInputKey(arctic::kKeyAlt, is_option);
+    arctic::PushInputKey(arctic::kKeyAlt, is_option, "");
   }
   //    if (is_command != was_command) {
   //        PushInputKey(kKeyControl, is_command);
@@ -235,7 +235,7 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
     if (key == arctic::kKeyUnknown) {
       NSLog(@"Unknown character key_unicode: %d", key_unicode);
     }
-    PushInputKey(key, true);
+    PushInputKey(key, true, [[theEvent characters] UTF8String]);
   }
 }
 
@@ -244,7 +244,7 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
   if ([characters length] > 0) {
     unsigned key_unicode = [characters characterAtIndex: 0];
     arctic::KeyCode key = arctic::TranslateKeyCode(key_unicode);
-    PushInputKey(key, false);
+    PushInputKey(key, false, "");
   }
 }
 
@@ -271,6 +271,7 @@ isScroll: (bool)is_scroll {
   arctic::InputMessage msg;
   msg.kind = arctic::InputMessage::kMouse;
   msg.keyboard.key = key_code;
+  msg.keyboard.characters[0] = '\0';
   msg.keyboard.key_state = state;
   msg.mouse.pos = pos;
   if (is_scroll) {
@@ -396,10 +397,16 @@ void Fatal(const char *message, const char *message_postfix) {
   exit(1);
 }
 
-void PushInputKey(KeyCode key, bool is_down) {
+void PushInputKey(KeyCode key, bool is_down, std::string characters) {
   InputMessage msg;
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = key;
+  if (is_down) {
+    strncpy(msg.keyboard.characters, characters.c_str(), 16);
+    msg.keyboard.characters[15] = '\0';
+  } else {
+    msg.keyboard.characters[0] = '\0';
+  }
   msg.keyboard.key_state = (is_down ? 1 : 2);
   PushInputMessage(msg);
 }
