@@ -107,6 +107,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4201</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -124,6 +125,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4201</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -146,6 +148,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CallingConvention>FastCall</CallingConvention>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -171,6 +174,7 @@
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CallingConvention>FastCall</CallingConvention>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -190,29 +194,28 @@
     <ClInclude Include="..\engine\arctic_types.h" />
     <ClInclude Include="..\engine\bound2f.h" />
     <ClInclude Include="..\engine\bound3f.h" />
-    <ClInclude Include="..\engine\byte_array.h" />
     <ClInclude Include="..\engine\easy.h" />
     <ClInclude Include="..\engine\easy_sound.h" />
     <ClInclude Include="..\engine\easy_sound_instance.h" />
     <ClInclude Include="..\engine\easy_sprite.h" />
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\engine.h" />
-    <ClInclude Include="..\engine\arctic_mixer.h" />
-    <ClInclude Include="..\engine\arctic_platform_byteorder.h" />
-    <ClInclude Include="..\engine\arctic_platform_fatal.h" />
-    <ClInclude Include="..\engine\arctic_platform_macosx_sound.mm" />
-    <ClInclude Include="..\engine\arctic_platform_sound.h" />
     <ClInclude Include="..\engine\csv.h" />
-    <ClInclude Include="..\engine\glcorearb.h" />
-    <ClInclude Include="..\engine\glext.h" />
-    <ClInclude Include="..\engine\gui.h" />
-    <ClInclude Include="..\engine\miniz.h" />
-    <ClInclude Include="..\engine\ofbx.h" />
+    <ClInclude Include="..\engine\arctic_platform_fatal.h" />
     <ClInclude Include="..\engine\test_main.h" />
-    <ClInclude Include="..\engine\unicode.h" />
     <ClInclude Include="..\engine\stb_vorbis.inc" />
     <ClInclude Include="..\engine\test.h" />
+    <ClInclude Include="..\engine\miniz.h" />
+    <ClInclude Include="..\engine\gui.h" />
+    <ClInclude Include="..\engine\unicode.h" />
+    <ClInclude Include="..\engine\arctic_mixer.h" />
+    <ClInclude Include="..\engine\glext.h" />
+    <ClInclude Include="..\engine\arctic_platform_macosx_sound.mm" />
+    <ClInclude Include="..\engine\ofbx.h" />
     <ClInclude Include="..\engine\arctic_platform_macosx.mm" />
+    <ClInclude Include="..\engine\glcorearb.h" />
+    <ClInclude Include="..\engine\arctic_platform_byteorder.h" />
+    <ClInclude Include="..\engine\arctic_platform_sound.h" />
     <ClInclude Include="..\engine\font.h" />
     <ClInclude Include="..\engine\frustum3f.h" />
     <ClInclude Include="..\engine\log.h" />
@@ -237,28 +240,26 @@
     <ClCompile Include="..\engine\arctic_input.cpp" />
     <ClCompile Include="..\engine\arctic_math.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows.cpp" />
-    <ClCompile Include="..\engine\byte_array.cpp" />
     <ClCompile Include="..\engine\easy.cpp" />
     <ClCompile Include="..\engine\easy_sound.cpp" />
     <ClCompile Include="..\engine\easy_sound_instance.cpp" />
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
-    <ClCompile Include="..\engine\arctic_mixer.cpp" />
+    <ClCompile Include="..\engine\miniz.c" />
+    <ClCompile Include="..\engine\csv.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_byteorder.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_input.cpp" />
+    <ClCompile Include="..\engine\arctic_mixer.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_es_egl.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_fatal.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_pi_filesystem.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_pi_input.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_pi_opengl_glx.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_pi_sound.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp" />
-    <ClCompile Include="..\engine\csv.cpp" />
     <ClCompile Include="..\engine\gui.cpp" />
-    <ClCompile Include="..\engine\miniz.c" />
+    <ClCompile Include="..\engine\arctic_platform_pi_filesystem.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_opengl_glx.cpp" />
     <ClCompile Include="..\engine\ofbx.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_sound.cpp" />
     <ClCompile Include="..\engine\unicode.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_pi.cpp" />
     <ClCompile Include="..\engine\font.cpp" />
     <ClCompile Include="..\engine\log.cpp" />
     <ClCompile Include="main.cpp">

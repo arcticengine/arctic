@@ -146,6 +146,7 @@
 #include <exception>
 #endif  //  __cplusplus
 
+#include "engine/easy.h"
 
 // Note our global private identifiers end with '__' to mitigate risk of clash
 // with the unit tests implementation.
@@ -169,7 +170,7 @@ extern "C" {
 
 #ifndef TEST_NO_MAIN
 
-  static char* test_argv0__ = NULL;
+  static const char* test_argv0__ = NULL;
   static size_t test_list_size__ = 0;
   static const struct test__** tests__ = NULL;
   static char* test_flags__ = NULL;
@@ -569,7 +570,7 @@ extern "C" {
     test_current_unit__ = test;
     test_current_already_logged__ = 0;
 
-    if (!test_no_exec__) {
+/*    if (!test_no_exec__) {
 #if defined(ACUTEST_UNIX__)
 
       pid_t pid;
@@ -670,10 +671,10 @@ extern "C" {
 
 #endif  // ACUTEST_WIN__
 
-    } else {
+    } else {*/
       // Child processes suppressed through --no-exec.
       failed = (test_do_run__(test) != 0);
-    }
+    //}
 
     test_current_unit__ = NULL;
 
@@ -774,10 +775,11 @@ extern "C" {
   }
 #endif  // ACUTEST_LINUX__
 
-  int main(int argc, char** argv) {
+  void EasyMainC() {
+    arctic::Si64 argc = arctic::easy::GetEngine()->GetArgc();
+    const char *const *argv = arctic::easy::GetEngine()->GetArgv();
 //    int i;
     int seen_double_dash = 0;
-
     test_argv0__ = argv[0];
 
 #if defined ACUTEST_UNIX__
@@ -854,6 +856,13 @@ extern "C" {
           || strcmp(argv[i], "-l") == 0) {
         test_list_names__();
         exit(0);
+      } else if (strcmp(argv[i], "-NSDocumentRevisionsDebugMode") == 0) {
+        i++;
+        if (i < argc) {
+          if (strcmp(argv[i], "YES") == 0) {
+            i++;
+          }
+        }
       } else {
         fprintf(stderr, "%s: Unrecognized option '%s'\n", argv[0], argv[i]);
         fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
@@ -942,7 +951,9 @@ extern "C" {
     free(tests__);
     free(test_flags__);
 
-    return (test_stat_failed_units__ == 0) ? 0 : 1;
+    if (test_stat_failed_units__ != 0) {
+      exit(1);
+    }
   }
 
 
@@ -952,5 +963,8 @@ extern "C" {
 }  // extern "C"
 #endif  // __cplusplus
 
+void EasyMain() {
+  EasyMainC();
+}
 
 #endif  // ENGINE_TEST_MAIN_H_

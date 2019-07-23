@@ -44,7 +44,24 @@ IF (APPLE)
   FIND_LIBRARY(OPENGL OpenGL)
 ELSE (APPLE)
   find_package(ALSA REQUIRED)
-  find_package(OpenGL REQUIRED)
+
+  find_library(EGL_LIBRARY NAMES EGL)
+  find_path(EGL_INCLUDE_DIR EGL/egl.h)
+  find_library(GLES_LIBRARY NAMES GLESv2)
+  find_path(GLES_INCLUDE_DIR GLES/gl.h)
+  IF (EGL_LIBRARY AND EGL_INCLUDE_DIR AND GLES_LIBRARY AND GLES_INCLUDE_DIR)
+    message(STATUS "GLES EGL mode")
+    set(EGL_MODE "EGL")
+  ELSE ()
+    message(STATUS "OPENGL GLX mode")
+  ENDIF()
+
+  IF (NOT EGL_MODE)
+    #only for opengl glx
+    set (OpenGL_GL_PREFERENCE "LEGACY")
+    find_package(OpenGL REQUIRED)
+  ENDIF (NOT EGL_MODE)
+
   find_package(X11 REQUIRED)
   find_package(Threads REQUIRED)
 ENDIF (APPLE)
@@ -54,11 +71,25 @@ ENDIF (APPLE)
 
 #-D_DEBUG 
 IF (APPLE)
+  add_definitions(
+    -DGL_SILENCE_DEPRECATION
+  )
 ELSE (APPLE)
-add_definitions(
+	IF (EGL_MODE)
+    #only for es egl
+    add_definitions(
+       -DPLATFORM_RPI 
+    )
+  ELSE (EGL_MODE)
+    #only for opengl glx
+    add_definitions(
+       -DPLATFORM_LINUX
+    )
+  ENDIF (EGL_MODE)
+  add_definitions(
    -DGLX
-   -DPLATFORM_RPI 
-)
+   -DGL_GLEXT_PROTOTYPES
+  )
 ENDIF (APPLE)
 
 include_directories(${CMAKE_SOURCE_DIR}/..)
@@ -68,34 +99,47 @@ include_directories(${CMAKE_SOURCE_DIR}/..)
 ########################################
 
 message(STATUS "CompilerId: ${CMAKE_CXX_COMPILER_ID}.")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O2 -Wall -Wtype-limits -Wuninitialized -Wshift-negative-value")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O2")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
     set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
+IF (EGL_MODE)
+  #only for  es egl
+  set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGLESv2 -lEGL")
+ENDIF (EGL_MODE)
+
 ################ Files ################
 #   --   Add files to project.   --   #
 #######################################
 
+
 IF (APPLE)
 file(GLOB SRC_FILES
-#    ${CPP_DIR_1}/*.cpp
-#    ${CPP_DIR_1}/*.mm
+    ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.mm
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ELSE (APPLE)
 file(GLOB SRC_FILES
-#    ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.cpp
+    ${CPP_DIR_1}/*.c
     ${CPP_DIR_2}/*.cpp
+    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
+    ${HEADER_DIR_1}/*.hpp
     ${HEADER_DIR_2}/*.h
+    ${HEADER_DIR_2}/*.hpp
 )
 ENDIF (APPLE)
-
 
 # Add executable to build.
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE
@@ -120,5 +164,7 @@ target_link_libraries(
   ${X11_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
   ${ALSA_LIBRARY}
+  #  ${EGL_LIBRARY}
+  #  ${GLES_LIBRARY}
 )
 ENDIF (APPLE)
