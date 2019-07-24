@@ -171,8 +171,8 @@ void CreateMainWindow(SystemInfo *system_info) {
   return;
 }
 
-void ExitProgram() {
-  exit(0);
+void ExitProgram(Si32 exit_code) {
+  exit(exit_code);
 }
 
 void Swap() {

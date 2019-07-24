@@ -951,9 +951,7 @@ extern "C" {
     free(tests__);
     free(test_flags__);
 
-    if (test_stat_failed_units__ != 0) {
-      exit(1);
-    }
+    arctic::ExitProgram((test_stat_failed_units__ != 0) ? 1 : 0);
   }
 
 

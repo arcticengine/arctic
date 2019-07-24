@@ -693,8 +693,8 @@ void EngineThreadFunction(SystemInfo system_info) {
   ExitProcess(0);
 }
 
-void ExitProgram() {
-  ExitProcess(0);
+void ExitProgram(Si32 exit_code) {
+  ExitProcess(exit_code);
 }
 
 void Swap() {

@@ -39,7 +39,7 @@ struct DirectoryEntry {
   Trivalent is_file = kTrivalentUnknown;
 };
 
-void ExitProgram();
+void ExitProgram(Si32 exit_code = 0);
 void Swap();
 bool IsVSyncSupported();
 bool SetVSync(bool is_enable);

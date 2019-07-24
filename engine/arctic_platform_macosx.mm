@@ -78,6 +78,7 @@ namespace arctic {
 - (void) drawRect: (NSRect) bounds;
 @end
 
+static arctic::Si32 g_exit_code = 0;
 static ArcticWindow *g_main_window = nil;
 static ArcticView *g_main_view = nil;
 static NSApplication *g_app = nil;
@@ -168,7 +169,7 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 
 - (void) windowWillClose: (NSNotification *)notification {
   arctic::StopLogger();
-  exit(0);
+  exit(g_exit_code);
 }
 @end
 
@@ -664,7 +665,8 @@ void PumpMessages() {
   }
 }
 
-void ExitProgram() {
+void ExitProgram(Si32 exit_code) {
+  g_exit_code = exit_code;
   [g_app terminate: nil];  // It will stop the logger
 }
 
@@ -822,15 +824,24 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   if (matching == from_abs.size() && matching == to_abs.size()) {
     return "./";
   }
-  // TODO(Huldra): check for the case where whole 'from' path is a prefix of
-  // the 'to' path and the first extra character of the 'to' path is '/'.
-  // TODO(Huldra): check for the case where whole 'to' path is a prefix of
-  // the 'from' path and the first extra character of the 'from' path is '/'.
-  while (matching && from_abs[matching - 1] != '/') {
-    --matching;
-  }
-  const char *from_part = from_abs.c_str() + matching;
+  bool is_one_end = (matching == from_abs.size() || matching == to_abs.size());
+  bool is_one_next_slash =
+    ((matching < from_abs.size() && from_abs[matching] == '/') ||
+     (matching < to_abs.size() && to_abs[matching] == '/'));
+
   std::stringstream res;
+  if (is_one_end && is_one_next_slash) {
+    if (from_abs.size() == matching) {
+      res << ".";
+    }
+  } else {
+    while (matching && from_abs[matching - 1] != '/') {
+      --matching;
+    }
+  }
+
+  const char *from_part = from_abs.c_str() + matching;
+
   while (*from_part != 0) {
     res << "../";
     ++from_part;

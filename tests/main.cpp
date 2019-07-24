@@ -34,33 +34,33 @@ void test_rgb() {
 }
 
 void test_file_operations() {
-  std::stringstream str;
   std::deque<DirectoryEntry> list;
-  std::string canonic = CanonicalizePath("./..");
-  /*
-  if (canonic.empty()) {
-    str << "empty canonic\n";
-  } else {
-    str << "Canonic: \"" << canonic << "\"\n";
+  std::string canonic = arctic::CanonicalizePath("./..");
+  
+  std::string arctic_engine_dir = "../engine";
+
+  Si32 i = 0;
+  while (i < 10) {
+    if (arctic::DoesDirectoryExist(arctic_engine_dir.c_str())) {
+      break;
+    }
+    arctic_engine_dir = std::string("../") + arctic_engine_dir;
   }
+  TEST_CHECK(i != 10);
+
+  std::string arctic_root_dir = arctic_engine_dir + std::string("/..");
+
+  std::string relative = RelativePathFromTo(arctic_root_dir.c_str(),
+      arctic_engine_dir.c_str());
+  TEST_CHECK(relative == std::string("./engine"));
+
+  std::string relative2 = RelativePathFromTo(arctic_engine_dir.c_str(),
+                                             arctic_root_dir.c_str());
+  TEST_CHECK(relative2 == std::string("../"));
   
-  std::string relative = RelativePathFromTo("../../../../../",
-                                            "../../../../../../piLibs");
-  str << "relative path: \"" << relative.c_str() << "\"\n";
-  str << "from " << CanonicalizePath("../../../../../").c_str() << "\n";
-  str << "to " << CanonicalizePath("../../../../../../piLibs").c_str() << "\n";
-  
-  bool isok = GetDirectoryEntries("../../../../../../piLibs", &list);
+  bool isok = GetDirectoryEntries(arctic_engine_dir.c_str(), &list);
   TEST_CHECK(isok);
-  for (const auto &entry: list) {
-    str << entry.title << "\n";
-  }
-  std::string res = str.str();
-  std::cout << res << std::endl;
-  
-  arctic::easy::WriteFile("../../../result.txt",
-      (const Ui8*)(const void*)res.data(), res.size());
-      */
+  TEST_CHECK(list.size() > 0);
 }
 
 TEST_LIST = {
