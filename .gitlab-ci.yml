@@ -52,7 +52,6 @@ build_tests:
     - cd tests
     - cmake .
     - make all
-    - ./tests
     - cmake -DCMAKE_BUILD_TYPE=Debug .
     - make all
     - cd ..
@@ -66,10 +65,10 @@ run_tests:
     - cd tests
     - cmake .
     - make all
-    - ./tests
+    - xvfb-run ./tests
     - cmake -DCMAKE_BUILD_TYPE=Debug .
     - make all
-    - ./tests
+    - xvfb-run ./tests
     - cd ..
 
 create_project:
