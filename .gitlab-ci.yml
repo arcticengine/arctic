@@ -61,6 +61,7 @@ run_tests:
   before_script:
     - apt-get update --yes
     - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
+    - sudo apt-get install xvfp
   script:
     - cd tests
     - cmake .
@@ -76,6 +77,7 @@ create_project:
   before_script:
     - apt-get update --yes
     - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
+    - sudo apt-get install xvfp
   script:
     - cd wizard
     - cmake .
