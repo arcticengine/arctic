@@ -80,8 +80,8 @@ create_project:
     - cd wizard
     - cmake .
     - make all
-    - ./wizard create test_project || true
-    - cd ../../test_project || true
-    - cmake . || true
-    - make all || true
+    - xvfb-run ./wizard create test_project
+    - cd ../../test_project
+    - cmake .
+    - make all
     - cd ..
