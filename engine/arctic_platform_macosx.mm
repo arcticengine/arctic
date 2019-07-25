@@ -751,17 +751,17 @@ bool GetCurrentPath(std::string *out_dir) {
   }
   return false;
 }
-  
+
 bool GetDirectoryEntries(const char *path,
     std::deque<DirectoryEntry> *out_entries) {
   Check(out_entries,
-      "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
+    "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
   out_entries->clear();
   DIR *dir = opendir(path);
   if (dir == nullptr) {
     std::stringstream info;
     info << "Error errno: " << errno
-        << " while opening path: \"" << path << "\"" << std::endl;
+      << " while opening path: \"" << path << "\"" << std::endl;
     Log(info.str().c_str());
     return false;
   }
@@ -789,7 +789,7 @@ bool GetDirectoryEntries(const char *path,
   closedir(dir);
   return true;
 }
-  
+
 std::string CanonicalizePath(const char *path) {
   Check(path, "CanonicalizePath error, path can't be nullptr");
   char *canonic_path = realpath(path, nullptr);
@@ -800,7 +800,7 @@ std::string CanonicalizePath(const char *path) {
   }
   return result;
 }
-  
+
 // TODO(Huldra): Move common code out of macos and pi specific files.
 std::string RelativePathFromTo(const char *from, const char *to) {
   std::string from_abs = CanonicalizePath(from);

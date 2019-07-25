@@ -52,11 +52,11 @@ void test_file_operations() {
 
   std::string relative = RelativePathFromTo(arctic_root_dir.c_str(),
       arctic_engine_dir.c_str());
-  TEST_CHECK(relative == std::string("./engine"));
+  TEST_CHECK_(relative == std::string("./engine"), "relative: %s", relative.c_str());
 
   std::string relative2 = RelativePathFromTo(arctic_engine_dir.c_str(),
                                              arctic_root_dir.c_str());
-  TEST_CHECK(relative2 == std::string("../"));
+  TEST_CHECK_(relative2 == std::string("../"), "relative2: %s", relative2.c_str());
   
   bool isok = GetDirectoryEntries(arctic_engine_dir.c_str(), &list);
   TEST_CHECK(isok);

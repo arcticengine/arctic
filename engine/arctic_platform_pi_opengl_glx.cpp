@@ -76,7 +76,7 @@ static const int kXEventMask = KeyPressMask | KeyReleaseMask | ButtonPressMask
   | ButtonReleaseMask | PointerMotionMask | ExposureMask
   | StructureNotifyMask;
 static GLXContext g_glx_context;
-
+static arctic::SoundPlayer g_sound_player;
 void PumpMessages();
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*,
@@ -191,6 +191,10 @@ void CreateMainWindow(SystemInfo *system_info) {
 }
 
 void ExitProgram(Si32 exit_code) {
+  XCloseDisplay(arctic::g_x_display);
+  arctic::g_sound_player.Deinitialize();
+  arctic::StopLogger();
+
   exit(exit_code);
 }
 
@@ -242,8 +246,7 @@ int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   arctic::StartLogger();
-  arctic::SoundPlayer soundPlayer;
-  soundPlayer.Initialize();
+  arctic::g_sound_player.Initialize();
   CreateMainWindow(&system_info);
   arctic::easy::GetEngine();
   arctic::easy::GetEngine()->SetArgcArgv(argc,
@@ -254,7 +257,7 @@ int main(int argc, char **argv) {
   EasyMain();
 
   XCloseDisplay(arctic::g_x_display);
-  soundPlayer.Deinitialize();
+  arctic::g_sound_player.Deinitialize();
   arctic::StopLogger();
 
   return 0;

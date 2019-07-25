@@ -583,7 +583,7 @@ extern "C" {
       } else if (pid == 0) {
         // Child: Do the test.
         failed = (test_do_run__(test) != 0);
-        exit(failed ? 1 : 0);
+	arctic::ExitProgram(failed ? 1 : 0);
       } else {
         // Parent: Wait until child terminates and analyze its exit code.
         waitpid(pid, &exit_code, 0);
@@ -805,7 +805,7 @@ extern "C" {
         malloc(sizeof(char) * test_list_size__));
     if (tests__ == NULL || test_flags__ == NULL) {
       fprintf(stderr, "Out of memory.\n");
-      exit(2);
+      arctic::ExitProgram(2);
     }
     memset(test_flags__, 0, sizeof(char) * test_list_size__);
 
@@ -817,14 +817,14 @@ extern "C" {
               argv[i]);
           fprintf(stderr, "Try '%s --list' for list of unit tests.\n",
               argv[0]);
-          exit(2);
+	  arctic::ExitProgram(2);
         }
       } else if (strcmp(argv[i], "--") == 0) {
         seen_double_dash = 1;
       } else if (strcmp(argv[i], "--help") == 0
           || strcmp(argv[i], "-h") == 0) {
         test_help__();
-        exit(0);
+	arctic::ExitProgram(0);
       } else if (strcmp(argv[i], "--verbose") == 0
           || strcmp(argv[i], "-v") == 0) {
         test_verbose_level__++;
@@ -855,7 +855,7 @@ extern "C" {
       } else if (strcmp(argv[i], "--list") == 0
           || strcmp(argv[i], "-l") == 0) {
         test_list_names__();
-        exit(0);
+	arctic::ExitProgram(0);
       } else if (strcmp(argv[i], "-NSDocumentRevisionsDebugMode") == 0) {
         i++;
         if (i < argc) {
@@ -866,7 +866,7 @@ extern "C" {
       } else {
         fprintf(stderr, "%s: Unrecognized option '%s'\n", argv[0], argv[i]);
         fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
-        exit(2);
+	arctic::ExitProgram(2);
       }
     }
 

@@ -68,7 +68,7 @@ bool GetCurrentPath(std::string *out_dir) {
 }
 
 bool GetDirectoryEntries(const char *path,
-     std::deque<DirectoryEntry> *out_entries) {
+    std::deque<DirectoryEntry> *out_entries) {
   Check(out_entries,
     "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
   out_entries->clear();
@@ -105,7 +105,6 @@ bool GetDirectoryEntries(const char *path,
   return true;
 }
 
-
 std::string CanonicalizePath(const char *path) {
   Check(path, "CanonicalizePath error, path can't be nullptr");
   char *canonic_path = realpath(path, nullptr);
@@ -117,6 +116,7 @@ std::string CanonicalizePath(const char *path) {
   return result;
 }
 
+// TODO(Huldra): Move common code out of macos and pi specific files.
 std::string RelativePathFromTo(const char *from, const char *to) {
   std::string from_abs = CanonicalizePath(from);
   if (from && from[strlen(from) - 1] == '/' &&
@@ -139,11 +139,24 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   if (matching == from_abs.size() && matching == to_abs.size()) {
     return "./";
   }
-  while (matching && from_abs[matching - 1] != '/') {
-    --matching;
-  }
-  const char *from_part = from_abs.c_str() + matching;
+  bool is_one_end = (matching == from_abs.size() || matching == to_abs.size());
+  bool is_one_next_slash =
+    ((matching < from_abs.size() && from_abs[matching] == '/') ||
+     (matching < to_abs.size() && to_abs[matching] == '/'));
+
   std::stringstream res;
+  if (is_one_end && is_one_next_slash) {
+    if (from_abs.size() == matching) {
+      res << ".";
+    }
+  } else {
+    while (matching && from_abs[matching - 1] != '/') {
+      --matching;
+    }
+  }
+
+  const char *from_part = from_abs.c_str() + matching;
+
   while (*from_part != 0) {
     res << "../";
     ++from_part;

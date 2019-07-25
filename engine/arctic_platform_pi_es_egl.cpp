@@ -61,11 +61,13 @@ Display *g_x_display;
 Window g_x_window;
 XIM g_x_im;
 XIC g_x_ic;
+
 static Colormap g_x_color_map;
 static const int kXEventMask = KeyPressMask | KeyReleaseMask | ButtonPressMask
   | ButtonReleaseMask | PointerMotionMask | ExposureMask
   | StructureNotifyMask;
 
+static arctic::SoundPlayer g_sound_player;
 void PumpMessages();
 
 static EGLint const attribute_list[] = {
@@ -114,6 +116,7 @@ void CreateMainWindow(SystemInfo *system_info) {
       CopyFromParent,
       CWEventMask | CWBorderPixel | CWColormap, &swa);
 
+
   system_info->screen_width = g_window_width;
   system_info->screen_height = g_window_height;
 
@@ -126,7 +129,8 @@ void CreateMainWindow(SystemInfo *system_info) {
 
   XSetIconName(g_x_display, g_x_window, title);
   XMapWindow(g_x_display, g_x_window);
-  
+
+
   g_x_im = XOpenIM(g_x_display, NULL, NULL, NULL);
   Check(g_x_im != NULL, "Could not open input method");
   g_x_ic = XCreateIC(g_x_im, XNInputStyle,
@@ -172,6 +176,10 @@ void CreateMainWindow(SystemInfo *system_info) {
 }
 
 void ExitProgram(Si32 exit_code) {
+  XCloseDisplay(arctic::g_x_display);
+  arctic::g_sound_player.Deinitialize();
+  arctic::StopLogger();
+
   exit(exit_code);
 }
 
@@ -213,8 +221,7 @@ int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   arctic::StartLogger();
-  arctic::SoundPlayer soundPlayer;
-  soundPlayer.Initialize();
+  arctic::g_sound_player.Initialize();
   CreateMainWindow(&system_info);
   arctic::easy::GetEngine();
   arctic::easy::GetEngine()->SetArgcArgv(argc,
@@ -225,7 +232,7 @@ int main(int argc, char **argv) {
   EasyMain();
 
   XCloseDisplay(arctic::g_x_display);
-  soundPlayer.Deinitialize();
+  arctic::g_sound_player.Deinitialize();
   arctic::StopLogger();
 
   return 0;
