@@ -60,7 +60,6 @@ public:
   std::vector<Si16> tmp;
   double starting_frame_count = 0.0;
   bool is_initialized = false;
-
   void Initialize();
   void Deinitialize();
   ~SoundPlayerImpl() {

@@ -57,6 +57,8 @@ class SoundPlayer {
   void Initialize(const char *input_device_system_name,
     const char *output_device_system_name);
   void Deinitialize();
+  bool IsOk();
+  std::string GetErrorDescription();
   ~SoundPlayer();
  protected:
   SoundPlayerImpl *impl = nullptr;

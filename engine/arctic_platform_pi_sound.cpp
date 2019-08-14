@@ -37,13 +37,12 @@
 #include <thread>  // NOLINT
 #include <vector>
 
+#include "engine/arctic_mixer.h"
 #include "engine/arctic_platform_sound.h"
 #include "engine/arctic_platform_fatal.h"
 
 
 namespace arctic {
-
-static std::mutex g_sound_mixer_mutex;
 
 class SoundPlayerImpl {
  public:
@@ -84,6 +83,20 @@ void SoundPlayer::Deinitialize() {
   }
 }
 
+bool SoundPlayer::IsOk() {
+  if (!impl) {
+    return false;
+  }
+  return impl->IsOk();
+}
+
+std::string SoundPlayer::GetErrorDescription() {
+  if (!impl) {
+    return "SoundPlayer was not initialized, impl is nullptr";
+  }
+  return impl->GetErrorDescription();
+}
+
 SoundPlayer::~SoundPlayer() {
   if (impl) {
     delete impl;
@@ -97,12 +110,6 @@ struct SoundBuffer {
   Si32 next_position = 0;
 };
 
-struct SoundMixerState {
-  float master_volume = 0.7f;
-  std::vector<SoundBuffer> buffers;
-  std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);
-  std::atomic<bool> is_operational = ATOMIC_VAR_INIT(false);
-};
 SoundMixerState g_sound_mixer_state;
 
 bool SoundCheck(bool condition, const char *error_message,
@@ -119,48 +126,41 @@ bool SoundCheck(bool condition, const char *error_message,
       (error_message_postfix ? error_message_postfix : ""));
   std::cerr << "Arctic Engine Sound ERROR: " << full_message << std::endl;
   // Signal error and stop the mixer
-  g_sound_mixer_state.is_operational = false;
-  g_sound_mixer_state.do_quit = true;
+  g_sound_mixer_state.SetError(full_message);
+  g_sound_mixer_state.do_quit.store(true);
   return false;
 }
 
 void StartSoundBuffer(easy::Sound sound, float volume) {
-  SoundBuffer buffer;
-  buffer.sound = sound;
-  buffer.volume = volume;
-  buffer.next_position = 0;
-  buffer.sound.GetInstance()->IncPlaying();
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  g_sound_mixer_state.buffers.push_back(buffer);
+  if (sound.GetInstance()) {
+    SoundBuffer buffer;
+    buffer.sound = sound;
+    buffer.volume = volume;
+    buffer.next_position = 0;
+    buffer.sound.GetInstance()->IncPlaying();
+    buffer.action = SoundBuffer::kStart;
+    g_sound_mixer_state.AddSoundTask(buffer);
+  }
 }
 
 void StopSoundBuffer(easy::Sound sound) {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  for (size_t idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
-    SoundBuffer &buffer = g_sound_mixer_state.buffers[idx];
-    if (buffer.sound.GetInstance() == sound.GetInstance()) {
-      buffer.sound.GetInstance()->DecPlaying();
-      if (idx != g_sound_mixer_state.buffers.size() - 1) {
-        g_sound_mixer_state.buffers[idx] =
-          g_sound_mixer_state.buffers[
-          g_sound_mixer_state.buffers.size() - 1];
-      }
-      g_sound_mixer_state.buffers.pop_back();
-      idx--;
-    }
+  if (sound.GetInstance()) {
+    SoundBuffer buffer;
+    buffer.sound = sound;
+    buffer.volume = 0.f;
+    buffer.next_position = 0;
+    buffer.action = SoundBuffer::kStop;
+    g_sound_mixer_state.AddSoundTask(buffer);
   }
 }
 
 void SetMasterVolume(float volume) {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  g_sound_mixer_state.master_volume = volume;
+  g_sound_mixer_state.master_volume.store(volume);
 }
 
 float GetMasterVolume() {
-  std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-  return g_sound_mixer_state.master_volume;
+  return g_sound_mixer_state.master_volume.load();
 }
-
 
 static unsigned int g_buffer_time_us = 50000;
 static unsigned int g_period_time_us = 10000;
@@ -187,8 +187,11 @@ void MixSound() {
   float master_volume = 1.0f;
   {
     memset(data->mix.data(), 0, 2 * buffer_bytes);
-    std::lock_guard<std::mutex> lock(g_sound_mixer_mutex);
-    master_volume = g_sound_mixer_state.master_volume;
+
+    g_sound_mixer_state.InputTasksToMixerThread();
+
+    master_volume = g_sound_mixer_state.master_volume.load();
+
     for (Ui32 idx = 0;
         idx < g_sound_mixer_state.buffers.size(); ++idx) {
       SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
@@ -250,7 +253,7 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
 
 void SoundMixerThreadFunction() {
   bool is_ok = true;
-  while (!g_sound_mixer_state.do_quit) {
+  while (!g_sound_mixer_state.do_quit.load()) {
     MixSound();
 
     Si16 *out_buffer = g_data.samples.data();
@@ -465,7 +468,7 @@ void StartSoundMixer(const char* output_device_name) {
 }
 
 void StopSoundMixer() {
-  g_sound_mixer_state.do_quit = true;
+  g_sound_mixer_state.do_quit.store(true);
   sound_thread.join();
 
   if (g_data.ahandler) {

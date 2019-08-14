@@ -46,6 +46,12 @@ struct SoundBuffer {
 struct SoundMixerState {
   std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);
 
+  std::atomic<bool> is_ok = ATOMIC_VAR_INIT(true);
+  std::mutex error_mutex;
+  // Mutex-protected state begin
+  std::string error_description = "Error description is not set.";
+  // Mutex-protected state end
+
   // Mixer-only state begin
   std::atomic<float> master_volume = ATOMIC_VAR_INIT(0.7f);
   std::vector<SoundBuffer> buffers;
@@ -57,6 +63,21 @@ struct SoundMixerState {
   std::atomic<Ui64> task_count;
   std::deque<SoundBuffer> tasks;
   // Mutex-protected state end
+
+  void SetError(std::string description) {
+    std::lock_guard<std::mutex> lock(error_mutex);
+    error_description = description;
+    is_ok = false;
+  }
+
+  bool IsOk() {
+    return is_ok;
+  }
+
+  std::string GetErrorDescription() {
+    std::lock_guard<std::mutex> lock(error_mutex);
+    return error_description;
+  }
 
   void AddSoundTask(const SoundBuffer &buffer) {
     while (true) {
