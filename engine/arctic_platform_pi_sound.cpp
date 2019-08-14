@@ -44,6 +44,8 @@
 
 namespace arctic {
 
+SoundMixerState g_sound_mixer_state;
+
 class SoundPlayerImpl {
  public:
   bool is_initialized = false;
@@ -84,17 +86,11 @@ void SoundPlayer::Deinitialize() {
 }
 
 bool SoundPlayer::IsOk() {
-  if (!impl) {
-    return false;
-  }
-  return impl->IsOk();
+  return g_sound_mixer_state.IsOk();
 }
 
 std::string SoundPlayer::GetErrorDescription() {
-  if (!impl) {
-    return "SoundPlayer was not initialized, impl is nullptr";
-  }
-  return impl->GetErrorDescription();
+  return g_sound_mixer_state.GetErrorDescription();
 }
 
 SoundPlayer::~SoundPlayer() {
@@ -103,14 +99,6 @@ SoundPlayer::~SoundPlayer() {
     impl = nullptr;
   }
 }
-
-struct SoundBuffer {
-  easy::Sound sound;
-  float volume = 1.0f;
-  Si32 next_position = 0;
-};
-
-SoundMixerState g_sound_mixer_state;
 
 bool SoundCheck(bool condition, const char *error_message,
     const char *error_message_postfix = nullptr) {
