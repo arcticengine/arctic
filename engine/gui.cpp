@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <cstring>
 #include "engine/easy.h"
+#include "engine/unicode.h"
 #include "engine/arctic_platform.h"
 
 namespace arctic {
@@ -232,6 +233,7 @@ void Panel::SetCurrentTab(bool is_current_tab) {
 
 void Panel::AddChild(std::shared_ptr<Panel> child) {
   Check(!!child, "AddChild called with child == nullptr");
+  Check(child.get() != this, "AddChild called with child == this");
   children_.push_back(child);
 }
 
@@ -283,6 +285,9 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
+  if (*in_out_is_applied) {
+    return;
+  }
   ButtonState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
@@ -378,7 +383,12 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , origin_(origin)
     , color_(color)
     , text_(text)
-    , alignment_(alignment) {
+    , alignment_(alignment)
+    , selection_begin_(0)
+    , selection_end_(0)
+    , selection_mode_(kTextSelectionModeInvert)
+    , selection_color_1_(Rgba(0, 0, 0))
+    , selection_color_2_(Rgba(255, 255, 255)) {
 }
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
@@ -389,13 +399,50 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , origin_(origin)
     , palete_(palete)
     , text_(text)
-    , alignment_(alignment) {
+    , alignment_(alignment)
+    , selection_begin_(0)
+    , selection_end_(0)
+    , selection_mode_(kTextSelectionModeInvert)
+    , selection_color_1_(Rgba(0, 0, 0))
+    , selection_color_2_(Rgba(255, 255, 255)) {
   Check(palete.size(), "Error! Palete is empty!");
   color_ = palete[0];
 }
 
 void Text::SetText(std::string text) {
   text_ = text;
+  selection_begin_ = 0;
+  selection_end_ = 0;
+}
+
+void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2, TextSelectionMode selection_mode,
+    Rgba c1, Rgba c2, easy::Sprite backbuffer) {
+  switch (selection_mode) {
+    case kTextSelectionModeInvert:
+      for (Si32 y = y1; y < y2; ++y) {
+        Rgba *p = backbuffer.RgbaData() + backbuffer.StridePixels() * y;
+        for (Si32 x = x1; x < x2; ++x) {
+          Rgba &c = p[x];
+          c.r = 255 - c.r;
+          c.g = 255 - c.g;
+          c.b = 255 - c.b;
+        }
+      }
+      break;
+    case kTextSelectionModeSwapColors:
+      for (Si32 y = y1; y < y2; ++y) {
+        Rgba *p = backbuffer.RgbaData() + backbuffer.StridePixels() * y;
+        for (Si32 x = x1; x < x2; ++x) {
+          Rgba &c = p[x];
+          if (c.rgba == c1.rgba) {
+            c.rgba = c2.rgba;
+          } else if (c.rgba == c2.rgba) {
+            c.rgba = c1.rgba;
+          }
+        }
+      }
+      break;
+  }
 }
 
 void Text::Draw(Vec2Si32 parent_absolute_pos) {
@@ -420,6 +467,37 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
       origin_, easy::kColorize, easy::kFilterNearest, color_);
   }
+
+  if (selection_begin_ != selection_end_) {
+    Si32 x1 = absolute_pos.x + font_.EvaluateSize(
+        text_.substr(0, selection_begin_).c_str(), false).x;
+    Si32 x2 = absolute_pos.x  + font_.EvaluateSize(
+        text_.substr(0, selection_end_).c_str(), true).x;
+    Si32 y1 = absolute_pos.y ;
+    Si32 y2 = absolute_pos.y + font_.line_height_;
+    easy::Sprite backbuffer = easy::GetEngine()->GetBackbuffer();
+
+    x1 = std::max(absolute_pos.x, x1);
+    x2 = std::max(absolute_pos.x, x2);
+
+    DrawSelection(x1, y1, x2, y2, selection_mode_,
+        selection_color_1_, selection_color_2_, backbuffer);
+  }
+}
+
+void Text::Select(Si32 selection_begin, Si32 selection_end) {
+  selection_begin_ = Clamp(selection_begin, 0, (Si32)text_.length());
+  selection_end_ = Clamp(selection_end, 0, (Si32)text_.length());
+  if (selection_begin_ > selection_end_) {
+    selection_begin_ = selection_end_;
+  }
+}
+
+void Text::SetSelectionMode(TextSelectionMode selection_mode,
+    Rgba selection_color_1, Rgba selection_color_2) {
+  selection_mode_ = selection_mode;
+  selection_color_1_ = selection_color_1;
+  selection_color_2_ = selection_color_2;
 }
 
 Progressbar::Progressbar(Ui64 tag, Vec2Si32 pos,
@@ -480,23 +558,28 @@ void Progressbar::SetCurrentValue(float current_value) {
 Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     easy::Sprite normal, easy::Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
-    TextAlignment alignment, bool is_digits)
-    : Panel(tag,
-      pos,
-      Max(normal.Size(), focused.Size()),
-      tab_order)
-    , font_(font)
-    , origin_(origin)
-    , color_(color)
-    , text_(text)
-    , alignment_(alignment)
-    , normal_(normal)
-    , focused_(focused)
-    , cursor_pos_((Si32)text.length())
-    , display_pos_(0)
-    , selection_begin_(0)
-    , selection_end_((Si32)text.length())
-    , is_digits_(is_digits) {
+    TextAlignment alignment, bool is_digits,
+    std::unordered_set<Ui32> white_list)
+  : Panel(tag,
+        pos,
+        Max(normal.Size(), focused.Size()),
+        tab_order)
+  , font_(font)
+  , origin_(origin)
+  , color_(color)
+  , text_(text)
+  , alignment_(alignment)
+  , normal_(normal)
+  , focused_(focused)
+  , cursor_pos_((Si32)text.length())
+  , display_pos_(0)
+  , selection_begin_(0)
+  , selection_end_((Si32)text.length())
+  , selection_mode_(kTextSelectionModeInvert)
+  , selection_color_1_(Rgba(0, 0, 0))
+  , selection_color_2_(Rgba(255, 255, 255))
+  , is_digits_(is_digits)
+  , white_list_(white_list) {
 }
 
 void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -609,8 +692,20 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             selection_end_ = selection_begin_;
           }
           if (message.keyboard.characters[0]) {
-            text_.insert(cursor_pos_, message.keyboard.characters);
-            cursor_pos_ += static_cast<Si32>(strlen(message.keyboard.characters));
+            bool do_insert = true;
+            if (!white_list_.empty()) {
+              Utf32Reader reader;
+              reader.Reset((Ui8*)message.keyboard.characters);
+              Ui32 codepoint = reader.ReadOne();
+              auto found_it = white_list_.find(codepoint);
+              if (found_it == white_list_.end()) {
+                do_insert = false;
+              }
+            }
+            if (do_insert) {
+              text_.insert(cursor_pos_, message.keyboard.characters);
+              cursor_pos_ += static_cast<Si32>(strlen(message.keyboard.characters));
+            }
           } else {
             //text_.insert(cursor_pos_, 1, static_cast<char>(key));
             //cursor_pos_++;
@@ -717,15 +812,8 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     x2 = std::min(std::max(pos.x + border, x2 - skip_x),
         pos.x + border + displayable_width);
 
-    for (Si32 y = y1; y < y2; ++y) {
-      Rgba *p = backbuffer.RgbaData() + backbuffer.StridePixels() * y;
-      for (Si32 x = x1; x < x2; ++x) {
-        Rgba &c = p[x];
-        c.r = 255 - c.r;
-        c.g = 255 - c.g;
-        c.b = 255 - c.b;
-      }
-    }
+    DrawSelection(x1, y1, x2, y2, selection_mode_,
+        selection_color_1_, selection_color_2_, backbuffer);
   }
 
   Panel::Draw(parent_absolute_pos);
@@ -738,6 +826,13 @@ std::string Editbox::GetText() {
 void Editbox::SelectAll() {
   selection_begin_ = 0;
   selection_end_ = (Si32)text_.length();
+}
+
+void Editbox::SetSelectionMode(TextSelectionMode selection_mode,
+    Rgba selection_color_1, Rgba selection_color_2) {
+  selection_mode_ = selection_mode;
+  selection_color_1_ = selection_color_1;
+  selection_color_2_ = selection_color_2;
 }
 
 
