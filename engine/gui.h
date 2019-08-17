@@ -64,6 +64,7 @@ class Panel : public std::enable_shared_from_this<Panel> {
   easy::Sprite background_;
   std::deque<std::shared_ptr<Panel>> children_;
   bool is_clickable_;
+  bool is_visible_;
 
  public:
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
@@ -92,6 +93,8 @@ class Panel : public std::enable_shared_from_this<Panel> {
   Panel *FindCurrentTab();
   virtual void SetCurrentTab(bool is_current_tab);
   virtual void AddChild(std::shared_ptr<Panel> child);
+  virtual void SetVisible(bool is_visible);
+  virtual bool IsVisible();
 };
 
 class Button : public Panel {
@@ -128,6 +131,8 @@ class Button : public Panel {
       std::deque<GuiMessage> *out_gui_messages,
       std::shared_ptr<Panel> *out_current_tab) override;
   void SetCurrentTab(bool is_current_tab) override;
+  void SetVisible(bool is_visible) override;
+  bool IsVisible() override;
 };
 
 enum TextAlignment {

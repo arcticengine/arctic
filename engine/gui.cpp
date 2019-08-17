@@ -46,7 +46,8 @@ Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , tab_order_(tab_order)
     , is_current_tab_(0)
     , background_(background)
-    , is_clickable_(is_clickable) {
+    , is_clickable_(is_clickable)
+    , is_visible_(true) {
 }
 
 Vec2Si32 Panel::GetSize() {
@@ -85,6 +86,9 @@ Panel::~Panel() {
 }
 
 void Panel::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!is_visible_) {
+    return;
+  }
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
   background_.Draw(absolute_pos, size_);
   for (auto it = children_.begin(); it != children_.end(); ++it) {
@@ -110,6 +114,9 @@ void Panel::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     "ApplyInput must not be called with in_out_is_applied == nullptr");
   Check(out_gui_messages,
     "ApplyInput must not be called with out_gui_messages == nullptr");
+  if (!is_visible_) {
+    return;
+  }
   Vec2Si32 pos = parent_pos + pos_;
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     (**it).ApplyInput(pos, message, false, in_out_is_applied,
@@ -237,6 +244,14 @@ void Panel::AddChild(std::shared_ptr<Panel> child) {
   children_.push_back(child);
 }
 
+void Panel::SetVisible(bool is_visible) {
+  is_visible_ = is_visible;
+}
+
+bool Panel::IsVisible() {
+  return is_visible_;
+}
+
 Button::Button(Ui64 tag, Vec2Si32 pos,
   easy::Sprite normal, easy::Sprite down, easy::Sprite hovered,
   easy::Sound down_sound, easy::Sound up_sound,
@@ -285,9 +300,6 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
-  if (*in_out_is_applied) {
-    return;
-  }
   ButtonState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
@@ -301,6 +313,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         state_ = kDown;
       } else {
         state_ = kHovered;
+        *in_out_is_applied = true;
       }
       if (message.keyboard.key == kKeyMouseLeft &&
           message.keyboard.key_state == 2 &&
@@ -374,6 +387,21 @@ void Button::SetCurrentTab(bool is_current_tab) {
   is_current_tab_ = is_current_tab;
 }
 
+void Button::SetVisible(bool is_visible) {
+  Panel::SetVisible(is_visible);
+  if (Panel::IsVisible()) {
+    state_ = kNormal;
+  } else {
+    state_ = kHidden;
+  }
+}
+
+bool Button::IsVisible() {
+  bool is_visible = Panel::IsVisible();
+  bool should_be_visible = state_ != kHidden;
+  Check(is_visible == should_be_visible, "Button visibility state inconsitency detected!");
+  return is_visible;
+}
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       Font font, TextOrigin origin, Rgba color, std::string text,
