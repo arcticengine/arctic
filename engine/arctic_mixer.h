@@ -60,7 +60,7 @@ struct SoundMixerState {
   std::atomic<Si64> task_pushers = ATOMIC_VAR_INIT(0);
   std::mutex task_mutex;
   // Mutex-protected state begin
-  std::atomic<Ui64> task_count;
+  std::atomic<Ui64> task_count = ATOMIC_VAR_INIT(0);
   std::deque<SoundBuffer> tasks;
   // Mutex-protected state end
 

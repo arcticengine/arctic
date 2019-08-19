@@ -64,10 +64,12 @@ class Sprite {
 
  public:
   Sprite();
+  void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);
   void Load(const char *file_name);
   void Load(const std::string &file_name);
   void Save(const char *file_name);
   void Save(const std::string &file_name);
+  std::vector<Ui8> SaveToData(const char *file_name);
   void Create(const Si32 width, const Si32 height);
   void Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height);

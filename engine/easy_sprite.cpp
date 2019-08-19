@@ -601,6 +601,30 @@ Sprite::Sprite() {
   pivot_ = Vec2Si32(0, 0);
 }
 
+void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name) {
+  Check(!!file_name, "Error in Sprite::Load, file_name is nullptr.");
+  const char *last_dot = strchr(file_name, '.');
+  Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
+  if (strcmp(last_dot, ".tga") == 0) {
+    if (size_bytes == 0) {
+      Log("File \"", file_name, "\" could not be loaded (size=0). Using empty sprite.");
+      return;
+    }
+    if (data == nullptr) {
+      Log("File \"", file_name, "\" could not be loaded (data=nullptr). Using empty sprite.");
+      return;
+    }
+    sprite_instance_ = LoadTga(data, size_bytes);
+    ref_pos_ = Vec2Si32(0, 0);
+    ref_size_ = Vec2Si32(sprite_instance_->width(),
+                         sprite_instance_->height());
+    pivot_ = Vec2Si32(0, 0);
+  } else {
+    Fatal("Error in Sprite::Load, unknown file extension.");
+  }
+  UpdateOpaqueSpans();
+}
+
 void Sprite::Load(const char *file_name) {
   Check(!!file_name, "Error in Sprite::Load, file_name is nullptr.");
   const char *last_dot = strchr(file_name, '.');
@@ -627,20 +651,27 @@ void Sprite::Load(const std::string &file_name) {
 }
 
 void Sprite::Save(const char *file_name) {
-  Check(!!file_name, "Error in Sprite::Save, file_name is nullptr.");
-  const char *last_dot = strchr(file_name, '.');
-  Check(!!last_dot, "Error in Sprite::Save, file_name has no extension.");
-  if (strcmp(last_dot, ".tga") == 0) {
-    std::vector<Ui8> data;
-    SaveTga(sprite_instance_, &data);
+  std::vector<Ui8> data = SaveToData(file_name);
+  if (data.size()) {
     WriteFile(file_name, data.data(), data.size());
-  } else {
-    Fatal("Error in Sprite::Save, unknown file extension.");
   }
 }
 
 void Sprite::Save(const std::string &file_name) {
   Save(file_name.c_str());
+}
+
+std::vector<Ui8> Sprite::SaveToData(const char *file_name) {
+  std::vector<Ui8> data;
+  Check(!!file_name, "Error in Sprite::Save, file_name is nullptr.");
+  const char *last_dot = strchr(file_name, '.');
+  Check(!!last_dot, "Error in Sprite::Save, file_name has no extension.");
+  if (strcmp(last_dot, ".tga") == 0) {
+    SaveTga(sprite_instance_, &data);
+  } else {
+    Fatal("Error in Sprite::Save, unknown file extension.");
+  }
+  return data;
 }
 
 void Sprite::Create(const Si32 width, const Si32 height) {
@@ -1088,14 +1119,14 @@ Ui8* Sprite::RawData() {
 
 Rgba* Sprite::RgbaData() {
   return (static_cast<Rgba*>(static_cast<void*>(
-    sprite_instance_->RawData())) +
+      sprite_instance_->RawData())) +
     ref_pos_.y * StridePixels() +
     ref_pos_.x);
 }
 
 const Rgba* Sprite::RgbaData() const {
   return (static_cast<Rgba*>(static_cast<void*>(
-    sprite_instance_->RawData())) +
+      sprite_instance_->RawData())) +
     ref_pos_.y * StridePixels() +
     ref_pos_.x);
 }

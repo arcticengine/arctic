@@ -171,6 +171,8 @@ void SoundPlayerImpl::Initialize() {
     return;
   }
   tmp.resize(2 << 20);
+  g_sound_mixer_state.buffers.reserve(1024);
+  g_sound_mixer_state.InputTasksToMixerThread();
 
   AudioComponentDescription outputcd = {0};
   outputcd.componentType = kAudioUnitType_Output;
