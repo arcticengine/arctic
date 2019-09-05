@@ -81,7 +81,7 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 Just execute the following commands in terminal line by line to install all the required libraries and tools, clone the repository to ~/arctic, build and run the demo project: 
 
 ```bash
-sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libgles2-mesa-dev
 cd ~
 git clone https://gitlab.com/huldra/arctic.git
 cd ~/arctic
