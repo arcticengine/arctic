@@ -65,10 +65,10 @@ class Engine {
   double time_correction_;
   double last_time_;
 
-  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_64_;
+  std::independent_bits_engine<std::mt19937_64, 64, Ui64> rnd_64_;
   std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_32_;
-  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_16_;
-  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_8_;
+  std::independent_bits_engine<std::mt19937_64, 16, Ui64> rnd_16_;
+  std::independent_bits_engine<std::mt19937_64, 8, Ui64> rnd_8_;
 
 
   bool is_inverse_y_ = false;
