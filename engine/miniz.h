@@ -246,7 +246,7 @@
 #include <stddef.h>
 
 #if !defined(MINIZ_NO_TIME) && !defined(MINIZ_NO_ARCHIVE_APIS)
-#include <ctime>
+#include <time.h>
 #endif  // !MINIZ_NO_TIME && !MINIZ_NO_ARCHIVE_APIS
 
 #if defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || \

@@ -190,14 +190,13 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba
         }
     } else {
         if (a.y > b.y) {
-            DrawLine(b, a, color_b, color_a);
+            DrawLine(to_sprite, b, a, color_b, color_a);
         } else {
-            Sprite back = GetEngine()->GetBackbuffer();
-            Vec2Si32 back_size = back.Size();
+            Vec2Si32 back_size = to_sprite.Size();
             if (ab.y == 0) {
                 if (a.y >= 0 && a.y < back_size.y &&
                     a.x >= 0 && a.x < back_size.x) {
-                    back.RgbaData()[a.x + a.y * back.StridePixels()] = color_a;
+                    to_sprite.RgbaData()[a.x + a.y * to_sprite.StridePixels()] = color_a;
                 }
                 return;
             }
@@ -252,7 +251,7 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba
             if (y2 <= y1) {
                 if (y2 == y1) {
                     Rgba color(rgba_1.y, rgba_1.x, rgba_1.z, rgba_1.w);
-                    back.RgbaData()[x1 + y1 * back.StridePixels()] = color;
+                    to_sprite.RgbaData()[x1 + y1 * to_sprite.StridePixels()] = color;
                 }
                 return;
             }
@@ -261,14 +260,14 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba
             Vec4Si32 rgba_12_16_step = rgba_12_16 / (y2 - y1);
             Si32 x_16 = x1 * 65536;
             Si32 x12_16_step = ((x2 - x1) * 65536) / (y2 - y1);
-            Si32 stride = back.StridePixels();
+            Si32 stride = to_sprite.StridePixels();
             for (Si32 y = y1; y <= y2; ++y) {
                 Rgba color(
                     rgba_16.x >> 16,
                     rgba_16.y >> 16,
                     rgba_16.z >> 16,
                     rgba_16.w >> 16);
-                back.RgbaData()[(x_16 >> 16) + y * stride] = color;
+                to_sprite.RgbaData()[(x_16 >> 16) + y * stride] = color;
                 rgba_16 += rgba_12_16_step;
                 x_16 += x12_16_step;
             }
