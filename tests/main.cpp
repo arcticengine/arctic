@@ -90,32 +90,183 @@ void radix_sort(std::vector<KeyT> &in_out_data) {
   }
 }
 
+template <class KeyT>
+void baseline_radix_sort(std::vector<KeyT> &in_out_data) {
+  constexpr Ui64 kBits = sizeof(KeyT) <= 4 ? 2 : 4;
+  constexpr KeyT kMask = ((KeyT)1 << kBits) - 1;
+  constexpr KeyT kBuckets = (KeyT)1 << kBits;
+  const Ui64 kTempSize = in_out_data.size() * ((kMask + 1) * 2 - 1);
+#ifdef alloca
+  const bool kIsBig = kTempSize > 50000;
+  KeyT *temp = kIsBig ?
+    (KeyT*)malloc(kTempSize * sizeof(KeyT)) :
+    (KeyT*)alloca(kTempSize * sizeof(KeyT));
+#else
+  const bool kIsBig = true;
+  KeyT *temp = (KeyT*)malloc(kTempSize * sizeof(KeyT));
+#endif
+
+  std::array<KeyT*, kBuckets> buf_a;
+  std::array<KeyT*, kBuckets> buf_b;
+  std::array<KeyT*, kBuckets> buf_a0;
+  std::array<KeyT*, kBuckets> buf_b0;
+
+  buf_a[0] = &temp[0];
+  buf_b[0] = &temp[0];
+  buf_a0[0] = &temp[0];
+  buf_b0[0] = &temp[0];
+  for (KeyT i = 1; i < kBuckets; ++i) {
+    buf_a[i] = &temp[in_out_data.size() * (i * 2 - 1)];
+    buf_b[i] = &temp[in_out_data.size() * (i * 2)];
+    buf_a0[i] = buf_a[i];
+    buf_b0[i] = buf_b[i];
+  }
+  std::array<KeyT*, kBuckets> *pa = &buf_a;
+  std::array<KeyT*, kBuckets> *pb = &buf_b;
+  std::array<KeyT*, kBuckets> *pa0 = &buf_a0;
+  std::array<KeyT*, kBuckets> *pb0 = &buf_b0;
+
+  // input pass
+  for (Si64 i = 0; i < (Si64)in_out_data.size(); ++i) {
+    KeyT val = in_out_data[i];
+    KeyT idx = val & kMask;
+    *(buf_a[idx]) = val;
+    ++buf_a[idx];
+  }
+  Ui64 shift = kBits;
+  while (shift < 8 * sizeof(KeyT)) {
+    // a->b pass
+    for (Si64 in_bucket_idx = 0; in_bucket_idx < kBuckets; ++in_bucket_idx) {
+      KeyT *begin = (*pa0)[in_bucket_idx];
+      KeyT *end = (*pa)[in_bucket_idx];
+      for (KeyT *p = begin; p < end; ++p) {
+        KeyT val = *p;
+        KeyT idx = (val >> shift) & kMask;
+        *(*pb)[idx] = val;
+        ++(*pb)[idx];
+      }
+    }
+    // swap a and b
+    std::swap(pa, pb);
+    std::swap(pa0, pb0);
+    for (KeyT i = 0; i < kBuckets; ++i) {
+      (*pb)[i] = (*pb0)[i];
+    }
+    shift += kBits;
+  }
+  // output pass
+  KeyT *out_p = &in_out_data[0];
+  for (Si64 in_bucket_idx = 0; in_bucket_idx < kBuckets; ++in_bucket_idx) {
+    KeyT *begin = (*pa0)[in_bucket_idx];
+    KeyT *end = (*pa)[in_bucket_idx];
+    for (KeyT *p = begin; p < end; ++p) {
+      *out_p = *p;
+      ++out_p;
+    }
+  }
+  if (kIsBig) {
+    free(temp);
+  }
+}
+
 void test_radix_sort() {
   std::vector<Ui32> input;
-  input.resize(5000);
+  input.resize(10000000);
   std::independent_bits_engine<std::mt19937_64, 64, Ui64> rnd;
   for (Si64 i = 0; i < (Si64)input.size(); ++i) {
-    input[i] = (Ui32)rnd();
+    input[i] = (Ui32)rnd() % 10;
   }
   std::chrono::high_resolution_clock clock;
-  std::vector<Ui32> input1(input);
-  auto t0 = clock.now();
-  std::sort(input1.begin(), input1.end());
-  auto t1 = clock.now();
-  std::cerr << std::endl;
-  std::cerr << "testing " << input.size() << " items" << std::endl;
-  std::cerr << "std::sort  duration: " << std::chrono::duration<double>(t1 - t0).count() << std::endl;
 
-  std::vector<Ui32> input2(input);
-  auto t2 = clock.now();
+  std::cerr << std::fixed << std::endl;
+  std::cerr.precision(8);
+  std::cerr << "testing " << input.size() << " items" << std::endl;
+  
+  {
+    std::vector<Ui32> input1(input);
+    auto t0 = clock.now();
+    std::sort(input1.begin(), input1.end());
+    auto t1 = clock.now();
+    std::cerr << "std::sort  duration: " << std::chrono::duration<double>(t1 - t0).count() << std::endl;
+  }
+
+  {
+    std::vector<Ui32> input2(input);
+    auto t2 = clock.now();
+    radix_sort(input2);
+    auto t3 = clock.now();
+    std::cerr << "radix sort duration: " << std::chrono::duration<double>(t3 - t2).count() << std::endl;
+  }
+
+  {
+    std::vector<Ui32> input3(input);
+    auto t4 = clock.now();
+    baseline_radix_sort(input3);
+    auto t5 = clock.now();
+    std::cerr << "base radix duration: " << std::chrono::duration<double>(t5 - t4).count() << std::endl;
+  }
+
+  {
+    std::vector<Ui32> input1(input);
+    auto t0 = clock.now();
+    std::sort(input1.begin(), input1.end());
+    auto t1 = clock.now();
+    std::cerr << "std::sort  duration: " << std::chrono::duration<double>(t1 - t0).count() << std::endl;
+  }
+
+  {
+    std::vector<Ui32> input2(input);
+    auto t2 = clock.now();
+    radix_sort(input2);
+    auto t3 = clock.now();
+    std::cerr << "radix sort duration: " << std::chrono::duration<double>(t3 - t2).count() << std::endl;
+  }
+
+  {
+    std::vector<Ui32> input3(input);
+    auto t4 = clock.now();
+    baseline_radix_sort(input3);
+    auto t5 = clock.now();
+    std::cerr << "base radix duration: " << std::chrono::duration<double>(t5 - t4).count() << std::endl;
+  }
+  {
+    std::vector<Ui32> input2(input);
+    auto t2 = clock.now();
+    radix_sort(input2);
+    auto t3 = clock.now();
+    std::cerr << "radix sort duration: " << std::chrono::duration<double>(t3 - t2).count() << std::endl;
+  }
+
+  {
+    std::vector<Ui32> input1(input);
+    auto t0 = clock.now();
+    std::sort(input1.begin(), input1.end());
+    auto t1 = clock.now();
+    std::cerr << "std::sort  duration: " << std::chrono::duration<double>(t1 - t0).count() << std::endl;
+  }
+  {
+    std::vector<Ui32> input3(input);
+    auto t4 = clock.now();
+    baseline_radix_sort(input3);
+    auto t5 = clock.now();
+    std::cerr << "base radix duration: " << std::chrono::duration<double>(t5 - t4).count() << std::endl;
+  }
+
+}
+
+void test_radix_sort_correctness() {
+  std::vector<Ui32> input1;
+  input1.resize(5000);
+  std::independent_bits_engine<std::mt19937_64, 64, Ui64> rnd;
+  for (Si64 i = 0; i < (Si64)input1.size(); ++i) {
+    input1[i] = (Ui32)rnd();
+  }
+  std::vector<Ui32> input2(input1);
+
+  std::sort(input1.begin(), input1.end());
   radix_sort(input2);
 
-
-  auto t3 = clock.now();
-  std::cerr << "radix sort duration: " << std::chrono::duration<double>(t3 - t2).count() << std::endl;
-
-  // check results
-  for (Si64 i = 0; i < (Si64)input.size(); ++i) {
+  for (Si64 i = 0; i < (Si64)input1.size(); ++i) {
     if (input1[i] != input2[i]) {
       TEST_CHECK(false && "lines do not match");
       break;
@@ -175,6 +326,7 @@ void test_file_operations() {
 
 TEST_LIST = {
   {"Radix sort", test_radix_sort},
+  {"Radix sort correctness", test_radix_sort_correctness},
   {"Rgb", test_rgb},
   {"File operations", test_file_operations},
   {0}
