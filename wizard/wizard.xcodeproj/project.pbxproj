@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		17D742A6B0289A25877E7149 /* arctic_platform_pi_es_egl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8564251A1E812877A794A79B /* arctic_platform_pi_es_egl.cpp */; };
 		1B312B5CD38DBA709E703C37 /* ofbx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E5B8BFF80236E863553ED790 /* ofbx.cpp */; };
 		30494AB9B3F9ADE189B2A5AF /* arctic_platform_pi_byteorder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F8C242DC394BBD23EC5EDC40 /* arctic_platform_pi_byteorder.cpp */; };
 		34436CFE1F642A66004DD16E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 34436CFD1F642A66004DD16E /* Assets.xcassets */; };
@@ -30,20 +31,20 @@
 		464BD175A97C439D019EB724 /* miniz.c in Sources */ = {isa = PBXBuildFile; fileRef = AEEC353CE1343BAEC93B53DC /* miniz.c */; };
 		4BD43F0F9823FECFE7F10F4C /* csv.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BA0501692C3E603ABAA13CA5 /* csv.cpp */; };
 		6567564F6DA360392AA570B3 /* arctic_platform_windows_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 105CF9107C756354FD3F8CDF /* arctic_platform_windows_sound.cpp */; };
+		71D661DF4BB43E105B32CF68 /* arctic_platform_pi_filesystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB2CB10DB0AAABC3ACD732EA /* arctic_platform_pi_filesystem.cpp */; };
 		9B8CAD78C87A7680CE0CADE0 /* arctic_platform_pi_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32A778C9FE53EE4A4D7DA058 /* arctic_platform_pi_sound.cpp */; };
 		B77B26C8316AFF5CA521101B /* arctic_platform_pi_fatal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FDC549EC6456DB91947CA9CA /* arctic_platform_pi_fatal.cpp */; };
+		B7FDCAEF1161F503CAABEC43 /* unicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7601E7C604452ACFDE7DCC39 /* unicode.cpp */; };
+		B9906EE9E994AD5CD86AAB25 /* arctic_platform_pi_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 21365DA828D892894A79048B /* arctic_platform_pi_input.cpp */; };
 		CECE0093B8AB8764011F6DE2 /* arctic_mixer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3A7BF7739A4E7CC657E4694B /* arctic_mixer.cpp */; };
 		CF039D3180431A30F0AA1AAA /* gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F87FB70864522B3B712F71F /* gui.cpp */; };
-		FD9BE784DC07A25D900D12AA /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 43E0FC3301A513CB59EBE648 /* arctic_platform_macosx_sound.mm */; };
-		17D742A6B0289A25877E7149 /* arctic_platform_pi_es_egl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8564251A1E812877A794A79B /* arctic_platform_pi_es_egl.cpp */; };
-		71D661DF4BB43E105B32CF68 /* arctic_platform_pi_filesystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DB2CB10DB0AAABC3ACD732EA /* arctic_platform_pi_filesystem.cpp */; };
-		B9906EE9E994AD5CD86AAB25 /* arctic_platform_pi_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 21365DA828D892894A79048B /* arctic_platform_pi_input.cpp */; };
 		F15120ADA5612BF23F09FDED /* arctic_platform_pi_opengl_glx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF50154262006677E5A9BAC4 /* arctic_platform_pi_opengl_glx.cpp */; };
-		B7FDCAEF1161F503CAABEC43 /* unicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7601E7C604452ACFDE7DCC39 /* unicode.cpp */; };
+		FD9BE784DC07A25D900D12AA /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 43E0FC3301A513CB59EBE648 /* arctic_platform_macosx_sound.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		105CF9107C756354FD3F8CDF /* arctic_platform_windows_sound.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_windows_sound.cpp; path = ../engine/arctic_platform_windows_sound.cpp; sourceTree = SOURCE_ROOT; };
+		21365DA828D892894A79048B /* arctic_platform_pi_input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_input.cpp; path = ../engine/arctic_platform_pi_input.cpp; sourceTree = SOURCE_ROOT; };
 		32A778C9FE53EE4A4D7DA058 /* arctic_platform_pi_sound.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_sound.cpp; path = ../engine/arctic_platform_pi_sound.cpp; sourceTree = SOURCE_ROOT; };
 		34436CF11F642A66004DD16E /* wizard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = wizard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		34436CFD1F642A66004DD16E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = wizard/Assets.xcassets; sourceTree = "<group>"; };
@@ -103,26 +104,25 @@
 		5D40B99ACAA85265BD0E6624 /* arctic_mixer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_mixer.h; path = ../engine/arctic_mixer.h; sourceTree = SOURCE_ROOT; };
 		5E4A7BFA883E2FD9361DE627 /* csv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = csv.h; path = ../engine/csv.h; sourceTree = SOURCE_ROOT; };
 		6119F8FFBB248C15A5241939 /* arctic_platform_sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_sound.h; path = ../engine/arctic_platform_sound.h; sourceTree = SOURCE_ROOT; };
+		65FEB0E1CD8E529C75C09382 /* glcorearb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glcorearb.h; path = ../engine/glcorearb.h; sourceTree = SOURCE_ROOT; };
+		7601E7C604452ACFDE7DCC39 /* unicode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = unicode.cpp; path = ../engine/unicode.cpp; sourceTree = SOURCE_ROOT; };
+		81E0DFB1F6BD74815D78AB8A /* cpplint.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cpplint.cfg; path = ../engine/cpplint.cfg; sourceTree = SOURCE_ROOT; };
+		8564251A1E812877A794A79B /* arctic_platform_pi_es_egl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_es_egl.cpp; path = ../engine/arctic_platform_pi_es_egl.cpp; sourceTree = SOURCE_ROOT; };
 		8883B6F41B16ABDAFA5CE636 /* test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test.h; path = ../engine/test.h; sourceTree = SOURCE_ROOT; };
+		9469B38E9D17EEB516DE82FE /* glext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glext.h; path = ../engine/glext.h; sourceTree = SOURCE_ROOT; };
 		9F87FB70864522B3B712F71F /* gui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gui.cpp; path = ../engine/gui.cpp; sourceTree = SOURCE_ROOT; };
 		AAEC2298D8A2DD764FE57C58 /* test_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = test_main.h; path = ../engine/test_main.h; sourceTree = SOURCE_ROOT; };
 		AEEC353CE1343BAEC93B53DC /* miniz.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = miniz.c; path = ../engine/miniz.c; sourceTree = SOURCE_ROOT; };
 		BA0501692C3E603ABAA13CA5 /* csv.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = csv.cpp; path = ../engine/csv.cpp; sourceTree = SOURCE_ROOT; };
 		BCABE2D229EF8949B499EB59 /* arctic_platform_byteorder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_byteorder.h; path = ../engine/arctic_platform_byteorder.h; sourceTree = SOURCE_ROOT; };
+		BF50154262006677E5A9BAC4 /* arctic_platform_pi_opengl_glx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_opengl_glx.cpp; path = ../engine/arctic_platform_pi_opengl_glx.cpp; sourceTree = SOURCE_ROOT; };
+		C0A3BF6C8BB250C75B0BE446 /* unicode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = unicode.h; path = ../engine/unicode.h; sourceTree = SOURCE_ROOT; };
+		DB2CB10DB0AAABC3ACD732EA /* arctic_platform_pi_filesystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_filesystem.cpp; path = ../engine/arctic_platform_pi_filesystem.cpp; sourceTree = SOURCE_ROOT; };
 		DB5B9F3DA4774C3A30277A94 /* arctic_platform_fatal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_fatal.h; path = ../engine/arctic_platform_fatal.h; sourceTree = SOURCE_ROOT; };
 		DD7A0669BE9852BAAC77A0AB /* ofbx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ofbx.h; path = ../engine/ofbx.h; sourceTree = SOURCE_ROOT; };
 		E5B8BFF80236E863553ED790 /* ofbx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofbx.cpp; path = ../engine/ofbx.cpp; sourceTree = SOURCE_ROOT; };
 		F8C242DC394BBD23EC5EDC40 /* arctic_platform_pi_byteorder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_byteorder.cpp; path = ../engine/arctic_platform_pi_byteorder.cpp; sourceTree = SOURCE_ROOT; };
 		FDC549EC6456DB91947CA9CA /* arctic_platform_pi_fatal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_fatal.cpp; path = ../engine/arctic_platform_pi_fatal.cpp; sourceTree = SOURCE_ROOT; };
-		8564251A1E812877A794A79B /* arctic_platform_pi_es_egl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_es_egl.cpp; path = ../engine/arctic_platform_pi_es_egl.cpp; sourceTree = SOURCE_ROOT; };
-		DB2CB10DB0AAABC3ACD732EA /* arctic_platform_pi_filesystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_filesystem.cpp; path = ../engine/arctic_platform_pi_filesystem.cpp; sourceTree = SOURCE_ROOT; };
-		21365DA828D892894A79048B /* arctic_platform_pi_input.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_input.cpp; path = ../engine/arctic_platform_pi_input.cpp; sourceTree = SOURCE_ROOT; };
-		BF50154262006677E5A9BAC4 /* arctic_platform_pi_opengl_glx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_opengl_glx.cpp; path = ../engine/arctic_platform_pi_opengl_glx.cpp; sourceTree = SOURCE_ROOT; };
-		81E0DFB1F6BD74815D78AB8A /* cpplint.cfg */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cpplint.cfg; path = ../engine/cpplint.cfg; sourceTree = SOURCE_ROOT; };
-		65FEB0E1CD8E529C75C09382 /* glcorearb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glcorearb.h; path = ../engine/glcorearb.h; sourceTree = SOURCE_ROOT; };
-		9469B38E9D17EEB516DE82FE /* glext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glext.h; path = ../engine/glext.h; sourceTree = SOURCE_ROOT; };
-		7601E7C604452ACFDE7DCC39 /* unicode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = unicode.cpp; path = ../engine/unicode.cpp; sourceTree = SOURCE_ROOT; };
-		C0A3BF6C8BB250C75B0BE446 /* unicode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = unicode.h; path = ../engine/unicode.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -293,7 +293,7 @@
 		34436CE91F642A66004DD16E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1110;
 				ORGANIZATIONNAME = Arctic;
 				TargetAttributes = {
 					34436CF01F642A66004DD16E = {
@@ -487,6 +487,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				"HEADER_SEARCH_PATHS[arch=*]" = $PROJECT_DIR/..;
 				INFOPLIST_FILE = Info.plist;
@@ -501,6 +502,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				"HEADER_SEARCH_PATHS[arch=*]" = $PROJECT_DIR/..;
 				INFOPLIST_FILE = Info.plist;

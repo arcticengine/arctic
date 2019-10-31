@@ -35,12 +35,20 @@
 #include <iostream>
 
 #include "engine/easy.h"
+#include "engine/decorated_frame.h"
 
 
 using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
 Font g_font;
+DecoratedFrame g_border;
+DecoratedFrame g_button_normal;
+DecoratedFrame g_button_hover;
+DecoratedFrame g_button_down;
+std::vector<Rgba> g_text_palete;
+
+
 std::string g_project_name;  // NOLINT
 std::string g_progress;  // NOLINT
 std::string g_path;  // NOLINT
@@ -152,32 +160,93 @@ void UpdateResolution() {
   }
 }
 
-bool GetOperationMode() {
-  bool is_done = false;
-  while (!IsKeyDownward(kKeyEscape)) {
-    UpdateResolution();
+Ui64 ShowModalDialogue(std::shared_ptr<Panel> gui) {
+  Ui64 clicked_button = Ui64(-1);
+  while (true) {
     Clear();
-    if (IsKeyUpward("C")) {
-      g_mode_of_operation = kModeCreate;
-      is_done = true;
-    } else if (IsKeyUpward("U")) {
-      g_mode_of_operation = kModeUpdate;
-      is_done = true;
-    }
-
-    const char *welcome = u8"The Snow Wizard\n\n"
-    "This wizard can create a new Arctic Engine project"
-      " for you or update an existing one.\n\n"
-    "Press C to Create a new project.\n"
-    "Press U to Update an existing project.\n"
-    "Press ESC to leave the Snow Wizard.";
-
-    g_font.Draw(welcome, 32, ScreenSize().y - 32, kTextOriginTop,
-                easy::kColorize, easy::kFilterNearest, g_palete);
+    gui->SetPos((ScreenSize() - gui->GetSize()) / 2);
+    gui->Draw(Vec2Si32(0, 0));
     ShowFrame();
-    if (is_done) {
-      return true;
+    if (IsKeyDownward(kKeyEscape) || clicked_button != Ui64(-1)) {
+      return clicked_button;
     }
+    std::deque<GuiMessage> messages;
+    for (Si32 idx = 0; idx < InputMessageCount(); ++idx) {
+      gui->ApplyInput(GetInputMessage(idx), &messages);
+    }
+    for (auto it = messages.begin(); it != messages.end(); ++it) {
+      if (it->kind == kGuiButtonClick) {
+        clicked_button = it->panel->GetTag();
+      }
+    }
+  }
+}
+
+std::shared_ptr<Button> MakeButton(Ui64 tag, Vec2Si32 pos,
+    KeyCode hotkey, Ui32 tab_order, std::string text, Vec2Si32 size = Vec2Si32(0, 0),
+    std::shared_ptr<Text> *out_text = nullptr) {
+  Vec2Si32 button_text_size = g_font.EvaluateSize(text.c_str(), false);
+  Vec2Si32 button_size = button_text_size + Vec2Si32(13 * 2 + 4, 4);
+  if (size != Vec2Si32(0, 0)) {
+    button_size = size;
+  }
+  Sprite button_normal = g_button_normal.DrawExternalSize(button_size);
+  Sprite button_hover = g_button_hover.DrawExternalSize(button_size);
+  Sprite button_down = g_button_down.DrawExternalSize(button_size);
+
+  Sound silent;
+  std::shared_ptr<Button> button(new Button(tag, pos,
+    button_normal, button_down, button_hover,
+    silent, silent, hotkey, tab_order));
+  std::shared_ptr<Text> button_textbox(new Text(
+    0, Vec2Si32(2, 8), Vec2Si32(button_size.x - 4, button_text_size.y),
+    0, g_font, kTextOriginBottom, g_palete, text, kAlignCenter));
+  button->AddChild(button_textbox);
+  if (out_text) {
+    *out_text = button_textbox;
+  }
+  return button;
+}
+
+bool GetOperationMode() {
+  UpdateResolution();
+
+  std::shared_ptr<Panel> box(new Panel(0, Vec2Si32(0, 0),
+    Vec2Si32(640, 480), 0, g_border.DrawExternalSize(Vec2Si32(640, 480))));
+  const Ui64 kCreateButton = 1;
+  const Ui64 kUpdateButton = 2;
+
+  const char *welcome = u8"The Snow Wizard\n\n"
+  "This wizard can create a new Arctic Engine project\n"
+    "for you or update an existing one.\n\n"
+
+  "Press ESC to leave the Snow Wizard.";
+
+
+  Ui32 y = box->GetSize().y-32;
+
+  std::shared_ptr<Text> textbox(new Text(
+    0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
+    0, g_font, kTextOriginTop, g_palete, welcome, kAlignCenter));
+  box->AddChild(textbox);
+  y = 32 + 48 + 64 ;
+  std::shared_ptr<Button> create_button = MakeButton(
+    kCreateButton, Vec2Si32(32, y), kKeyC,
+    1, "\001C\002reate a new project", Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(create_button);
+  y -= 64;
+  std::shared_ptr<Button> update_button = MakeButton(
+    kUpdateButton, Vec2Si32(32, y), kKeyU,
+    2, "\001U\002pdate an existing project", Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(update_button);
+
+  Ui64 action = ShowModalDialogue(box);
+  if (action == kCreateButton) {
+    g_mode_of_operation = kModeCreate;
+    return true;
+  } else if (action == kUpdateButton) {
+    g_mode_of_operation = kModeUpdate;
+    return true;
   }
   return false;
 }
@@ -1157,6 +1226,22 @@ void EasyMain() {
   g_palete.emplace_back((Ui32)0xffffffff);
   g_palete.emplace_back((Ui32)0xff6666ff);
   g_font.Load("data/arctic_one_bmf.fnt");
+
+  Sprite border;
+  border.Load("data/border.tga");
+  g_border.Split(border, 32, true, true);
+  Sprite button_normal;
+  button_normal.Load("data/button_normal.tga");
+  g_button_normal.Split(button_normal, 12, true, true);
+  Sprite button_hover;
+  button_hover.Load("data/button_hover.tga");
+  g_button_hover.Split(button_hover, 12, true, true);
+  Sprite button_down;
+  button_down.Load("data/button_down.tga");
+  g_button_down.Split(button_down, 12, true, true);
+
+  g_text_palete = {Rgba(255, 255, 255)};
+
 
   CsvTable csv;
   csv.LoadFile("data/deprecations.csv");
