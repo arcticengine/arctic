@@ -62,15 +62,6 @@ run_tests:
     - apt-get update --yes
     - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
   script:
-    - echo "pcm.card0 {" >/etc/asound.conf
-    - echo "  type hw" >>/etc/asound.conf
-    - echo "  card 0" >>/etc/asound.conf
-    - echo "}" >>/etc/asound.conf
-    - echo "ctl.card0 {" >>/etc/asound.conf
-    - echo "  type hw" >>/etc/asound.conf
-    - echo "  card 0" >>/etc/asound.conf
-    - echo "}" >>/etc/asound.conf
-    - /sbin/modprobe snd-dummy; /sbin/modprobe snd-pcm-oss; /sbin/modprobe snd-mixer-oss; /sbin/modprobe snd-seq-oss
     - cd tests
     - cmake .
     - make all
