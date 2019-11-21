@@ -923,6 +923,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   std::thread engine_thread(arctic::EngineThreadFunction,
     arctic::g_system_info);
+  engine_thread.detach();
   while (true) {
     MSG msg;
     BOOL ret = GetMessage(&msg, NULL, 0, 0);
@@ -942,7 +943,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   arctic::StopLogger();
   LocalFree(args);
   ExitProcess(0);
-  //    engine_thread.join();
   return 0;
 }
 

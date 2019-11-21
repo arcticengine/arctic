@@ -1,5 +1,6 @@
 #include "engine/test_main.h"
 
+#include <algorithm>
 #include <array>
 #include <deque>
 #include <string>

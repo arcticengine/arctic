@@ -260,13 +260,13 @@ void SoundPlayerImpl::Initialize() {
   is_initialized = true;
   std::thread st(arctic::SoundMixerThreadFunction);
   sound_thread = std::move(st);
+  sound_thread.detach();
 }
 
 void SoundPlayerImpl::Deinitialize() {
   if (is_initialized) {
     is_initialized = false;
     arctic::g_sound_mixer_state.do_quit = true;
-    sound_thread.join();
   }
 }
 
