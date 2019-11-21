@@ -60,8 +60,17 @@ run_tests:
   stage: test
   before_script:
     - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
+    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb alsa-base alsa-utils
   script:
+    - echo "pcm.card0 {" >/etc/asound.conf
+    - echo "  type hw" >>/etc/asound.conf
+    - echo "  card 0" >>/etc/asound.conf
+    - echo "}" >>/etc/asound.conf
+    - echo "ctl.card0 {" >>/etc/asound.conf
+    - echo "  type hw" >>/etc/asound.conf
+    - echo "  card 0" >>/etc/asound.conf
+    - echo "}" >>/etc/asound.conf
+    - modprobe snd-dummy; modprobe snd-pcm-oss; modprobe snd-mixer-oss; modprobe snd-seq-oss
     - cd tests
     - cmake .
     - make all
