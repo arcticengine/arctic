@@ -70,7 +70,7 @@ run_tests:
     - echo "  type hw" >>/etc/asound.conf
     - echo "  card 0" >>/etc/asound.conf
     - echo "}" >>/etc/asound.conf
-    - modprobe snd-dummy; modprobe snd-pcm-oss; modprobe snd-mixer-oss; modprobe snd-seq-oss
+    - /sbin/modprobe snd-dummy; /sbin/modprobe snd-pcm-oss; /sbin/modprobe snd-mixer-oss; /sbin/modprobe snd-seq-oss
     - cd tests
     - cmake .
     - make all
