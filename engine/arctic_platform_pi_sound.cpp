@@ -457,14 +457,16 @@ void StartSoundMixer(const char* output_device_name) {
 }
 
 void StopSoundMixer() {
-  g_sound_mixer_state.do_quit.store(true);
+  if (!g_sound_mixer_state.do_quit) {
+    g_sound_mixer_state.do_quit.store(true);
 
-  if (g_data.ahandler) {
-    int err = snd_async_del_handler(g_data.ahandler);
-    SoundCheck(err >= 0, "Can't delete async sound handler",
-        snd_strerror(err));
+    if (g_data.ahandler) {
+      int err = snd_async_del_handler(g_data.ahandler);
+      SoundCheck(err >= 0, "Can't delete async sound handler",
+          snd_strerror(err));
+    }
+    snd_pcm_close(g_data.handle);
   }
-  snd_pcm_close(g_data.handle);
 }
 
 void SoundPlayerImpl::Initialize(const char *input_device_system_name,
