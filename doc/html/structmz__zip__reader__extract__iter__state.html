@@ -28,9 +28,10 @@
 <table cellspacing="0" cellpadding="0">
  <tbody>
  <tr style="height: 56px;">
+  <td id="projectlogo"><img alt="Logo" src="icon_black_on_transparent_64.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Arctic Engine
-   &#160;<span id="projectnumber">0.401</span>
+   &#160;<span id="projectnumber">0.402</span>
    </div>
    <div id="projectbrief">Designed to give you control and not take anything away.</div>
   </td>
@@ -109,24 +110,24 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>status</b></td></tr>
 <tr class="memitem:a92097e7958c03a4f7c4f9f5f9145269d"><td class="memItemLeft" align="right" valign="top"><a id="a92097e7958c03a4f7c4f9f5f9145269d"></a>
 mz_uint&#160;</td><td class="memItemRight" valign="bottom"><b>file_crc32</b></td></tr>
 <tr class="separator:a92097e7958c03a4f7c4f9f5f9145269d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d1660fbffb6e64fcf7fc92c71e75b93"><td class="memItemLeft" align="right" valign="top"><a id="a5d1660fbffb6e64fcf7fc92c71e75b93"></a>
-mz_uint64&#160;</td><td class="memItemRight" valign="bottom"><b>read_buf_size</b></td></tr>
-<tr class="separator:a5d1660fbffb6e64fcf7fc92c71e75b93"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acf293fcde5b8047049770936f480ef35"><td class="memItemLeft" align="right" valign="top"><a id="acf293fcde5b8047049770936f480ef35"></a>
-mz_uint64&#160;</td><td class="memItemRight" valign="bottom"><b>read_buf_ofs</b></td></tr>
-<tr class="separator:acf293fcde5b8047049770936f480ef35"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa1f8c854643105032293013ef1f63e99"><td class="memItemLeft" align="right" valign="top"><a id="aa1f8c854643105032293013ef1f63e99"></a>
-mz_uint64&#160;</td><td class="memItemRight" valign="bottom"><b>read_buf_avail</b></td></tr>
-<tr class="separator:aa1f8c854643105032293013ef1f63e99"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a835bf9de4597638b9ae3ef3e8f7f770a"><td class="memItemLeft" align="right" valign="top"><a id="a835bf9de4597638b9ae3ef3e8f7f770a"></a>
-mz_uint64&#160;</td><td class="memItemRight" valign="bottom"><b>comp_remaining</b></td></tr>
-<tr class="separator:a835bf9de4597638b9ae3ef3e8f7f770a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4cfc70cb49cd1edc40bc9c39c1525296"><td class="memItemLeft" align="right" valign="top"><a id="a4cfc70cb49cd1edc40bc9c39c1525296"></a>
-mz_uint64&#160;</td><td class="memItemRight" valign="bottom"><b>out_buf_ofs</b></td></tr>
-<tr class="separator:a4cfc70cb49cd1edc40bc9c39c1525296"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee3911ccbf924ff0d716720809f7fa8a"><td class="memItemLeft" align="right" valign="top"><a id="aee3911ccbf924ff0d716720809f7fa8a"></a>
-mz_uint64&#160;</td><td class="memItemRight" valign="bottom"><b>cur_file_ofs</b></td></tr>
-<tr class="separator:aee3911ccbf924ff0d716720809f7fa8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad00cfdf7f616727fc615b04c6f5cd163"><td class="memItemLeft" align="right" valign="top"><a id="ad00cfdf7f616727fc615b04c6f5cd163"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>read_buf_size</b></td></tr>
+<tr class="separator:ad00cfdf7f616727fc615b04c6f5cd163"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40a0a9ba2757635458707681c5120b03"><td class="memItemLeft" align="right" valign="top"><a id="a40a0a9ba2757635458707681c5120b03"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>read_buf_ofs</b></td></tr>
+<tr class="separator:a40a0a9ba2757635458707681c5120b03"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2ecc49fa031480eb8612bbce7d5e4e1"><td class="memItemLeft" align="right" valign="top"><a id="ae2ecc49fa031480eb8612bbce7d5e4e1"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>read_buf_avail</b></td></tr>
+<tr class="separator:ae2ecc49fa031480eb8612bbce7d5e4e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4e07ee3c846b8ebe0549b32f5774adf2"><td class="memItemLeft" align="right" valign="top"><a id="a4e07ee3c846b8ebe0549b32f5774adf2"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>comp_remaining</b></td></tr>
+<tr class="separator:a4e07ee3c846b8ebe0549b32f5774adf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a611e0112c8d418323fc715e843c7dcce"><td class="memItemLeft" align="right" valign="top"><a id="a611e0112c8d418323fc715e843c7dcce"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>out_buf_ofs</b></td></tr>
+<tr class="separator:a611e0112c8d418323fc715e843c7dcce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29f451664dd05220f5a932daaef7cce9"><td class="memItemLeft" align="right" valign="top"><a id="a29f451664dd05220f5a932daaef7cce9"></a>
+uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>cur_file_ofs</b></td></tr>
+<tr class="separator:a29f451664dd05220f5a932daaef7cce9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a70e07c7c822ee9014f5092be0b3c01ff"><td class="memItemLeft" align="right" valign="top"><a id="a70e07c7c822ee9014f5092be0b3c01ff"></a>
 <a class="el" href="structmz__zip__archive__file__stat.html">mz_zip_archive_file_stat</a>&#160;</td><td class="memItemRight" valign="bottom"><b>file_stat</b></td></tr>
 <tr class="separator:a70e07c7c822ee9014f5092be0b3c01ff"><td class="memSeparator" colspan="2">&#160;</td></tr>

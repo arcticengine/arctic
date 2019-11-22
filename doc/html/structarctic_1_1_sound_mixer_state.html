@@ -28,9 +28,10 @@
 <table cellspacing="0" cellpadding="0">
  <tbody>
  <tr style="height: 56px;">
+  <td id="projectlogo"><img alt="Logo" src="icon_black_on_transparent_64.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Arctic Engine
-   &#160;<span id="projectnumber">0.401</span>
+   &#160;<span id="projectnumber">0.402</span>
    </div>
    <div id="projectbrief">Designed to give you control and not take anything away.</div>
   </td>
@@ -98,9 +99,18 @@ $(document).ready(function(){initNavTree('structarctic_1_1_sound_mixer_state.htm
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:afeb3dab1907b6fca55bd35026812bf8c"><td class="memItemLeft" align="right" valign="top"><a id="afeb3dab1907b6fca55bd35026812bf8c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>AddSoundTask</b> (<a class="el" href="structarctic_1_1_sound_buffer.html">SoundBuffer</a> &amp;buffer)</td></tr>
-<tr class="separator:afeb3dab1907b6fca55bd35026812bf8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6b8c1d3d302f93d20c0568f3ee5c99da"><td class="memItemLeft" align="right" valign="top"><a id="a6b8c1d3d302f93d20c0568f3ee5c99da"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>SetError</b> (std::string description)</td></tr>
+<tr class="separator:a6b8c1d3d302f93d20c0568f3ee5c99da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92d737df022b6c654d90e2050737e309"><td class="memItemLeft" align="right" valign="top"><a id="a92d737df022b6c654d90e2050737e309"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>IsOk</b> ()</td></tr>
+<tr class="separator:a92d737df022b6c654d90e2050737e309"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2bff170751ec70beed7aa7ff19d0ac44"><td class="memItemLeft" align="right" valign="top"><a id="a2bff170751ec70beed7aa7ff19d0ac44"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>GetErrorDescription</b> ()</td></tr>
+<tr class="separator:a2bff170751ec70beed7aa7ff19d0ac44"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9a16f9456da1b6ea43a3e32d611421f4"><td class="memItemLeft" align="right" valign="top"><a id="a9a16f9456da1b6ea43a3e32d611421f4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>AddSoundTask</b> (const <a class="el" href="structarctic_1_1_sound_buffer.html">SoundBuffer</a> &amp;buffer)</td></tr>
+<tr class="separator:a9a16f9456da1b6ea43a3e32d611421f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8b086bc44218aa2d5e01863fae1a9f5e"><td class="memItemLeft" align="right" valign="top"><a id="a8b086bc44218aa2d5e01863fae1a9f5e"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InputTasksToMixerThread</b> ()</td></tr>
 <tr class="separator:a8b086bc44218aa2d5e01863fae1a9f5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -110,6 +120,15 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a254a26c7895c83f653d480a14d7fd00d"><td class="memItemLeft" align="right" valign="top"><a id="a254a26c7895c83f653d480a14d7fd00d"></a>
 std::atomic&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>do_quit</b> = ATOMIC_VAR_INIT(false)</td></tr>
 <tr class="separator:a254a26c7895c83f653d480a14d7fd00d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe7dce048e2e7df1a38ad74002fcaa20"><td class="memItemLeft" align="right" valign="top"><a id="abe7dce048e2e7df1a38ad74002fcaa20"></a>
+std::atomic&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>is_ok</b> = ATOMIC_VAR_INIT(true)</td></tr>
+<tr class="separator:abe7dce048e2e7df1a38ad74002fcaa20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1a9109b3b0e2c869ec8cda967b208a94"><td class="memItemLeft" align="right" valign="top"><a id="a1a9109b3b0e2c869ec8cda967b208a94"></a>
+std::mutex&#160;</td><td class="memItemRight" valign="bottom"><b>error_mutex</b></td></tr>
+<tr class="separator:a1a9109b3b0e2c869ec8cda967b208a94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abdd3df8268739e90cf294a361ce5f9be"><td class="memItemLeft" align="right" valign="top"><a id="abdd3df8268739e90cf294a361ce5f9be"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>error_description</b> = &quot;Error description is not set.&quot;</td></tr>
+<tr class="separator:abdd3df8268739e90cf294a361ce5f9be"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac78bc23a6aeeb24e6dd26fc17fff7ac3"><td class="memItemLeft" align="right" valign="top"><a id="ac78bc23a6aeeb24e6dd26fc17fff7ac3"></a>
 std::atomic&lt; float &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>master_volume</b> = ATOMIC_VAR_INIT(0.7f)</td></tr>
 <tr class="separator:ac78bc23a6aeeb24e6dd26fc17fff7ac3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -123,7 +142,7 @@ std::atomic&lt; Si64 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>
 std::mutex&#160;</td><td class="memItemRight" valign="bottom"><b>task_mutex</b></td></tr>
 <tr class="separator:aef4df90904674471ec88c045ea5eb8f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae7271973fb3a19d10ef527c4294a0750"><td class="memItemLeft" align="right" valign="top"><a id="ae7271973fb3a19d10ef527c4294a0750"></a>
-std::atomic&lt; Ui64 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>task_count</b></td></tr>
+std::atomic&lt; Ui64 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>task_count</b> = ATOMIC_VAR_INIT(0)</td></tr>
 <tr class="separator:ae7271973fb3a19d10ef527c4294a0750"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a47a17b271ad4414d499a042d0e27146c"><td class="memItemLeft" align="right" valign="top"><a id="a47a17b271ad4414d499a042d0e27146c"></a>
 std::deque&lt; <a class="el" href="structarctic_1_1_sound_buffer.html">SoundBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>tasks</b></td></tr>

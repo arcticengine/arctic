@@ -1,0 +1,11 @@
+digraph "inflate_state"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="inflate_state",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_decomp" ,fontname="Helvetica"];
+  Node2 [label="tinfl_decompressor_tag",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structtinfl__decompressor__tag.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_tables" ,fontname="Helvetica"];
+  Node3 [label="tinfl_huff_table",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structtinfl__huff__table.html",tooltip=" "];
+}

@@ -1,0 +1,16 @@
+digraph "arctic::HorizontalScroll"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node3 [label="arctic::HorizontalScroll",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node4 [label="arctic::Panel",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classarctic_1_1_panel.html",tooltip=" "];
+  Node5 -> Node4 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node5 [label="std::enable_shared\l_from_this\< Panel \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled",tooltip=" "];
+  Node6 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" size_\npos_" ,fontname="Helvetica"];
+  Node6 [label="arctic::Vec2Si32",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1_vec2_si32.html",tooltip=" "];
+  Node7 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" background_" ,fontname="Helvetica"];
+  Node7 [label="arctic::easy::Sprite",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classarctic_1_1easy_1_1_sprite.html",tooltip=" "];
+  Node7 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" down_button_right_\nfocused_button_left\l_\nnormal_button_right\l_\nfocused_background\l_\nfocused_button\l_right_\ndown_button_cur\l_\nfocused_button\l_cur_\ndown_button\l_left_\nnormal_button\l_cur_\nnormal_background\l_\n..." ,fontname="Helvetica"];
+}

@@ -1,6 +1,6 @@
 var structarctic_1_1ofbx_1_1_header =
 [
-    [ "magic", "structarctic_1_1ofbx_1_1_header.html#ad55c96dddea67c420857ebd074468ae4", null ],
-    [ "reserved", "structarctic_1_1ofbx_1_1_header.html#a27ed1c70744b7a80a8bf22460b9f9a43", null ],
-    [ "version", "structarctic_1_1ofbx_1_1_header.html#ad50e7b51d5b069de576784045dad3c98", null ]
+    [ "magic", "structarctic_1_1ofbx_1_1_header.html#a7799dc715358fb7b18fa1bbb6aa25f6a", null ],
+    [ "reserved", "structarctic_1_1ofbx_1_1_header.html#a9bc619e933fc698bd0b3bef300c8d37f", null ],
+    [ "version", "structarctic_1_1ofbx_1_1_header.html#a5551681b53470e886fe8ff6a7b46d471", null ]
 ];

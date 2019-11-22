@@ -9,8 +9,8 @@ var structarctic_1_1ofbx_1_1_global_settings =
     [ "OriginalUpAxis", "structarctic_1_1ofbx_1_1_global_settings.html#a3078526f7b7210e705a069d066e552a0", null ],
     [ "OriginalUpAxisSign", "structarctic_1_1ofbx_1_1_global_settings.html#af1dc62e1ffddbd5ba3ea6188cb0e34e0", null ],
     [ "TimeMode", "structarctic_1_1ofbx_1_1_global_settings.html#a119b4dcbbc4fbee7e5fecba63f950953", null ],
-    [ "TimeSpanStart", "structarctic_1_1ofbx_1_1_global_settings.html#aa7c9fe2a225def70dd84a86c8c851218", null ],
-    [ "TimeSpanStop", "structarctic_1_1ofbx_1_1_global_settings.html#aff0e59b97672e094261082534f5a77ab", null ],
+    [ "TimeSpanStart", "structarctic_1_1ofbx_1_1_global_settings.html#a56b0e8712ab3deace219dc8c375fbf3f", null ],
+    [ "TimeSpanStop", "structarctic_1_1ofbx_1_1_global_settings.html#aae46aec4a2a95253a5b1aec3c3012e64", null ],
     [ "UnitScaleFactor", "structarctic_1_1ofbx_1_1_global_settings.html#ae32cc6e5728ffcce16da4b72c51c1e3c", null ],
     [ "UpAxis", "structarctic_1_1ofbx_1_1_global_settings.html#a9dc4cbd1d7f182c7a83e4cf71fafec41", null ],
     [ "UpAxisSign", "structarctic_1_1ofbx_1_1_global_settings.html#adcb160d5521f4c5abc24664564d6e696", null ]

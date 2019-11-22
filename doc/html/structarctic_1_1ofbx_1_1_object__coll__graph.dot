@@ -1,0 +1,32 @@
+digraph "arctic::ofbx::Object"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node26 [label="arctic::ofbx::Object",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node27 -> Node26 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" scene" ,fontname="Helvetica"];
+  Node27 [label="arctic::ofbx::Scene",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_scene.html",tooltip=" "];
+  Node28 -> Node27 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node28 [label="arctic::ofbx::IScene",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_i_scene.html",tooltip=" "];
+  Node29 -> Node27 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_root" ,fontname="Helvetica"];
+  Node29 [label="arctic::ofbx::Root",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_root.html",tooltip=" "];
+  Node26 -> Node29 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node30 -> Node27 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_settings" ,fontname="Helvetica"];
+  Node30 [label="arctic::ofbx::GlobalSettings",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_global_settings.html",tooltip=" "];
+  Node31 -> Node27 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" m_root_element" ,fontname="Helvetica"];
+  Node31 [label="arctic::ofbx::Element",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_element.html",tooltip=" "];
+  Node32 -> Node31 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node32 [label="arctic::ofbx::IElement",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_i_element.html",tooltip=" "];
+  Node33 -> Node31 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" first_property" ,fontname="Helvetica"];
+  Node33 [label="arctic::ofbx::Property",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_property.html",tooltip=" "];
+  Node34 -> Node33 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node34 [label="arctic::ofbx::IElementProperty",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_i_element_property.html",tooltip=" "];
+  Node33 -> Node33 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" next" ,fontname="Helvetica"];
+  Node35 -> Node33 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" value" ,fontname="Helvetica"];
+  Node35 [label="arctic::ofbx::DataView",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structarctic_1_1ofbx_1_1_data_view.html",tooltip=" "];
+  Node31 -> Node31 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" sibling\nchild" ,fontname="Helvetica"];
+  Node35 -> Node31 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" id" ,fontname="Helvetica"];
+  Node26 -> Node26 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" node_attribute" ,fontname="Helvetica"];
+  Node32 -> Node26 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" element" ,fontname="Helvetica"];
+}

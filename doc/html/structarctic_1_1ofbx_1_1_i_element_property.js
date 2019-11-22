@@ -16,9 +16,9 @@ var structarctic_1_1ofbx_1_1_i_element_property =
     [ "getNext", "structarctic_1_1ofbx_1_1_i_element_property.html#a69cbadbad9b58866c0c7d03355d15925", null ],
     [ "getType", "structarctic_1_1ofbx_1_1_i_element_property.html#a5e330240055b7e39fd07342341b0773c", null ],
     [ "getValue", "structarctic_1_1ofbx_1_1_i_element_property.html#abd9e28451ec36c813356950ea781f33d", null ],
-    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#a7afbb506d8f282d762a94a8f3d0cbcbf", null ],
-    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#ae40bb0aeb0d27e8b8752ace0a415e644", null ],
-    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#ac59d17b21700395f285a2158cbfd2669", null ],
-    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#ae7e34da93aea95b332390e05614a967b", null ],
-    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#abe547bbc5bb948e5f2ebd3c2a622a2a5", null ]
+    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#a7fb4a1dc7d2c6dc1c93035fbaba048fb", null ],
+    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#a38dcd1fa25b616639ae81137fbe49937", null ],
+    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#add2ead9c97d9950a1043999d8fbb62d2", null ],
+    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#a8f4cb4abce54e65ed73d8f12e8ad6fd6", null ],
+    [ "getValues", "structarctic_1_1ofbx_1_1_i_element_property.html#a54e660df3705ca501579cf37b65ff220", null ]
 ];

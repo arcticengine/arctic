@@ -28,9 +28,10 @@
 <table cellspacing="0" cellpadding="0">
  <tbody>
  <tr style="height: 56px;">
+  <td id="projectlogo"><img alt="Logo" src="icon_black_on_transparent_64.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Arctic Engine
-   &#160;<span id="projectnumber">0.401</span>
+   &#160;<span id="projectnumber">0.402</span>
    </div>
    <div id="projectbrief">Designed to give you control and not take anything away.</div>
   </td>
@@ -97,6 +98,9 @@ $(document).ready(function(){initNavTree('classarctic_1_1easy_1_1_sprite.html','
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a5e816d3e3967013eb2d3702d668442ab"><td class="memItemLeft" align="right" valign="top"><a id="a5e816d3e3967013eb2d3702d668442ab"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>LoadFromData</b> (const Ui8 *data, Ui64 size_bytes, const char *file_name)</td></tr>
+<tr class="separator:a5e816d3e3967013eb2d3702d668442ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f604084a3a675bb8bbaf5d7013f1acb"><td class="memItemLeft" align="right" valign="top"><a id="a4f604084a3a675bb8bbaf5d7013f1acb"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Load</b> (const char *file_name)</td></tr>
 <tr class="separator:a4f604084a3a675bb8bbaf5d7013f1acb"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -109,12 +113,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Save</b> (const char 
 <tr class="memitem:a80c13b22cdff29e347382eef8d995db5"><td class="memItemLeft" align="right" valign="top"><a id="a80c13b22cdff29e347382eef8d995db5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Save</b> (const std::string &amp;file_name)</td></tr>
 <tr class="separator:a80c13b22cdff29e347382eef8d995db5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aec6f99971daa8189f522a4e5ff594806"><td class="memItemLeft" align="right" valign="top"><a id="aec6f99971daa8189f522a4e5ff594806"></a>
+std::vector&lt; Ui8 &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>SaveToData</b> (const char *file_name)</td></tr>
+<tr class="separator:aec6f99971daa8189f522a4e5ff594806"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa880be8dae9adb750e3ed0ce3e27af3f"><td class="memItemLeft" align="right" valign="top"><a id="aa880be8dae9adb750e3ed0ce3e27af3f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Create</b> (const Si32 width, const Si32 height)</td></tr>
 <tr class="separator:aa880be8dae9adb750e3ed0ce3e27af3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab302b4f7f1d65b4e6db23a098086d64c"><td class="memItemLeft" align="right" valign="top"><a id="ab302b4f7f1d65b4e6db23a098086d64c"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>Reference</b> (<a class="el" href="classarctic_1_1easy_1_1_sprite.html">Sprite</a> &amp;from, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height)</td></tr>
-<tr class="separator:ab302b4f7f1d65b4e6db23a098086d64c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cf6c4ea882ef48f3c339101139ca3d7"><td class="memItemLeft" align="right" valign="top"><a id="a9cf6c4ea882ef48f3c339101139ca3d7"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>Reference</b> (const <a class="el" href="classarctic_1_1easy_1_1_sprite.html">Sprite</a> &amp;from, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height)</td></tr>
+<tr class="separator:a9cf6c4ea882ef48f3c339101139ca3d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf0970ef0cee203058a35e3b9b3f99ba"><td class="memItemLeft" align="right" valign="top"><a id="abf0970ef0cee203058a35e3b9b3f99ba"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>Clear</b> ()</td></tr>
 <tr class="separator:abf0970ef0cee203058a35e3b9b3f99ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -202,6 +209,9 @@ Ui8 *&#160;</td><td class="memItemRight" valign="bottom"><b>RawData</b> ()</td><
 <tr class="memitem:a1a64a3ec112b5a3c03ce69c9ffc35140"><td class="memItemLeft" align="right" valign="top"><a id="a1a64a3ec112b5a3c03ce69c9ffc35140"></a>
 <a class="el" href="structarctic_1_1_rgba.html">Rgba</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>RgbaData</b> ()</td></tr>
 <tr class="separator:a1a64a3ec112b5a3c03ce69c9ffc35140"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f077ff29f150f53c8ab20e78de57968"><td class="memItemLeft" align="right" valign="top"><a id="a4f077ff29f150f53c8ab20e78de57968"></a>
+const <a class="el" href="structarctic_1_1_rgba.html">Rgba</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>RgbaData</b> () const</td></tr>
+<tr class="separator:a4f077ff29f150f53c8ab20e78de57968"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b12b60bb5ae547f473b162cc170ca31"><td class="memItemLeft" align="right" valign="top"><a id="a3b12b60bb5ae547f473b162cc170ca31"></a>
 const std::vector&lt; <a class="el" href="structarctic_1_1easy_1_1_span_si32.html">SpanSi32</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>Opaque</b> () const</td></tr>
 <tr class="separator:a3b12b60bb5ae547f473b162cc170ca31"><td class="memSeparator" colspan="2">&#160;</td></tr>

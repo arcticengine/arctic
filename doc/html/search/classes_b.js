@@ -6,7 +6,7 @@ var searchData=
   ['material',['Material',['../structarctic_1_1ofbx_1_1_material.html',1,'arctic::ofbx']]],
   ['materialimpl',['MaterialImpl',['../structarctic_1_1ofbx_1_1_material_impl.html',1,'arctic::ofbx']]],
   ['mathtables',['MathTables',['../structarctic_1_1_math_tables.html',1,'arctic']]],
-  ['matrix',['Matrix',['../structarctic_1_1ofbx_1_1_matrix.html',1,'arctic::ofbx']]],
+  ['matrix44d',['Matrix44D',['../structarctic_1_1ofbx_1_1_matrix44_d.html',1,'arctic::ofbx']]],
   ['mesh',['Mesh',['../structarctic_1_1ofbx_1_1_mesh.html',1,'arctic::ofbx']]],
   ['meshimpl',['MeshImpl',['../structarctic_1_1ofbx_1_1_mesh_impl.html',1,'arctic::ofbx']]],
   ['mouse',['Mouse',['../structarctic_1_1_input_message_1_1_mouse.html',1,'arctic::InputMessage']]],

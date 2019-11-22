@@ -1,7 +1,7 @@
 var structinflate__state =
 [
     [ "m_decomp", "structinflate__state.html#aa112419e6fc485a0569d89b0dac4c40d", null ],
-    [ "m_dict", "structinflate__state.html#a6d9569803f5139b8bb11b409f69f598b", null ],
+    [ "m_dict", "structinflate__state.html#a34081ff1827d0d59258f632136188944", null ],
     [ "m_dict_avail", "structinflate__state.html#a45eb73702d5588b380842d55633adfa1", null ],
     [ "m_dict_ofs", "structinflate__state.html#a26b59390ae38c5a0ee081a729479b89f", null ],
     [ "m_first_call", "structinflate__state.html#a8ed1d9e9a13f5e5f5c4229c67509a5a1", null ],

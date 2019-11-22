@@ -1,10 +1,11 @@
 var classarctic_1_1_editbox =
 [
-    [ "Editbox", "classarctic_1_1_editbox.html#a4eca99bf7020e1b495dae1768ec1433e", null ],
+    [ "Editbox", "classarctic_1_1_editbox.html#afe4da3784a9591cd387c0e72da96dca6", null ],
     [ "ApplyInput", "classarctic_1_1_editbox.html#ab0b26968780280e4da7923c5c904d345", null ],
     [ "Draw", "classarctic_1_1_editbox.html#aa2f8efd6a536854d0868f992ecc01b7a", null ],
     [ "GetText", "classarctic_1_1_editbox.html#a79517b39a5bcb13980c71551734d4186", null ],
     [ "SelectAll", "classarctic_1_1_editbox.html#aa3151ec1cbaeecc61eabb7b2bfdc7e31", null ],
+    [ "SetSelectionMode", "classarctic_1_1_editbox.html#a5bb7fbb522312f418ca447a79a1bba26", null ],
     [ "SetText", "classarctic_1_1_editbox.html#a0abd698626deed23645cb3bd16022e69", null ],
     [ "alignment_", "classarctic_1_1_editbox.html#a4df7559af8cb72a11227f9b5095ce7f9", null ],
     [ "color_", "classarctic_1_1_editbox.html#a723ec5f0f65d64d4eb1a1910e703b04d", null ],
@@ -16,6 +17,10 @@ var classarctic_1_1_editbox =
     [ "normal_", "classarctic_1_1_editbox.html#a0c8b61141c85debe35bb2e8f753ecfd5", null ],
     [ "origin_", "classarctic_1_1_editbox.html#afa997bda71081cb65d3db32c4a196263", null ],
     [ "selection_begin_", "classarctic_1_1_editbox.html#ab3c353d04a6cf897170fcafc75347ebb", null ],
+    [ "selection_color_1_", "classarctic_1_1_editbox.html#ab9375dd5f4f1ec2b5d305033458bd04a", null ],
+    [ "selection_color_2_", "classarctic_1_1_editbox.html#a1063283c452cfe5cb1aceaef67feffa1", null ],
     [ "selection_end_", "classarctic_1_1_editbox.html#a54ef5e8fa19950dcc658e4db9f77ea2c", null ],
-    [ "text_", "classarctic_1_1_editbox.html#a4332ecb510ed9e757c5e28275eb8590d", null ]
+    [ "selection_mode_", "classarctic_1_1_editbox.html#a522f95081060e66da258e87cbb7abc3f", null ],
+    [ "text_", "classarctic_1_1_editbox.html#a4332ecb510ed9e757c5e28275eb8590d", null ],
+    [ "white_list_", "classarctic_1_1_editbox.html#adbb92bce218bccc3c8617422fdcec306", null ]
 ];

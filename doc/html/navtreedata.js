@@ -43,11 +43,12 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 ".html",
-"classarctic_1_1easy_1_1_sprite.html#ac21d6b8e3fef34ac187f4f4991c09348",
-"structarctic_1_1_sound_buffer.html#a707e39f36c88c7834b8c58bc1d772fd3ae53fbac2bb7cf833b3e5aaa9233fa99d",
-"structarctic_1_1_vec4_f.html#ac58109e49907a52d88414abecea1c933",
-"structarctic_1_1ofbx_1_1_geometry_impl.html#a98cb9a4e7f576b37a3e83a7189a9464b",
-"structarctic_1_1ofbx_1_1_texture.html#a796d2e69fd9c7e34802090c07d5cfce6a3096490da2c1ebfb09a17c6f56c8d28e"
+"classarctic_1_1easy_1_1_sound_instance.html#a08dbe2bbf5fead53688ec5a28ecd194b",
+"structarctic_1_1_mat44_f.html#a60e025c47eb1fbc7737293dac315dc28",
+"structarctic_1_1_vec3_si32.html#ae86ec11d8ae1d61c5814999911a44962",
+"structarctic_1_1ofbx_1_1_cluster_impl.html#af16abf98f83bb27c7855acd768fbffc1",
+"structarctic_1_1ofbx_1_1_root.html#affe4f98b19440ec2e21e371174876e09",
+"structtinfl__decompressor__tag.html#af9423e90a8651cc0824d5f4cf4a94235"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

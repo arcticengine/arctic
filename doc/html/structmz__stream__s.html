@@ -28,9 +28,10 @@
 <table cellspacing="0" cellpadding="0">
  <tbody>
  <tr style="height: 56px;">
+  <td id="projectlogo"><img alt="Logo" src="icon_black_on_transparent_64.png"/></td>
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">Arctic Engine
-   &#160;<span id="projectnumber">0.401</span>
+   &#160;<span id="projectnumber">0.402</span>
    </div>
    <div id="projectbrief">Designed to give you control and not take anything away.</div>
   </td>
@@ -95,178 +96,69 @@ $(document).ready(function(){initNavTree('structmz__stream__s.html','');});
 </div><!--header-->
 <div class="contents">
 
+<p>Compression/decompression stream struct.  
+ <a href="structmz__stream__s.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="miniz_8h_source.html">miniz.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:aa75ed42cc83b0f74d7fcce6299439307"><td class="memItemLeft" align="right" valign="top">const unsigned char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#aa75ed42cc83b0f74d7fcce6299439307">next_in</a></td></tr>
+<tr class="memitem:aa75ed42cc83b0f74d7fcce6299439307"><td class="memItemLeft" align="right" valign="top"><a id="aa75ed42cc83b0f74d7fcce6299439307"></a>
+const unsigned char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#aa75ed42cc83b0f74d7fcce6299439307">next_in</a></td></tr>
+<tr class="memdesc:aa75ed42cc83b0f74d7fcce6299439307"><td class="mdescLeft">&#160;</td><td class="mdescRight">pointer to next byte to read <br /></td></tr>
 <tr class="separator:aa75ed42cc83b0f74d7fcce6299439307"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aafcd4c220622ede6d54015f1fbdadd9e"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#aafcd4c220622ede6d54015f1fbdadd9e">avail_in</a></td></tr>
+<tr class="memitem:aafcd4c220622ede6d54015f1fbdadd9e"><td class="memItemLeft" align="right" valign="top"><a id="aafcd4c220622ede6d54015f1fbdadd9e"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#aafcd4c220622ede6d54015f1fbdadd9e">avail_in</a></td></tr>
+<tr class="memdesc:aafcd4c220622ede6d54015f1fbdadd9e"><td class="mdescLeft">&#160;</td><td class="mdescRight">number of bytes available at next_in <br /></td></tr>
 <tr class="separator:aafcd4c220622ede6d54015f1fbdadd9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abfa083eb7707360c33389ec12fadf376"><td class="memItemLeft" align="right" valign="top">mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#abfa083eb7707360c33389ec12fadf376">total_in</a></td></tr>
+<tr class="memitem:abfa083eb7707360c33389ec12fadf376"><td class="memItemLeft" align="right" valign="top"><a id="abfa083eb7707360c33389ec12fadf376"></a>
+mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#abfa083eb7707360c33389ec12fadf376">total_in</a></td></tr>
+<tr class="memdesc:abfa083eb7707360c33389ec12fadf376"><td class="mdescLeft">&#160;</td><td class="mdescRight">total number of bytes consumed so far <br /></td></tr>
 <tr class="separator:abfa083eb7707360c33389ec12fadf376"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c569383efce3b9d9e7c02e3e03941bc"><td class="memItemLeft" align="right" valign="top">unsigned char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a2c569383efce3b9d9e7c02e3e03941bc">next_out</a></td></tr>
+<tr class="memitem:a2c569383efce3b9d9e7c02e3e03941bc"><td class="memItemLeft" align="right" valign="top"><a id="a2c569383efce3b9d9e7c02e3e03941bc"></a>
+unsigned char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a2c569383efce3b9d9e7c02e3e03941bc">next_out</a></td></tr>
+<tr class="memdesc:a2c569383efce3b9d9e7c02e3e03941bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">pointer to next byte to write <br /></td></tr>
 <tr class="separator:a2c569383efce3b9d9e7c02e3e03941bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9092fed61f7be520fb1bbcf152905ee8"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a9092fed61f7be520fb1bbcf152905ee8">avail_out</a></td></tr>
+<tr class="memitem:a9092fed61f7be520fb1bbcf152905ee8"><td class="memItemLeft" align="right" valign="top"><a id="a9092fed61f7be520fb1bbcf152905ee8"></a>
+unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a9092fed61f7be520fb1bbcf152905ee8">avail_out</a></td></tr>
+<tr class="memdesc:a9092fed61f7be520fb1bbcf152905ee8"><td class="mdescLeft">&#160;</td><td class="mdescRight">n of bytes that can be written to next_out <br /></td></tr>
 <tr class="separator:a9092fed61f7be520fb1bbcf152905ee8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5cf2c15cc49a99ee7d541375798a3e27"><td class="memItemLeft" align="right" valign="top"><a id="a5cf2c15cc49a99ee7d541375798a3e27"></a>
-mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><b>total_out</b></td></tr>
+mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a5cf2c15cc49a99ee7d541375798a3e27">total_out</a></td></tr>
+<tr class="memdesc:a5cf2c15cc49a99ee7d541375798a3e27"><td class="mdescLeft">&#160;</td><td class="mdescRight">total number of bytes produced so far <br /></td></tr>
 <tr class="separator:a5cf2c15cc49a99ee7d541375798a3e27"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad4095b25455e382787dc06d20157e05f"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#ad4095b25455e382787dc06d20157e05f">msg</a></td></tr>
+<tr class="memitem:ad4095b25455e382787dc06d20157e05f"><td class="memItemLeft" align="right" valign="top"><a id="ad4095b25455e382787dc06d20157e05f"></a>
+char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#ad4095b25455e382787dc06d20157e05f">msg</a></td></tr>
+<tr class="memdesc:ad4095b25455e382787dc06d20157e05f"><td class="mdescLeft">&#160;</td><td class="mdescRight">error msg (unused) <br /></td></tr>
 <tr class="separator:ad4095b25455e382787dc06d20157e05f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a935cdb239d37161b5a5e6eda1e047df6"><td class="memItemLeft" align="right" valign="top">struct mz_internal_state *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a935cdb239d37161b5a5e6eda1e047df6">state</a></td></tr>
 <tr class="separator:a935cdb239d37161b5a5e6eda1e047df6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abbd8109a7f88713f39b9e3046a223ef2"><td class="memItemLeft" align="right" valign="top">mz_alloc_func&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#abbd8109a7f88713f39b9e3046a223ef2">zalloc</a></td></tr>
 <tr class="separator:abbd8109a7f88713f39b9e3046a223ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a55dbac0e9b86472bfa41f86dfb35df9a"><td class="memItemLeft" align="right" valign="top">mz_free_func&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a55dbac0e9b86472bfa41f86dfb35df9a">zfree</a></td></tr>
+<tr class="memitem:a55dbac0e9b86472bfa41f86dfb35df9a"><td class="memItemLeft" align="right" valign="top"><a id="a55dbac0e9b86472bfa41f86dfb35df9a"></a>
+mz_free_func&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a55dbac0e9b86472bfa41f86dfb35df9a">zfree</a></td></tr>
+<tr class="memdesc:a55dbac0e9b86472bfa41f86dfb35df9a"><td class="mdescLeft">&#160;</td><td class="mdescRight">optional heap free function (defaults to free) <br /></td></tr>
 <tr class="separator:a55dbac0e9b86472bfa41f86dfb35df9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31c21928246598992a5cce6d20ae7e78"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a31c21928246598992a5cce6d20ae7e78">opaque</a></td></tr>
+<tr class="memitem:a31c21928246598992a5cce6d20ae7e78"><td class="memItemLeft" align="right" valign="top"><a id="a31c21928246598992a5cce6d20ae7e78"></a>
+void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a31c21928246598992a5cce6d20ae7e78">opaque</a></td></tr>
+<tr class="memdesc:a31c21928246598992a5cce6d20ae7e78"><td class="mdescLeft">&#160;</td><td class="mdescRight">heap alloc function user pointer <br /></td></tr>
 <tr class="separator:a31c21928246598992a5cce6d20ae7e78"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e1503f72464a3b7b40d1df232ba9f43"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a3e1503f72464a3b7b40d1df232ba9f43">data_type</a></td></tr>
+<tr class="memitem:a3e1503f72464a3b7b40d1df232ba9f43"><td class="memItemLeft" align="right" valign="top"><a id="a3e1503f72464a3b7b40d1df232ba9f43"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a3e1503f72464a3b7b40d1df232ba9f43">data_type</a></td></tr>
+<tr class="memdesc:a3e1503f72464a3b7b40d1df232ba9f43"><td class="mdescLeft">&#160;</td><td class="mdescRight">data_type (unused) <br /></td></tr>
 <tr class="separator:a3e1503f72464a3b7b40d1df232ba9f43"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a24c6cf42b5b6a655f4664dd15203dce7"><td class="memItemLeft" align="right" valign="top">mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a24c6cf42b5b6a655f4664dd15203dce7">adler</a></td></tr>
+<tr class="memitem:a24c6cf42b5b6a655f4664dd15203dce7"><td class="memItemLeft" align="right" valign="top"><a id="a24c6cf42b5b6a655f4664dd15203dce7"></a>
+mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#a24c6cf42b5b6a655f4664dd15203dce7">adler</a></td></tr>
+<tr class="memdesc:a24c6cf42b5b6a655f4664dd15203dce7"><td class="mdescLeft">&#160;</td><td class="mdescRight">adler32 of the source or uncompressed data <br /></td></tr>
 <tr class="separator:a24c6cf42b5b6a655f4664dd15203dce7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4fc708fffee7b10a4586964401613fb"><td class="memItemLeft" align="right" valign="top">mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#ae4fc708fffee7b10a4586964401613fb">reserved</a></td></tr>
+<tr class="memitem:ae4fc708fffee7b10a4586964401613fb"><td class="memItemLeft" align="right" valign="top"><a id="ae4fc708fffee7b10a4586964401613fb"></a>
+mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structmz__stream__s.html#ae4fc708fffee7b10a4586964401613fb">reserved</a></td></tr>
+<tr class="memdesc:ae4fc708fffee7b10a4586964401613fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">not used <br /></td></tr>
 <tr class="separator:ae4fc708fffee7b10a4586964401613fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Compression/decompression stream struct. </p>
 </div><h2 class="groupheader">Member Data Documentation</h2>
-<a id="a24c6cf42b5b6a655f4664dd15203dce7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a24c6cf42b5b6a655f4664dd15203dce7">&#9670;&nbsp;</a></span>adler</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">mz_ulong mz_stream_s::adler</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>adler32 of the source or uncompressed data </p>
-
-</div>
-</div>
-<a id="aafcd4c220622ede6d54015f1fbdadd9e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aafcd4c220622ede6d54015f1fbdadd9e">&#9670;&nbsp;</a></span>avail_in</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">unsigned int mz_stream_s::avail_in</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>number of bytes available at next_in </p>
-
-</div>
-</div>
-<a id="a9092fed61f7be520fb1bbcf152905ee8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9092fed61f7be520fb1bbcf152905ee8">&#9670;&nbsp;</a></span>avail_out</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">unsigned int mz_stream_s::avail_out</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>number of bytes that can be written to next_out </p>
-
-</div>
-</div>
-<a id="a3e1503f72464a3b7b40d1df232ba9f43"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3e1503f72464a3b7b40d1df232ba9f43">&#9670;&nbsp;</a></span>data_type</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int mz_stream_s::data_type</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>data_type (unused) </p>
-
-</div>
-</div>
-<a id="ad4095b25455e382787dc06d20157e05f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad4095b25455e382787dc06d20157e05f">&#9670;&nbsp;</a></span>msg</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">char* mz_stream_s::msg</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>total number of bytes produced so far error msg (unused) </p>
-
-</div>
-</div>
-<a id="aa75ed42cc83b0f74d7fcce6299439307"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa75ed42cc83b0f74d7fcce6299439307">&#9670;&nbsp;</a></span>next_in</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">const unsigned char* mz_stream_s::next_in</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>pointer to next byte to read </p>
-
-</div>
-</div>
-<a id="a2c569383efce3b9d9e7c02e3e03941bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c569383efce3b9d9e7c02e3e03941bc">&#9670;&nbsp;</a></span>next_out</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">unsigned char* mz_stream_s::next_out</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>pointer to next byte to write </p>
-
-</div>
-</div>
-<a id="a31c21928246598992a5cce6d20ae7e78"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a31c21928246598992a5cce6d20ae7e78">&#9670;&nbsp;</a></span>opaque</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void* mz_stream_s::opaque</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>heap alloc function user pointer </p>
-
-</div>
-</div>
-<a id="ae4fc708fffee7b10a4586964401613fb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae4fc708fffee7b10a4586964401613fb">&#9670;&nbsp;</a></span>reserved</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">mz_ulong mz_stream_s::reserved</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>not used </p>
-
-</div>
-</div>
 <a id="a935cdb239d37161b5a5e6eda1e047df6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a935cdb239d37161b5a5e6eda1e047df6">&#9670;&nbsp;</a></span>state</h2>
 
@@ -282,21 +174,6 @@ mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><b>total_out</b></td
 
 </div>
 </div>
-<a id="abfa083eb7707360c33389ec12fadf376"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abfa083eb7707360c33389ec12fadf376">&#9670;&nbsp;</a></span>total_in</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">mz_ulong mz_stream_s::total_in</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>total number of bytes consumed so far </p>
-
-</div>
-</div>
 <a id="abbd8109a7f88713f39b9e3046a223ef2"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#abbd8109a7f88713f39b9e3046a223ef2">&#9670;&nbsp;</a></span>zalloc</h2>
 
@@ -309,21 +186,6 @@ mz_ulong&#160;</td><td class="memItemRight" valign="bottom"><b>total_out</b></td
       </table>
 </div><div class="memdoc">
 <p>optional heap allocation function (defaults to malloc) </p>
-
-</div>
-</div>
-<a id="a55dbac0e9b86472bfa41f86dfb35df9a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a55dbac0e9b86472bfa41f86dfb35df9a">&#9670;&nbsp;</a></span>zfree</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">mz_free_func mz_stream_s::zfree</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>optional heap free function (defaults to free) </p>
 
 </div>
 </div>

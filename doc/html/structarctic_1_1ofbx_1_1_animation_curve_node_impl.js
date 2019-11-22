@@ -8,7 +8,7 @@ var structarctic_1_1ofbx_1_1_animation_curve_node_impl =
     ] ],
     [ "AnimationCurveNodeImpl", "structarctic_1_1ofbx_1_1_animation_curve_node_impl.html#a3675bdb0d79fd27030ce0d8cbe9a7945", null ],
     [ "getBone", "structarctic_1_1ofbx_1_1_animation_curve_node_impl.html#ac7df13529b4dd3eebc361614741d0fdd", null ],
-    [ "getNodeLocalTransform", "structarctic_1_1ofbx_1_1_animation_curve_node_impl.html#a7413efcc3264f5bd7d0191db4bb32e23", null ],
+    [ "getNodeLocalTransform", "structarctic_1_1ofbx_1_1_animation_curve_node_impl.html#ac6e050ef9e144ca8ec05f522530f5d17", null ],
     [ "getType", "structarctic_1_1ofbx_1_1_animation_curve_node_impl.html#a8cfff726826c3364595266ce9288a331", null ],
     [ "bone", "structarctic_1_1ofbx_1_1_animation_curve_node_impl.html#a0a193c5e1eaea51a76d22a3ac83bad4d", null ],
     [ "bone_link_property", "structarctic_1_1ofbx_1_1_animation_curve_node_impl.html#a5dfea6e9a834eb88d30ba171f673f336", null ],
