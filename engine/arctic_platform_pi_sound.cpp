@@ -34,6 +34,7 @@
 #include <deque>
 #include <iostream>
 #include <mutex>  // NOLINT
+#include <string>
 #include <thread>  // NOLINT
 #include <vector>
 
@@ -233,7 +234,8 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
 
     unsigned char *out_buffer = (unsigned char *)data->samples.data();
     int err = snd_pcm_writei(handle, out_buffer, data->period_size);
-    is_ok = is_ok && SoundCheck(err >= 0, "Sound write error: ", snd_strerror(err));
+    is_ok = is_ok && SoundCheck(err >= 0,
+        "Sound write error: ", snd_strerror(err));
     is_ok = is_ok && SoundCheck(err == data->period_size,
         "Sound write error: written != expected.");
   }
@@ -252,7 +254,8 @@ void SoundMixerThreadFunction() {
         continue;
       } else if (err == -EPIPE) {
         err = snd_pcm_prepare(g_data.handle);
-        is_ok = is_ok && SoundCheck(err >= 0, "Can't recover sound from underrun: ",
+        is_ok = is_ok && SoundCheck(err >= 0,
+            "Can't recover sound from underrun: ",
             snd_strerror(err));
       } else if (err == -ESTRPIPE) {
         while (true) {
@@ -264,7 +267,8 @@ void SoundMixerThreadFunction() {
         }
         if (err < 0) {
           err = snd_pcm_prepare(g_data.handle);
-          is_ok = is_ok && SoundCheck(err >= 0, "Can't recover sound from suspend: ",
+          is_ok = is_ok && SoundCheck(err >= 0,
+              "Can't recover sound from suspend: ",
               snd_strerror(err));
         }
       } else {
@@ -297,16 +301,19 @@ void StartSoundMixer(const char* output_device_name) {
     if (err == -ENOENT) {
       err = snd_pcm_open(&g_data.handle, "plughw:0,0",
           SND_PCM_STREAM_PLAYBACK, 0);
-      is_ok = is_ok && SoundCheck(err >= 0, "Can't open 'plughw:0,0' sound device: ",
+      is_ok = is_ok && SoundCheck(err >= 0,
+          "Can't open 'plughw:0,0' sound device: ",
           snd_strerror(err));
     } else {
-      is_ok = is_ok && SoundCheck(err >= 0, "Can't open 'default' sound device: ",
+      is_ok = is_ok && SoundCheck(err >= 0,
+          "Can't open 'default' sound device: ",
           snd_strerror(err));
     }
   } else {
     err = snd_pcm_open(&g_data.handle, output_device_name,
         SND_PCM_STREAM_PLAYBACK, 0);
-    is_ok = is_ok && SoundCheck(err >= 0, "Can't open the specified sound device: ",
+    is_ok = is_ok && SoundCheck(err >= 0,
+        "Can't open the specified sound device: ",
         snd_strerror(err));
   }
   if (!is_ok) {
@@ -398,20 +405,23 @@ void StartSoundMixer(const char* output_device_name) {
     return;
   }
   err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams, 512);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't set start threshold mode for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0,
+      "Can't set start threshold mode for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_sw_params_set_avail_min(g_data.handle, swparams,
       512);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't set avail min for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0,
+      "Can't set avail min for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
   }
   err = snd_pcm_sw_params(g_data.handle, swparams);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't set sw params for sound: ",
+  is_ok = is_ok && SoundCheck(err >= 0,
+      "Can't set sw params for sound: ",
       snd_strerror(err));
   if (!is_ok) {
     return;
@@ -452,7 +462,6 @@ void StartSoundMixer(const char* output_device_name) {
         return;
       }
     }
-
   }
 }
 

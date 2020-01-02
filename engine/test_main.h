@@ -817,14 +817,14 @@ extern "C" {
               argv[i]);
           fprintf(stderr, "Try '%s --list' for list of unit tests.\n",
               argv[0]);
-	  arctic::ExitProgram(2);
+          arctic::ExitProgram(2);
         }
       } else if (strcmp(argv[i], "--") == 0) {
         seen_double_dash = 1;
       } else if (strcmp(argv[i], "--help") == 0
           || strcmp(argv[i], "-h") == 0) {
         test_help__();
-	arctic::ExitProgram(0);
+        arctic::ExitProgram(0);
       } else if (strcmp(argv[i], "--verbose") == 0
           || strcmp(argv[i], "-v") == 0) {
         test_verbose_level__++;
@@ -855,7 +855,7 @@ extern "C" {
       } else if (strcmp(argv[i], "--list") == 0
           || strcmp(argv[i], "-l") == 0) {
         test_list_names__();
-	arctic::ExitProgram(0);
+        arctic::ExitProgram(0);
       } else if (strcmp(argv[i], "-NSDocumentRevisionsDebugMode") == 0) {
         i++;
         if (i < argc) {
@@ -866,7 +866,7 @@ extern "C" {
       } else {
         fprintf(stderr, "%s: Unrecognized option '%s'\n", argv[0], argv[i]);
         fprintf(stderr, "Try '%s --help' for more information.\n", argv[0]);
-	arctic::ExitProgram(2);
+        arctic::ExitProgram(2);
       }
     }
 

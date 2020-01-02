@@ -40,6 +40,8 @@
 #include <X11/keysymdef.h>
 #include <X11/Xatom.h>
 
+#include <algorithm>
+
 #include "engine/easy.h"
 
 extern void EasyMain();
@@ -347,7 +349,9 @@ void PumpMessages() {
       KeySym keysym = 0;
       char buf[20];
       memset(buf, 0, sizeof(buf));
-      int count = Xutf8LookupString(g_x_ic, (XKeyPressedEvent*)&ev, buf, 20, &keysym, &status);
+      int count = Xutf8LookupString(g_x_ic,
+          reinterpret_cast<XKeyPressedEvent*>(&ev),
+          buf, 20, &keysym, &status);
       buf[std::min(count, 19)] = '\0';
       OnKey(key, is_down, buf);
     }

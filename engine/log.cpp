@@ -121,7 +121,7 @@ namespace arctic {
         "StartLogger called while g_logger_do_quit is false");
     g_logger_do_quit = false;
     g_logger_thread = std::thread(arctic::LoggerThreadFunction);
-    g_logger_thread.detach();  
+    g_logger_thread.detach();
   }
 
   void StopLogger() {

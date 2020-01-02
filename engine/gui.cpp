@@ -399,7 +399,8 @@ void Button::SetVisible(bool is_visible) {
 bool Button::IsVisible() {
   bool is_visible = Panel::IsVisible();
   bool should_be_visible = state_ != kHidden;
-  Check(is_visible == should_be_visible, "Button visibility state inconsitency detected!");
+  Check(is_visible == should_be_visible,
+      "Button visibility state inconsitency detected!");
   return is_visible;
 }
 
@@ -443,7 +444,8 @@ void Text::SetText(std::string text) {
   selection_end_ = 0;
 }
 
-void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2, TextSelectionMode selection_mode,
+void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2,
+    TextSelectionMode selection_mode,
     Rgba c1, Rgba c2, easy::Sprite backbuffer) {
   switch (selection_mode) {
     case kTextSelectionModeInvert:
@@ -501,7 +503,7 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
         text_.substr(0, selection_begin_).c_str(), false).x;
     Si32 x2 = absolute_pos.x  + font_.EvaluateSize(
         text_.substr(0, selection_end_).c_str(), true).x;
-    Si32 y1 = absolute_pos.y ;
+    Si32 y1 = absolute_pos.y;
     Si32 y2 = absolute_pos.y + font_.line_height_;
     easy::Sprite backbuffer = easy::GetEngine()->GetBackbuffer();
 
@@ -705,7 +707,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         } else if (key == kKeyEnter) {
           // skip
         } else if (is_digits_ ? (key >= kKey0 && key <= kKey9) : true) {
-            //(key >= kKeySpace && key <= kKeyGraveAccent)) {
+            // (key >= kKeySpace && key <= kKeyGraveAccent)) {
           *in_out_is_applied = true;
           if (!message.keyboard.characters[0]) {
             if (key >= kKeyA && key <= kKeyZ) {
@@ -723,7 +725,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             bool do_insert = true;
             if (!white_list_.empty()) {
               Utf32Reader reader;
-              reader.Reset((Ui8*)message.keyboard.characters);
+              reader.Reset(reinterpret_cast<const Ui8*>(message.keyboard.characters));
               Ui32 codepoint = reader.ReadOne();
               auto found_it = white_list_.find(codepoint);
               if (found_it == white_list_.end()) {
@@ -732,11 +734,12 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             }
             if (do_insert) {
               text_.insert(cursor_pos_, message.keyboard.characters);
-              cursor_pos_ += static_cast<Si32>(strlen(message.keyboard.characters));
+              cursor_pos_ += static_cast<Si32>(strlen(
+                  message.keyboard.characters));
             }
           } else {
-            //text_.insert(cursor_pos_, 1, static_cast<char>(key));
-            //cursor_pos_++;
+            // text_.insert(cursor_pos_, 1, static_cast<char>(key));
+            // cursor_pos_++;
           }
         }
       }

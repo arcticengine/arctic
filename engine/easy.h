@@ -44,7 +44,8 @@ namespace easy {
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color);
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b);
 void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color);
-void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b);
+void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
+    Rgba color_a, Rgba color_b);
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Rgba color_a, Rgba color_b, Rgba color_c);

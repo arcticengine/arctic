@@ -431,7 +431,7 @@ void OnChar(WPARAM word_param, LPARAM long_param) {
   switch (word_param) {
   case 0x08:  // backspace
     return;
-  case 0x0A:  // linefeed 
+  case 0x0A:  // linefeed
     return;
   case 0x1B:  // escape
     return;
@@ -450,7 +450,8 @@ void OnChar(WPARAM word_param, LPARAM long_param) {
   memset(utf16, 0, sizeof(utf16));
   memcpy(utf16, &word_param, sizeof(word_param));
   memset(msg.keyboard.characters, 0, sizeof(msg.keyboard.characters));
-  strncpy(msg.keyboard.characters, Utf16ToUtf8(utf16).c_str(), sizeof(msg.keyboard.characters));
+  strncpy(msg.keyboard.characters, Utf16ToUtf8(utf16).c_str(),
+      sizeof(msg.keyboard.characters));
   msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
   PushInputMessage(msg);
 }

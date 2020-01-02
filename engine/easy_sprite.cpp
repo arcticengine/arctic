@@ -601,17 +601,20 @@ Sprite::Sprite() {
   pivot_ = Vec2Si32(0, 0);
 }
 
-void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name) {
+void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
+    const char *file_name) {
   Check(!!file_name, "Error in Sprite::Load, file_name is nullptr.");
   const char *last_dot = strchr(file_name, '.');
   Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
   if (strcmp(last_dot, ".tga") == 0) {
     if (size_bytes == 0) {
-      Log("File \"", file_name, "\" could not be loaded (size=0). Using empty sprite.");
+      Log("File \"", file_name, "\" could not be loaded (size=0)."
+          " Using empty sprite.");
       return;
     }
     if (data == nullptr) {
-      Log("File \"", file_name, "\" could not be loaded (data=nullptr). Using empty sprite.");
+      Log("File \"", file_name, "\" could not be loaded (data=nullptr)."
+          " Using empty sprite.");
       return;
     }
     sprite_instance_ = LoadTga(data, size_bytes);

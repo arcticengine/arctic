@@ -162,17 +162,18 @@ class Text : public Panel {
 
  public:
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-    Font font, TextOrigin origin, Rgba color, std::string text,
-    TextAlignment alignment = kAlignLeft);
+      Font font, TextOrigin origin, Rgba color, std::string text,
+      TextAlignment alignment = kAlignLeft);
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-    Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text,
-    TextAlignment alignment = kAlignLeft);
+      Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text,
+      TextAlignment alignment = kAlignLeft);
   void SetText(std::string text);
   void Draw(Vec2Si32 parent_absolute_pos) override;
   void Select(Si32 selection_begin, Si32 selection_end);
-  void SetSelectionMode(TextSelectionMode selection_mode = kTextSelectionModeInvert,
-    Rgba selection_color_1 = Rgba(0, 0, 0),
-    Rgba selection_color_2 = Rgba(255, 255, 255));
+  void SetSelectionMode(
+      TextSelectionMode selection_mode = kTextSelectionModeInvert,
+      Rgba selection_color_1 = Rgba(0, 0, 0),
+      Rgba selection_color_2 = Rgba(255, 255, 255));
 };
 
 class Progressbar: public Panel {
@@ -228,9 +229,10 @@ class Editbox: public Panel {
   void Draw(Vec2Si32 parent_absolute_pos) override;
   std::string GetText();
   void SelectAll();
-  void SetSelectionMode(TextSelectionMode selection_mode = kTextSelectionModeInvert,
-    Rgba selection_color_1 = Rgba(0, 0, 0),
-    Rgba selection_color_2 = Rgba(255, 255, 255));
+  void SetSelectionMode(
+      TextSelectionMode selection_mode = kTextSelectionModeInvert,
+      Rgba selection_color_1 = Rgba(0, 0, 0),
+      Rgba selection_color_2 = Rgba(255, 255, 255));
 };
 
 class HorizontalScroll : public Panel {

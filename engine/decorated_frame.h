@@ -21,8 +21,10 @@
 // IN THE SOFTWARE.
 
 
-#ifndef ENGINE_ARCTIC_DECORATED_FRAME_H_
-#define ENGINE_ARCTIC_DECORATED_FRAME_H_
+#ifndef ENGINE_DECORATED_FRAME_H_
+#define ENGINE_DECORATED_FRAME_H_
+
+#include <algorithm>
 
 #include "engine/easy.h"
 
@@ -40,7 +42,8 @@ class DecoratedFrame {
   easy::Sprite background_tile_;
   bool is_x_scaleable_;
   bool is_y_scaleable_;
-public:
+
+ public:
   DecoratedFrame() {
   }
 
@@ -178,13 +181,16 @@ public:
       0, 0, lower_left_.Width(), lower_left_.Height(), sprite, easy::kCopyRgba);
     lower_right_.Draw(size.x - lower_right_.Width(), 0,
       lower_right_.Width(), lower_right_.Height(),
-      0, 0, lower_right_.Width(), lower_right_.Height(), sprite, easy::kCopyRgba);
+      0, 0, lower_right_.Width(), lower_right_.Height(),
+      sprite, easy::kCopyRgba);
     upper_left_.Draw(0, size.y - upper_left_.Height(),
       upper_left_.Width(), upper_left_.Height(),
       0, 0, upper_left_.Width(), upper_left_.Height(), sprite, easy::kCopyRgba);
-    upper_right_.Draw(size.x - upper_right_.Width(), size.y - upper_right_.Height(),
+    upper_right_.Draw(size.x - upper_right_.Width(),
+      size.y - upper_right_.Height(),
       upper_right_.Width(), upper_right_.Height(),
-      0, 0, upper_right_.Width(), upper_right_.Height(), sprite, easy::kCopyRgba);
+      0, 0, upper_right_.Width(), upper_right_.Height(), sprite,
+      easy::kCopyRgba);
 
     return sprite;
   }
@@ -192,4 +198,4 @@ public:
 
 }  // namespace arctic
 
-#endif  // ENGINE_ARCTIC_DECORATED_FRAME_H_
+#endif  // ENGINE_DECORATED_FRAME_H_

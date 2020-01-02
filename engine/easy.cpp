@@ -101,7 +101,8 @@ void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b) {
   DrawLine(GetEngine()->GetBackbuffer(), a, b, color_a, color_b);
 }
 
-void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b) {
+void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
+      Rgba color_a, Rgba color_b) {
     Vec2Si32 ab = b - a;
     Vec2Si32 abs_ab(std::abs(ab.x), std::abs(ab.y));
     if (abs_ab.x >= abs_ab.y) {
@@ -112,7 +113,8 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba
             if (ab.x == 0) {
                 if (a.x >= 0 && a.x < back_size.x &&
                         a.y >= 0 && a.y < back_size.y) {
-                    to_sprite.RgbaData()[a.x + a.y * to_sprite.StridePixels()] = color_a;
+                    to_sprite.RgbaData()[
+                        a.x + a.y * to_sprite.StridePixels()] = color_a;
                 }
                 return;
             }
@@ -167,7 +169,8 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba
             if (x2 <= x1) {
                 if (x2 == x1) {
                     Rgba color(rgba_1.x, rgba_1.y, rgba_1.z, rgba_1.w);
-                    to_sprite.RgbaData()[x1 + y1 * to_sprite.StridePixels()] = color;
+                    to_sprite.RgbaData()[
+                        x1 + y1 * to_sprite.StridePixels()] = color;
                 }
                 return;
             }
@@ -196,7 +199,8 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba
             if (ab.y == 0) {
                 if (a.y >= 0 && a.y < back_size.y &&
                     a.x >= 0 && a.x < back_size.x) {
-                    to_sprite.RgbaData()[a.x + a.y * to_sprite.StridePixels()] = color_a;
+                    to_sprite.RgbaData()[
+                        a.x + a.y * to_sprite.StridePixels()] = color_a;
                 }
                 return;
             }
@@ -251,7 +255,8 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba
             if (y2 <= y1) {
                 if (y2 == y1) {
                     Rgba color(rgba_1.y, rgba_1.x, rgba_1.z, rgba_1.w);
-                    to_sprite.RgbaData()[x1 + y1 * to_sprite.StridePixels()] = color;
+                    to_sprite.RgbaData()[
+                        x1 + y1 * to_sprite.StridePixels()] = color;
                 }
                 return;
             }

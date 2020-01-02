@@ -25,6 +25,7 @@
 
 #include <deque>  // NOLINT
 #include <mutex>  // NOLINT
+#include <string>
 #include <vector>
 
 #include "engine/arctic_types.h"

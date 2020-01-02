@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstring>
 #include <deque>
+#include <memory>
 #include <regex>  // NOLINT
 #include <string>
 #include <sstream>
@@ -183,7 +184,8 @@ Ui64 ShowModalDialogue(std::shared_ptr<Panel> gui) {
 }
 
 std::shared_ptr<Button> MakeButton(Ui64 tag, Vec2Si32 pos,
-    KeyCode hotkey, Ui32 tab_order, std::string text, Vec2Si32 size = Vec2Si32(0, 0),
+    KeyCode hotkey, Ui32 tab_order, std::string text,
+    Vec2Si32 size = Vec2Si32(0, 0),
     std::shared_ptr<Text> *out_text = nullptr) {
   Vec2Si32 button_text_size = g_font.EvaluateSize(text.c_str(), false);
   Vec2Si32 button_size = button_text_size + Vec2Si32(13 * 2 + 4, 4);
@@ -229,7 +231,7 @@ bool GetOperationMode() {
     0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
     0, g_font, kTextOriginTop, g_palete, welcome, kAlignCenter));
   box->AddChild(textbox);
-  y = 32 + 48 + 64 ;
+  y = 32 + 48 + 64;
   std::shared_ptr<Button> create_button = MakeButton(
     kCreateButton, Vec2Si32(32, y), kKeyC,
     1, "\001C\002reate a new project", Vec2Si32(box->GetSize().x - 64, 48));
@@ -237,7 +239,8 @@ bool GetOperationMode() {
   y -= 64;
   std::shared_ptr<Button> update_button = MakeButton(
     kUpdateButton, Vec2Si32(32, y), kKeyU,
-    2, "\001U\002pdate an existing project", Vec2Si32(box->GetSize().x - 64, 48));
+    2, "\001U\002pdate an existing project",
+    Vec2Si32(box->GetSize().x - 64, 48));
   box->AddChild(update_button);
 
   Ui64 action = ShowModalDialogue(box);
@@ -637,7 +640,8 @@ bool ShowProgress() {
           auto data = ReadFile((g_template + "/" + files[idx]).c_str());
           std::string name = files[idx];
           ReplaceAll("template_project_name", g_project_name, &name);
-          WriteFile((g_project_directory + "/" + name).c_str(), data.data(), data.size());
+          WriteFile((g_project_directory + "/" + name).c_str(),
+              data.data(), data.size());
         }
         g_progress.append(u8"Data files copied OK\n");
       }
@@ -1261,7 +1265,7 @@ void EasyMain() {
     if (GetEngine()->GetArgv()[1] == std::string("create")) {
       g_mode_of_operation = kModeCreate;
       is_mode_of_operation_set = true;
-      
+
       if (strlen(GetEngine()->GetArgv()[2]) > 0) {
         g_project_name.assign(GetEngine()->GetArgv()[2]);
         // TODO(Huldra): validate g_project_name
