@@ -83,6 +83,7 @@ static ArcticWindow *g_main_window = nil;
 static ArcticView *g_main_view = nil;
 static NSApplication *g_app = nil;
 static ArcticAppDelegate *g_app_delegate = nil;
+static arctic::SoundPlayer *g_mixer = nil;
 
 static bool g_is_full_screen = false;
 static bool g_is_cursor_desired_visible = true;
@@ -168,6 +169,11 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 }
 
 - (void) windowWillClose: (NSNotification *)notification {
+  if (g_mixer) {
+    g_mixer->Deinitialize();
+    delete g_mixer;
+    g_mixer = nil;
+  }
   arctic::StopLogger();
   exit(g_exit_code);
 }
@@ -871,8 +877,8 @@ int main(int argc, char **argv) {
   arctic::easy::GetEngine()->Init((arctic::Si32)rect.size.width,
                                   (arctic::Si32)rect.size.height);
 
-  arctic::SoundPlayer mixer;
-  mixer.Initialize();
+  g_mixer = new arctic::SoundPlayer;
+  g_mixer->Initialize();
 
   EasyMain();
 
