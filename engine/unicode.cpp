@@ -172,10 +172,11 @@ std::string Utf32ToUtf8(const void* data) {
     Ui32 d;
     memcpy(&d, data_cursor, 4);
     cp.WriteUtf32(d);
-    size += cp.size;
     if (d == 0) {
       break;
     }
+    size += cp.size;
+    data_cursor += sizeof(Ui32);
   }
   std::string buf;
   buf.resize(static_cast<size_t>(size));
@@ -187,6 +188,9 @@ std::string Utf32ToUtf8(const void* data) {
     memcpy(&d, data_cursor, 4);
     cp.WriteUtf32(d);
 
+    if (d == 0) {
+      break;
+    }
     Ui32 readPos = 0;
     while (readPos < cp.size) {
       buf[pos] = cp.buffer[readPos];
@@ -194,9 +198,8 @@ std::string Utf32ToUtf8(const void* data) {
       readPos++;
     }
 
-    if (d == 0) {
-      break;
-    }
+
+    data_cursor += sizeof(Ui32);
   }
   return buf;
 }
