@@ -157,6 +157,10 @@ CsvRow &CsvTable::operator[](Ui64 row_position) const {
   return *row;
 }
 
+std::string CsvTable::GetErrorDescription() const {
+  return error_description;
+}
+
 Ui64 CsvTable::RowCount() const {
   return static_cast<Ui64>(content_.size());
 }

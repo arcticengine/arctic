@@ -99,6 +99,7 @@ class CsvTable {
   bool AddRow(Ui64 pos, const std::vector<std::string> &);
   void SaveFile() const;
   CsvRow &operator[](Ui64 row) const;
+  std::string GetErrorDescription() const;
 
  protected:
   bool ParseHeader();
