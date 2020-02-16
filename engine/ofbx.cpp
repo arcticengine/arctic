@@ -2808,10 +2808,10 @@ const IScene& Object::getScene() const {
 
 
 Object* Object::resolveObjectLink(int idx) const {
-  Ui64 id = element.getFirstProperty() ?
+  Ui64 propertyId = element.getFirstProperty() ?
     element.getFirstProperty()->getValue().toU64() : 0;
   for (auto& connection : scene.m_connections) {
-    if (connection.to == id && connection.from != 0) {
+    if (connection.to == propertyId && connection.from != 0) {
       Object* obj = scene.m_object_map.find(connection.from)->second.object;
       if (obj) {
         if (idx == 0)
