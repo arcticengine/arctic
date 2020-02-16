@@ -139,8 +139,8 @@ void Fatal(const char *message, const char *message_postfix) {
       (message_postfix ? message_postfix : ""));
   }
   Log(full_message);
-  StopLogger();
   MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
+  StopLogger();
   ExitProcess(1);
 }
 
