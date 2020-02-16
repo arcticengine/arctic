@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 Huldra
+// Copyright (c) 2018 - 2020 Huldra
 // Copyright (c) 2017 Romain Sylvian
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -54,6 +54,11 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
     if (original_file_.size() == 0) {
       error_description = std::string("No Data in ").append(file_);
       return false;
+    }
+    // Remove the BOM (Byte Order Mark) for UTF-8
+    if (original_file_[0].length() >=3 &&
+        memcmp(original_file_[0].c_str(), "\xEF\xBB\xBF", 3) == 0) {
+      original_file_[0] = original_file_[0].erase(0, 3);
     }
     bool is_ok = true;
     is_ok = is_ok && ParseHeader();
