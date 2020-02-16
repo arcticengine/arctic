@@ -90,7 +90,12 @@ struct Rgba {
   }
 };
 
-
+inline Rgba Mix(Rgba const &a, Rgba const &b, float const f) {
+  return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
+    static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),
+    static_cast<Ui8>(a.b * (1.0f - f) + f * b.b),
+    static_cast<Ui8>(a.a * (1.0f - f) + f * b.a));
+}
 inline Rgba Mix(Rgba const a, Rgba const b, float const f) {
   return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
               static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),
