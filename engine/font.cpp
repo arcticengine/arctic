@@ -337,7 +337,7 @@ void Font::DrawEvaluateSizeImpl(easy::Sprite to_sprite,
       }
     } else {
       is_newline = false;
-      if (code >= 1 && code <= 8) {
+      if (code <= 8) {
         color_idx = code;
         if (color_idx >= palete.size()) {
           color_idx = 0;
