@@ -105,9 +105,15 @@ struct SoundMixerState {
     if (!task_pushers.compare_exchange_strong(exp, -1)) {
       return;
     }
-    std::lock_guard<std::mutex> lock(task_mutex);
-    for (size_t i = 0; i < tasks.size(); ++i) {
-      SoundBuffer &task = tasks[i];
+    std::deque<arctic::SoundBuffer> input_tasks;
+    {
+      std::lock_guard<std::mutex> lock(task_mutex);
+      input_tasks.swap(tasks);
+      task_count.store(0);
+      task_pushers.store(0);
+    }
+    for (size_t i = 0; i < input_tasks.size(); ++i) {
+      SoundBuffer &task = input_tasks[i];
       switch (task.action) {
       case SoundBuffer::kStart:
         buffers.push_back(task);
@@ -127,9 +133,7 @@ struct SoundMixerState {
         break;
       }
     }
-    tasks.clear();
-    task_count.store(0);
-    task_pushers.store(0);
+    input_tasks.clear();
   }
 };
 
