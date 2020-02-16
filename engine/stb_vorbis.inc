@@ -917,7 +917,7 @@ static void *setup_malloc(vorb *f, int sz)
    return sz ? malloc(sz) : NULL;
 }
 
-static void setup_free(vorb *f, void *p)
+static void setup_free(const vorb *f, void *p)
 {
    if (f->alloc.alloc_buffer) return; // do nothing; setup mem is a stack
    free(p);
@@ -1040,7 +1040,7 @@ static void add_entry(Codebook *c, uint32 huff_code, int symbol, int count, int 
    }
 }
 
-static int compute_codewords(Codebook *c, uint8 *len, int n, uint32 *values)
+static int compute_codewords(Codebook *c, const uint8 *len, int n, uint32 *values)
 {
    int i,k,m=0;
    uint32 available[32];
@@ -1127,7 +1127,7 @@ static int STBV_CDECL uint32_compare(const void *p, const void *q)
    return x < y ? -1 : x > y;
 }
 
-static int include_in_sort(Codebook *c, uint8 len)
+static int include_in_sort(const Codebook *c, uint8 len)
 {
    if (c->sparse) { assert(len != NO_CODE); return TRUE; }
    if (len == NO_CODE) return FALSE;
@@ -1191,7 +1191,7 @@ static void compute_sorted_huffman(Codebook *c, uint8 *lengths, uint32 *values)
 }
 
 // only run while parsing the header (3 times)
-static int vorbis_validate(uint8 *data)
+static int vorbis_validate(const uint8 *data)
 {
    static uint8 vorbis[6] = { 'v', 'o', 'r', 'b', 'i', 's' };
    return memcmp(data, vorbis, 6) == 0;
@@ -1259,7 +1259,7 @@ static int init_blocksize(vorb *f, int b, int n)
    return TRUE;
 }
 
-static void neighbors(uint16 *x, int n, int *plow, int *phigh)
+static void neighbors(const uint16 *x, int n, int *plow, int *phigh)
 {
    int low = -1;
    int high = 65536;
@@ -1605,7 +1605,7 @@ enum {
    VORBIS_packet_setup = 5
 };
 
-static int codebook_decode_scalar_raw(vorb *f, Codebook *c) {
+static int codebook_decode_scalar_raw(vorb *f, const Codebook *c) {
    int i;
    prep_huffman(f);
 
@@ -4187,7 +4187,7 @@ static void vorbis_init(stb_vorbis *p, const stb_vorbis_alloc *z)
    #endif
 }
 
-int stb_vorbis_get_sample_offset(stb_vorbis *f)
+int stb_vorbis_get_sample_offset(const stb_vorbis *f)
 {
    if (f->current_loc_valid)
       return f->current_loc;
@@ -4195,7 +4195,7 @@ int stb_vorbis_get_sample_offset(stb_vorbis *f)
       return -1;
 }
 
-stb_vorbis_info stb_vorbis_get_info(stb_vorbis *f)
+stb_vorbis_info stb_vorbis_get_info(const stb_vorbis *f)
 {
    stb_vorbis_info d;
    d.channels = f->channels;
