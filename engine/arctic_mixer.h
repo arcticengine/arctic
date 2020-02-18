@@ -65,9 +65,9 @@ struct SoundMixerState {
   std::deque<SoundBuffer> tasks;
   // Mutex-protected state end
 
-  void SetError(std::string description) {
+  void SetError(std::string description) { //-V813
     std::lock_guard<std::mutex> lock(error_mutex);
-    error_description = description;
+    error_description = description; //-V820
     is_ok = false;
   }
 

@@ -887,7 +887,7 @@ extern "C" {
 
   static uint8_t s_tdefl_packed_code_size_syms_swizzle[] = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
 
-  static void tdefl_start_dynamic_block(tdefl_compressor *d) {
+  static void tdefl_start_dynamic_block(tdefl_compressor *d) { //-V2008
     int num_lit_codes, num_dist_codes, num_bit_lengths;
     mz_uint i, total_code_sizes_to_pack, num_packed_code_sizes, rle_z_count, rle_repeat_count, packed_code_sizes_index;
     uint8_t code_sizes_to_pack[TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1], packed_code_sizes[TDEFL_MAX_HUFF_SYMBOLS_0 + TDEFL_MAX_HUFF_SYMBOLS_1], prev_code_size = 0xFF;
@@ -1137,7 +1137,7 @@ extern "C" {
     return tdefl_compress_lz_codes(d);
   }
 
-  static int tdefl_flush_block(tdefl_compressor *d, int flush)
+  static int tdefl_flush_block(tdefl_compressor *d, int flush) //-V2008
   {
     mz_uint saved_bit_buf, saved_bits_in;
     uint8_t *pSaved_output_buf;
@@ -2222,7 +2222,7 @@ extern "C" {
       }                                                                                                                               \
       MZ_MACRO_END
 
-      tinfl_status tinfl_decompress(tinfl_decompressor *r, const uint8_t *pIn_buf_next, size_t *pIn_buf_size, uint8_t *pOut_buf_start, uint8_t *pOut_buf_next, size_t *pOut_buf_size, const uint32_t decomp_flags)
+      tinfl_status tinfl_decompress(tinfl_decompressor *r, const uint8_t *pIn_buf_next, size_t *pIn_buf_size, uint8_t *pOut_buf_start, uint8_t *pOut_buf_next, size_t *pOut_buf_size, const uint32_t decomp_flags) //-V2008
       {
         static const int s_length_base[31] = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0 };
         static const int s_length_extra[31] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0 };
@@ -3386,7 +3386,7 @@ extern "C" {
     return MZ_TRUE;
   }
 
-  static mz_bool mz_zip_reader_read_central_dir(mz_zip_archive *pZip, mz_uint flags)
+  static mz_bool mz_zip_reader_read_central_dir(mz_zip_archive *pZip, mz_uint flags) //-V2008
   {
     mz_uint cdir_size = 0, cdir_entries_on_this_disk = 0, num_this_disk = 0, cdir_disk_index = 0;
     uint64_t cdir_ofs = 0;
@@ -5008,7 +5008,7 @@ extern "C" {
     return n;
   }
 
-  mz_bool mz_zip_validate_file(mz_zip_archive *pZip, mz_uint file_index, mz_uint flags)
+  mz_bool mz_zip_validate_file(mz_zip_archive *pZip, mz_uint file_index, mz_uint flags) //-V2008
   {
     mz_zip_archive_file_stat file_stat;
     mz_zip_internal_state *pState;
@@ -5916,7 +5916,7 @@ handle_failure:
     return mz_zip_writer_add_mem_ex_v2(pZip, pArchive_name, pBuf, buf_size, pComment, comment_size, level_and_flags, uncomp_size, uncomp_crc32, NULL, NULL, 0, NULL, 0);
   }
 
-  mz_bool mz_zip_writer_add_mem_ex_v2(mz_zip_archive *pZip, const char *pArchive_name, const void *pBuf, size_t buf_size, const void *pComment, uint16_t comment_size,
+  mz_bool mz_zip_writer_add_mem_ex_v2(mz_zip_archive *pZip, const char *pArchive_name, const void *pBuf, size_t buf_size, const void *pComment, uint16_t comment_size, //-V2008
       mz_uint level_and_flags, uint64_t uncomp_size, uint32_t uncomp_crc32, MZ_TIME_T *last_modified,
       const char *user_extra_data, mz_uint user_extra_data_len, const char *user_extra_data_central, mz_uint user_extra_data_central_len)
   {
@@ -6206,7 +6206,7 @@ handle_failure:
     return MZ_TRUE;
   }
 
-  mz_bool mz_zip_writer_add_read_buf_callback(mz_zip_archive *pZip, const char *pArchive_name, mz_file_read_func read_callback, void* callback_opaque, uint64_t size_to_add, const MZ_TIME_T *pFile_time, const void *pComment, uint16_t comment_size, mz_uint level_and_flags,
+  mz_bool mz_zip_writer_add_read_buf_callback(mz_zip_archive *pZip, const char *pArchive_name, mz_file_read_func read_callback, void* callback_opaque, uint64_t size_to_add, const MZ_TIME_T *pFile_time, const void *pComment, uint16_t comment_size, mz_uint level_and_flags, //-V2008
       const char *user_extra_data, mz_uint user_extra_data_len, const char *user_extra_data_central, mz_uint user_extra_data_central_len)
   {
     if (!pZip)
@@ -6646,7 +6646,7 @@ handle_failure:
   }
 
   /* TODO: This func is now pretty freakin complex due to zip64, split it up? */
-  mz_bool mz_zip_writer_add_from_zip_reader(mz_zip_archive *pZip, mz_zip_archive *pSource_zip, mz_uint src_file_index)
+  mz_bool mz_zip_writer_add_from_zip_reader(mz_zip_archive *pZip, mz_zip_archive *pSource_zip, mz_uint src_file_index) //-V2008
   {
     mz_uint n, bit_flags, num_alignment_padding_bytes, src_central_dir_following_data_size;
     uint64_t src_archive_bytes_remaining, local_dir_header_ofs;

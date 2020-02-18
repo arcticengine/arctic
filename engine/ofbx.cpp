@@ -2432,7 +2432,7 @@ if (node->first_property->value == name) { \
 }
 
 
-static bool parseObjects(const Element& root, Scene* scene) {
+static bool parseObjects(const Element& root, Scene* scene) { //-V2008
   const Element* objs = findChild(root, "Objects");
   if (!objs)
     return true;

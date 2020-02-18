@@ -2042,7 +2042,7 @@ static int residue_decode(vorb *f, Codebook *book, float *target, int offset, in
    return TRUE;
 }
 
-static void decode_residue(vorb *f, float *residue_buffers[], int ch, int n, int rn, uint8 *do_not_decode) {
+static void decode_residue(vorb *f, float *residue_buffers[], int ch, int n, int rn, uint8 *do_not_decode) { //-V2008
    int i,j,pass;
    Residue *r = f->residue_config + rn;
    int rtype = f->residue_types[rn];
@@ -3148,7 +3148,7 @@ static int vorbis_decode_initial(vorb *f, int *p_left_start, int *p_left_end, in
    return TRUE;
 }
 
-static int vorbis_decode_packet_rest(vorb *f, int *len, Mode *m, int left_start, int left_end, int right_start, int right_end, int *p_left)
+static int vorbis_decode_packet_rest(vorb *f, int *len, Mode *m, int left_start, int left_end, int right_start, int right_end, int *p_left) //-V2008
 {
    Mapping *map;
    int i,j,k,n,n2;
@@ -3557,7 +3557,7 @@ static int is_whole_packet_present(stb_vorbis *f, int end_page)
 }
 #endif // !STB_VORBIS_NO_PUSHDATA_API
 
-static int start_decoder(vorb *f)
+static int start_decoder(vorb *f) //-V2008
 {
    uint8 header[6], x,y;
    int len,i,j,k, max_submaps = 0;

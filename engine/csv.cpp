@@ -175,7 +175,7 @@ std::vector<std::string> CsvTable::GetHeader() const {
 
 const std::string CsvTable::GetHeaderElement(Ui64 pos) const {
   if (pos >= header_.size()) {
-    return nullptr;
+    return std::string();
   }
   return header_[static_cast<size_t>(pos)];
 }
@@ -264,7 +264,7 @@ const std::string CsvRow::operator[](Ui64 value_position) const {
   if (value_position < values_.size()) {
     return values_[static_cast<size_t>(value_position)];
   }
-  return nullptr;
+  return std::string();
 }
 
 const std::string CsvRow::operator[](const std::string &key) const {
@@ -276,7 +276,7 @@ const std::string CsvRow::operator[](const std::string &key) const {
     }
     pos++;
   }
-  return nullptr;
+  return std::string();
 }
 
 std::ostream &operator<<(std::ostream &os, const CsvRow &row) {

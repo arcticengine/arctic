@@ -194,7 +194,7 @@ void Font::Load(const char *file_name) {
     page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
     // page.Log(id);
 
-    char path[65536];
+    char path[8 << 10];
     const char *p = file_name;
     Check(file_name_len < sizeof(path) / 2, "File name is too long: ",
       file_name);
@@ -388,7 +388,7 @@ void Font::Draw(easy::Sprite to_sprite, const char *text,
     const TextOrigin origin,
     const easy::DrawBlendingMode blending_mode,
     const easy::DrawFilterMode filter_mode,
-    const Rgba color) {
+    const Rgba color) { //-V801
   DrawEvaluateSizeImpl(to_sprite,
     text, false, x, y, origin, blending_mode, filter_mode, color,
     std::vector<Rgba>(), true, nullptr);
@@ -409,7 +409,7 @@ void Font::Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
       const easy::DrawBlendingMode blending_mode,
       const easy::DrawFilterMode filter_mode,
-      const Rgba color) {
+      const Rgba color) { //-V801
   DrawEvaluateSizeImpl(easy::GetEngine()->GetBackbuffer(),
       text, false, x, y, origin,
       blending_mode, filter_mode, color,

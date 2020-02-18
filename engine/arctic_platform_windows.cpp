@@ -214,7 +214,7 @@ static Si32 g_window_height = 0;
 static std::atomic<bool> g_is_cursor_desired = true;
 static std::atomic<bool> g_is_cursor_visible = true;
 
-KeyCode TranslateKeyCode(WPARAM word_param) {
+KeyCode TranslateKeyCode(WPARAM word_param) { //-V2008
   if (word_param >= 'A' && word_param <= 'Z') {
     return static_cast<KeyCode>(word_param - 'A' + kKeyA);
   }
@@ -766,7 +766,7 @@ bool MakeDirectory(const char *path) {
 }
 
 bool GetCurrentPath(std::string *out_dir) {
-  char cwd[1 << 20];
+  char cwd[8 << 10];
   DWORD res = GetCurrentDirectoryA(sizeof(cwd), cwd);
   if (res > 0) {
     out_dir->assign(cwd);
