@@ -386,22 +386,22 @@ struct mz_internal_state;
 
 //! Compression/decompression stream struct.
 typedef struct mz_stream_s {
-    const unsigned char *next_in;  //!< pointer to next byte to read
+    const unsigned char *next_in;  //!< pointer to next byte to read //-V122
     unsigned int avail_in;         //!< number of bytes available at next_in
     mz_ulong total_in;             //!< total number of bytes consumed so far
 
-    unsigned char *next_out;  //!< pointer to next byte to write
+    unsigned char *next_out;  //!< pointer to next byte to write //-V122
     unsigned int avail_out;   //!< n of bytes that can be written to next_out
     mz_ulong total_out;       //!< total number of bytes produced so far
 
-    char *msg;                        //!< error msg (unused)
-    struct mz_internal_state *state;  //!< internal state, allocated by
+    char *msg;                        //!< error msg (unused) //-V122
+    struct mz_internal_state *state;  //!< internal state, allocated by //-V122
                                       //!< zalloc/zfree
 
-    mz_alloc_func zalloc;  //!< optional heap allocation function
+    mz_alloc_func zalloc;  //!< optional heap allocation function //-V122
                            //!< (defaults to malloc)
-    mz_free_func zfree;    //!< optional heap free function (defaults to free)
-    void *opaque;          //!< heap alloc function user pointer
+    mz_free_func zfree;    //!< optional heap free function (defaults to free) //-V122
+    void *opaque;          //!< heap alloc function user pointer //-V122
 
     int data_type;      //!< data_type (unused)
     mz_ulong adler;     //!< adler32 of the source or uncompressed data
@@ -871,24 +871,24 @@ typedef enum {
 
 /** tdefl's compression state structure. */
 typedef struct {
-    tdefl_put_buf_func_ptr m_pPut_buf_func;
-    void *m_pPut_buf_user;
+    tdefl_put_buf_func_ptr m_pPut_buf_func; //-V122
+    void *m_pPut_buf_user; //-V122
     mz_uint m_flags, m_max_probes[2];
     int m_greedy_parsing;
     mz_uint m_adler32, m_lookahead_pos, m_lookahead_size, m_dict_size;
-    uint8_t *m_pLZ_code_buf, *m_pLZ_flags, *m_pOutput_buf, *m_pOutput_buf_end;
+    uint8_t *m_pLZ_code_buf, *m_pLZ_flags, *m_pOutput_buf, *m_pOutput_buf_end; //-V122
     mz_uint m_num_flags_left, m_total_lz_bytes, m_lz_code_buf_dict_pos,
   m_bits_in, m_bit_buffer;
     mz_uint m_saved_match_dist, m_saved_match_len, m_saved_lit,
   m_output_flush_ofs, m_output_flush_remaining, m_finished, m_block_index,
   m_wants_to_finish;
     tdefl_status m_prev_return_status;
-    const void *m_pIn_buf;
-    void *m_pOut_buf;
-    size_t *m_pIn_buf_size, *m_pOut_buf_size;
+    const void *m_pIn_buf; //-V122
+    void *m_pOut_buf; //-V122
+    size_t *m_pIn_buf_size, *m_pOut_buf_size; //-V122
     tdefl_flush m_flush;
-    const uint8_t *m_pSrc;
-    size_t m_src_buf_left, m_out_buf_ofs;
+    const uint8_t *m_pSrc; //-V122
+    size_t m_src_buf_left, m_out_buf_ofs; //-V122
     uint8_t m_dict[TDEFL_LZ_DICT_SIZE + TDEFL_MAX_MATCH_LEN - 1];
     uint16_t m_huff_count[TDEFL_MAX_HUFF_TABLES][TDEFL_MAX_HUFF_SYMBOLS];
     uint16_t m_huff_codes[TDEFL_MAX_HUFF_TABLES][TDEFL_MAX_HUFF_SYMBOLS];
@@ -1133,7 +1133,7 @@ struct tinfl_decompressor_tag {
   m_type, m_check_adler32, m_dist, m_counter, m_num_extra,
   m_table_sizes[TINFL_MAX_HUFF_TABLES];
     tinfl_bit_buf_t m_bit_buf;
-    size_t m_dist_from_out_buf_start;
+    size_t m_dist_from_out_buf_start; //-V122
     tinfl_huff_table m_tables[TINFL_MAX_HUFF_TABLES];
     uint8_t m_raw_header[4],
   m_len_codes[TINFL_MAX_HUFF_SYMBOLS_0 + TINFL_MAX_HUFF_SYMBOLS_1 + 137];

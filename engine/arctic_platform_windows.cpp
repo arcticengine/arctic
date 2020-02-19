@@ -141,7 +141,7 @@ void Fatal(const char *message, const char *message_postfix) {
   Log(full_message);
   MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
   StopLogger();
-  ExitProcess(1);
+  ExitProcess(1); //-V2014
 }
 
 static void FatalWithLastError(const char* message_prefix,
@@ -691,11 +691,11 @@ void EngineThreadFunction(SystemInfo system_info) {
 
   EasyMain();
 
-  ExitProcess(0);
+  ExitProcess(0); //-V2014
 }
 
 void ExitProgram(Si32 exit_code) {
-  ExitProcess(exit_code);
+  ExitProcess(exit_code); //-V2014
 }
 
 void Swap() {
@@ -943,7 +943,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   arctic::StopLogger();
   LocalFree(args);
-  ExitProcess(0);
+  ExitProcess(0); //-V2014
   return 0;
 }
 
