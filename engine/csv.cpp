@@ -45,7 +45,7 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
   if (ifile.is_open()) {
     while (ifile.good()) {
       getline(ifile, line);
-      if (line != "") {
+      if (line.empty()) {
         original_file_.push_back(line);
       }
     }
@@ -76,7 +76,7 @@ bool CsvTable::LoadString(const std::string &data, char sep) {
   std::string line;
   std::istringstream stream(data);
   while (std::getline(stream, line)) {
-    if (line != "") {
+    if (line.empty()) {
       original_file_.push_back(line);
     }
   }
@@ -154,7 +154,7 @@ CsvRow *CsvTable::GetRow(Ui64 row_position) const {
 CsvRow &CsvTable::operator[](Ui64 row_position) const {
   CsvRow *row = CsvTable::GetRow(row_position);
   // Check(row, "row_position out of bounds in CvsTable");
-  return *row;
+   return *row;
 }
 
 std::string CsvTable::GetErrorDescription() const {

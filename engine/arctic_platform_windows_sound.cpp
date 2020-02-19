@@ -111,9 +111,9 @@ void StartSoundBuffer(easy::Sound sound, float volume) {
     SoundBuffer buffer;
     buffer.sound = sound;
     buffer.volume = volume;
-    buffer.next_position = 0;
+    buffer.next_position = 0; //-V1048
     buffer.sound.GetInstance()->IncPlaying();
-    buffer.action = SoundBuffer::kStart;
+    buffer.action = SoundBuffer::kStart; //-V1048
     g_sound_mixer_state.AddSoundTask(buffer);
   }
 }
@@ -123,7 +123,7 @@ void StopSoundBuffer(easy::Sound sound) {
     SoundBuffer buffer;
     buffer.sound = sound;
     buffer.volume = 0.f;
-    buffer.next_position = 0;
+    buffer.next_position = 0; //-V1048
     buffer.action = SoundBuffer::kStop;
     g_sound_mixer_state.AddSoundTask(buffer);
   }

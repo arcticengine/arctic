@@ -141,6 +141,7 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
   sound.reset(new easy::SoundInstance(sample_count));
   const Ui8 *in_data = data + 44;
   Si16 *out_data = sound->GetWavData();
+  Check(out_data != nullptr, "Error in LoadWav, unexpected nullptr from GetWavData");
   Ui16 block_align = wav->block_align;
 
   if (wav->sample_rate == 44100) {

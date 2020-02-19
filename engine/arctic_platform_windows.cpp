@@ -382,14 +382,14 @@ void SetFullScreen(bool is_enable) {
   }
   g_is_full_screen = is_enable;
   if (g_is_full_screen) {
-    SetWindowLong(g_system_info.window_handle, GWL_STYLE,
+    SetWindowLongPtr(g_system_info.window_handle, GWL_STYLE,
       WS_POPUP | WS_VISIBLE);
     ShowWindow(g_system_info.window_handle, SW_RESTORE);
     SetWindowPos(g_system_info.window_handle, HWND_TOP, 0, 0, 0, 0,
       SWP_FRAMECHANGED | SWP_NOSIZE);
     ShowWindow(g_system_info.window_handle, SW_SHOWMAXIMIZED);
   } else {
-    SetWindowLong(g_system_info.window_handle, GWL_STYLE,
+    SetWindowLongPtr(g_system_info.window_handle, GWL_STYLE,
       WS_OVERLAPPEDWINDOW | WS_VISIBLE);
     SetWindowPos(g_system_info.window_handle, 0, 0, 0, 0, 0,
       SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOZORDER);

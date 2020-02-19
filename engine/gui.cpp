@@ -439,7 +439,7 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
 }
 
 void Text::SetText(std::string text) {
-  text_ = text;
+  text_ = std::move(text);
   selection_begin_ = 0;
   selection_end_ = 0;
 }

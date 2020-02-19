@@ -661,7 +661,7 @@ typedef struct
 } Codebook;
 
 typedef struct
-{
+{ //-V802
    uint8 order;
    uint16 rate;
    uint16 bark_map_size;
@@ -867,7 +867,7 @@ static int error(vorb *f, enum STBVorbisError e)
 {
    f->error = e;
    if (!f->eof && e != VORBIS_need_more_data) {
-      f->error=e; // breakpoint for debugging
+      f->error=e; // breakpoint for debugging //-V1048
    }
    return 0;
 }
@@ -1137,7 +1137,7 @@ static int include_in_sort(const Codebook *c, uint8 len)
 
 // if the fast table above doesn't work, we want to binary
 // search them... need to reverse the bits
-static void compute_sorted_huffman(Codebook *c, uint8 *lengths, uint32 *values)
+static void compute_sorted_huffman(Codebook *c, const uint8 *lengths, const uint32 *values)
 {
    int i, len;
    // build a list of all the entries
@@ -1231,7 +1231,7 @@ static void compute_window(int n, float *window)
 {
    int n2 = n >> 1, i;
    for (i=0; i < n2; ++i)
-      window[i] = (float) sin(0.5 * M_PI * square((float) sin((i - 0 + 0.5) / n2 * 0.5 * M_PI)));
+      window[i] = (float) sin(0.5 * M_PI * square((float) sin((i + 0.5) / n2 * 0.5 * M_PI)));
 }
 
 static void compute_bitreverse(int n, uint16 *rev)
@@ -1569,8 +1569,6 @@ static uint32 get_bits(vorb *f, int n)
          f->valid_bits += 8;
       }
    }
-   if (f->valid_bits < 0)
-     return 0;
    z = f->acc & ((1 << n)-1);
    f->acc >>= n;
    f->valid_bits -= n;
@@ -1722,7 +1720,7 @@ static int codebook_decode_scalar(vorb *f, Codebook *c) {
 #define CODEBOOK_ELEMENT_FAST(c,off)     (c->multiplicands[off])
 #define CODEBOOK_ELEMENT_BASE(c)         (0)
 
-static int codebook_decode_start(vorb *f, Codebook *c) {
+static int codebook_decode_start(vorb *f, const Codebook *c) {
    int z = -1;
 
    // type 0 is only legal in a scalar context
@@ -2470,7 +2468,7 @@ static void imdct_step3_inner_r_loop(int lim, float *e, int d0, int k_off, float
    }
 }
 
-static void imdct_step3_inner_s_loop(int n, float *e, int i_off, int k_off, float *A, int a_off, int k0) {
+static void imdct_step3_inner_s_loop(int n, float *e, int i_off, int k_off, const float *A, int a_off, int k0) {
    int i;
    float A0 = A[0];
    float A1 = A[0+1];
@@ -2552,7 +2550,7 @@ static __forceinline void iter_54(float *z)
    z[-7] = k11 + k22;    // z1 - z5 - z2 + z6
 }
 
-static void imdct_step3_inner_s_loop_ld654(int n, float *e, int i_off, float *A, int base_n)
+static void imdct_step3_inner_s_loop_ld654(int n, float *e, int i_off, const float *A, int base_n)
 {
    int a_off = base_n >> 3;
    float A2 = A[0+a_off];
@@ -3224,7 +3222,7 @@ static int vorbis_decode_packet_rest(vorb *f, int *len, Mode *m, int left_start,
                   step2_flag[j] = 1;
                   if (val >= room)
                      if (highroom > lowroom)
-                        finalY[j] = val - lowroom + pred;
+                        finalY[j] = val - lowroom + pred; //-V1048
                      else
                         finalY[j] = pred - val + highroom - 1;
                   else
@@ -5022,8 +5020,8 @@ static int8 channel_position[7][6] =
    typedef char stb_vorbis_float_size_test[sizeof(float)==4 && sizeof(int) == 4];
    #define FASTDEF(x) float_conv x
    // add (1<<23) to convert to int, then divide by 2^SHIFT, then add 0.5/2^SHIFT to round
-   #define MAGIC(SHIFT) (1.5f * (1 << (23-SHIFT)) + 0.5f/(1 << SHIFT))
-   #define ADDEND(SHIFT) (((150-SHIFT) << 23) + (1 << 22))
+   #define MAGIC(SHIFT) (1.5f * (1 << (23-(SHIFT))) + 0.5f/(1 << (SHIFT)))
+   #define ADDEND(SHIFT) (((150-(SHIFT)) << 23) + (1 << 22))
    #define FAST_SCALED_FLOAT_TO_INT(temp,x,s) (temp.f = (x) + MAGIC(s), temp.i - ADDEND(s))
    #define check_endianness()  
 #else
@@ -5032,7 +5030,7 @@ static int8 channel_position[7][6] =
    #define FASTDEF(x)
 #endif
 
-static void copy_samples(short *dest, float *src, int len)
+static void copy_samples(short *dest, const float *src, int len)
 {
    int i;
    check_endianness();

@@ -498,7 +498,7 @@ extern "C" {
     return ((status == TINFL_STATUS_DONE) && (!pState->m_dict_avail)) ? MZ_STREAM_END : MZ_OK;
   }
 
-  int mz_inflateEnd(mz_streamp pStream) {
+  int mz_inflateEnd(mz_streamp pStream) { //-V524
     if (!pStream)
       return MZ_STREAM_ERROR;
     if (pStream->state) {
@@ -2715,7 +2715,7 @@ extern "C" {
               (flags & ~TINFL_FLAG_HAS_MORE_INPUT) | TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF);
           if ((status < 0) || (status == TINFL_STATUS_NEEDS_MORE_INPUT))
           {
-            if (pBuf) {
+            if (pBuf) { //-V809
               MZ_FREE(pBuf);
             }
             *pOut_len = 0;
@@ -2731,7 +2731,7 @@ extern "C" {
           pNew_buf = MZ_REALLOC(pBuf, new_out_buf_capacity);
           if (!pNew_buf)
           {
-            if (pBuf) {
+            if (pBuf) { //-V809
               MZ_FREE(pBuf);
             }
             *pOut_len = 0;

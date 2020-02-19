@@ -503,7 +503,7 @@ inline Mat44F SetScale4(const Vec3F &s) {
     0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-inline Mat44F SetIdentity4(void) {
+inline Mat44F SetIdentity4(void) { //-V524
   return Mat44F(1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
