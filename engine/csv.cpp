@@ -27,6 +27,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <cstring>
 
 #include "engine/csv.h"
 #include "engine/arctic_types.h"
@@ -57,7 +58,7 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
     }
     // Remove the BOM (Byte Order Mark) for UTF-8
     if (original_file_[0].length() >=3 &&
-        memcmp(original_file_[0].c_str(), u8"\xEF\xBB\xBF", 3) == 0) {
+        std::memcmp(original_file_[0].c_str(), u8"\xEF\xBB\xBF", 3) == 0) {
       original_file_[0] = original_file_[0].erase(0, 3);
     }
     bool is_ok = true;
