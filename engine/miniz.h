@@ -387,12 +387,12 @@ struct mz_internal_state;
 //! Compression/decompression stream struct.
 typedef struct mz_stream_s {
     const unsigned char *next_in;  //!< pointer to next byte to read //-V122
-    unsigned int avail_in;         //!< number of bytes available at next_in
-    mz_ulong total_in;             //!< total number of bytes consumed so far
+    size_t avail_in;         //!< number of bytes available at next_in
+    size_t total_in;             //!< total number of bytes consumed so far
 
     unsigned char *next_out;  //!< pointer to next byte to write //-V122
-    unsigned int avail_out;   //!< n of bytes that can be written to next_out
-    mz_ulong total_out;       //!< total number of bytes produced so far
+    size_t avail_out;   //!< n of bytes that can be written to next_out
+    size_t total_out;       //!< total number of bytes produced so far
 
     char *msg;                        //!< error msg (unused) //-V122
     struct mz_internal_state *state;  //!< internal state, allocated by //-V122
@@ -925,8 +925,8 @@ tdefl_status tdefl_compress(tdefl_compressor *d, const void *pIn_buf,
 tdefl_status tdefl_compress_buffer(tdefl_compressor *d, const void *pIn_buf,
                                    size_t in_buf_size, tdefl_flush flush);
 
-tdefl_status tdefl_get_prev_return_status(tdefl_compressor *d);
-uint32_t tdefl_get_adler32(tdefl_compressor *d);
+tdefl_status tdefl_get_prev_return_status(const tdefl_compressor *d);
+uint32_t tdefl_get_adler32(const tdefl_compressor *d);
 
 /** Create tdefl_compress() flags given zlib-style compression parameters. */
 /* level may range from [0,10] (where 10 is absolute max compression, but may
@@ -1386,14 +1386,14 @@ mz_bool mz_zip_reader_end(mz_zip_archive *pZip);
  functions. */
 void mz_zip_zero_struct(mz_zip_archive *pZip);
 
-mz_zip_mode mz_zip_get_mode(mz_zip_archive *pZip);
-mz_zip_type mz_zip_get_type(mz_zip_archive *pZip);
+mz_zip_mode mz_zip_get_mode(const mz_zip_archive *pZip);
+mz_zip_type mz_zip_get_type(const mz_zip_archive *pZip);
 
 /** Returns the total number of files in the archive. */
-mz_uint mz_zip_reader_get_num_files(mz_zip_archive *pZip);
+mz_uint mz_zip_reader_get_num_files(const mz_zip_archive *pZip);
 
-uint64_t mz_zip_get_archive_size(mz_zip_archive *pZip);
-uint64_t mz_zip_get_archive_file_start_offset(mz_zip_archive *pZip);
+uint64_t mz_zip_get_archive_size(const mz_zip_archive *pZip);
+uint64_t mz_zip_get_archive_file_start_offset(const mz_zip_archive *pZip);
 MZ_FILE *mz_zip_get_cfile(mz_zip_archive *pZip);
 
 /** Reads n bytes of raw archive data, starting at file offset file_ofs,
@@ -1405,7 +1405,7 @@ size_t mz_zip_read_archive_data(mz_zip_archive *pZip, uint64_t file_ofs,
  These functions retrieve/manipulate this field. */
 /* Note that the m_last_error functionality is not thread safe. */
 mz_zip_error mz_zip_set_last_error(mz_zip_archive *pZip, mz_zip_error err_num);
-mz_zip_error mz_zip_peek_last_error(mz_zip_archive *pZip);
+mz_zip_error mz_zip_peek_last_error(const mz_zip_archive *pZip);
 mz_zip_error mz_zip_clear_last_error(mz_zip_archive *pZip);
 mz_zip_error mz_zip_get_last_error(mz_zip_archive *pZip);
 const char *mz_zip_get_error_string(mz_zip_error mz_err);
@@ -1446,11 +1446,11 @@ mz_bool mz_zip_reader_file_stat(mz_zip_archive *pZip, mz_uint file_index,
 /* A file is considered zip64 if it contained a zip64 end of central directory
  marker, or if it contained any zip64 extended file information fields in the
  central directory. */
-mz_bool mz_zip_is_zip64(mz_zip_archive *pZip);
+mz_bool mz_zip_is_zip64(const mz_zip_archive *pZip);
 
 /** Returns the total central directory size in bytes. */
 /* The current max supported size is <= Ui32_MAX. */
-size_t mz_zip_get_central_dir_size(mz_zip_archive *pZip);
+size_t mz_zip_get_central_dir_size(const mz_zip_archive *pZip);
 
 /** Extracts a archive file to a memory buffer using no memory allocation. */
 /* There must be at least enough room on the stack to store the inflator's

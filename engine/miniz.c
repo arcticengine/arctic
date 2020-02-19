@@ -219,7 +219,7 @@ extern "C" {
 
   int mz_deflate(mz_streamp pStream, int flush) {
     size_t in_bytes, out_bytes;
-    mz_ulong orig_total_in, orig_total_out;
+    size_t orig_total_in, orig_total_out;
     int mz_status = MZ_OK;
 
     if ((!pStream) || (!pStream->state) || (flush < 0) || (flush > MZ_FINISH) || (!pStream->next_out))
@@ -309,7 +309,7 @@ extern "C" {
       return (status == MZ_OK) ? MZ_BUF_ERROR : status;
     }
 
-    *pDest_len = stream.total_out;
+    *pDest_len = (mz_ulong)stream.total_out;
     return mz_deflateEnd(&stream);
   }
 
@@ -323,7 +323,8 @@ extern "C" {
 
   typedef struct {
     tinfl_decompressor m_decomp;
-    mz_uint m_dict_ofs, m_dict_avail, m_first_call, m_has_flushed;
+    mz_uint m_dict_ofs, m_first_call, m_has_flushed;
+    size_t m_dict_avail;
     int m_window_bits;
     uint8_t m_dict[TINFL_LZ_DICT_SIZE];
     tinfl_status m_last_status;
@@ -395,7 +396,8 @@ extern "C" {
 
   int mz_inflate(mz_streamp pStream, int flush) {
     inflate_state *pState;
-    mz_uint n, first_call, decomp_flags = TINFL_FLAG_COMPUTE_ADLER32;
+    size_t n;
+    mz_uint first_call, decomp_flags = TINFL_FLAG_COMPUTE_ADLER32;
     size_t in_bytes, out_bytes, orig_avail_in;
     tinfl_status status;
 
@@ -531,7 +533,7 @@ extern "C" {
       mz_inflateEnd(&stream);
       return ((status == MZ_BUF_ERROR) && (!stream.avail_in)) ? MZ_DATA_ERROR : status;
     }
-    *pDest_len = stream.total_out;
+    *pDest_len = (mz_ulong)stream.total_out;
 
     return mz_inflateEnd(&stream);
   }
