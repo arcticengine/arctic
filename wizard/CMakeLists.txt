@@ -127,9 +127,6 @@ file(GLOB SRC_FILES
     ${HEADER_DIR_2}/*.h
     ${HEADER_DIR_2}/*.hpp
 )
-list(REMOVE_ITEM SRC_FILES "${CPP_DIR_1}/arctic_platform_pi.cpp")
-list(REMOVE_ITEM SRC_FILES "${CPP_DIR_1}/byte_array.cpp")
-list(REMOVE_ITEM SRC_FILES "${HEADER_DIR_1}/byte_array.h")
 ELSE (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
@@ -141,10 +138,13 @@ file(GLOB SRC_FILES
     ${HEADER_DIR_2}/*.h
     ${HEADER_DIR_2}/*.hpp
 )
-list(REMOVE_ITEM SRC_FILES "${CPP_DIR_1}/arctic_platform_pi.cpp")
-list(REMOVE_ITEM SRC_FILES "${CPP_DIR_1}/byte_array.cpp")
-list(REMOVE_ITEM SRC_FILES "${HEADER_DIR_1}/byte_array.h")
 ENDIF (APPLE)
+file(GLOB SRC_FILES_TO_REMOVE
+    ${CPP_DIR_1}/arctic_platform_pi.cpp
+    ${CPP_DIR_1}/byte_array.cpp
+    ${HEADER_DIR_1}/byte_array.h
+)
+list(REMOVE_ITEM SRC_FILES ${SRC_FILES_TO_REMOVE})
 
 # Add executable to build.
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE
