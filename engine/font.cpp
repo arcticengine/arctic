@@ -237,7 +237,7 @@ void Font::Load(const char *file_name) {
     sprite.Clone(sprite0);
     sprite.UpdateOpaqueSpans();
     sprite.SetPivot(arctic::Vec2Si32(
-      chars->xoffset, chars->height + chars->yoffset - common->base));
+      -chars->xoffset, chars->height + chars->yoffset - common->base));
     glyph_.emplace_back(chars->id, chars->xadvance, sprite);
 
     inner_pos += 20;
