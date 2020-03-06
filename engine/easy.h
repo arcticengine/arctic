@@ -101,11 +101,11 @@ bool IsKeyUpward(const char key);
 bool IsKeyUpward(const std::string &keys);
 
 
-// true if key transitioned from up to down state last frame
+/// @brief true if key transitioned from up to down state last frame
 bool IsAnyKeyDownward();
-// true is key is currently down
+/// @brief true is key is currently down
 bool IsAnyKeyDown();
-// true if key transitioned from down to up since last frame
+/// @brief true if key transitioned from down to up since last frame
 bool IsAnyKeyUpward();
 
 void SetKey(const KeyCode key_code, bool is_set_down);
@@ -118,17 +118,26 @@ Si32 MouseWheelDelta();
 Si32 InputMessageCount();
 const InputMessage& GetInputMessage(Si32 idx);
 
+/// @brief Get the window size in actual pixels of the OS
 Vec2Si32 WindowSize();
+/// @brief Get the backbuffer resolution in pixels
 Vec2Si32 ScreenSize();
+/// @brief Set the backbuffer resolution in pixels
 void ResizeScreen(const Si32 width, const Si32 height);
+/// @brief Set the backbuffer resolution in pixels
 void ResizeScreen(const Vec2Si32 size);
 void SetInverseY(bool is_inverse);
 
+/// @brief Clear the backbuffer with black color
 void Clear();
+/// @brief Clear the backbuffer with the color specified
 void Clear(Rgba color);
 
+/// @brief Returns time in seconds since the game was started
 double Time();
+/// @brief Returns a random number in range [min,max]
 Si64 Random(Si64 min, Si64 max);
+/// @brief Returns a random number in range [min,max]
 Si32 Random32(Si32 min, Si32 max);
 void Sleep(double duration_seconds);
 

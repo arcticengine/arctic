@@ -68,19 +68,33 @@ class Sprite {
  public:
   Sprite();
   void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);
+  /// @brief Load sprite data from file
   void Load(const char *file_name);
+  /// @brief Load sprite data from file
   void Load(const std::string &file_name);
+  /// @brief Load sprite data from file
   void Save(const char *file_name);
+  /// @brief Load sprite data from file
   void Save(const std::string &file_name);
   std::vector<Ui8> SaveToData(const char *file_name);
+  /// @brief Make current sprite an empty sprite of the specified size
   void Create(const Vec2Si32 size);
+  /// @brief Make current sprite an empty sprite of the specified size
   void Create(const Si32 width, const Si32 height);
+  /// @brief Make current sprite reference to a rectangular part of another sprite
   void Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height);
+  /// @brief Fill the sprite with black
   void Clear();
+  /// @brief Fill the sprite with the specified color
   void Clear(Rgba color);
+  /// @brief Make current sprite a (tansformed) copy of another sprite
+  /// @param from Souce sprite to clone from
+  /// @param transform A transformation to perform while copying (kCloneUntransformed by default)
   void Clone(Sprite from, CloneTransform transform = kCloneUntransformed);
+  /// @brief Set the coordinates of the pivot point of the sprite
   void SetPivot(Vec2Si32 pivot);
+  /// @brief Get the coordinates of the pivot point of the sprite
   Vec2Si32 Pivot() const;
   void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
     DrawBlendingMode blending_mode = kAlphaBlend,
@@ -157,17 +171,31 @@ class Sprite {
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
 
+  /// @brief Get width of the sprite in pixels
   Si32 Width() const;
+  /// @brief Get height of the sprite in pixels
   Si32 Height() const;
+  /// @brief Get size of the sprite in pixels
   Vec2Si32 Size() const;
+  /// @brief Get stride of the sprite raw data in bytes
   Si32 StrideBytes() const;
+  /// @brief Get stride of the sprite rgba data in pixels
   Si32 StridePixels() const;
+  /// @brief Returns true if the sprite is actually a reference to another sprite
   bool IsRef() const;
+  /// @brief Returns a pointer to the raw data bytes of the sprite
   Ui8* RawData();
+  /// @brief Returns a pointer to the Rgba data of the sprite
   Rgba* RgbaData();
+  /// @brief Returns a pointer to the read-only Rgba data of the sprite
   const Rgba* RgbaData() const;
   const std::vector<SpanSi32> &Opaque() const;
+  /// @brief Update the opaque span parameters of the sprite
+  /// @details
+  /// Sets up the span parameters so that currently transparent pixels will not be drawn.
+  /// Changing pixel transparency may require calling either UpdateOpaqueSpans or ClearOpaqueSpans.
   void UpdateOpaqueSpans();
+  /// @brief Clear the opaque span parameters of the sprite so that each pixel of the sprite is drawn
   void ClearOpaqueSpans();
 };
 
