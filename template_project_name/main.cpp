@@ -5,8 +5,11 @@
 using namespace arctic;  // NOLINT
 using namespace arctic::easy;  // NOLINT
 
-Sprite g_blocks[3];
-Si32 g_field[16][8] = {
+const Si32 kBlockSpriteCount = 3;
+Sprite g_blocks[kBlockSpriteCount];
+const Si32 kFieldWidth = 8;
+const Si32 kFieldHeight = 16;
+Si32 g_field[kFieldHeight][kFieldWidth] = {
   {0, 0, 0, 0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0, 0, 0, 0},
@@ -24,7 +27,9 @@ Si32 g_field[16][8] = {
   {2, 0, 0, 0, 2, 2, 2, 2},
   {2, 0, 0, 0, 2, 2, 2, 2},
 };
-Si32 g_tetraminoes[7 * 5][5] = {
+const Si32 kTetraminoSide = 5;
+const Si32 kTetraminoCount = 7;
+Si32 g_tetraminoes[kTetraminoCount * kTetraminoSide][kTetraminoSide] = {
   {0, 0, 1, 0, 0},
   {0, 0, 1, 0, 0},
   {0, 0, 1, 0, 0},
@@ -67,7 +72,8 @@ Si32 g_tetraminoes[7 * 5][5] = {
   {0, 0, 0, 0, 0},
   {0, 0, 0, 0, 0},
 };
-Si32 g_current[4][5][5];
+const Si32 kOrientationCount = 4;
+Si32 g_current[kOrientationCount][kTetraminoSide][kTetraminoSide];
 Si32 g_current_x;
 Si32 g_current_y;
 Si32 g_current_orientation;
@@ -79,22 +85,22 @@ Si32 g_drop = 0;
 Si32 g_score = 0;
 Font g_font;
 void StartNewTetramino() {
-  Si32 idx = Random32(0, 6);
-  for (Si32 y = 0; y < 5; ++y) {
-    for (Si32 x = 0; x < 5; ++x) {
-      g_current[0][y][x] = g_tetraminoes[y + idx * 5][x];
-      g_current[1][x][4 - y] = g_tetraminoes[y + idx * 5][x];
-      g_current[2][4 - y][4 - x] = g_tetraminoes[y + idx * 5][x];
-      g_current[3][4 - x][y] = g_tetraminoes[y + idx * 5][x];
+  Si32 idx = Random32(0, kTetraminoCount - 1);
+  for (Si32 y = 0; y < kTetraminoSide; ++y) {
+    for (Si32 x = 0; x < kTetraminoSide; ++x) {
+      g_current[0][y][x] = g_tetraminoes[y + idx * kTetraminoSide][x];
+      g_current[1][x][kTetraminoSide - 1 - y] = g_tetraminoes[y + idx * kTetraminoSide][x];
+      g_current[2][kTetraminoSide - 1 - y][kTetraminoSide - 1 - x] = g_tetraminoes[y + idx * kTetraminoSide][x];
+      g_current[3][kTetraminoSide - 1 - x][y] = g_tetraminoes[y + idx * kTetraminoSide][x];
     }
   }
-  g_current_x = 3;
+  g_current_x = (kFieldWidth - kTetraminoSide + 1) / 2;
   g_current_y = 0;
-  g_current_orientation = Random32(0, 3);
+  g_current_orientation = Random32(0, kOrientationCount - 1);
 }
 void ClearField() {
-  for (Si32 y = 0; y < 16; ++y) {
-    for (Si32 x = 0; x < 8; ++x) {
+  for (Si32 y = 0; y < kFieldHeight; ++y) {
+    for (Si32 x = 0; x < kFieldWidth; ++x) {
         g_field[y][x] = 0;
     }
   }
@@ -102,6 +108,8 @@ void ClearField() {
 void Init() {
   g_blocks[1].Load("data/block_1.tga");
   g_blocks[2].Load("data/block_2.tga");
+  g_blocks[0].Create(g_blocks[1].Size());
+  g_blocks[1].Draw(g_blocks[0], 0, 0, kDrawBlendingModeColorize, kFilterNearest, Rgba(0, 0, 48));
   ResizeScreen(800, 500);
   StartNewTetramino();
   g_prev_time = Time();
@@ -109,10 +117,10 @@ void Init() {
   g_font.Load("data/arctic_one_bmf.fnt");
 }
 bool IsPositionOk(Si32 test_x, Si32 test_y, Si32 test_orientation) {
-  for (Si32 y = 0; y < 5; ++y) {
-    for (Si32 x = 0; x < 5; ++x) {
+  for (Si32 y = 0; y < kTetraminoSide; ++y) {
+    for (Si32 x = 0; x < kTetraminoSide; ++x) {
       if (g_current[test_orientation][y][x]) {
-        if (x + test_x < 0 || x + test_x > 7 || y + test_y > 15
+        if (x + test_x < 0 || x + test_x >= kFieldWidth || y + test_y >= kFieldHeight
               || g_field[y + test_y][x + test_x]) {
           return false;
         }
@@ -122,35 +130,37 @@ bool IsPositionOk(Si32 test_x, Si32 test_y, Si32 test_orientation) {
   return true;
 }
 void LockTetramino() {
-  for (Si32 y = 0; y < 5; ++y) {
-    for (Si32 x = 0; x < 5; ++x) {
+  for (Si32 y = 0; y < kTetraminoSide; ++y) {
+    for (Si32 x = 0; x < kTetraminoSide; ++x) {
       if (g_current[g_current_orientation][y][x]) {
         g_field[y + g_current_y][x + g_current_x] = 2;
       }
     }
   }
   bool do_continue = true;
+  Si32 full_lines = 0;
   while (do_continue) {
     do_continue = false;
-    for (Si32 y = 15; y >= 0; --y) {
+    for (Si32 y = kFieldHeight - 1; y >= 0; --y) {
       bool is_full_line = true;
-      for (Si32 x = 0; x < 8; ++x) {
+      for (Si32 x = 0; x < kFieldWidth; ++x) {
         if (!g_field[y][x]) {
           is_full_line = false;
           break;
         }
       }
       if (is_full_line) {
-        g_score += 100;
+        full_lines++;
         do_continue = true;
         for (Si32 y2 = y; y2 > 0; --y2) {
-          for (Si32 x = 0; x < 8; ++x) {
+          for (Si32 x = 0; x < kFieldWidth; ++x) {
             g_field[y2][x] = g_field[y2 - 1][x];
           }
         }
       }
     }
   }
+  g_score += full_lines * full_lines * 100;
 }
 void Update() {
   double time = Time();
@@ -183,8 +193,8 @@ void Update() {
   }
   if (g_rotate) {
     if (IsPositionOk(g_current_x, g_current_y,
-          (g_current_orientation + 1) % 4)) {
-      g_current_orientation = (g_current_orientation + 1) % 4;
+          (g_current_orientation + 1) % kOrientationCount)) {
+      g_current_orientation = (g_current_orientation + 1) % kOrientationCount;
       g_dy = 0;
     }
   }
@@ -211,16 +221,18 @@ void Update() {
 }
 void Render() {
   Clear();
-  Si32 x_offset = (ScreenSize().x - 25 * 8) / 2;
-  for (Si32 y = 0; y < 16; ++y) {
-    for (Si32 x = 0; x < 8; ++x) {
-      g_blocks[g_field[y][x]].Draw(x_offset + x * 25, (15 - y) * 25);
+  Si32 x_offset = (ScreenSize().x - 25 * kFieldWidth) / 2;
+  for (Si32 y = 0; y < kFieldHeight; ++y) {
+    for (Si32 x = 0; x < kFieldWidth; ++x) {
+      g_blocks[g_field[y][x]].Draw(x_offset + x * 25, (kFieldHeight - 1 - y) * 25);
     }
   }
-  for (Si32 y = 0; y < 5; ++y) {
-    for (Si32 x = 0; x < 5; ++x) {
-      g_blocks[g_current[g_current_orientation][y][x]].Draw(
-        x_offset + (x + g_current_x) * 25, (15 - y - g_current_y) * 25);
+  for (Si32 y = 0; y < kTetraminoSide; ++y) {
+    for (Si32 x = 0; x < kTetraminoSide; ++x) {
+      if (g_current[g_current_orientation][y][x]) {
+        g_blocks[g_current[g_current_orientation][y][x]].Draw(
+          x_offset + (x + g_current_x) * 25, (kFieldHeight - 1 - y - g_current_y) * 25);
+      }
     }
   }
   char score[128];

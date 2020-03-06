@@ -677,6 +677,10 @@ std::vector<Ui8> Sprite::SaveToData(const char *file_name) {
   return data;
 }
 
+void Sprite::Create(const Vec2Si32 size) {
+  Create(size.x, size.y);
+}
+
 void Sprite::Create(const Si32 width, const Si32 height) {
   sprite_instance_.reset(new SpriteInstance(width, height));
   ref_pos_ = Vec2Si32(0, 0);

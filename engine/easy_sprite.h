@@ -36,9 +36,12 @@ namespace arctic {
 namespace easy {
 
 enum DrawBlendingMode {
-  kCopyRgba,
-  kAlphaBlend,
-  kColorize
+  kCopyRgba = 0, // Deprecated
+  kDrawBlendingModeCopyRgba = 0,
+  kAlphaBlend = 1, // Deprecated
+  kDrawBlendingModeAlphaBlend = 1,
+  kColorize = 2, // Deprecated
+  kDrawBlendingModeColorize = 2
 };
 
 enum DrawFilterMode {
@@ -70,6 +73,7 @@ class Sprite {
   void Save(const char *file_name);
   void Save(const std::string &file_name);
   std::vector<Ui8> SaveToData(const char *file_name);
+  void Create(const Vec2Si32 size);
   void Create(const Si32 width, const Si32 height);
   void Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height);
