@@ -55,23 +55,49 @@ void SetPixel(Si32 x, Si32 y, Rgba color);
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color);
 void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color);
 
+/// @brief Show the current backbuffer and update the input state
 void ShowFrame();
 
 // true if key transitioned from up to down state last frame
+/// @brief Returns true if the key with the specified key_code travelled downwards during the last frame
+/// @param key_code The key code
 bool IsKeyDownward(const KeyCode key_code);
+/// @brief Returns true if any of the specified keys travelled downwards during the last frame
+/// @param keys A c-string specifying one or more key character codes to check
 bool IsKeyDownward(const char *keys);
+/// @brief Returns true if the key specified travelled downwards during the last frame
+/// @param key The key character code
 bool IsKeyDownward(const char key);
+/// @brief Returns true if any of the specified keys travelled downwards during the last frame
+/// @param keys A std::string specifying one or more key character codes to check
 bool IsKeyDownward(const std::string &keys);
+
 // true is key is currently down
+/// @brief Returns true if the key with the specified key_code was pressed during the last frame
+/// @param key_code The key code
 bool IsKeyDown(const KeyCode key_code);
+/// @brief Returns true if any of the specified keys was pressed during the last frame
+/// @param keys A c-string specifying one or more key character codes to check
 bool IsKeyDown(const char *keys);
+/// @brief Returns true if the key specified was pressed during the last frame
+/// @param key The key character code
 bool IsKeyDown(const char key);
+/// @brief Returns true if any of the specified keys was pressed during the last frame
+/// @param keys A std::string specifying one or more key character codes to check
 bool IsKeyDown(const std::string &keys);
 
 // true if key transitioned from down to up since last frame
+/// @brief Returns true if the key with the specified key_code was released during the last frame
+/// @param key_code The key code
 bool IsKeyUpward(const KeyCode key_code);
+/// @brief Returns true if any of the specified keys was released during the last frame
+/// @param keys A c-string specifying one or more key character codes to check
 bool IsKeyUpward(const char *keys);
+/// @brief Returns true if the key specified was released during the last frame
+/// @param key The key character code
 bool IsKeyUpward(const char key);
+/// @brief Returns true if any of the specified keys was released during the last frame
+/// @param keys A std::string specifying one or more key character codes to check
 bool IsKeyUpward(const std::string &keys);
 
 
