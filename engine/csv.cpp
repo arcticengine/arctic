@@ -46,7 +46,7 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
   if (ifile.is_open()) {
     while (ifile.good()) {
       getline(ifile, line);
-      if (line.empty()) {
+      if (!line.empty()) {
         original_file_.push_back(line);
       }
     }
