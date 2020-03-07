@@ -521,11 +521,19 @@ Rgba GetPixel(Si32 x, Si32 y) {
 }
 
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color) {
-  DrawOval(c, Vec2Si32(r, r), color);
+  DrawOval(GetEngine()->GetBackbuffer(), c, Vec2Si32(r, r), color);
+}
+
+void DrawCircle(easy::Sprite to_sprite, Vec2Si32 c, Si32 r, Rgba color) {
+  DrawOval(to_sprite, c, Vec2Si32(r, r), color);
 }
 
 void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color) {
-  Sprite back = GetEngine()->GetBackbuffer();
+  DrawOval(GetEngine()->GetBackbuffer(), c, r, color);
+}
+
+void DrawOval(easy::Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
+  Sprite back = to_sprite;
   Vec2Si32 limit = back.Size();
   MathTables &tables = GetEngine()->GetMathTables();
 

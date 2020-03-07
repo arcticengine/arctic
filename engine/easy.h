@@ -53,7 +53,9 @@ void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color);
 Rgba GetPixel(Si32 x, Si32 y);
 void SetPixel(Si32 x, Si32 y, Rgba color);
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color);
+void DrawCircle(Sprite to_sprite, Vec2Si32 c, Si32 r, Rgba color);
 void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color);
+void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color);
 
 /// @brief Show the current backbuffer and update the input state
 void ShowFrame();
