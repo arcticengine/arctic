@@ -281,7 +281,11 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
 }
 
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color) {
-    DrawTriangle(a, b, c, color, color, color);
+    DrawTriangle(GetEngine()->GetBackbuffer(), a, b, c, color, color, color);
+}
+
+void DrawTriangle(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color) {
+    DrawTriangle(to_sprite, a, b, c, color, color, color);
 }
 
 // Just like MasterBoy wrote in HUGi 17, but without subpixel
@@ -354,138 +358,147 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
     }
 }
 
+
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Rgba color_a, Rgba color_b, Rgba color_c) {
-    if (a.y > b.y) {
-        std::swap(a, b);
-        std::swap(color_a, color_b);
-    }
-    if (a.y > c.y) {
-        std::swap(a, c);
-        std::swap(color_a, color_c);
-    }
-    if (b.y > c.y) {
-        std::swap(b, c);
-        std::swap(color_b, color_c);
-    }
-    if (a.y == c.y) {
-        return;
-    }
-    Sprite back = GetEngine()->GetBackbuffer();
-    Si32 stride = back.StridePixels();
-    Rgba *dst = back.RgbaData();
-    Si32 width = back.Width();
-    Si32 height = back.Height();
+  DrawTriangle(GetEngine()->GetBackbuffer(), a, b, c, color_a, color_b, color_c);
+}
 
-    float dxdy_ac = static_cast<float>(c.x - a.x) /
-        static_cast<float>(c.y - a.y);
-    float dxdy_bc = static_cast<float>(c.x - b.x) /
-        static_cast<float>(c.y - b.y);
-    float dxdy_ab = static_cast<float>(b.x - a.x) /
-        static_cast<float>(b.y - a.y);
+void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
+    Rgba color_a, Rgba color_b, Rgba color_c) {
+  if (a.y > b.y) {
+      std::swap(a, b);
+      std::swap(color_a, color_b);
+  }
+  if (a.y > c.y) {
+      std::swap(a, c);
+      std::swap(color_a, color_c);
+  }
+  if (b.y > c.y) {
+      std::swap(b, c);
+      std::swap(color_b, color_c);
+  }
+  if (a.y == c.y) {
+      return;
+  }
 
-    Vec4F rgba_a(color_a.r, color_a.g, color_a.b, color_a.a);
-    Vec4F rgba_b(color_b.r, color_b.g, color_b.b, color_b.a);
-    Vec4F rgba_c(color_c.r, color_c.g, color_c.b, color_c.a);
+  Si32 stride = to_sprite.StridePixels();
+  Rgba *dst = to_sprite.RgbaData();
+  Si32 width = to_sprite.Width();
+  Si32 height = to_sprite.Height();
 
-    Vec4F dcdy_ac = (rgba_c - rgba_a) / static_cast<float>(c.y - a.y);
-    Vec4F dcdy_bc = (rgba_c - rgba_b) / static_cast<float>(c.y - b.y);
-    Vec4F dcdy_ab = (rgba_b - rgba_a) / static_cast<float>(b.y - a.y);
+  float dxdy_ac = static_cast<float>(c.x - a.x) /
+      static_cast<float>(c.y - a.y);
+  float dxdy_bc = static_cast<float>(c.x - b.x) /
+      static_cast<float>(c.y - b.y);
+  float dxdy_ab = static_cast<float>(b.x - a.x) /
+      static_cast<float>(b.y - a.y);
 
-    float x1;
-    float x2;
-    float dxdy1;
-    float dxdy2;
-    Vec4F rgba1;
-    Vec4F rgba2;
-    Vec4F dcdy1;
-    Vec4F dcdy2;
+  Vec4F rgba_a(color_a.r, color_a.g, color_a.b, color_a.a);
+  Vec4F rgba_b(color_b.r, color_b.g, color_b.b, color_b.a);
+  Vec4F rgba_c(color_c.r, color_c.g, color_c.b, color_c.a);
 
-    bool is_b_at_the_right_side = dxdy_ac < dxdy_ab;
-    if (is_b_at_the_right_side) {
-        dxdy1 = dxdy_ac;
-        dcdy1 = dcdy_ac;
-        if (a.y == b.y) {
-            dxdy2 = dxdy_bc;
-            x1 = static_cast<float>(a.x);
-            x2 = static_cast<float>(b.x);
-            dcdy2 = dcdy_bc;
-            rgba1 = rgba_a;
-            rgba2 = rgba_b;
-            DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
-                dxdy1, dxdy2,
-                dcdy1, dcdy2, width, height, a.y, c.y);
-            return;
-        }
-        if (a.y < b.y) {
-            dxdy2 = dxdy_ab;
-            x1 = static_cast<float>(a.x);
-            x2 = static_cast<float>(a.x);
-            dcdy2 = dcdy_ab;
-            rgba1 = rgba_a;
-            rgba2 = rgba_a;
-            DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
-                dxdy1, dxdy2,
-                dcdy1, dcdy2, width, height, a.y, b.y);
-        }
-        if (b.y < c.y) {
-            dxdy2 = dxdy_bc;
-            x2 = static_cast<float>(b.x);
-            dcdy2 = dcdy_bc;
-            rgba2 = rgba_b;
-            DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
-                dxdy1, dxdy2,
-                dcdy1, dcdy2, width, height, b.y, c.y);
-        }
-    } else {
-        // b is at the left side
-        dxdy2 = dxdy_ac;
-        dcdy2 = dcdy_ac;
-        if (a.y == b.y) {
-            dxdy1 = dxdy_bc;
-            x1 = static_cast<float>(b.x);
-            x2 = static_cast<float>(a.x);
-            dcdy1 = dcdy_bc;
-            rgba1 = rgba_b;
-            rgba2 = rgba_a;
-            DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
-                dxdy1, dxdy2,
-                dcdy1, dcdy2, width, height, a.y, c.y);
-            return;
-        }
-        if (a.y < b.y) {
-            dxdy1 = dxdy_ab;
-            x1 = static_cast<float>(a.x);
-            x2 = static_cast<float>(a.x);
-            dcdy1 = dcdy_ab;
-            rgba1 = rgba_a;
-            rgba2 = rgba_a;
-            DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
-                dxdy1, dxdy2,
-                dcdy1, dcdy2, width, height, a.y, b.y);
-        }
-        if (b.y < c.y) {
-            dxdy1 = dxdy_bc;
-            x1 = static_cast<float>(b.x);
-            dcdy1 = dcdy_bc;
-            rgba1 = rgba_b;
-            DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
-                dxdy1, dxdy2,
-                dcdy1, dcdy2, width, height, b.y, c.y);
-        }
-    }
+  Vec4F dcdy_ac = (rgba_c - rgba_a) / static_cast<float>(c.y - a.y);
+  Vec4F dcdy_bc = (rgba_c - rgba_b) / static_cast<float>(c.y - b.y);
+  Vec4F dcdy_ab = (rgba_b - rgba_a) / static_cast<float>(b.y - a.y);
+
+  float x1;
+  float x2;
+  float dxdy1;
+  float dxdy2;
+  Vec4F rgba1;
+  Vec4F rgba2;
+  Vec4F dcdy1;
+  Vec4F dcdy2;
+
+  bool is_b_at_the_right_side = dxdy_ac < dxdy_ab;
+  if (is_b_at_the_right_side) {
+      dxdy1 = dxdy_ac;
+      dcdy1 = dcdy_ac;
+      if (a.y == b.y) {
+          dxdy2 = dxdy_bc;
+          x1 = static_cast<float>(a.x);
+          x2 = static_cast<float>(b.x);
+          dcdy2 = dcdy_bc;
+          rgba1 = rgba_a;
+          rgba2 = rgba_b;
+          DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
+              dxdy1, dxdy2,
+              dcdy1, dcdy2, width, height, a.y, c.y);
+          return;
+      }
+      if (a.y < b.y) {
+          dxdy2 = dxdy_ab;
+          x1 = static_cast<float>(a.x);
+          x2 = static_cast<float>(a.x);
+          dcdy2 = dcdy_ab;
+          rgba1 = rgba_a;
+          rgba2 = rgba_a;
+          DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
+              dxdy1, dxdy2,
+              dcdy1, dcdy2, width, height, a.y, b.y);
+      }
+      if (b.y < c.y) {
+          dxdy2 = dxdy_bc;
+          x2 = static_cast<float>(b.x);
+          dcdy2 = dcdy_bc;
+          rgba2 = rgba_b;
+          DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
+              dxdy1, dxdy2,
+              dcdy1, dcdy2, width, height, b.y, c.y);
+      }
+  } else {
+      // b is at the left side
+      dxdy2 = dxdy_ac;
+      dcdy2 = dcdy_ac;
+      if (a.y == b.y) {
+          dxdy1 = dxdy_bc;
+          x1 = static_cast<float>(b.x);
+          x2 = static_cast<float>(a.x);
+          dcdy1 = dcdy_bc;
+          rgba1 = rgba_b;
+          rgba2 = rgba_a;
+          DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
+              dxdy1, dxdy2,
+              dcdy1, dcdy2, width, height, a.y, c.y);
+          return;
+      }
+      if (a.y < b.y) {
+          dxdy1 = dxdy_ab;
+          x1 = static_cast<float>(a.x);
+          x2 = static_cast<float>(a.x);
+          dcdy1 = dcdy_ab;
+          rgba1 = rgba_a;
+          rgba2 = rgba_a;
+          DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
+              dxdy1, dxdy2,
+              dcdy1, dcdy2, width, height, a.y, b.y);
+      }
+      if (b.y < c.y) {
+          dxdy1 = dxdy_bc;
+          x1 = static_cast<float>(b.x);
+          dcdy1 = dcdy_bc;
+          rgba1 = rgba_b;
+          DrawTrianglePart(dst, stride, &x1, &x2, &rgba1, &rgba2,
+              dxdy1, dxdy2,
+              dcdy1, dcdy2, width, height, b.y, c.y);
+      }
+  }
 }
 
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
-  Sprite back = GetEngine()->GetBackbuffer();
-  Vec2Si32 limit = back.Size();
+  DrawRectangle(GetEngine()->GetBackbuffer(), ll, ur, color);
+}
+
+void DrawRectangle(easy::Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
+  Vec2Si32 limit = to_sprite.Size();
   Si32 x1 = std::max(std::min(ll.x, ur.x), 0);
   Si32 x2 = std::min(std::max(ll.x, ur.x) + 1, limit.x);
   Si32 y1 = std::max(std::min(ll.y, ur.y), 0);
   Si32 y2 = std::min(std::max(ll.y, ur.y) + 1, limit.y);
   if (x1 < x2 && y1 < y2) {
-    Rgba *data = back.RgbaData();
-    Si32 stride = back.StridePixels();
+    Rgba *data = to_sprite.RgbaData();
+    Si32 stride = to_sprite.StridePixels();
     Rgba *p_begin = data + stride * y1 + x1;
     Si32 w = x2 - x1;
     Rgba *p = p_begin;
@@ -500,20 +513,38 @@ void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   }
 }
 
-void SetPixel(Si32 x, Si32 y, Rgba color) {
-  Sprite back = GetEngine()->GetBackbuffer();
-  Rgba *data = back.RgbaData();
-  Si32 stride = back.StridePixels();
-  if (x >= 0 && x < back.Width() && y >= 0 && y < back.Height()) {
+void SetPixel(easy::Sprite to_sprite, Si32 x, Si32 y, Rgba color) {
+  Rgba *data = to_sprite.RgbaData();
+  Si32 stride = to_sprite.StridePixels();
+  if (x >= 0 && x < to_sprite.Width() && y >= 0 && y < to_sprite.Height()) {
     data[x + y * stride] = color;
   }
 }
 
+void SetPixel(Si32 x, Si32 y, Rgba color) {
+  Sprite to_sprite = GetEngine()->GetBackbuffer();
+  Rgba *data = to_sprite.RgbaData();
+  Si32 stride = to_sprite.StridePixels();
+  if (x >= 0 && x < to_sprite.Width() && y >= 0 && y < to_sprite.Height()) {
+    data[x + y * stride] = color;
+  }
+}
+
+Rgba GetPixel(easy::Sprite from_sprite, Si32 x, Si32 y) {
+  Rgba *data = from_sprite.RgbaData();
+  Si32 stride = from_sprite.StridePixels();
+  if (x >= 0 && x < from_sprite.Width() && y >= 0 && y < from_sprite.Height()) {
+    return data[x + y * stride];
+  } else {
+    return Rgba(0, 0, 0);
+  }
+}
+
 Rgba GetPixel(Si32 x, Si32 y) {
-  Sprite back = GetEngine()->GetBackbuffer();
-  Rgba *data = back.RgbaData();
-  Si32 stride = back.StridePixels();
-  if (x >= 0 && x < back.Width() && y >= 0 && y < back.Height()) {
+  Sprite from_sprite = GetEngine()->GetBackbuffer();
+  Rgba *data = from_sprite.RgbaData();
+  Si32 stride = from_sprite.StridePixels();
+  if (x >= 0 && x < from_sprite.Width() && y >= 0 && y < from_sprite.Height()) {
     return data[x + y * stride];
   } else {
     return Rgba(0, 0, 0);
