@@ -18,7 +18,7 @@ filetest [![Windows build status](https://ci.appveyor.com/api/projects/status/7t
 
 Linux: [![Linux build status](https://gitlab.com/huldra/arctic/badges/master/build.svg)](https://gitlab.com/huldra/arctic/pipelines)
 
-Scrum board: https://gitlab.com/huldra/arctic/boards?=
+Scrum board: https://gitlab.com/huldra/arctic/-/boards
 
 Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
