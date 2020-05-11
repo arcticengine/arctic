@@ -16,7 +16,8 @@ antarctica pyramids [![Windows build status](https://ci.appveyor.com/api/project
 wizard [![Windows build status](https://ci.appveyor.com/api/projects/status/sa5a1rng94yb4w4o?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 filetest [![Windows build status](https://ci.appveyor.com/api/projects/status/7tb6wk4xdwhp4dlq?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 
-Linux: [![Linux build status](https://gitlab.com/huldra/arctic/badges/master/build.svg)](https://gitlab.com/huldra/arctic/pipelines)
+Linux: [![Linux build status](https://gitlab.com/huldra/arctic/badges/master/pipeline.svg)](https://gitlab.com/huldra/arctic/pipelines)
+
 
 Scrum board: https://gitlab.com/huldra/arctic/-/boards
 
