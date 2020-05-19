@@ -28,6 +28,9 @@
 *.out
 *.app
 
+# vim swap files
+*.swp
+
 # Visual studio hidden stuff
 .vs
 
@@ -49,3 +52,7 @@ CMakeCache.txt
 CMakeFiles
 Makefile
 cmake_install.cmake
+
+#final artefacts
+wizard/wizard
+log.txt
