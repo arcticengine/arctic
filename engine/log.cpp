@@ -30,6 +30,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>  // NOLINT
+#include <sstream>
 #include <string>
 #include <thread>  // NOLINT
 
@@ -114,6 +115,16 @@ namespace arctic {
     str.append(text2);
     str.append(text3);
     PushLog(str);
+  }
+
+  void LogAndDelete(std::ostringstream *str) {
+    Check(str, "Unexpected nullptr in LogAndDelete call");
+    Log(str->str().c_str());
+    delete str;
+  }
+
+  std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log() {
+    return std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)>(new std::ostringstream, LogAndDelete);
   }
 
   void StartLogger() {

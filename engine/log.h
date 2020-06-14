@@ -24,12 +24,14 @@
 #define ENGINE_LOG_H_
 
 #include "engine/arctic_types.h"
+#include <memory>
 
 namespace arctic {
 
 void Log(const char *text);
 void Log(const char *text1, const char *text2);
 void Log(const char *text1, const char *text2, const char *text3);
+std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
 
 void StartLogger();
 void StopLogger();
