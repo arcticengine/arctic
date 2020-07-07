@@ -150,19 +150,15 @@ void CreateMainWindow(SystemInfo *system_info) {
   context = eglCreateContext(g_egl_display, config,
       EGL_NO_CONTEXT, context_attributes);
   if (context == EGL_NO_CONTEXT) {
-    std::stringstream info;
-    info << "Unable to create EGL context (eglError: "
+    *Log() << "Unable to create EGL context (eglError: "
       << eglGetError() << ")" << std::endl;
-    Log(info.str().c_str());
     Check(false, info.str().c_str());
   }
   g_egl_surface = eglCreateWindowSurface(g_egl_display, config,
       (EGLNativeWindowType)g_x_window, NULL);
   if ( g_egl_surface == EGL_NO_SURFACE ) {
-    std::stringstream info;
-    info << "Unable to create EGL surface (eglError: "
+    *Log() << "Unable to create EGL surface (eglError: "
       << eglGetError() << ")" << std::endl;
-    Log(info.str().c_str());
     Check(false, info.str().c_str());
   }
   EGLBoolean mcr = eglMakeCurrent(g_egl_display, g_egl_surface,

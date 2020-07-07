@@ -783,10 +783,8 @@ bool GetDirectoryEntries(const char *path,
 
   std::string canonic_path = CanonicalizePath(path);
   if (canonic_path.size() == 0) {
-    std::stringstream info;
-    info << "GetDirectoryEntries can't canonize path: \"" << path << "\""
+    *Log() << "GetDirectoryEntries can't canonize path: \"" << path << "\""
       << std::endl;
-    Log(info.str().c_str());
     return false;
   }
   std::stringstream search_pattern;
@@ -795,10 +793,8 @@ bool GetDirectoryEntries(const char *path,
   WIN32_FIND_DATA find_data;
   HANDLE find_handle = FindFirstFile(search_pattern.str().c_str(), &find_data);
   if (find_handle == INVALID_HANDLE_VALUE) {
-    std::stringstream info;
-    info << "GetDirectoryEntires error in FindFirstFile, path: \""
+    *Log() << "GetDirectoryEntires error in FindFirstFile, path: \""
       << path << "\", canonic path: \"" << canonic_path << "\"" << std::endl;
-    Log(info.str().c_str());
     return false;
   }
 

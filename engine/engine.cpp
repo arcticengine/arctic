@@ -311,9 +311,7 @@ void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
       GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
   {
     GLenum errCode = glGetError();
-    std::stringstream info;
-    info << "code: " << (Ui64)errCode;
-    Log(info.str().c_str());
+    *Log() << "code: " << (Ui64)errCode;
   }
   // send the texture data
 }

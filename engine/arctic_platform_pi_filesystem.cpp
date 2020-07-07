@@ -74,10 +74,8 @@ bool GetDirectoryEntries(const char *path,
   out_entries->clear();
   DIR *dir = opendir(path);
   if (dir == nullptr) {
-    std::stringstream info;
-    info << "Error errno: " << errno
+    *Log() << "Error errno: " << errno
       << " while opening path: \"" << path << "\"" << std::endl;
-    Log(info.str().c_str());
     return false;
   }
   char full_path[1 << 20];
