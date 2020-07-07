@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 Huldra
+// Copyright (c) 2020 The Lasting Curator
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,37 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_LOG_H_
-#define ENGINE_LOG_H_
+#ifndef ENGINE_BITSTREAM_H_
+#define ENGINE_BITSTREAM_H_
+
+#include <deque>
+#include <vector>
 
 #include "engine/arctic_types.h"
-#include <memory>
 
 namespace arctic {
 
-void Log(const char *text);
-void Log(const char *text1, const char *text2);
-void Log(const char *text1, const char *text2, const char *text3);
-std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
-
-void StartLogger();
-void StopLogger();
+class BitStream {
+  // Single bit is represented with 1 byte of 10000000 or 0x80
+  // sequence of 10001001 becomes 1 byte of 0x89
+  // adding bits does not change preexisting ones
+ protected:
+  std::deque<Ui8> data_;
+  Ui8 *write_cursor_;
+  Ui8 unused_bits_ = 0;
+  Ui8 *read_cursor_;
+  Ui8 zero_ = 0;
+  Ui64 read_byte_idx_ = 0;
+  Ui64 read_bit_shift_ = 0;
+ public:
+  BitStream();
+  BitStream(std::vector<Ui8> &data);
+  void PushBit(Ui64 bit);
+  void BeginRead();
+  Ui8 ReadBit();
+  const std::deque<Ui8>& GetData();
+};
 
 }  // namespace arctic
 
-#endif  // ENGINE_LOG_H_
+#endif  // ENGINE_BITSTREAM_H_
