@@ -52,7 +52,7 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
     }
     ifile.close();
 
-    if (original_file_.size() == 0) {
+    if (original_file_.empty()) {
       error_description = std::string("No Data in ").append(file_);
       return false;
     }
@@ -81,7 +81,7 @@ bool CsvTable::LoadString(const std::string &data, char sep) {
       original_file_.push_back(line);
     }
   }
-  if (original_file_.size() == 0) {
+  if (original_file_.empty()) {
     error_description = std::string("No Data in pure content");
     return false;
   }
@@ -121,7 +121,7 @@ bool CsvTable::ParseContent() {
 
     for (; i != it->length(); ++i) {
       if (it->at(i) == '"') {
-        quoted = ((quoted) ? (false) : (true));
+        quoted = !quoted;
       } else if (it->at(i) == ',' && !quoted) {
         row->Push(it->substr(token_start, i - token_start));
         token_start = i + 1;

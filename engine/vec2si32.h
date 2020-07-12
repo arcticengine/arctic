@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 - 2017 Huldra
+// Copyright (c) 2016 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ struct Vec2Si32 {
 
   explicit Vec2Si32(const struct Vec2F &s);
 
-  explicit Vec2Si32(Si32 a, Si32 b) {
+  explicit Vec2Si32(Si32 a, Si32 b) noexcept {
     x = a;
     y = b;
   }

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,6 @@ class Engine {
   Si32 tex_ = 0;
   Si32 indices_ = 0;
 
-  std::chrono::high_resolution_clock clock_;
   std::chrono::high_resolution_clock::time_point start_time_;
   double time_correction_;
   double last_time_;

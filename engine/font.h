@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2018 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +45,7 @@ struct BmFontBinHeader {
   Si8 m;
   Si8 f;
   Ui8 version;
-  void Log();
+  void Log() const;
 };
 
 struct BmFontBinInfo {
@@ -77,7 +77,7 @@ struct BmFontBinInfo {
   // as following the block comes the font name,
   // including the terminating null char.
   // Most of the time this block can simply be ignored.
-  void Log();
+  void Log() const;
 };
 
 struct BmFontBinCommon {
@@ -95,7 +95,7 @@ struct BmFontBinCommon {
   Ui8 red_chnl;
   Ui8 green_chnl;
   Ui8 blue_chnl;
-  void Log();
+  void Log() const;
 };
 
 struct BmFontBinPages {
@@ -107,7 +107,7 @@ struct BmFontBinPages {
   // so once you know the size of the first name, you can easily
   // determine the position of each of the names. The id of each page
   // is the zero-based index of the string name.
-  void Log(Si32 id);
+  void Log(Si32 id) const;
 };
 
 struct BmFontBinChars {
@@ -125,7 +125,7 @@ struct BmFontBinChars {
   // The number of characters in the file can be computed by taking the
   // size of the block and dividing with the size of the charInfo structure,
   // i.e.: numChars = charsBlock.blockSize/20.
-  void Log();
+  void Log() const;
 };
 
 struct BmFontBinKerningPair {
@@ -134,7 +134,7 @@ struct BmFontBinKerningPair {
                // described
   Ui32 second;
   Si16 amount;
-  void Log();
+  void Log() const;
 };
 #pragma pack(pop)
 

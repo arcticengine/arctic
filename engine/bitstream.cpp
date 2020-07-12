@@ -4,6 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2020 The Lasting Curator
+// Copyright (c) 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,9 +28,13 @@
 
 namespace arctic {
 
-BitStream::BitStream() : read_cursor_(&zero_) {}
+BitStream::BitStream()
+  : write_cursor_(&zero_)
+  , read_cursor_(&zero_) {}
 
-BitStream::BitStream(std::vector<Ui8> &data) {
+BitStream::BitStream(std::vector<Ui8> &data)
+    : write_cursor_(&zero_)
+    , read_cursor_(&zero_) {
   data_.resize(data.size());
   std::copy(data.begin(), data.end(), data_.begin());
   BeginRead();
@@ -38,9 +43,9 @@ BitStream::BitStream(std::vector<Ui8> &data) {
 void BitStream::PushBit(Ui64 bit) {
   if (unused_bits_) {
     --unused_bits_;
-    *write_cursor_ |= ((bit & 1) << unused_bits_);
+    *write_cursor_ |= ((bit & 1ull) << unused_bits_);
   } else {
-    data_.push_back((bit & 1) << 7);
+    data_.push_back((bit & 1ull) << 7u);
     write_cursor_ = &data_.back();
     unused_bits_ = 7;
   }
@@ -49,7 +54,7 @@ void BitStream::PushBit(Ui64 bit) {
 void BitStream::BeginRead() {
   read_byte_idx_ = 0;
   read_bit_shift_ = 7;
-  if (data_.size()) {
+  if (!data_.empty()) {
     read_cursor_ = &data_.front();
   } else {
     read_cursor_ = &zero_;
@@ -57,7 +62,7 @@ void BitStream::BeginRead() {
 }
 
 Ui8 BitStream::ReadBit() {
-  Ui8 bit = (((*read_cursor_) >> read_bit_shift_) & 1);
+  Ui8 bit = (((*read_cursor_) >> read_bit_shift_) & 1ull);
   if (read_bit_shift_ > 0) {
     --read_bit_shift_;
   } else {

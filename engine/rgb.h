@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,9 +51,9 @@ struct Rgb {
   }
   // Byte order is 0xbbggrr
   explicit Rgb(Ui32 rgb_in) {
-    r = rgb_in & 0xff;
-    g = (rgb_in >> 8) & 0xff;
-    b = (rgb_in >> 16) & 0xff;
+    r = static_cast<Ui8>(rgb_in & 0xfful);
+    g = static_cast<Ui8>((rgb_in >> 8ul) & 0xfful);
+    b = static_cast<Ui8>((rgb_in >> 16ul) & 0xfful);
   }
   Ui8 &operator[](Si32 i) {
     return element[i];

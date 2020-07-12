@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2017 - 2018 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,9 @@
 
 #include "engine/arctic_types.h"
 
-#define MASK_LO    0x00ff00ff
-#define MASK_HI    0xff00ff00
-#define MASK_BLEND 0xfefefeff
+#define MASK_LO    0x00ff00fful
+#define MASK_HI    0xff00ff00ul
+#define MASK_BLEND 0xfefefefful
 
 namespace arctic {
 
@@ -121,17 +121,17 @@ inline Rgba Clamp(const Rgba rgba, const Rgba mi, const Rgba ma) {
 inline Rgba BlendFast(Rgba c1, Rgba c2) {
   return Rgba(static_cast<Ui32>((
       (static_cast<Ui64>(c1.rgba) & MASK_BLEND) +
-      (static_cast<Ui64>(c2.rgba) & MASK_BLEND)) >> 1));
+      (static_cast<Ui64>(c2.rgba) & MASK_BLEND)) >> 1u));
 }
 
 inline Rgba Mix(Rgba c1, Rgba c2, Ui32 alpha_1_8) {
   Ui32 a = c1.rgba & MASK_LO;
   Ui32 b = c2.rgba & MASK_LO;
-  Ui32 d = a + (((b - a) * alpha_1_8) >> 8);
+  Ui32 d = a + (((b - a) * alpha_1_8) >> 8u);
   d = d & MASK_LO;
 
-  Ui32 m = (c1.rgba & MASK_HI) >> 8;
-  Ui32 n = (c2.rgba & MASK_HI) >> 8;
+  Ui32 m = (c1.rgba & MASK_HI) >> 8u;
+  Ui32 n = (c2.rgba & MASK_HI) >> 8u;
   Ui32 e = (c1.rgba & MASK_HI) + ((n - m) * alpha_1_8);
   e = e & MASK_HI;
 
@@ -140,10 +140,10 @@ inline Rgba Mix(Rgba c1, Rgba c2, Ui32 alpha_1_8) {
 
 inline Rgba Scale(Rgba c, Ui32 alpha_1_8) {
   Ui32 a = c.rgba & MASK_LO;
-  Ui32 d = (a * alpha_1_8) >> 8;
+  Ui32 d = (a * alpha_1_8) >> 8u;
   d = d & MASK_LO;
 
-  a = (c.rgba & MASK_HI) >> 8;
+  a = (c.rgba & MASK_HI) >> 8u;
   Ui32 e = a * alpha_1_8;
   e = e & MASK_HI;
 
@@ -153,11 +153,11 @@ inline Rgba Scale(Rgba c, Ui32 alpha_1_8) {
 inline Rgba Lerp(Rgba c1, Rgba c2, Si32 alpha_1_8) {
   Ui32 a = c1.rgba & MASK_LO;
   Ui32 b = c2.rgba & MASK_LO;
-  Ui32 d = a + (((b - a) * alpha_1_8) >> 8);
+  Ui32 d = a + (((b - a) * alpha_1_8) >> 8u);
   d = d & MASK_LO;
 
-  a = (c1.rgba & MASK_HI) >> 8;
-  b = (c2.rgba & MASK_HI) >> 8;
+  a = (c1.rgba & MASK_HI) >> 8u;
+  b = (c2.rgba & MASK_HI) >> 8u;
   Ui32 e = (c1.rgba & MASK_HI) + ((b - a) * alpha_1_8);
   e = e & MASK_HI;
 
@@ -181,20 +181,20 @@ inline Rgba GetGray(Rgba c) {
 //      0   ax 256
 // Calculate color at point P
 inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
-  const Si32 axy = (ax * ay) >> 8;
+  const Si32 axy = (ax * ay) >> 8u;
   Ui32 aa = a.rgba & MASK_LO;
   Ui32 bb = b.rgba & MASK_LO;
   Ui32 cc = c.rgba & MASK_LO;
   Ui32 dd = d.rgba & MASK_LO;
 
   Ui32 rb = (aa + ((
-      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy) >> 8))
+      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy) >> 8u))
     & MASK_LO;
 
-  aa = (a.rgba & MASK_HI) >> 8;
-  bb = (b.rgba & MASK_HI) >> 8;
-  cc = (c.rgba & MASK_HI) >> 8;
-  dd = (d.rgba & MASK_HI) >> 8;
+  aa = (a.rgba & MASK_HI) >> 8u;
+  bb = (b.rgba & MASK_HI) >> 8u;
+  cc = (c.rgba & MASK_HI) >> 8u;
+  dd = (d.rgba & MASK_HI) >> 8u;
 
   Ui32 gg = ((a.rgba & MASK_HI) + (
       (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy))

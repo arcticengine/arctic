@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2018 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@
 
 namespace arctic {
 
-void BmFontBinHeader::Log() {
+void BmFontBinHeader::Log() const {
   // TODO(Huldra): Use log here
   std::cerr << "header";
   std::cerr << " bmf=" << ((b == 66 && m == 77 && f == 70) ? 1 : 0);
@@ -45,7 +45,7 @@ void BmFontBinHeader::Log() {
 }
 
 
-void BmFontBinInfo::Log() {
+void BmFontBinInfo::Log() const {
   // TODO(Huldra): Use log here
   std::cerr << "info";
   std::cerr << " face=\"" << font_name << "\"";
@@ -67,7 +67,7 @@ void BmFontBinInfo::Log() {
   std::cerr << std::endl;
 }
 
-void BmFontBinCommon::Log() {
+void BmFontBinCommon::Log() const {
   // TODO(Huldra): Use log here
   std::cerr << "common";
   std::cerr << " lineHeight=" << line_height;
@@ -83,7 +83,7 @@ void BmFontBinCommon::Log() {
   std::cerr << std::endl;
 }
 
-void BmFontBinPages::Log(Si32 id) {
+void BmFontBinPages::Log(Si32 id) const {
   // TODO(Huldra): Use log here
   std::cerr << "page";
   std::cerr << " id=" << id;
@@ -91,7 +91,7 @@ void BmFontBinPages::Log(Si32 id) {
   std::cerr << std::endl;
 }
 
-void BmFontBinChars::Log() {
+void BmFontBinChars::Log() const {
   // TODO(Huldra): Use log here
   std::cerr << "char";
   std::cerr << " id=" << id;
@@ -107,7 +107,7 @@ void BmFontBinChars::Log() {
   std::cerr << std::endl;
 }
 
-void BmFontBinKerningPair::Log() {
+void BmFontBinKerningPair::Log() const {
   // TODO(Huldra): Use log here
   std::cerr << "kerning";
   std::cerr << " first=" << first;

@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 Huldra
+// Copyright (c) 2018 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
 #include "engine/easy.h"
 #include "engine/unicode.h"
 #include "engine/arctic_platform.h"
@@ -45,16 +46,16 @@ Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , size_(size)
     , tab_order_(tab_order)
     , is_current_tab_(0)
-    , background_(background)
+    , background_(std::move(background))
     , is_clickable_(is_clickable)
     , is_visible_(true) {
 }
 
-Vec2Si32 Panel::GetSize() {
+Vec2Si32 Panel::GetSize() const {
   return size_;
 }
 
-Ui32 Panel::GetTabOrder() {
+Ui32 Panel::GetTabOrder() const {
   return tab_order_;
 }
 
@@ -140,15 +141,15 @@ void Panel::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (*in_out_is_applied == false) {
       if (message.kind == InputMessage::kKeyboard &&
           message.keyboard.key == kKeyTab &&
-          (message.keyboard.key_state & 1) == 1) {
-        bool is_forward = !(message.keyboard.state[kKeyShift] & 1);
+          (message.keyboard.key_state & 1u) == 1u) {
+        bool is_forward = !(message.keyboard.state[kKeyShift] & 1u);
         bool is_switched = SwitchCurrentTab(is_forward);
         if (is_switched) {
           *in_out_is_applied = true;
         }
       }
     }
-    if ((*out_current_tab).get()) {
+    if (*out_current_tab) {
       MakeCurrentTab((*out_current_tab).get());
       if (!(*out_current_tab)->is_current_tab_) {
         (*out_current_tab)->is_current_tab_ = true;
@@ -263,8 +264,8 @@ Button::Button(Ui64 tag, Vec2Si32 pos,
     , normal_(normal)
     , down_(down)
     , hovered_(hovered)
-    , down_sound_(down_sound)
-    , up_sound_(up_sound)
+    , down_sound_(std::move(down_sound))
+    , up_sound_(std::move(up_sound))
     , hotkey_(hotkey) {
 }
 
@@ -346,7 +347,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         (message.keyboard.key == kKeyEnter ||
           message.keyboard.key == kKeySpace));
       if (is_hotkey || is_tab_order_enter) {
-        if (message.keyboard.key_state & 1) {
+        if (message.keyboard.key_state & 1u) {
           if ((prev_state != kDown && is_hotkey) ||
               (prev_state == kHovered && is_tab_order_enter)) {
             *in_out_is_applied = true;
@@ -408,10 +409,10 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       Font font, TextOrigin origin, Rgba color, std::string text,
       TextAlignment alignment)
     : Panel(tag, pos, size, tab_order)
-    , font_(font)
+    , font_(std::move(font))
     , origin_(origin)
     , color_(color)
-    , text_(text)
+    , text_(std::move(text))
     , alignment_(alignment)
     , selection_begin_(0)
     , selection_end_(0)
@@ -424,17 +425,17 @@ Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text,
       TextAlignment alignment)
     : Panel(tag, pos, size, tab_order)
-    , font_(font)
+    , font_(std::move(font))
     , origin_(origin)
     , palete_(palete)
-    , text_(text)
+    , text_(std::move(text))
     , alignment_(alignment)
     , selection_begin_(0)
     , selection_end_(0)
     , selection_mode_(kTextSelectionModeInvert)
     , selection_color_1_(Rgba(0, 0, 0))
     , selection_color_2_(Rgba(255, 255, 255)) {
-  Check(palete.size(), "Error! Palete is empty!");
+  Check(!palete.empty(), "Error! Palete is empty!");
   color_ = palete[0];
 }
 
@@ -490,7 +491,7 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
     offset.x = (size_.x - size.x);
   }
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
-  if (palete_.size()) {
+  if (!palete_.empty()) {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
       origin_, easy::kColorize, easy::kFilterNearest, palete_);
   } else {
@@ -539,9 +540,9 @@ Progressbar::Progressbar(Ui64 tag, Vec2Si32 pos,
     , complete_(complete)
     , total_value_(total_value)
     , current_value_(current_value) {
-  text_.reset(new Text(Ui64(-1), Vec2Si32(0, 0), GetSize(), 0,
-    font, kTextOriginBottom, palete, "0% Done", kAlignCenter));
-  AddChild(text_);
+  text_ = std::make_shared<Text>(Ui64(-1), Vec2Si32(0, 0), GetSize(), 0,
+    font, kTextOriginBottom, palete, "0% Done", kAlignCenter);
+  Panel::AddChild(text_);
   UpdateText();
 }
 
@@ -594,7 +595,7 @@ Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
         pos,
         Max(normal.Size(), focused.Size()),
         tab_order)
-  , font_(font)
+  , font_(std::move(font))
   , origin_(origin)
   , color_(color)
   , text_(text)
@@ -609,7 +610,7 @@ Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
   , selection_color_1_(Rgba(0, 0, 0))
   , selection_color_2_(Rgba(255, 255, 255))
   , is_digits_(is_digits)
-  , white_list_(white_list) {
+  , white_list_(std::move(white_list)) {
 }
 
 void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -881,15 +882,15 @@ HorizontalScroll::HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
       tab_order)
   , normal_background_(normal_background)
   , focused_background_(focused_background)
-  , normal_button_left_(normal_button_left)
-  , focused_button_left_(focused_button_left)
-  , down_button_left_(down_button_left)
-  , normal_button_right_(normal_button_right)
-  , focused_button_right_(focused_button_right)
-  , down_button_right_(down_button_right)
-  , normal_button_cur_(normal_button_cur)
-  , focused_button_cur_(focused_button_cur)
-  , down_button_cur_(down_button_cur)
+  , normal_button_left_(std::move(normal_button_left))
+  , focused_button_left_(std::move(focused_button_left))
+  , down_button_left_(std::move(down_button_left))
+  , normal_button_right_(std::move(normal_button_right))
+  , focused_button_right_(std::move(focused_button_right))
+  , down_button_right_(std::move(down_button_right))
+  , normal_button_cur_(std::move(normal_button_cur))
+  , focused_button_cur_(std::move(focused_button_cur))
+  , down_button_cur_(std::move(down_button_cur))
   , min_value_(min_value)
   , max_value_(max_value)
   , value_(value) {
@@ -1066,7 +1067,7 @@ void HorizontalScroll::SetValue(Si32 value) {
   value_ = std::min(max_value_, std::max(min_value_, value));
 }
 
-Si32 HorizontalScroll::GetValue() {
+Si32 HorizontalScroll::GetValue() const {
   return value_;
 }
 

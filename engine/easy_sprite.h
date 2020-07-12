@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2018 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -147,7 +147,7 @@ class Sprite {
     const Si32 from_width, const Si32 from_height,
             Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
-            Rgba in_color = Rgba(0xffffffff));
+            Rgba in_color = Rgba(0xffffffff)) const;
   void Draw(const Vec2Si32 to, float angle_radians,
             DrawBlendingMode blending_mode = kAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,

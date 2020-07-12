@@ -25,9 +25,10 @@
 
 #include "engine/easy_sprite.h"
 
-#include <string.h>
+#include <cstring>
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -87,34 +88,34 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
           } else if (color.a) {
             Ui32 m = 255 - color.a;
             Ui32 rb = (p->rgba & 0x00ff00fful) * m;
-            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8u) * m;
             Ui32 m2 = color.a;
             Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
+            p->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
               ((g + g2) & 0x0000ff00ul);
           }
         } else if (kBlendingMode == kColorize) {
           Rgba color = tex_data[offset];
-          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
+          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1ul)) >> 8u;
           if (ca == 255) {
-            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
-            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8;
-            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8;
+            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1ul)) >> 8u;
+            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1ul)) >> 8u;
+            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1ul)) >> 8u;
             p->rgba = Rgba(r2, g2, b2).rgba;
           } else if (ca) {
-            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
+            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1ul)) >> 8u;
             Ui32 m = 255 - ca;
             Ui32 rb = (p->rgba & 0x00ff00fful) * m;
-            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8u) * m;
 
             Ui32 m2 = ca;
-            Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
-            Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-            Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+            Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1ul);
+            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1ul)) >> 8u;
+            Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1ul);
+            Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000);
 
-            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            p->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
               ((g + g2) & 0x0000ff00ul);
           }
         } else {
@@ -137,8 +138,8 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
 
       Rgba *p = dst + x1c;
       for (Si32 x = x1c; x < x2c; ++x) {
-        Si32 offset = (tex_16.x >> 16) +
-          (tex_16.y >> 16) * tex_stride;
+        Si32 offset = (static_cast<Ui32>(tex_16.x) >> 16u) +
+          (static_cast<Ui32>(tex_16.y) >> 16u) * tex_stride;
         if (kBlendingMode == kCopyRgba) {
           p->rgba = tex_data[offset].rgba;
         } else if (kBlendingMode == kAlphaBlend) {
@@ -148,34 +149,34 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
           } else if (color.a) {
             Ui32 m = 255 - color.a;
             Ui32 rb = (p->rgba & 0x00ff00fful) * m;
-            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8u) * m;
             Ui32 m2 = color.a;
             Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
+            p->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
               ((g + g2) & 0x0000ff00ul);
           }
         } else if (kBlendingMode == kColorize) {
           Rgba color = tex_data[offset];
-          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
+          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
           if (ca == 255) {
-            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
-            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8;
-            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8;
+            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1u)) >> 8u;
+            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1u)) >> 8u;
+            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1u)) >> 8u;
             p->rgba = Rgba(r2, g2, b2).rgba;
           } else if (ca) {
-            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
+            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
             Ui32 m = 255 - ca;
             Ui32 rb = (p->rgba & 0x00ff00fful) * m;
-            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8u) * m;
 
             Ui32 m2 = ca;
             Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
+            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
             Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-            Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+            Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000);
 
-            p->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            p->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
           }
         } else {
@@ -388,33 +389,32 @@ void DrawSprite(Sprite *to_sprite,
           } else if (color.a) {
             Ui32 m = 255 - color.a;
             Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
-            Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
             Ui32 m2 = color.a;
             Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-            to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
+            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
           }
         } else if (kBlendingMode == kColorize) {
-          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
+          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
           if (ca == 255) {
-            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
-            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8;
-            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8;
+            Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
+            Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8u;
+            Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8u;
             to_rgba->rgba = Rgba(r2, g2, b2).rgba;
           } else if (ca) {
-            Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
             Ui32 m = 255 - ca;
             Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
-            Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+            Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
             Ui32 m2 = ca;
             Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
+            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
             Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-            Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+            Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000);
 
-            to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
               ((g + g2) & 0x0000ff00ul);
           }
         } else {  // Unknown blending mode!
@@ -487,19 +487,19 @@ void DrawSprite(Sprite *to_sprite,
            ((Ui32(color00.r) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.r) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.r) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.r) * ((from_x_8) * (from_y_8)))) >> 16,
+            (Ui32(color11.r) * ((from_x_8) * (from_y_8)))) >> 16u,
            ((Ui32(color00.g) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.g) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.g) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.g) * ((from_x_8) * (from_y_8)))) >> 16,
+            (Ui32(color11.g) * ((from_x_8) * (from_y_8)))) >> 16u,
            ((Ui32(color00.b) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.b) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.b) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.b) * ((from_x_8) * (from_y_8)))) >> 16,
+            (Ui32(color11.b) * ((from_x_8) * (from_y_8)))) >> 16u,
            ((Ui32(color00.a) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.a) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.a) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.a) * ((from_x_8) * (from_y_8)))) >> 16);
+            (Ui32(color11.a) * ((from_x_8) * (from_y_8)))) >> 16u);
       }
 
 
@@ -511,33 +511,32 @@ void DrawSprite(Sprite *to_sprite,
         } else if (color.a) {
           Ui32 m = 255 - color.a;
           Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
-          Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+          Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
           Ui32 m2 = color.a;
           Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
-          Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8) * m2;
-          to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+          Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
+          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
         }
       } else if (kBlendingMode == kColorize) {
-        Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
+        Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8u;
         if (ca == 255) {
-          Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8;
-          Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) & 0xff00;
-          Ui32 b2 = ((Ui32(color.b) * (Ui32(in_color.b) + 1)) << 8) & 0xff0000;
+          Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
+          Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) & 0xff00u;
+          Ui32 b2 = ((Ui32(color.b) * (Ui32(in_color.b) + 1)) << 8u) & 0xff0000ull;
           to_rgba->rgba = r2 | g2 | b2;
         } else if (ca) {
-          Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8;
           Ui32 m = 255 - ca;
           Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
-          Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8) * m;
+          Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
           Ui32 m2 = ca;
           Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
-          Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8;
+          Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
           Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-          Ui32 rb2 = ((r2 >> 8) & 0xff00) + (b2 & 0xff000000);
+          Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000ull);
 
-          to_rgba->rgba = (((rb + rb2) >> 8) & 0x00ff00fful) |
+          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
           ((g + g2) & 0x0000ff00ul);
         }
       } else {  // Unknown blending mode!
@@ -545,14 +544,14 @@ void DrawSprite(Sprite *to_sprite,
       }
 
       if (from_x_acc_16 > 0) {
-        from_x_8 = (from_x_acc_16 & 65535) >> 8;
-        from_x_disp_00 = from_x_b + (from_x_acc_16 >> 16);
+        from_x_8 = (static_cast<Ui32>(from_x_acc_16) & 65535ul) >> 8u;
+        from_x_disp_00 = from_x_b + (static_cast<Ui32>(from_x_acc_16) >> 16u);
         from_x_disp_01 = from_x_disp_00 + 1;
       }
       ++to_rgba;
     }
     if (from_y_acc_16 > 0) {
-      from_y_8 = (from_y_acc_16 & 65535) >> 8;
+      from_y_8 = (static_cast<Ui32>(from_y_acc_16) & 65535ul) >> 8u;
     }
   }
 }
@@ -634,7 +633,7 @@ void Sprite::Load(const char *file_name) {
   Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
   if (strcmp(last_dot, ".tga") == 0) {
     std::vector<Ui8> data = ReadFile(file_name, true);
-    if (data.size() == 0) {
+    if (data.empty()) {
       Log("File \"", file_name, "\" could not be loaded. Using empty sprite.");
       return;
     }
@@ -655,7 +654,7 @@ void Sprite::Load(const std::string &file_name) {
 
 void Sprite::Save(const char *file_name) {
   std::vector<Ui8> data = SaveToData(file_name);
-  if (data.size()) {
+  if (!data.empty()) {
     WriteFile(file_name, data.data(), data.size());
   }
 }
@@ -682,7 +681,7 @@ void Sprite::Create(const Vec2Si32 size) {
 }
 
 void Sprite::Create(const Si32 width, const Si32 height) {
-  sprite_instance_.reset(new SpriteInstance(width, height));
+  sprite_instance_ = std::make_shared<SpriteInstance>(width, height);
   ref_pos_ = Vec2Si32(0, 0);
   ref_size_ = Vec2Si32(width, height);
   pivot_ = Vec2Si32(0, 0);
@@ -703,7 +702,7 @@ void Sprite::Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
 }
 
 void Sprite::Clear() {
-  if (!sprite_instance_.get()) {
+  if (!sprite_instance_) {
     return;
   }
   const size_t size = static_cast<size_t>(ref_size_.x) * sizeof(Rgba);
@@ -716,7 +715,7 @@ void Sprite::Clear() {
 }
 
 void Sprite::Clear(Rgba color) {
-  if (!sprite_instance_.get()) {
+  if (!sprite_instance_) {
     return;
   }
   const Si32 stride = StridePixels();
@@ -734,7 +733,7 @@ void Sprite::Clear(Rgba color) {
 }
 
 void Sprite::Clone(Sprite from, CloneTransform transform) {
-  if (!from.sprite_instance_.get()) {
+  if (!from.sprite_instance_) {
     sprite_instance_ = nullptr;
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = Vec2Si32(0, 0);
@@ -808,7 +807,7 @@ Vec2Si32 Sprite::Pivot() const {
 void Sprite::Draw(Sprite to_sprite,
     const Si32 to_x_pivot, const Si32 to_y_pivot,
   DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba color) {
-  if (!sprite_instance_.get()) {
+  if (!sprite_instance_) {
     return;
   }
   switch (filter_mode) {
@@ -1041,7 +1040,7 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
     Sprite to_sprite, DrawBlendingMode blending_mode,
-    DrawFilterMode filter_mode, Rgba in_color) {
+    DrawFilterMode filter_mode, Rgba in_color) const {
   switch (filter_mode) {
       case kFilterNearest:
       switch (blending_mode) {

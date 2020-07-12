@@ -4,7 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2017 Inigo Quilez
-// Copyright (c) 2017 - 2018 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -125,7 +125,7 @@ struct TgaHeader {
     const Ui8 *p = colormap
       + tga->color_map_length * colormap_bytes_per_entry;
 
-    bool is_origin_upper_left = !!(tga->image_descriptor & (1 << 5));
+    bool is_origin_upper_left = !!(tga->image_descriptor & (1u << 5u));
 
     sprite.reset(new easy::SpriteInstance(tga->image_width, tga->image_height));
 
@@ -177,8 +177,8 @@ struct TgaHeader {
                      bool is_rle_packet = false;
                      if (is_rle) {
                        Ui8 repetitionCount = *(from_line + 0);
-                       repetitions = (Si32)(repetitionCount & 0x7f) + 1;
-                       is_rle_packet = !!(repetitionCount & 0x80);
+                       repetitions = (Si32)(repetitionCount & 0x7fu) + 1;
+                       is_rle_packet = !!(repetitionCount & 0x80u);
                        from_line++;
                      }
                      if (is_rle_packet) {  // run length packet
@@ -219,13 +219,13 @@ struct TgaHeader {
                              + entry_idx * colormap_bytes_per_entry;
                          }
                          if (entry_bytes_per_pixel == 2) {
-                           Ui8 b = (entry[0] & 0x1f);
-                           Ui8 g = ((entry[1] << 3) & 0x1c)
-                             | ((entry[0] >> 5) & 0x07);
-                           Ui8 r = (entry[1] >> 2) & 0x1f;
-                           to[0] = (r << 3) | (r >> 2);
-                           to[1] = (g << 3) | (g >> 2);
-                           to[2] = (b << 3) | (b >> 2);
+                           Ui8 b = (entry[0] & 0x1fu);
+                           Ui8 g = ((entry[1] << 3u) & 0x1cu)
+                             | ((entry[0] >> 5u) & 0x07u);
+                           Ui8 r = (entry[1] >> 2u) & 0x1fu;
+                           to[0] = (r << 3u) | (r >> 2u);
+                           to[1] = (g << 3u) | (g >> 2u);
+                           to[2] = (b << 3u) | (b >> 2u);
                          } else {
                            to[0] = entry[2];
                            to[1] = entry[1];
@@ -233,7 +233,7 @@ struct TgaHeader {
                          }
                          if (is_with_alpha) {
                            if (entry_bytes_per_pixel == 2) {
-                             to[3] = ((entry[1] & 0x80) >> 7) * 255;
+                             to[3] = ((entry[1] & 0x80u) >> 7u) * 255u;
                            } else {
                              to[3] = entry[3];
                            }

@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2019 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,25 +53,25 @@ Ui32 Utf32Reader::ReadOne() {
       return u;
     } else if ((p[0] & 0xe0) == 0xc0) {
       // 110xxxxx 10xxxxxx
-      if ((p[1] & 0xc0) == 0x80) {
-        u = (Ui32(p[0] & 0x1f) << 6) | (Ui32(p[1] & 0x3f));
+      if ((p[1] & 0xc0u) == 0x80u) {
+        u = (Ui32(p[0] & 0x1fu) << 6u) | (Ui32(p[1] & 0x3fu));
         p += 2;
         return u;
       }
     } else if ((p[0] & 0xf0) == 0xe0) {
       // 1110xxxx 10xxxxxx 10xxxxxx
-      if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80) {
-        u = (Ui32(p[0] & 0x0f) << 12) | (Ui32(p[1] & 0x3f) << 6) |
-          (Ui32(p[2] & 0x3f));
+      if ((p[1] & 0xc0u) == 0x80u && (p[2] & 0xc0u) == 0x80) {
+        u = (Ui32(p[0] & 0x0fu) << 12u) | (Ui32(p[1] & 0x3fu) << 6u) |
+          (Ui32(p[2] & 0x3fu));
         p += 3;
         return u;
       }
-    } else if ((p[0] & 0xf8) == 0xf0) {
+    } else if ((p[0] & 0xf8u) == 0xf0) {
       // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-      if ((p[1] & 0xc0) == 0x80 && (p[2] & 0xc0) == 0x80 &&
-        (p[3] & 0xc0) == 0x80) {
-        u = (Ui32(p[0] & 0x07) << 18) | (Ui32(p[1] & 0x3f) << 12) |
-          (Ui32(p[2] & 0x3f) << 6) | (Ui32(p[3] & 0x3f));
+      if ((p[1] & 0xc0u) == 0x80u && (p[2] & 0xc0u) == 0x80u &&
+        (p[3] & 0xc0u) == 0x80u) {
+        u = (Ui32(p[0] & 0x07u) << 18u) | (Ui32(p[1] & 0x3fu) << 12u) |
+          (Ui32(p[2] & 0x3fu) << 6u) | (Ui32(p[3] & 0x3fu));
         p += 4;
         return u;
       }
@@ -98,7 +98,7 @@ Ui32 Utf32FromUtf16::ReadOne() {
       if ((s1 & 0xFC00u) == 0xD800u) {
         Ui16 s2 = Read16();
         if ((s2 & 0xFC00u) == 0xDC00u) {
-          Ui32 u = (static_cast<Ui32>(s1 & 0x3FFu) << 10)
+          Ui32 u = (static_cast<Ui32>(s1 & 0x3FFu) << 10u)
             + static_cast<Ui32>(s2 & 0x3FFu) + 0x10000ul;
           return u;
         }
@@ -114,9 +114,9 @@ Ui32 Utf32FromUtf16::ReadOne() {
 Ui16 Utf32FromUtf16::Read16() {
   Ui16 ch;
   if (is_inverse_byte_order_) {
-    ch = static_cast<Ui16>(p_[1]) | (static_cast<Ui16>(p_[0]) << 8);
+    ch = static_cast<Ui16>(p_[1]) | (static_cast<Ui16>(p_[0]) << 8u);
   } else {
-    ch = static_cast<Ui16>(p_[0]) | (static_cast<Ui16>(p_[1]) << 8);
+    ch = static_cast<Ui16>(p_[0]) | (static_cast<Ui16>(p_[1]) << 8u);
   }
   if (ch) {
     p_ += 2;
@@ -138,24 +138,24 @@ void Utf8Codepoint::WriteUtf32(Ui32 codepoint) {
   }
   if (codepoint <= 0x07FFul) {
     // 110xxxxx 10xxxxxx
-    buffer[0] = static_cast<Ui8>((codepoint >> 6) | 0xC0ul);
+    buffer[0] = static_cast<Ui8>((codepoint >> 6u) | 0xC0ul);
     buffer[1] = static_cast<Ui8>((codepoint & 0x3Ful) | 0x80ul);
     size = 2;
     return;
   }
   if (codepoint <= 0xFFFFul) {
     // 1110xxxx 10xxxxxx 10xxxxxx
-    buffer[0] = static_cast<Ui8>((codepoint >> 12) | 0xE0ul);
-    buffer[1] = static_cast<Ui8>(((codepoint >> 6) & 0x3Ful) | 0x80ul);
+    buffer[0] = static_cast<Ui8>((codepoint >> 12u) | 0xE0ul);
+    buffer[1] = static_cast<Ui8>(((codepoint >> 6u) & 0x3Ful) | 0x80ul);
     buffer[2] = static_cast<Ui8>((codepoint & 0x3Ful) | 0x80ul);
     size = 3;
     return;
   }
   if (codepoint <= 0x10FFFFul) {
     // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-    buffer[0] = static_cast<Ui8>((codepoint >> 18) | 0xF0ul);
-    buffer[1] = static_cast<Ui8>(((codepoint >> 12) & 0x3Ful) | 0x80ul);
-    buffer[2] = static_cast<Ui8>(((codepoint >> 6) & 0x3Ful) | 0x80ul);
+    buffer[0] = static_cast<Ui8>((codepoint >> 18u) | 0xF0ul);
+    buffer[1] = static_cast<Ui8>(((codepoint >> 12u) & 0x3Ful) | 0x80ul);
+    buffer[2] = static_cast<Ui8>(((codepoint >> 6u) & 0x3Ful) | 0x80ul);
     buffer[3] = static_cast<Ui8>((codepoint & 0x3Ful) | 0x80ul);
     size = 4;
     return;

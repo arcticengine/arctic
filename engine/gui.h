@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 Huldra
+// Copyright (c) 2018 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,8 +69,8 @@ class Panel : public std::enable_shared_from_this<Panel> {
  public:
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
     easy::Sprite background = easy::Sprite(), bool is_clickable = false);
-  Vec2Si32 GetSize();
-  Ui32 GetTabOrder();
+  Vec2Si32 GetSize() const;
+  Ui32 GetTabOrder() const;
   void SetTabOrder(Ui32 tab_order);
   Ui64 GetTag() const;
   void SetTag(Ui64 tag);
@@ -283,7 +283,7 @@ class HorizontalScroll : public Panel {
     std::shared_ptr<Panel> *out_current_tab) override;
   void Draw(Vec2Si32 parent_absolute_pos) override;
   void SetValue(Si32 value);
-  Si32 GetValue();
+  Si32 GetValue() const;
 };
 
 }  // namespace arctic

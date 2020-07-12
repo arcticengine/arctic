@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -268,11 +268,11 @@ void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
             Si32 stride = to_sprite.StridePixels();
             for (Si32 y = y1; y <= y2; ++y) {
                 Rgba color(
-                    rgba_16.x >> 16,
-                    rgba_16.y >> 16,
-                    rgba_16.z >> 16,
-                    rgba_16.w >> 16);
-                to_sprite.RgbaData()[(x_16 >> 16) + y * stride] = color;
+                    rgba_16.x >> 16u,
+                    rgba_16.y >> 16u,
+                    rgba_16.z >> 16u,
+                    rgba_16.w >> 16u);
+                to_sprite.RgbaData()[(x_16 >> 16u) + y * stride] = color;
                 rgba_16 += rgba_12_16_step;
                 x_16 += x12_16_step;
             }
@@ -341,10 +341,10 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
             Rgba *p = dst + x1c;
             for (Si32 x = x1c; x < x2c; ++x) {
                 Rgba color(
-                    rgba_16.x >> 16,
-                    rgba_16.y >> 16,
-                    rgba_16.z >> 16,
-                    rgba_16.w >> 16);
+                    rgba_16.x >> 16u,
+                    rgba_16.y >> 16u,
+                    rgba_16.z >> 16u,
+                    rgba_16.w >> 16u);
                 p->rgba = color.rgba;
                 p++;
                 rgba_16 += rgba_12_16_step;
@@ -579,7 +579,7 @@ void DrawOval(easy::Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
       if (y1 < y2) {
         for (Si32 y = y1; y < y2; ++y) {
           Si32 table_y = tables.cicrle_16_16_mask * (y - c.y) / (r.y + 1);
-          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16;
+          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16u;
           Si32 x1 = std::max(c.x - table_x, 0);
           Si32 x2 = std::min(c.x + table_x + 1, limit.x);
           Rgba *p = data + stride * y + x1;
@@ -598,7 +598,7 @@ void DrawOval(easy::Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
       if (y1 < y2) {
         for (Si32 y = y1; y < y2; ++y) {
           Si32 table_y = tables.cicrle_16_16_mask * (c.y - y) / (r.y + 1);
-          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16;
+          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16u;
           Si32 x1 = std::max(c.x - table_x, 0);
           Si32 x2 = std::min(c.x + table_x + 1, limit.x);
           Rgba *p = data + stride * y + x1;

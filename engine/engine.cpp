@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2019 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -111,7 +111,7 @@ void Engine::Init(Si32 width, Si32 height) {
 
   ResizeBackbuffer(width, height);
 
-  start_time_ = clock_.now();
+  start_time_ = std::chrono::high_resolution_clock::now();
   time_correction_ = 0.0;
   last_time_ = 0.0;
 
@@ -317,10 +317,10 @@ void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
 }
 
 double Engine::GetTime() {
-  auto now = clock_.now();
+  auto now = std::chrono::high_resolution_clock::now();
   if (now > start_time_) {
-    double duration =
-      std::chrono::duration<double>(now - start_time_).count();
+    double duration = std::chrono::duration<double, std::ratio<1>>(
+      now - start_time_).count();
     double time = duration + time_correction_;
     if (time >= last_time_) {
       last_time_ = time;

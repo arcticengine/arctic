@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2019 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -128,7 +128,8 @@ OSStatus SoundRenderProc(void *inRefCon,
   
   g_sound_mixer_state.InputTasksToMixerThread();
 
-  float master_volume = g_sound_mixer_state.master_volume.load() / 32767.0;
+  float master_volume = static_cast<float>(
+    g_sound_mixer_state.master_volume.load() / 32767.0);
   
   for (Ui32 idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
     SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
@@ -160,8 +161,8 @@ OSStatus SoundRenderProc(void *inRefCon,
   }
 
   for (int frame = 0; frame < inNumberFrames; ++frame) {
-    mixL[frame] = Clamp(mixL[frame] * master_volume, -1.0, 1.0);
-    mixR[frame] = Clamp(mixR[frame] * master_volume, -1.0, 1.0);
+    mixL[frame] = Clamp(mixL[frame] * master_volume, -1.0f, 1.0f);
+    mixR[frame] = Clamp(mixR[frame] * master_volume, -1.0f, 1.0f);
   }
   return noErr;
 }

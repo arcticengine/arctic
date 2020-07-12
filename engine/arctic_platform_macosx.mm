@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2019 Huldra
+// Copyright (c) 2017 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -204,10 +204,10 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
   static bool was_option = false;
   //static bool was_command = false;
 
-  bool is_caps_lock = (modifier_flags & NSEventModifierFlagCapsLock);
-  bool is_shift = (modifier_flags & NSEventModifierFlagShift);
-  bool is_control = (modifier_flags & NSEventModifierFlagControl);
-  bool is_option = (modifier_flags & NSEventModifierFlagOption);
+  bool is_caps_lock = (modifier_flags & NSEventModifierFlagCapsLock) != 0;
+  bool is_shift = (modifier_flags & NSEventModifierFlagShift) != 0;
+  bool is_control = (modifier_flags & NSEventModifierFlagControl) != 0;
+  bool is_option = (modifier_flags & NSEventModifierFlagOption) != 0;
   //bool is_command = (modifier_flags & NSEventModifierFlagCommand);
 
   if (is_caps_lock != was_caps_lock) {
@@ -277,9 +277,9 @@ isScroll: (bool)is_scroll {
 
   arctic::InputMessage msg;
   msg.kind = arctic::InputMessage::kMouse;
-  msg.keyboard.key = key_code;
+  msg.keyboard.key = static_cast<unsigned int>(key_code);
   msg.keyboard.characters[0] = '\0';
-  msg.keyboard.key_state = state;
+  msg.keyboard.key_state = static_cast<unsigned int>(state);
   msg.mouse.pos = pos;
   if (is_scroll) {
     if (event.hasPreciseScrollingDeltas) {
@@ -697,7 +697,7 @@ bool SetVSync(bool is_enable) {
   GLint swap_interval = (is_enable ? 1 : 0);
   [[g_main_view openGLContext]
     setValues: &swap_interval
-      forParameter: NSOpenGLCPSwapInterval];
+      forParameter: NSOpenGLContextParameterSwapInterval];
   return true;
 }
 
@@ -760,7 +760,7 @@ bool GetCurrentPath(std::string *out_dir) {
 
 bool GetDirectoryEntries(const char *path,
     std::deque<DirectoryEntry> *out_entries) {
-  Check(out_entries,
+  Check(out_entries != nullptr,
     "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
   out_entries->clear();
   DIR *dir = opendir(path);
@@ -797,7 +797,7 @@ bool GetDirectoryEntries(const char *path,
 }
 
 std::string CanonicalizePath(const char *path) {
-  Check(path, "CanonicalizePath error, path can't be nullptr");
+  Check(path != nullptr, "CanonicalizePath error, path can't be nullptr");
   char *canonic_path = realpath(path, nullptr);
   std::string result;
   if (canonic_path) {
@@ -811,12 +811,12 @@ std::string CanonicalizePath(const char *path) {
 std::string RelativePathFromTo(const char *from, const char *to) {
   std::string from_abs = CanonicalizePath(from);
   if (from && from[strlen(from) - 1] == '/' &&
-      from_abs.size() && from_abs[from_abs.size() - 1] != '/') {
+      !from_abs.empty() && from_abs[from_abs.size() - 1] != '/') {
     from_abs = from_abs + '/';
   }
   std::string to_abs = CanonicalizePath(to);
   if (to && to[strlen(to) - 1] == '/' &&
-      to_abs.size() && to_abs[to_abs.size() - 1] != '/') {
+      !to_abs.empty() && to_abs[to_abs.size() - 1] != '/') {
     to_abs = to_abs + '/';
   }
   Ui32 matching = 0;
