@@ -3,8 +3,8 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 - 2017 Huldra
+// Copyright (c) 2018 Vitaliy Manushkin
+// Copyright (c) 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,38 +24,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/arctic_input.h"
-#include "engine/arctic_platform.h"
-#include "engine/mtq_mpsc_vinfarr.h"
-#include "engine/mtq_spmc_array.h"
+#ifndef ENGINE_MTQ_MEMPOOL_ALLOCATOR_H_
+#define ENGINE_MTQ_MEMPOOL_ALLOCATOR_H_
 
 namespace arctic {
 
-static MpscVirtInfArray<InputMessage*, TuneDeletePayloadFlag<true>> g_input;
-static SpmcArray<InputMessage, true> g_input_pool(16);
+class I_FixedSizeAllocator {
+public:
+  virtual void *alloc() = 0;
+  virtual void free(void *ptr) = 0;
+  virtual size_t getBlockSize() = 0;
+};
 
-bool PopInputMessage(InputMessage *out_message) {
-  Check(out_message != nullptr, "Unexpected nullptr in out_message!");
+} // namespace arctic
 
-  InputMessage *msg = g_input.dequeue();
-  if (msg == nullptr) {
-    return false;
-  }
-  *out_message = *msg;
-  if (!g_input_pool.enqueue(msg)) {
-    delete msg;
-  }
-  return true;
-}
-
-void PushInputMessage(const InputMessage &message) {
-  InputMessage *p = g_input_pool.dequeue();
-  if (p == nullptr) {
-    g_input.enqueue(new InputMessage(message));
-  } else {
-    *p = message;
-    g_input.enqueue(p);
-  }
-}
-
-}  // namespace arctic
+#endif  // ENGINE_MTQ_MEMPOOL_ALLOCATOR_H_

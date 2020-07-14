@@ -30,6 +30,8 @@
 
 #include "engine/arctic_types.h"
 #include "engine/easy_sound.h"
+#include "engine/mtq_mpsc_vinfarr.h"
+#include "engine/mtq_spmc_array.h"
 
 namespace arctic {
 
@@ -46,24 +48,19 @@ struct SoundBuffer {
 
 struct SoundMixerState {
   std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);
-
   std::atomic<bool> is_ok = ATOMIC_VAR_INIT(true);
   std::mutex error_mutex;
+  MpscVirtInfArray<SoundBuffer*, TuneDeletePayloadFlag<true>> tasks;
+  SpmcArray<SoundBuffer, true> pool;
   // Mutex-protected state begin
   std::string error_description = "Error description is not set.";
-  // Mutex-protected state end
-
   // Mixer-only state begin
   std::atomic<float> master_volume = ATOMIC_VAR_INIT(0.7f);
   std::vector<SoundBuffer> buffers;
-  // Mixer-only state end
 
-  std::atomic<Si64> task_pushers = ATOMIC_VAR_INIT(0);
-  std::mutex task_mutex;
-  // Mutex-protected state begin
-  std::atomic<Ui64> task_count = ATOMIC_VAR_INIT(0);
-  std::deque<SoundBuffer> tasks;
-  // Mutex-protected state end
+  SoundMixerState()
+      : pool(16) {
+  };
 
   void SetError(std::string description) { //-V813
     std::lock_guard<std::mutex> lock(error_mutex);
@@ -81,47 +78,29 @@ struct SoundMixerState {
   }
 
   void AddSoundTask(const SoundBuffer &buffer) {
-    while (true) {
-      Si64 starts = task_pushers.load();
-      if (starts >= 0) {
-        if (task_pushers.compare_exchange_strong(starts, starts + 1)) {
-          break;
-        }
-      }
+    SoundBuffer *p = pool.dequeue();
+    if (p == nullptr) {
+      tasks.enqueue(new SoundBuffer(buffer));
+    } else {
+      *p = buffer;
+      tasks.enqueue(p);
     }
-    {
-      std::lock_guard<std::mutex> lock(task_mutex);
-      tasks.push_back(buffer);
-    }
-    task_pushers.fetch_add(-1);
-    task_count.fetch_add(1);
   }
 
   void InputTasksToMixerThread() {
-    if (!task_count.load()) {
-      return;
-    }
-    Si64 exp = 0;
-    if (!task_pushers.compare_exchange_strong(exp, -1)) {
-      return;
-    }
-    std::deque<arctic::SoundBuffer> input_tasks;
-    {
-      std::lock_guard<std::mutex> lock(task_mutex);
-      input_tasks.swap(tasks);
-      task_count.store(0);
-      task_pushers.store(0);
-    }
-    for (size_t i = 0; i < input_tasks.size(); ++i) {
-      SoundBuffer &task = input_tasks[i];
-      switch (task.action) {
+    for (Si32 i = 0; i < 4096; ++i) {
+      SoundBuffer *task = tasks.dequeue();
+      if (task == nullptr) {
+        return;
+      }
+      switch (task->action) {
       case SoundBuffer::kStart:
-        buffers.push_back(task);
+        buffers.push_back(*task);
         break;
       case SoundBuffer::kStop:
         for (size_t idx = 0; idx < buffers.size(); ++idx) {
           SoundBuffer &buffer = buffers[idx];
-          if (buffer.sound.GetInstance() == task.sound.GetInstance()) {
+          if (buffer.sound.GetInstance() == task->sound.GetInstance()) {
             buffer.sound.GetInstance()->DecPlaying();
             if (idx != buffers.size() - 1) {
               buffers[idx] = buffers[buffers.size() - 1];
@@ -132,8 +111,10 @@ struct SoundMixerState {
         }
         break;
       }
+      if (!pool.enqueue(task)) {
+        delete task;
+      }
     }
-    input_tasks.clear();
   }
 };
 

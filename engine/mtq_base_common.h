@@ -3,8 +3,8 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 - 2017 Huldra
+// Copyright (c) 2018 Vitaliy Manushkin
+// Copyright (c) 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,38 +24,35 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/arctic_input.h"
-#include "engine/arctic_platform.h"
-#include "engine/mtq_mpsc_vinfarr.h"
-#include "engine/mtq_spmc_array.h"
+#ifndef ENGINE_MTQ_BASE_COMMON_H_
+#define ENGINE_MTQ_BASE_COMMON_H_
+
+#include <atomic>
 
 namespace arctic {
 
-static MpscVirtInfArray<InputMessage*, TuneDeletePayloadFlag<true>> g_input;
-static SpmcArray<InputMessage, true> g_input_pool(16);
+typedef unsigned long ui64;
+static_assert(sizeof(ui64) == 8, "invalid ui64 definition");
 
-bool PopInputMessage(InputMessage *out_message) {
-  Check(out_message != nullptr, "Unexpected nullptr in out_message!");
+typedef signed long si64;
+static_assert(sizeof(si64) == 8, "invalid si64 definition");
 
-  InputMessage *msg = g_input.dequeue();
-  if (msg == nullptr) {
-    return false;
-  }
-  *out_message = *msg;
-  if (!g_input_pool.enqueue(msg)) {
-    delete msg;
-  }
-  return true;
+typedef signed long i64;
+static_assert(sizeof(i64) == 8, "invalid i64 definition");
+
+typedef unsigned int ui32;
+static_assert(sizeof(ui32) == 4, "invalid ui32 definition");
+
+typedef unsigned char ui8;
+typedef signed char si8;
+typedef signed char i8;
+
+static constexpr auto MO_SEQUENCE = std::memory_order_seq_cst;
+static constexpr auto MO_RELAXED = std::memory_order_relaxed;
+static constexpr auto MO_ACQUIRE = std::memory_order_acquire;
+static constexpr auto MO_RELEASE = std::memory_order_release;
+static constexpr auto MO_ACQUIRE_RELEASE = std::memory_order_acq_rel;
+
 }
 
-void PushInputMessage(const InputMessage &message) {
-  InputMessage *p = g_input_pool.dequeue();
-  if (p == nullptr) {
-    g_input.enqueue(new InputMessage(message));
-  } else {
-    *p = message;
-    g_input.enqueue(p);
-  }
-}
-
-}  // namespace arctic
+#endif  // ENGINE_MTQ_BASE_COMMON_H_
