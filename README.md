@@ -1,4 +1,4 @@
-﻿![Arctic Engine](doc/logo_black_on_transparent.png)
+![Arctic Engine](doc/logo_black_on_transparent.png)
 ### Designed to give you control and not take anything away.
 
 Arctic Engine is an open-source free game engine released under the MIT license. Arctic Engine is implemented in C++ and focuses on simplicity.
@@ -43,6 +43,7 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 * stb single-file public domain (or MIT Licensed) libraries for C/C++ (30/06/2017) Copyright (c) 2017 Sean Barrett ([https://github.com/nothings/stb](https://github.com/nothings/stb))
 * Miniz 2.1.0 (01/06/2019) Copyright 2013-2014 RAD Game Tools and Valve Software, Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC ([https://github.com/richgel999/miniz](https://github.com/richgel999/miniz))
 * OpenFBX (01/06/2019) by Mikulas Florek ([https://github.com/nem0/OpenFBX](https://github.com/nem0/OpenFBX))
+* Collection of wait-free/lock-free queues (18/07/2020) Copyright (c) 2018 Vitaliy Manushkin ([https://gitlab.com/agrianius/mt_queue](https://gitlab.com/agrianius/mt_queue))
 
 #### ArcticOne font:
 
@@ -62,7 +63,7 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 #### IDE
 
-* Visual Studio Community 2017
+* Visual Studio Community 2019
 ([https://www.visualstudio.com/](https://www.visualstudio.com/))
 
 #### Python
