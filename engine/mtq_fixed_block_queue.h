@@ -52,13 +52,13 @@ protected:
 
   struct BlockItems {
     BlockItems *next = nullptr;
-    char items[0];
+    alignas(std::max_align_t) char items[0];
 
     BlockItems() {
     }
 
-    BlockItems(BlockItems const & );            // undefined
-    BlockItems& operator=(BlockItems const & ); // undefined
+    BlockItems(BlockItems const & ) = delete;
+    BlockItems& operator=(BlockItems const & ) = delete;
   };
 
   BlockItems *getNewBlock(I_FixedSizeAllocator *pool) {
