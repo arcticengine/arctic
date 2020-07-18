@@ -85,16 +85,16 @@ struct InfArrayChunk<true> final {
   atomic<SelfType *> Next{nullptr};
 
   // id of the first slot of the chunk
-  ui64 const StartSlot;
+  Ui64 const StartSlot;
 
   // If a consumer received all items with ids up to ReleaseCounter
   // then it is safe to reclaim all the previous chunks in
   // the double-linked list
-  atomic<ui64> ReleaseCounter{0};
+  atomic<Ui64> ReleaseCounter{0};
 
   // let's allocate the chunk, calculating enough memory for payload items
   static SelfType *
-  allocateNew(SelfType *prev, ui64 start_slot, ui32 size) {
+  allocateNew(SelfType *prev, Ui64 start_slot, Ui32 size) {
     void *memblock =
       ::operator new(sizeof(SelfType) + sizeof(slot[0]) * size);
     return new(memblock) SelfType(prev, start_slot, size);
@@ -103,8 +103,8 @@ struct InfArrayChunk<true> final {
   static SelfType *reset(
     SelfType *self,
     SelfType *prev,
-    ui64 start_slot,
-    ui32 size) {
+    Ui64 start_slot,
+    Ui32 size) {
     self->~SelfType();
     return new(self) SelfType(prev, start_slot, size);
   }
@@ -116,7 +116,7 @@ struct InfArrayChunk<true> final {
 
   // least_busy_counter is a lowest slot id of all active producers
   template<typename Releaser>
-  bool releaseBefore(Releaser *releaser, ui64 least_busy_counter) {
+  bool releaseBefore(Releaser *releaser, Ui64 least_busy_counter) {
     if (!Prev) {
       return true;
     }
@@ -135,20 +135,20 @@ struct InfArrayChunk<true> final {
     return !Prev;
   }
 
-  void set_slot(ui64 slot_num, void *value) {
-    ui32 lslot = slot_num - StartSlot;
+  void set_slot(Ui64 slot_num, void *value) {
+    Ui32 lslot = slot_num - StartSlot;
     slot[lslot].store(value, MO_RELEASE);
   }
 
-  void *get_slot(ui32 chunk_slot) {
+  void *get_slot(Ui32 chunk_slot) {
     return slot[chunk_slot].load(MO_RELAXED);
   }
 
 private:
   InfArrayChunk(
     SelfType *prev,
-    ui64 start_slot,
-    ui32 size)
+    Ui64 start_slot,
+    Ui32 size)
     : Prev(prev)
     , StartSlot(start_slot) {
     std::memset(&slot, 0, sizeof(slot[0]) * size);
@@ -177,19 +177,19 @@ struct InfArrayChunk<false> final {
   atomic<SelfType *> Next{nullptr};
 
   // id of the first slot of the chunk
-  ui64 const StartSlot;
+  Ui64 const StartSlot;
 
   // If a consumer received all items with ids up to ReleaseCounter
   // then it is safe to reclaim all the previous chunks in
   // the double-linked list
-  atomic<ui64> ReleaseCounter{0};
+  atomic<Ui64> ReleaseCounter{0};
 
   // let's allocate the chunk, calculating enough memory for payload items
   static SelfType *allocateNew(
     SelfType *prev,
-    ui64 start_slot,
-    ui32 number_of_slots,
-    ui32 payload_size) {
+    Ui64 start_slot,
+    Ui32 number_of_slots,
+    Ui32 payload_size) {
     void *memblock = ::operator new(
       sizeof(SelfType) + getTotalPackSize(number_of_slots, payload_size));
     return new(memblock)
@@ -199,16 +199,16 @@ struct InfArrayChunk<false> final {
   static SelfType *reset(
     SelfType *self,
     SelfType *prev,
-    ui64 start_slot,
-    ui32 number_of_slots,
-    ui32 payload_size) {
+    Ui64 start_slot,
+    Ui32 number_of_slots,
+    Ui32 payload_size) {
     self->~SelfType();
     return new(self)
       SelfType(prev, start_slot, number_of_slots, payload_size);
   }
 
   static constexpr size_t
-  getChunkSize(ui32 number_of_slots, ui32 payload_size) {
+  getChunkSize(Ui32 number_of_slots, Ui32 payload_size) {
     return sizeof(SelfType) +
       getTotalPackSize(number_of_slots, payload_size);
   }
@@ -216,7 +216,7 @@ struct InfArrayChunk<false> final {
 
   // least_busy_counter is a lowest slot id of all active producers
   template<typename Releaser>
-  bool releaseBefore(Releaser *releaser, ui64 least_busy_counter) {
+  bool releaseBefore(Releaser *releaser, Ui64 least_busy_counter) {
     if (!Prev) {
       return true;
     }
@@ -235,10 +235,10 @@ struct InfArrayChunk<false> final {
     return !Prev;
   }
 
-  void set_slot(ui64 slot_num, void *value, ui32 payload_size) {
-    ui32 lslot = slot_num - StartSlot;
-    ui32 pack_num = lslot / NUMBER_OF_SLOTS_IN_PACK;
-    ui32 slot_in_pack = lslot % NUMBER_OF_SLOTS_IN_PACK;
+  void set_slot(Ui64 slot_num, void *value, Ui32 payload_size) {
+    Ui32 lslot = slot_num - StartSlot;
+    Ui32 pack_num = lslot / NUMBER_OF_SLOTS_IN_PACK;
+    Ui32 slot_in_pack = lslot % NUMBER_OF_SLOTS_IN_PACK;
     SlotPack &pack = getPack(pack_num, payload_size);
     memcpy(&pack.Payload[payload_size * slot_in_pack],
       value,
@@ -246,9 +246,9 @@ struct InfArrayChunk<false> final {
     pack.ReadyFlags.fetch_or(1U << slot_in_pack, MO_RELEASE);
   }
 
-  bool get_slot(ui32 chunk_slot, void *value, ui32 payload_size) {
-    ui32 pack_num = chunk_slot / NUMBER_OF_SLOTS_IN_PACK;
-    ui32 slot_in_pack = chunk_slot % NUMBER_OF_SLOTS_IN_PACK;
+  bool get_slot(Ui32 chunk_slot, void *value, Ui32 payload_size) {
+    Ui32 pack_num = chunk_slot / NUMBER_OF_SLOTS_IN_PACK;
+    Ui32 slot_in_pack = chunk_slot % NUMBER_OF_SLOTS_IN_PACK;
     SlotPack &pack = getPack(pack_num, payload_size);
     auto ready_flags = pack.ReadyFlags.load(MO_RELAXED);
     if (!(ready_flags & (1U << slot_in_pack))) {
@@ -261,15 +261,15 @@ struct InfArrayChunk<false> final {
     return true;
   }
 
-  static constexpr ui32
-  getNumberOfSlotsForSize(ui32 size, ui32 payload_size) {
-    ui32 pack_size = getPackPayloadSize(payload_size) + sizeof(SlotPack);
-    ui32 total_packs = size / pack_size;
-    ui32 pack_tail = size % pack_size;
+  static constexpr Ui32
+  getNumberOfSlotsForSize(Ui32 size, Ui32 payload_size) {
+    Ui32 pack_size = getPackPayloadSize(payload_size) + sizeof(SlotPack);
+    Ui32 total_packs = size / pack_size;
+    Ui32 pack_tail = size % pack_size;
     if (pack_tail < sizeof(SlotPack) + payload_size) {
       return 0;
     }
-    ui32 tail_number_of_slots =
+    Ui32 tail_number_of_slots =
       (pack_tail - sizeof(SlotPack)) / payload_size;
     return total_packs * NUMBER_OF_SLOTS_IN_PACK + tail_number_of_slots;
   }
@@ -277,19 +277,19 @@ struct InfArrayChunk<false> final {
 private:
   InfArrayChunk(
     SelfType *prev,
-    ui64 start_slot,
-    ui32 number_of_slots,
-    ui32 payload_size)
+    Ui64 start_slot,
+    Ui32 number_of_slots,
+    Ui32 payload_size)
     : Prev(prev)
     , StartSlot(start_slot) {
     auto total_pack_size = getTotalPackSize(number_of_slots, payload_size);
     std::memset(&slot_pack, 0, total_pack_size);
   }
 
-  static constexpr ui32 NUMBER_OF_SLOTS_IN_PACK =
+  static constexpr Ui32 NUMBER_OF_SLOTS_IN_PACK =
     sizeof(std::uintmax_t) * 8;
 
-  static constexpr ui32 getPackPayloadSize(ui32 payload_size) {
+  static constexpr Ui32 getPackPayloadSize(Ui32 payload_size) {
     return payload_size * NUMBER_OF_SLOTS_IN_PACK;
   }
 
@@ -299,15 +299,15 @@ private:
   };
 
   static constexpr size_t
-  getTotalPackSize(ui32 number_of_slots, ui32 payload_size) {
-    ui32 total_payload_size = payload_size * number_of_slots;
-    ui32 number_of_packs =
+  getTotalPackSize(Ui32 number_of_slots, Ui32 payload_size) {
+    Ui32 total_payload_size = payload_size * number_of_slots;
+    Ui32 number_of_packs =
       align_up(number_of_slots, NUMBER_OF_SLOTS_IN_PACK);
     return total_payload_size
       + number_of_packs * sizeof(SlotPack::ReadyFlags);
   }
 
-  SlotPack &getPack(ui32 pack_num, ui32 payload_size) {
+  SlotPack &getPack(Ui32 pack_num, Ui32 payload_size) {
     size_t pack_size = getPackPayloadSize(payload_size) + sizeof(SlotPack);
     return *(SlotPack *) (&slot_pack[0] + pack_size * pack_num);
   }
@@ -333,11 +333,11 @@ class AuxiliaryChunkSize<false, true> {
 protected:
   typedef InfArrayChunk<true> ChunkType;
 
-  AuxiliaryChunkSize(ui32 number_of_slots_in_chunk)
+  AuxiliaryChunkSize(Ui32 number_of_slots_in_chunk)
     : numberOfSlotsInChunk(number_of_slots_in_chunk) {}
 
   inline ChunkType *
-  allocateChunk(ChunkType *current, ui64 start_slot) {
+  allocateChunk(ChunkType *current, Ui64 start_slot) {
     return ChunkType::allocateNew(
       current, start_slot, numberOfSlotsInChunk);
   }
@@ -345,7 +345,7 @@ protected:
   inline ChunkType *
   resetChunk(ChunkType *chunk,
     ChunkType *prev,
-    ui64 start_slot) {
+    Ui64 start_slot) {
     return ChunkType::reset(
       chunk, prev, start_slot, numberOfSlotsInChunk);
   }
@@ -354,11 +354,11 @@ protected:
     delete chunk;
   }
 
-  void setSlot(ChunkType *chunk, ui64 slot, void *item) {
+  void setSlot(ChunkType *chunk, Ui64 slot, void *item) {
     chunk->set_slot(slot, item);
   }
 
-  bool getSlot(void *result, ChunkType *chunk, ui32 chunk_slot) {
+  bool getSlot(void *result, ChunkType *chunk, Ui32 chunk_slot) {
     void *item = chunk->get_slot(chunk_slot);
     if (!item) {
       return false;
@@ -367,7 +367,7 @@ protected:
     return true;
   }
 
-  ui32 const numberOfSlotsInChunk;
+  Ui32 const numberOfSlotsInChunk;
 };
 
 
@@ -381,7 +381,7 @@ protected:
     , pool(pool_) {}
 
   inline ChunkType *
-  allocateChunk(ChunkType *current, ui64 start_slot) {
+  allocateChunk(ChunkType *current, Ui64 start_slot) {
     ChunkType *new_chunk =
       reinterpret_cast<ChunkType *>(pool->alloc());
     return ChunkType::reset(
@@ -391,7 +391,7 @@ protected:
   inline ChunkType *
   resetChunk(ChunkType *chunk,
     ChunkType *prev,
-    ui64 start_slot) {
+    Ui64 start_slot) {
     return ChunkType::reset(
       chunk, prev, start_slot, numberOfSlotsInChunk);
   }
@@ -400,11 +400,11 @@ protected:
     pool->free(chunk);
   }
 
-  void setSlot(ChunkType *chunk, ui64 slot, void *item) {
+  void setSlot(ChunkType *chunk, Ui64 slot, void *item) {
     chunk->set_slot(slot, item);
   }
 
-  bool getSlot(void *result, ChunkType *chunk, ui32 chunk_slot) {
+  bool getSlot(void *result, ChunkType *chunk, Ui32 chunk_slot) {
     void *item = chunk->get_slot(chunk_slot);
     if (!item) {
       return false;
@@ -413,11 +413,11 @@ protected:
     return true;
   }
 
-  ui32 const numberOfSlotsInChunk;
+  Ui32 const numberOfSlotsInChunk;
   I_FixedSizeAllocator *const pool;
 
-  static ui32 calculateNumberOfSlots(I_FixedSizeAllocator *pool) {
-    ui32 block_size = pool->getBlockSize();
+  static Ui32 calculateNumberOfSlots(I_FixedSizeAllocator *pool) {
+    Ui32 block_size = pool->getBlockSize();
     if (block_size < sizeof(ChunkType) + sizeof(void *)) {
       return 0;
     }
@@ -431,18 +431,18 @@ class AuxiliaryChunkSize<false, false> {
 protected:
   typedef InfArrayChunk<false> ChunkType;
 
-  AuxiliaryChunkSize(ui32 payload_size, ui32 number_of_slots_in_chunk)
+  AuxiliaryChunkSize(Ui32 payload_size, Ui32 number_of_slots_in_chunk)
     : numberOfSlotsInChunk(number_of_slots_in_chunk)
     , payloadSize(payload_size) {}
 
   inline ChunkType *
-  allocateChunk(ChunkType *current, ui64 start_slot) {
+  allocateChunk(ChunkType *current, Ui64 start_slot) {
     return ChunkType::allocateNew(
       current, start_slot, numberOfSlotsInChunk, payloadSize);
   }
 
   inline ChunkType *
-  resetChunk(ChunkType *chunk, ChunkType *prev, ui64 start_slot) {
+  resetChunk(ChunkType *chunk, ChunkType *prev, Ui64 start_slot) {
     return ChunkType::reset(
       chunk, prev, start_slot, numberOfSlotsInChunk, payloadSize);
   }
@@ -451,16 +451,16 @@ protected:
     delete chunk;
   }
 
-  void setSlot(ChunkType *chunk, ui64 slot, void *item) {
+  void setSlot(ChunkType *chunk, Ui64 slot, void *item) {
     chunk->set_slot(slot, item, payloadSize);
   }
 
-  bool getSlot(void *result, ChunkType *chunk, ui32 chunk_slot) {
+  bool getSlot(void *result, ChunkType *chunk, Ui32 chunk_slot) {
     return chunk->get_slot(chunk_slot, result, payloadSize);
   }
 
-  ui32 const numberOfSlotsInChunk;
-  ui32 const payloadSize;
+  Ui32 const numberOfSlotsInChunk;
+  Ui32 const payloadSize;
 };
 
 
@@ -469,20 +469,20 @@ class AuxiliaryChunkSize<true, false> {
 protected:
   typedef InfArrayChunk<false> ChunkType;
 
-  AuxiliaryChunkSize(ui32 payload_size, I_FixedSizeAllocator *pool_)
+  AuxiliaryChunkSize(Ui32 payload_size, I_FixedSizeAllocator *pool_)
     : pool(pool_)
     , payloadSize(payload_size)
     , numberOfSlotsInChunk(calculateNumberOfSlots()) {}
 
   inline ChunkType *
-  allocateChunk(ChunkType *prev, ui64 start_slot) {
+  allocateChunk(ChunkType *prev, Ui64 start_slot) {
     ChunkType *new_chunk = reinterpret_cast<ChunkType *>(pool->alloc());
     return ChunkType::reset(
       new_chunk, prev, start_slot, numberOfSlotsInChunk, payloadSize);
   }
 
   inline ChunkType *
-  resetChunk(ChunkType *chunk, ChunkType *prev, ui64 start_slot) {
+  resetChunk(ChunkType *chunk, ChunkType *prev, Ui64 start_slot) {
     return ChunkType::reset(
       chunk, prev, start_slot, numberOfSlotsInChunk, payloadSize);
   }
@@ -491,20 +491,20 @@ protected:
     pool->free(chunk);
   }
 
-  void setSlot(ChunkType *chunk, ui64 slot, void *item) {
+  void setSlot(ChunkType *chunk, Ui64 slot, void *item) {
     chunk->set_slot(slot, item, payloadSize);
   }
 
-  bool getSlot(void *result, ChunkType *chunk, ui32 chunk_slot) {
+  bool getSlot(void *result, ChunkType *chunk, Ui32 chunk_slot) {
     return chunk->get_slot(chunk_slot, result, payloadSize);
   }
 
   I_FixedSizeAllocator *const pool;
-  ui32 const payloadSize;
-  ui32 const numberOfSlotsInChunk;
+  Ui32 const payloadSize;
+  Ui32 const numberOfSlotsInChunk;
 
-  ui32 calculateNumberOfSlots() {
-    ui32 block_size = pool->getBlockSize();
+  Ui32 calculateNumberOfSlots() {
+    Ui32 block_size = pool->getBlockSize();
     return ChunkType::getNumberOfSlotsForSize(block_size, payloadSize);
   }
 };
@@ -640,11 +640,11 @@ protected:
 
   void checkForRelease();
 
-  atomic<ui64> tailCounter{0};
+  atomic<Ui64> tailCounter{0};
   atomic<ChunkType *> tail{allocateChunk(nullptr, 0)};
 
   struct SlotChunkPair {
-    ui32 slot;
+    Ui32 slot;
     ChunkType *chunk;
   };
 
@@ -680,8 +680,8 @@ protected:
     template front<ForMemoryPool>(this, retrySlots);
   }
 
-  ui64 headCounter{0};
-  ui64 lastKnownTailCounter{0};
+  Ui64 headCounter{0};
+  Ui64 lastKnownTailCounter{0};
   ChunkType *head = tail.load(std::memory_order_relaxed);
 
   SkipContainer skippedSlots;
@@ -693,7 +693,7 @@ protected:
 
 template<bool ForMemoryPool, bool PtrPayload>
 void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
-  ui64 slot = tailCounter.fetch_add(1, MO_ACQUIRE);
+  Ui64 slot = tailCounter.fetch_add(1, MO_ACQUIRE);
   ChunkType *current_chunk = tail.load(MO_ACQUIRE);
 
   if (current_chunk->StartSlot > slot) {
@@ -745,7 +745,7 @@ void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
       // ReleaseCounter of the current_chunk is not set,
       // let's help another thread to set ReleaseCounter
       auto current_tail_counter = tailCounter.load(MO_ACQUIRE);
-      ui64 release_counter = 0;
+      Ui64 release_counter = 0;
       bool set;
       do {
         set = current_chunk->ReleaseCounter.compare_exchange_strong(
@@ -766,7 +766,7 @@ template<bool ForMemoryPool, bool PtrPayload>
 bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::dequeue(void *result) {
   look_through_skipped_slots:
   while (!retrySlots.empty()) {
-    ui32 chunk_slot = frontRetry().slot;
+    Ui32 chunk_slot = frontRetry().slot;
     ChunkType *chunk = frontRetry().chunk;
     bool ready = getSlot(result, chunk, chunk_slot);
     if (ready) {
@@ -801,7 +801,7 @@ bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::dequeue(void *result) {
     } // no items in the queue
   }
 
-  ui32 head_slot = headCounter - head->StartSlot;
+  Ui32 head_slot = headCounter - head->StartSlot;
   if (head_slot == numberOfSlotsInChunk) {
     // the slot in the next chunk, let's seek the chunk
     auto new_head = head->Next.load(MO_ACQUIRE);
@@ -831,10 +831,10 @@ bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::dequeue(void *result) {
 
 template<bool ForMemoryPool, bool PtrPayload>
 void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::checkForRelease() {
-  ui64 least_slot = headCounter;
+  Ui64 least_slot = headCounter;
   if (!retrySlots.empty()) {
     const auto &front = frontRetry();
-    ui64 front_slot = front.chunk->StartSlot + front.slot;
+    Ui64 front_slot = front.chunk->StartSlot + front.slot;
     if (front_slot < least_slot) {
       least_slot = front_slot;
     }
@@ -863,7 +863,7 @@ template<typename Params, typename...ForwardParams>
 class MPSC_VirtInfArray_ConstructorSelector<Params, false, ForwardParams...> {
 public:
   MPSC_VirtInfArray_ConstructorSelector(
-    ForwardParams...params, ui32 size = Params::DEFAULT_CHUNK_SIZE)
+    ForwardParams...params, Ui32 size = Params::DEFAULT_CHUNK_SIZE)
     : impl(params..., size) {}
 
 protected:
@@ -1053,7 +1053,7 @@ public:
 
 
 struct MpscVirtInfArray_Default_Params {
-  static constexpr ui32 DEFAULT_CHUNK_SIZE = 16;
+  static constexpr Ui32 DEFAULT_CHUNK_SIZE = 16;
   static constexpr bool FOR_MEMORY_POOL = false;
   static constexpr bool DELETE_PAYLOAD_IN_DESTRUCTOR = false;
 };
@@ -1063,7 +1063,7 @@ struct MpscVirtInfArray_Default_Params {
 
 
 DECLARE_TUNE_TYPE_PARAM(TunePayload, PayloadType);
-DECLARE_TUNE_VALUE_PARAM(TuneChunkSize, ui32, DEFAULT_CHUNK_SIZE);
+DECLARE_TUNE_VALUE_PARAM(TuneChunkSize, Ui32, DEFAULT_CHUNK_SIZE);
 DECLARE_TUNE_VALUE_PARAM_DEFVALUE(
     TuneDeletePayloadFlag, bool, true, DELETE_PAYLOAD_IN_DESTRUCTOR);
 DECLARE_TUNE_VALUE_PARAM_DEFVALUE(

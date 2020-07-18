@@ -27,25 +27,14 @@
 #ifndef ENGINE_MTQ_BASE_COMMON_H_
 #define ENGINE_MTQ_BASE_COMMON_H_
 
+#include "engine/arctic_types.h"
 #include <atomic>
 
 namespace arctic {
 
-typedef unsigned long ui64;
-static_assert(sizeof(ui64) == 8, "invalid ui64 definition");
-
-typedef signed long si64;
-static_assert(sizeof(si64) == 8, "invalid si64 definition");
-
-typedef signed long i64;
-static_assert(sizeof(i64) == 8, "invalid i64 definition");
-
-typedef unsigned int ui32;
-static_assert(sizeof(ui32) == 4, "invalid ui32 definition");
-
-typedef unsigned char ui8;
-typedef signed char si8;
-typedef signed char i8;
+static_assert(sizeof(Ui64) == 8, "invalid Ui64 definition");
+static_assert(sizeof(Si64) == 8, "invalid Si64 definition");
+static_assert(sizeof(Ui32) == 4, "invalid Ui32 definition");
 
 static constexpr auto MO_SEQUENCE = std::memory_order_seq_cst;
 static constexpr auto MO_RELAXED = std::memory_order_relaxed;
