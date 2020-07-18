@@ -54,9 +54,8 @@ void *FixedBlockQueue_Gears::get_front(
     return &front->items[item_size * front_offset];
   }
 
-  size_t front_offset =
-    front_offset - getItemCount(pool, item_size);
-  return &front->next->items[front_offset * item_size];
+  size_t front_idx = front_offset - getItemCount(pool, item_size);
+  return &front->next->items[front_idx * item_size];
 }
 
 

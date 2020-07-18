@@ -41,7 +41,7 @@ class BitStream {
   Ui8 unused_bits_ = 0;
   Ui8 *read_cursor_;
   Ui8 zero_ = 0;
-  Ui64 read_byte_idx_ = 0;
+  size_t read_byte_idx_ = 0;
   Ui64 read_bit_shift_ = 0;
  public:
   BitStream();

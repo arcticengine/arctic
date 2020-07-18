@@ -45,7 +45,7 @@ using std::atomic;
 
 class SPMC_ArrayImpl {
 public:
-  SPMC_ArrayImpl(Ui64 size);
+  SPMC_ArrayImpl(size_t size);
 
   bool enqueue(void *elem);
   void *dequeue();
@@ -56,13 +56,13 @@ protected:
     atomic<Ui64> seq;
   };
 
-  Ui64 const numberOfSlots;
+  size_t const numberOfSlots;
   std::unique_ptr<Slot[]> const array;
-  atomic<Ui64> head;
+  atomic<size_t> head;
   atomic<Ui64> headSeq;
   atomic<Ui64> dequeueBarrier;
   atomic<Ui64> dequeueCounter;
-  Ui64 tail;
+  size_t tail;
   Ui64 tailSeq;
   atomic<Ui64> enqueueCounter;
 };
@@ -71,7 +71,7 @@ protected:
 template<typename Payload, bool Delete = true>
 class SpmcArray {
 public:
-  SpmcArray(Ui64 size)
+  SpmcArray(size_t size)
     : impl(size) {}
 
   ~SpmcArray() {

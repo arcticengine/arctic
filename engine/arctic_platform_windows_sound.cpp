@@ -181,7 +181,7 @@ void SoundMixerThreadFunction() {
   std::vector<std::vector<Si16>> wave_buffers(buffer_count);
   std::vector<Si16> tmp(buffer_samples_total);
   std::vector<float> mix(buffer_samples_total);
-  memset(&(mix[0]), 0, 2 * buffer_bytes);
+  memset(&(mix[0]), 0, 2 * size_t(buffer_bytes));
   for (Ui32 i = 0; i < wave_headers.size(); ++i) {
     wave_buffers[i].resize(buffer_samples_total);
     memset(reinterpret_cast<char*>(&(wave_buffers[i][0])), 0, buffer_bytes);
@@ -197,9 +197,9 @@ void SoundMixerThreadFunction() {
 
   SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
 
-  int cur_buffer_idx = 0;
+  size_t cur_buffer_idx = 0;
   while (!g_sound_mixer_state.do_quit) {
-    memset(reinterpret_cast<char*>(mix.data()), 0, 2 * buffer_bytes);
+    memset(reinterpret_cast<char*>(mix.data()), 0, 2 * size_t(buffer_bytes));
     MMTIME mmt;
     waveOutGetPosition(wave_out_handle, &mmt, sizeof(mmt));
     while (!(*(volatile DWORD*)&wave_headers[cur_buffer_idx].dwFlags
@@ -223,9 +223,9 @@ void SoundMixerThreadFunction() {
         tmp.data(), buffer_samples_total);
       Si16 *in_data = tmp.data();
       for (Ui32 i = 0; i < size; ++i) {
-        mix[i * 2] +=
+        mix[size_t(i) * 2] +=
           static_cast<float>(in_data[i * 2]) * sound.volume;
-        mix[i * 2 + 1] +=
+        mix[size_t(i) * 2 + 1] +=
           static_cast<float>(in_data[i * 2 + 1]) * sound.volume;
       }
       sound.next_position += size;

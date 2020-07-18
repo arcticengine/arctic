@@ -29,7 +29,7 @@
 
 namespace arctic {
 
-SPMC_ArrayImpl::SPMC_ArrayImpl(Ui64 const size)
+SPMC_ArrayImpl::SPMC_ArrayImpl(size_t const size)
   : numberOfSlots(size)
   , array(new Slot[size])
   , head(0)
@@ -80,23 +80,23 @@ void *SPMC_ArrayImpl::dequeue() {
   }
 
   // "acquire" is here for better chances to find required cell quickly
-  Ui64 current_head = head.load(MO_ACQUIRE);
+  size_t current_head = head.load(MO_ACQUIRE);
   Ui64 const my_seq = headSeq.fetch_add(1, MO_RELAXED) + 1;
   for (;;) {
     Ui64 head_seq = array[current_head].seq.load(MO_RELAXED);
     if (head_seq == my_seq) {
       break;
     }
-    Ui64 old_head = current_head;
+    size_t old_head = current_head;
     if (++current_head == numberOfSlots) {
       current_head = 0;
     }
     head.compare_exchange_strong(old_head, current_head, MO_RELAXED);
   }
 
-  Ui64 const next_head =
+  size_t const next_head =
     (current_head + 1 == numberOfSlots) ? 0 : current_head + 1;
-  Ui64 expect_head = current_head;
+  size_t expect_head = current_head;
   head.compare_exchange_strong(expect_head, next_head, MO_RELAXED);
 
   auto item = array[current_head].item.load(MO_RELAXED);
