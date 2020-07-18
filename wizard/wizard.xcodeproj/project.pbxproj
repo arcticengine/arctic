@@ -40,6 +40,9 @@
 		CF039D3180431A30F0AA1AAA /* gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F87FB70864522B3B712F71F /* gui.cpp */; };
 		F15120ADA5612BF23F09FDED /* arctic_platform_pi_opengl_glx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF50154262006677E5A9BAC4 /* arctic_platform_pi_opengl_glx.cpp */; };
 		FD9BE784DC07A25D900D12AA /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 43E0FC3301A513CB59EBE648 /* arctic_platform_macosx_sound.mm */; };
+		50672A61D1815883C437B3AB /* bitstream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 73B0744EBF6EAFF215D76490 /* bitstream.cpp */; };
+		F796B3853903CCC08E2180E8 /* mtq_spmc_array.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 318CBCC15BE9221E6461D65F /* mtq_spmc_array.cpp */; };
+		CAC89DF4159D95A53152AD5B /* mtq_fixed_block_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F0F4AD9CD8659E7353255CD /* mtq_fixed_block_queue.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -123,6 +126,18 @@
 		E5B8BFF80236E863553ED790 /* ofbx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ofbx.cpp; path = ../engine/ofbx.cpp; sourceTree = SOURCE_ROOT; };
 		F8C242DC394BBD23EC5EDC40 /* arctic_platform_pi_byteorder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_byteorder.cpp; path = ../engine/arctic_platform_pi_byteorder.cpp; sourceTree = SOURCE_ROOT; };
 		FDC549EC6456DB91947CA9CA /* arctic_platform_pi_fatal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_fatal.cpp; path = ../engine/arctic_platform_pi_fatal.cpp; sourceTree = SOURCE_ROOT; };
+		73B0744EBF6EAFF215D76490 /* bitstream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = bitstream.cpp; path = ../engine/bitstream.cpp; sourceTree = SOURCE_ROOT; };
+		4DD4E93783041A0344DFA87D /* mtq_fixed_block_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_fixed_block_queue.h; path = ../engine/mtq_fixed_block_queue.h; sourceTree = SOURCE_ROOT; };
+		54EF2808476B164D1397C474 /* decorated_frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decorated_frame.h; path = ../engine/decorated_frame.h; sourceTree = SOURCE_ROOT; };
+		0AEF34AF38204DA2EEFA7730 /* mtq_mpsc_vinfarr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mpsc_vinfarr.h; path = ../engine/mtq_mpsc_vinfarr.h; sourceTree = SOURCE_ROOT; };
+		318CBCC15BE9221E6461D65F /* mtq_spmc_array.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mtq_spmc_array.cpp; path = ../engine/mtq_spmc_array.cpp; sourceTree = SOURCE_ROOT; };
+		AF06C55C035F45FE167105FA /* mtq_mempool_allocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mempool_allocator.h; path = ../engine/mtq_mempool_allocator.h; sourceTree = SOURCE_ROOT; };
+		7F0F4AD9CD8659E7353255CD /* mtq_fixed_block_queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mtq_fixed_block_queue.cpp; path = ../engine/mtq_fixed_block_queue.cpp; sourceTree = SOURCE_ROOT; };
+		B3504EBA5F768495B6243557 /* mtq_base_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_base_common.h; path = ../engine/mtq_base_common.h; sourceTree = SOURCE_ROOT; };
+		E3B7FB5005268AF82E048F2D /* bitstream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitstream.h; path = ../engine/bitstream.h; sourceTree = SOURCE_ROOT; };
+		AB6F51699D49CF8B261A9A73 /* mtq_mpsc_tail_swap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mpsc_tail_swap.h; path = ../engine/mtq_mpsc_tail_swap.h; sourceTree = SOURCE_ROOT; };
+		208938D1C5CC5AEEA99D5A91 /* template_tune.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = template_tune.h; path = ../engine/template_tune.h; sourceTree = SOURCE_ROOT; };
+		E4355092A4A0E68AAB259AB5 /* mtq_spmc_array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_spmc_array.h; path = ../engine/mtq_spmc_array.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -224,6 +239,18 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				73B0744EBF6EAFF215D76490 /* bitstream.cpp */,
+				4DD4E93783041A0344DFA87D /* mtq_fixed_block_queue.h */,
+				54EF2808476B164D1397C474 /* decorated_frame.h */,
+				0AEF34AF38204DA2EEFA7730 /* mtq_mpsc_vinfarr.h */,
+				318CBCC15BE9221E6461D65F /* mtq_spmc_array.cpp */,
+				AF06C55C035F45FE167105FA /* mtq_mempool_allocator.h */,
+				7F0F4AD9CD8659E7353255CD /* mtq_fixed_block_queue.cpp */,
+				B3504EBA5F768495B6243557 /* mtq_base_common.h */,
+				E3B7FB5005268AF82E048F2D /* bitstream.h */,
+				AB6F51699D49CF8B261A9A73 /* mtq_mpsc_tail_swap.h */,
+				208938D1C5CC5AEEA99D5A91 /* template_tune.h */,
+				E4355092A4A0E68AAB259AB5 /* mtq_spmc_array.h */,
 				8564251A1E812877A794A79B /* arctic_platform_pi_es_egl.cpp */,
 				DB2CB10DB0AAABC3ACD732EA /* arctic_platform_pi_filesystem.cpp */,
 				21365DA828D892894A79048B /* arctic_platform_pi_input.cpp */,
@@ -343,6 +370,9 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				50672A61D1815883C437B3AB /* bitstream.cpp in Sources */,
+				F796B3853903CCC08E2180E8 /* mtq_spmc_array.cpp in Sources */,
+				CAC89DF4159D95A53152AD5B /* mtq_fixed_block_queue.cpp in Sources */,
 				17D742A6B0289A25877E7149 /* arctic_platform_pi_es_egl.cpp in Sources */,
 				71D661DF4BB43E105B32CF68 /* arctic_platform_pi_filesystem.cpp in Sources */,
 				B9906EE9E994AD5CD86AAB25 /* arctic_platform_pi_input.cpp in Sources */,

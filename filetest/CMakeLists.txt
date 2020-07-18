@@ -1,3 +1,4 @@
+
 cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 ################### Variables. ####################
 # Change if you want modify path or other values. #
@@ -70,9 +71,9 @@ ENDIF (APPLE)
 
 #-D_DEBUG 
 IF (APPLE)
-add_definitions(
-  -DGL_SILENCE_DEPRECATION
-)
+  add_definitions(
+    -DGL_SILENCE_DEPRECATION
+  )
 ELSE (APPLE)
 	IF (EGL_MODE)
     #only for es egl
@@ -98,7 +99,7 @@ include_directories(${CMAKE_SOURCE_DIR}/..)
 ########################################
 
 message(STATUS "CompilerId: ${CMAKE_CXX_COMPILER_ID}.")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O2 -Wall -Wtype-limits -Wuninitialized -Wshift-negative-value")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O2")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")

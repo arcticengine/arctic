@@ -42,6 +42,9 @@
 		5FF44F6E1657F963BED5EE89 /* arctic_platform_pi_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 50B13D2F2E11D3E4C68DD961 /* arctic_platform_pi_input.cpp */; };
 		70A7E85E530D554BF7284339 /* arctic_platform_pi_opengl_glx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 289294284CE00D18357D4E44 /* arctic_platform_pi_opengl_glx.cpp */; };
 		96BCA5B4E487E779B9ABAB0D /* unicode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0D88F01A10062FDCBB30231F /* unicode.cpp */; };
+		0ED0B3A468E4594C40A5CF20 /* bitstream.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2525F23A9FDF60EEDA311161 /* bitstream.cpp */; };
+		776044007007E4584BCF3C80 /* mtq_spmc_array.cpp in Sources */ = {isa = PBXBuildFile; fileRef = AF3BD45A12918526BA6FE750 /* mtq_spmc_array.cpp */; };
+		1E5AB041E87D59E3347B93CB /* mtq_fixed_block_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6BA5F59BED836FA3D7463DD1 /* mtq_fixed_block_queue.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -127,6 +130,18 @@
 		375284B8707E4AC38F6BCCF7 /* glext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = glext.h; path = ../engine/glext.h; sourceTree = SOURCE_ROOT; };
 		0D88F01A10062FDCBB30231F /* unicode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = unicode.cpp; path = ../engine/unicode.cpp; sourceTree = SOURCE_ROOT; };
 		62B3E8AFB66222B9F4F4C722 /* unicode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = unicode.h; path = ../engine/unicode.h; sourceTree = SOURCE_ROOT; };
+		2525F23A9FDF60EEDA311161 /* bitstream.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = bitstream.cpp; path = ../engine/bitstream.cpp; sourceTree = SOURCE_ROOT; };
+		DE862155BC29736DA5B3CF8A /* mtq_fixed_block_queue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_fixed_block_queue.h; path = ../engine/mtq_fixed_block_queue.h; sourceTree = SOURCE_ROOT; };
+		947D27E2EA923E3647CE91A6 /* decorated_frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decorated_frame.h; path = ../engine/decorated_frame.h; sourceTree = SOURCE_ROOT; };
+		DFF143012DF4B9AC7CBCB074 /* mtq_mpsc_vinfarr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mpsc_vinfarr.h; path = ../engine/mtq_mpsc_vinfarr.h; sourceTree = SOURCE_ROOT; };
+		AF3BD45A12918526BA6FE750 /* mtq_spmc_array.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mtq_spmc_array.cpp; path = ../engine/mtq_spmc_array.cpp; sourceTree = SOURCE_ROOT; };
+		4F532EC5787AE61C88EC0131 /* mtq_mempool_allocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mempool_allocator.h; path = ../engine/mtq_mempool_allocator.h; sourceTree = SOURCE_ROOT; };
+		6BA5F59BED836FA3D7463DD1 /* mtq_fixed_block_queue.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mtq_fixed_block_queue.cpp; path = ../engine/mtq_fixed_block_queue.cpp; sourceTree = SOURCE_ROOT; };
+		FC85CFA4DE8A2957DF3B4966 /* mtq_base_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_base_common.h; path = ../engine/mtq_base_common.h; sourceTree = SOURCE_ROOT; };
+		7F1614B29605582786A798E6 /* bitstream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bitstream.h; path = ../engine/bitstream.h; sourceTree = SOURCE_ROOT; };
+		E3AAA6C21E5C2311B71FDB52 /* mtq_mpsc_tail_swap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mpsc_tail_swap.h; path = ../engine/mtq_mpsc_tail_swap.h; sourceTree = SOURCE_ROOT; };
+		50DA4728B759F8278C2D927A /* template_tune.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = template_tune.h; path = ../engine/template_tune.h; sourceTree = SOURCE_ROOT; };
+		7DADDA117F1AFDF8F9810A39 /* mtq_spmc_array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_spmc_array.h; path = ../engine/mtq_spmc_array.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -221,6 +236,18 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				2525F23A9FDF60EEDA311161 /* bitstream.cpp */,
+				DE862155BC29736DA5B3CF8A /* mtq_fixed_block_queue.h */,
+				947D27E2EA923E3647CE91A6 /* decorated_frame.h */,
+				DFF143012DF4B9AC7CBCB074 /* mtq_mpsc_vinfarr.h */,
+				AF3BD45A12918526BA6FE750 /* mtq_spmc_array.cpp */,
+				4F532EC5787AE61C88EC0131 /* mtq_mempool_allocator.h */,
+				6BA5F59BED836FA3D7463DD1 /* mtq_fixed_block_queue.cpp */,
+				FC85CFA4DE8A2957DF3B4966 /* mtq_base_common.h */,
+				7F1614B29605582786A798E6 /* bitstream.h */,
+				E3AAA6C21E5C2311B71FDB52 /* mtq_mpsc_tail_swap.h */,
+				50DA4728B759F8278C2D927A /* template_tune.h */,
+				7DADDA117F1AFDF8F9810A39 /* mtq_spmc_array.h */,
 				2EF869B1BA4462F476D94D9E /* arctic_platform_pi_es_egl.cpp */,
 				B758832684C5F0883CC05FEF /* arctic_platform_pi_filesystem.cpp */,
 				50B13D2F2E11D3E4C68DD961 /* arctic_platform_pi_input.cpp */,
@@ -349,6 +376,9 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				0ED0B3A468E4594C40A5CF20 /* bitstream.cpp in Sources */,
+				776044007007E4584BCF3C80 /* mtq_spmc_array.cpp in Sources */,
+				1E5AB041E87D59E3347B93CB /* mtq_fixed_block_queue.cpp in Sources */,
 				3E2FECBEA6373C0EE55F36D0 /* arctic_platform_pi_es_egl.cpp in Sources */,
 				C74FD6642E1D591B21AB1BEE /* arctic_platform_pi_filesystem.cpp in Sources */,
 				5FF44F6E1657F963BED5EE89 /* arctic_platform_pi_input.cpp in Sources */,
