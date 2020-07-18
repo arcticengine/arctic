@@ -64,6 +64,9 @@
 #include "engine/mtq_fixed_block_queue.h"
 #include "engine/template_tune.h"
 
+#pragma warning(push)
+#pragma warning(disable : 4200)
+
 namespace arctic {
 
 using std::atomic;
@@ -1106,5 +1109,7 @@ public:
 
 
 } // namespace arctic
+
+#pragma warning(pop)
 
 #endif  // ENGINE_MTQ_MPSC_VINFARR_H_

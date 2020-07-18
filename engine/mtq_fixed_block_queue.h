@@ -34,6 +34,9 @@
 #include <new>
 #include "engine/mtq_mempool_allocator.h"
 
+#pragma warning(push)
+#pragma warning(disable : 4200)
+
 namespace arctic {
 
 class FixedBlockQueue_Gears {
@@ -111,5 +114,7 @@ public:
 
 
 } // namespace arctic
+
+#pragma warning(pop)
 
 #endif  // ENGINE_MTQ_FIXED_BLOCK_QUEUE_H_
