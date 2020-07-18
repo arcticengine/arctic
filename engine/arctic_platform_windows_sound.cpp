@@ -45,7 +45,6 @@
 #include <cmath>
 #include <fstream>
 #include <memory>
-#include <mutex>  // NOLINT
 #include <sstream>
 #include <thread>  // NOLINT
 #include <utility>

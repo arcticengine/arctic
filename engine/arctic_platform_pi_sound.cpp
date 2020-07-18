@@ -33,7 +33,6 @@
 #include <algorithm>
 #include <deque>
 #include <iostream>
-#include <mutex>  // NOLINT
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>

@@ -25,11 +25,6 @@
 
 #include "engine/arctic_mixer.h"
 
-#include <deque>
-#include <mutex>  // NOLINT
-
-#include "engine/arctic_platform.h"
-
 namespace arctic {
 
 }  // namespace arctic

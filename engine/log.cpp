@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 Huldra
+// Copyright (c) 2018 - 2020 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 
 #include "engine/log.h"
+#include "engine/mtq_mpsc_vinfarr.h"
 
 #include <condition_variable>  // NOLINT
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <mutex>  // NOLINT
@@ -37,13 +37,55 @@
 #include "engine/arctic_platform.h"
 
 namespace arctic {
-  static std::mutex g_logger_mutex;
-  static std::deque<std::string> g_logger_queue;
-  static std::thread g_logger_thread;
-  static std::atomic<bool> g_logger_do_quit = ATOMIC_VAR_INIT(true);
-  static std::condition_variable g_logger_condition_variable;
 
-  void LoggerThreadFunction() {
+  template <class TQueue, class TItem>
+  class SyncQueue{
+    std::atomic<bool> is_going_to_sleep = ATOMIC_VAR_INIT(false);
+    std::mutex sleep_mutex;
+    std::condition_variable sleep_condvar;
+    TQueue queue;
+  public:
+    void Enqueue(TItem *item) {
+      queue.enqueue(item);
+      if (is_going_to_sleep.load()) {
+        sleep_condvar.notify_one();
+      }
+    }
+
+    TItem* TryDequeue() {
+      return queue.dequeue();
+    }
+
+    TItem* SyncDequeue() {
+      TItem *item = queue.dequeue();
+      if (item) {
+        return item;
+      }
+      is_going_to_sleep.store(true);
+      {
+        while (true) {
+          item = queue.dequeue();
+          if (item) {
+            is_going_to_sleep.store(false);
+            return item;
+          }
+          {
+            std::unique_lock<std::mutex> lock(sleep_mutex);
+            sleep_condvar.wait(lock);
+          }
+        }
+      }
+    }
+  };
+
+  static SyncQueue<
+    MpscVirtInfArray<std::string*, TuneDeletePayloadFlag<true>>,
+    std::string> g_logger_queue;
+  static std::thread g_logger_thread;
+  static std::string *g_quit_item = nullptr;
+  static std::mutex g_quit_mutex;
+
+void LoggerThreadFunction() {
     const char *file_name = "log.txt";
     const char *newline = "\r\n";
     std::ofstream out(file_name,
@@ -52,74 +94,61 @@ namespace arctic {
       "Error in LoggerThreadFunction. Can't create/open the file, file_name: ",
       file_name);
     out.exceptions(std::ios_base::goodbit);
-    bool is_present = false;
+    bool is_flush_needed = false;
     while (true) {
-      std::string message;
-      {
-        std::lock_guard<std::mutex> lock(g_logger_mutex);
-        if (is_present) {
-          g_logger_queue.pop_front();
+      std::string *message = g_logger_queue.TryDequeue();
+      if (!message) {
+        if (is_flush_needed) {
+          out.flush();
+          is_flush_needed = false;
         }
-        if (!g_logger_queue.empty()) {
-          is_present = true;
-          message = g_logger_queue.front();
-        } else {
-          is_present = false;
-        }
+        message = g_logger_queue.SyncDequeue();
       }
-      if (is_present) {
-        out.write(message.data(), message.size());
-        Check(!(out.rdstate() & std::ios_base::badbit),
-          "Error in LoggerThreadFunction. Can't write the file, file_name: ",
-          file_name);
-        out.write(newline, 2);
-        Check(!(out.rdstate() & std::ios_base::badbit),
-          "Error in LoggerThreadFunction. Can't write the file, file_name: ",
-          file_name);
-      } else {
-        if (g_logger_do_quit) {
-          out.close();
-          Check(!(out.rdstate() & std::ios_base::failbit),
-            "Error in LoggerThreadFunction. Can't close the file, file_name: ",
-            file_name);
-          return;
+      if (message == g_quit_item) {
+        if (is_flush_needed) {
+          out.flush();
         }
-        out.flush();
-        std::unique_lock<std::mutex> lock(g_logger_mutex);
-        if (g_logger_queue.empty()) {
-          g_logger_condition_variable.wait(lock);
-        }
+        out.close();
+        Check(!(out.rdstate() & std::ios_base::failbit),
+          "Error in LoggerThreadFunction. Can't close the file, file_name: ",
+          file_name);
+        delete message;
+        return;
       }
+      is_flush_needed = true;
+      out.write(message->data(), message->size());
+      Check(!(out.rdstate() & std::ios_base::badbit),
+        "Error in LoggerThreadFunction. Can't write the file, file_name: ",
+        file_name);
+      out.write(newline, 2);
+      Check(!(out.rdstate() & std::ios_base::badbit),
+        "Error in LoggerThreadFunction. Can't write the file, file_name: ",
+        file_name);
     }
   }
 
-  void PushLog(const std::string &str) {
-    std::lock_guard<std::mutex> lock(g_logger_mutex);
-    g_logger_queue.push_back(str);
-    g_logger_condition_variable.notify_one();
-  }
-
   void Log(const char *text) {
-    std::string str(text);
-    PushLog(str);
+    std::string *str = new std::string(text);
+    g_logger_queue.Enqueue(str);
   }
 
   void Log(const char *text1, const char *text2) {
-    std::string str(text1);
-    str.append(text2);
-    PushLog(str);
+    std::string *str = new std::string(text1);
+    str->append(text2);
+    g_logger_queue.Enqueue(str);
   }
 
   void Log(const char *text1, const char *text2, const char *text3) {
-    std::string str(text1);
-    str.append(text2);
-    str.append(text3);
-    PushLog(str);
+    std::string *str = new std::string(text1);
+    str->append(text2);
+    str->append(text3);
+    g_logger_queue.Enqueue(str);
   }
 
   void LogAndDelete(std::ostringstream *str) {
     Check(str, "Unexpected nullptr in LogAndDelete call");
-    Log(str->str().c_str());
+    std::string *p = new std::string(str->str());
+    g_logger_queue.Enqueue(p);
     delete str;
   }
 
@@ -128,20 +157,20 @@ namespace arctic {
   }
 
   void StartLogger() {
-    Check(g_logger_do_quit == true,
-        "StartLogger called while g_logger_do_quit is false");
-    g_logger_do_quit = false;
+    std::lock_guard<std::mutex> lock(g_quit_mutex);
+    Check(g_quit_item == nullptr,
+        "StartLogger called with g_quit_item already initialized");
+    g_quit_item = new std::string("g_quit_item");
     g_logger_thread = std::thread(arctic::LoggerThreadFunction);
-    g_logger_thread.detach();
   }
 
   void StopLogger() {
-    {
-      std::lock_guard<std::mutex> lock(g_logger_mutex);
-      Check(g_logger_do_quit == false,
-        "StopLogger is supposed to be called once after StartLogger");
-      g_logger_do_quit = true;
-      g_logger_condition_variable.notify_one();
+    std::lock_guard<std::mutex> lock(g_quit_mutex);
+    if (g_quit_item == nullptr) {
+      return;
     }
+    g_logger_queue.Enqueue(g_quit_item);
+    g_logger_thread.join();
+    g_quit_item = nullptr;
   }
 }  // namespace arctic

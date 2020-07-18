@@ -47,7 +47,6 @@
 #include <deque>
 #include <fstream>
 #include <memory>
-#include <mutex>  // NOLINT
 #include <sstream>
 #include <string>
 #include <thread>  // NOLINT
