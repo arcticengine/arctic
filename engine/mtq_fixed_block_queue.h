@@ -43,11 +43,11 @@ protected:
   void front_cleanup(I_FixedSizeAllocator *pool, size_t item_size);
 
   inline void *get_back(size_t item_size) {
-    return &state->back->items[item_size * (state->back_offset - 1)];
+    return &back->items[item_size * (back_offset - 1)];
   }
 
   bool empty() const {
-    return state == nullptr;
+    return front == nullptr;
   }
 
   struct BlockItems {
@@ -61,22 +61,6 @@ protected:
     BlockItems& operator=(BlockItems const & ); // undefined
   };
 
-  struct QueueState {
-    size_t front_offset = 0;
-    size_t back_offset = 0;
-    BlockItems *back;
-  };
-
-  struct BlockQueueState
-    : public QueueState
-      , public BlockItems {
-  };
-
-  BlockQueueState *getNewState(I_FixedSizeAllocator *pool) {
-    void *block = pool->alloc();
-    return new(block) BlockQueueState;
-  }
-
   BlockItems *getNewBlock(I_FixedSizeAllocator *pool) {
     void *block = pool->alloc();
     return new(block) BlockItems;
@@ -84,15 +68,12 @@ protected:
 
   size_t inline getItemCount(
     I_FixedSizeAllocator *pool,
-    BlockItems *block,
     size_t item_size);
 
-  size_t inline getItemCount(
-    I_FixedSizeAllocator *pool,
-    bool first_block,
-    size_t item_size);
-
-  BlockQueueState *state = nullptr;
+  size_t front_offset = 0;
+  size_t back_offset = 0;
+  BlockItems *back = nullptr;
+  BlockItems *front = nullptr;
 };
 
 
@@ -102,7 +83,7 @@ public:
   void push_back(ElemType elem, I_FixedSizeAllocator *pool) {
     prepare_slot(pool, sizeof(ElemType));
     // state is absolutely not nullptr after prepare_slot
-    ++(state->back_offset);
+    ++back_offset;
     new(get_back(sizeof(ElemType))) ElemType(std::move(elem));
   }
 
@@ -119,7 +100,7 @@ public:
       get_front(pool, sizeof(ElemType)));
     // let's destroy the front element and free some memory
     front->~ElemType();
-    state->front_offset++;
+    front_offset++;
     front_cleanup(pool, sizeof(ElemType));
   }
 
