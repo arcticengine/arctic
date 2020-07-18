@@ -53,6 +53,12 @@ protected:
   struct BlockItems {
     BlockItems *next = nullptr;
     char items[0];
+
+    BlockItems() {
+    }
+
+    BlockItems(BlockItems const & );            // undefined
+    BlockItems& operator=(BlockItems const & ); // undefined
   };
 
   struct QueueState {

@@ -154,6 +154,9 @@ private:
     std::memset(&slot, 0, sizeof(slot[0]) * size);
   }
 
+  InfArrayChunk(InfArrayChunk const & );            // undefined
+  InfArrayChunk& operator=(InfArrayChunk const & ); // undefined
+
 
   // payload data
   atomic<void *> slot[0];
@@ -243,7 +246,7 @@ struct InfArrayChunk<false> final {
     memcpy(&pack.Payload[payload_size * slot_in_pack],
       value,
       payload_size);
-    pack.ReadyFlags.fetch_or(1U << slot_in_pack, MO_RELEASE);
+    pack.ReadyFlags.fetch_or(1ull << slot_in_pack, MO_RELEASE);
   }
 
   bool get_slot(Ui32 chunk_slot, void *value, Ui32 payload_size) {
@@ -251,7 +254,7 @@ struct InfArrayChunk<false> final {
     Ui32 slot_in_pack = chunk_slot % NUMBER_OF_SLOTS_IN_PACK;
     SlotPack &pack = getPack(pack_num, payload_size);
     auto ready_flags = pack.ReadyFlags.load(MO_RELAXED);
-    if (!(ready_flags & (1U << slot_in_pack))) {
+    if (!(ready_flags & (1ull << slot_in_pack))) {
       return false;
     }
     std::atomic_thread_fence(MO_ACQUIRE);
@@ -296,6 +299,9 @@ private:
   struct SlotPack {
     atomic<std::uintmax_t> ReadyFlags;
     char Payload[0];
+
+    SlotPack(SlotPack const & );            // undefined
+    SlotPack& operator=(SlotPack const & ); // undefined
   };
 
   static constexpr size_t
@@ -322,7 +328,7 @@ private:
  * AuxiliaryChunkSize uses malloc if ForMemoryPool was false.
  * AuxiliaryChunkSize uses memory pool with I_FixedSizeAllocator interface
  * if ForMemoryPool was true.
- * In both cases AuxiliaryChunkSize constructs objects of class InfArrayChunk.
+ * In both cases AuxiliaryChunkSize constructs objects of struct InfArrayChunk.
  */
 template<bool ForMemoryPool, bool PtrPayload>
 class AuxiliaryChunkSize;
@@ -634,7 +640,7 @@ public:
 protected:
   template<bool>
   friend
-  class InfArrayChunk;
+  struct InfArrayChunk;
 
   typedef InfArrayChunk<PtrPayload> ChunkType;
 
