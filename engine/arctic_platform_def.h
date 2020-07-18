@@ -25,20 +25,14 @@
 
 #include "engine/arctic_types.h"
 
-#ifdef _WIN32
+#if defined _WIN32
 #define ARCTIC_PLATFORM_WINDOWS
-#endif  // _WIN32
-
-#ifdef __APPLE__
+#elif defined __APPLE__
 #define ARCTIC_PLATFORM_MACOSX
-#endif  // __APPLE__
-
-#ifdef PLATFORM_RPI
+#elif defined PLATFORM_RPI
 #define ARCTIC_PLATFORM_PI
 #define ARCTIC_PLATFORM_PI_ES_EGL
-#endif  // PLATFORM_RPI
-
-#ifdef PLATFORM_LINUX
+#elif defined PLATFORM_LINUX
 #define ARCTIC_PLATFORM_PI
 #define ARCTIC_PLATFORM_PI_OPENGL_GLX
 #endif  // PLATFORM_LINUX
