@@ -188,8 +188,11 @@
     <ClInclude Include="..\engine\arctic_math.h" />
     <ClInclude Include="..\engine\arctic_platform.h" />
     <ClInclude Include="..\engine\arctic_types.h" />
+    <ClInclude Include="..\engine\bitstream.h" />
     <ClInclude Include="..\engine\bound2f.h" />
     <ClInclude Include="..\engine\bound3f.h" />
+    <ClInclude Include="..\engine\byte_array.h" />
+    <ClInclude Include="..\engine\decorated_frame.h" />
     <ClInclude Include="..\engine\easy.h" />
     <ClInclude Include="..\engine\easy_sound.h" />
     <ClInclude Include="..\engine\easy_sound_instance.h" />
@@ -198,6 +201,13 @@
     <ClInclude Include="..\engine\engine.h" />
     <ClInclude Include="..\engine\glcorearb.h" />
     <ClInclude Include="..\engine\glext.h" />
+    <ClInclude Include="..\engine\mtq_base_common.h" />
+    <ClInclude Include="..\engine\mtq_fixed_block_queue.h" />
+    <ClInclude Include="..\engine\mtq_mempool_allocator.h" />
+    <ClInclude Include="..\engine\mtq_mpsc_tail_swap.h" />
+    <ClInclude Include="..\engine\mtq_mpsc_vinfarr.h" />
+    <ClInclude Include="..\engine\mtq_spmc_array.h" />
+    <ClInclude Include="..\engine\template_tune.h" />
     <ClInclude Include="..\engine\unicode.h" />
     <ClInclude Include="..\engine\csv.h" />
     <ClInclude Include="..\engine\arctic_platform_fatal.h" />
@@ -235,14 +245,19 @@
   <ItemGroup>
     <ClCompile Include="..\engine\arctic_input.cpp" />
     <ClCompile Include="..\engine\arctic_math.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp" />
+    <ClCompile Include="..\engine\bitstream.cpp" />
+    <ClCompile Include="..\engine\byte_array.cpp" />
     <ClCompile Include="..\engine\easy.cpp" />
     <ClCompile Include="..\engine\easy_sound.cpp" />
     <ClCompile Include="..\engine\easy_sound_instance.cpp" />
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\mtq_fixed_block_queue.cpp" />
+    <ClCompile Include="..\engine\mtq_spmc_array.cpp" />
     <ClCompile Include="..\engine\unicode.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_es_egl.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_filesystem.cpp" />
