@@ -61,12 +61,17 @@ std::vector<std::string> g_deprecated_files;  // NOLINT
 
 std::vector<Rgba> g_palete;
 
+enum ProjectKind {
+  kProjectKindTetramino = 0,
+  kProjectKindHello = 1
+};
 
 enum MainMode {
   kModeCreate = 0,
   kModeUpdate = 1
 };
 
+ProjectKind g_project_kind = kProjectKindTetramino;
 MainMode g_mode_of_operation = kModeCreate;
 bool g_pause_when_done = true;
 
@@ -249,6 +254,49 @@ bool GetOperationMode() {
     return true;
   } else if (action == kUpdateButton) {
     g_mode_of_operation = kModeUpdate;
+    return true;
+  }
+  return false;
+}
+
+bool GetProjectKind() {
+  UpdateResolution();
+
+  std::shared_ptr<Panel> box(new Panel(0, Vec2Si32(0, 0),
+    Vec2Si32(640, 480), 0, g_border.DrawExternalSize(Vec2Si32(640, 480))));
+  const Ui64 kTetraminoButton = 1;
+  const Ui64 kHelloButton = 2;
+
+  const char *welcome = u8"The Snow Wizard\n\n"
+  "Please select the flavour of the new project.\n"
+
+  "Press ESC to leave the Snow Wizard.";
+
+
+  Ui32 y = box->GetSize().y-32;
+
+  std::shared_ptr<Text> textbox(new Text(
+    0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
+    0, g_font, kTextOriginTop, g_palete, welcome, kAlignCenter));
+  box->AddChild(textbox);
+  y = 32 + 48 + 64;
+  std::shared_ptr<Button> tetramino_button = MakeButton(
+    kTetraminoButton, Vec2Si32(32, y), kKeyT,
+    1, "\001T\002etramino game project", Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(tetramino_button);
+  y -= 64;
+  std::shared_ptr<Button> hello_button = MakeButton(
+    kHelloButton, Vec2Si32(32, y), kKeyH,
+    2, "\001H\002ello Wrold project",
+    Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(hello_button);
+
+  Ui64 action = ShowModalDialogue(box);
+  if (action == kTetraminoButton) {
+    g_project_kind = kProjectKindTetramino;
+    return true;
+  } else if (action == kHelloButton) {
+    g_project_kind = kProjectKindHello;
     return true;
   }
   return false;
@@ -529,16 +577,20 @@ bool SelectProject() {
   return false;
 }
 
-void PatchAndCopyTemplateFile(std::string file_name) {
+void PatchAndCopyTemplateFile(std::string file_name, std::string target_name) {
   std::vector<Ui8> data = ReadFile(
       (g_template + "/" + file_name).c_str());
-  std::string name = file_name;
+  std::string name = target_name;
   ReplaceAll("template_project_name", g_project_name, &name);
   data.push_back('\0');
   std::string content = reinterpret_cast<char*>(data.data());
   ReplaceAll("template_project_name", g_project_name, &content);
   WriteFile((g_project_directory + "/" + name).c_str(),
       reinterpret_cast<const Ui8*>(content.data()), content.size());
+}
+
+void PatchAndCopyTemplateFile(std::string file_name) {
+  PatchAndCopyTemplateFile(file_name, file_name);
 }
 
 bool ShowProgress() {
@@ -669,6 +721,16 @@ bool ShowProgress() {
         };
         for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
           PatchAndCopyTemplateFile(files[idx]);
+        }
+
+        switch (g_project_kind) {
+          case kProjectKindTetramino:
+            PatchAndCopyTemplateFile("main.cpp", "main.cpp");
+            break;
+          default:
+          case kProjectKindHello:
+            PatchAndCopyTemplateFile("main_hello.cpp", "main.cpp");
+            break;
         }
         g_progress.append(u8"Project created OK\n");
 
@@ -1297,6 +1359,9 @@ void EasyMain() {
   }
   if (g_mode_of_operation == kModeCreate) {
     if (!is_project_name_set) {
+      if (!GetProjectKind()) {
+        return;
+      }
       if (!GetProjectName()) {
         return;
       }
