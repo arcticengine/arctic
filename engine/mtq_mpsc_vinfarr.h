@@ -269,9 +269,9 @@ struct InfArrayChunk<false> final {
 
   static constexpr size_t
   getNumberOfSlotsForSize(size_t size, size_t payload_size) {
-    size_t pack_size = getPackPayloadSize(payload_size) + sizeof(SlotPack);
-    size_t total_packs = size / pack_size;
-    size_t pack_tail = size % pack_size;
+    const size_t pack_size = getPackPayloadSize(payload_size) + sizeof(SlotPack);
+    const size_t total_packs = size / pack_size;
+    const size_t pack_tail = size % pack_size;
     if (pack_tail < sizeof(SlotPack) + payload_size) {
       return 0;
     }
