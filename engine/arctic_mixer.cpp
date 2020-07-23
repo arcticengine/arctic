@@ -26,6 +26,6 @@
 #include "engine/arctic_mixer.h"
 
 namespace arctic {
-
+template class MpscVirtInfArray<SoundBuffer*, TuneDeletePayloadFlag<true>>;
 }  // namespace arctic
 

@@ -1074,3 +1074,12 @@ Si32 HorizontalScroll::GetValue() const {
 
 
 }  // namespace arctic
+
+
+template class std::shared_ptr<arctic::GuiMessage>;
+template class std::shared_ptr<arctic::Panel>;
+template class std::shared_ptr<arctic::Button>;
+template class std::shared_ptr<arctic::Text>;
+template class std::shared_ptr<arctic::Progressbar>;
+template class std::shared_ptr<arctic::Editbox>;
+template class std::shared_ptr<arctic::HorizontalScroll>;

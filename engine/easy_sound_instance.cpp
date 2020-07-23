@@ -238,3 +238,5 @@ void SoundInstance::DecPlaying() {
 
 }  // namespace easy
 }  // namespace arctic
+
+template class std::shared_ptr<arctic::easy::SoundInstance>;

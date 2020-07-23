@@ -118,6 +118,8 @@ struct SoundMixerState {
   }
 };
 
+extern template class MpscVirtInfArray<SoundBuffer*, TuneDeletePayloadFlag<true>>;
+
 }  // namespace arctic
 
 #endif  // ENGINE_ARCTIC_MIXER_H_

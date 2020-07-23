@@ -288,4 +288,12 @@ class HorizontalScroll : public Panel {
 
 }  // namespace arctic
 
+extern template class std::shared_ptr<arctic::GuiMessage>;
+extern template class std::shared_ptr<arctic::Panel>;
+extern template class std::shared_ptr<arctic::Button>;
+extern template class std::shared_ptr<arctic::Text>;
+extern template class std::shared_ptr<arctic::Progressbar>;
+extern template class std::shared_ptr<arctic::Editbox>;
+extern template class std::shared_ptr<arctic::HorizontalScroll>;
+
 #endif  // ENGINE_GUI_H_

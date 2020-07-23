@@ -60,4 +60,6 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
 }  // namespace easy
 }  // namespace arctic
 
+extern template class std::shared_ptr<arctic::easy::SoundInstance>;
+
 #endif  // ENGINE_EASY_SOUND_INSTANCE_H_
