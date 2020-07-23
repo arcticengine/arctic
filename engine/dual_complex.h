@@ -31,6 +31,7 @@
 #define ENGINE_DUAL_COMPLEX_H_
 
 #include <math.h>
+#include <iostream>
 #include <vector>
 
 namespace arctic {
@@ -131,7 +132,7 @@ public:
   }
 
   /// multiplication by a scalar
-  void operator*=(T scale) {
+  DualComplex& operator*=(T scale) {
     real[0] *= scale;
     real[1] *= scale;
     dual[0] *= scale;
@@ -140,11 +141,12 @@ public:
   }
 
   /// sum
-  void operator+=(DualComplex toSum) {
+  DualComplex& operator+=(DualComplex toSum) {
     real[0] += toSum.real[0];
     real[1] += toSum.real[1];
     dual[0] += toSum.dual[0];
     dual[1] += toSum.dual[1];
+    return *this;
   }
 
   /// multiplication by a scalar
@@ -158,11 +160,12 @@ public:
   }
 
   /// substitution
-  void operator=(DualComplex dcn) {
+  DualComplex operator=(DualComplex dcn) {
     real[0] = dcn.real[0];
     real[1] = dcn.real[1];
     dual[0] = dcn.dual[0];
     dual[1] = dcn.dual[1];
+    return *this;
   }
 
   /// multiplication by a DualComplex
@@ -205,7 +208,7 @@ public:
 };
 
 template<class T>
-std::ostream &operator<<(std::ostream &os, const DualComplex<T> &dt) {
+std::ostream& operator<<(std::ostream &os, const DualComplex<T> &dt) {
   os << dt.real[0] << "+" << dt.real[1] <<
      " i + (" << dt.dual[0] << "+" << dt.dual[1] << "i)e";
   return os;
@@ -216,6 +219,9 @@ extern template class DualComplex<double>;
 
 typedef DualComplex<float> DualComplexF;
 typedef DualComplex<double> DualComplexD;
+
+extern template std::ostream& operator<<(std::ostream &os, const DualComplexF &dt);
+extern template std::ostream& operator<<(std::ostream &os, const DualComplexD &dt);
 
 }  // namespace arctic
 

@@ -24,10 +24,13 @@
 
 namespace arctic {
 
-extern template class DualComplex<float>;
-extern template class DualComplex<double>;
+template class DualComplex<float>;
+template class DualComplex<double>;
+
+template std::ostream& operator<<(std::ostream &os, const DualComplexF &dt);
+template std::ostream& operator<<(std::ostream &os, const DualComplexD &dt);
 
 }  // namespace arctic
 
-extern template class std::vector<arctic::DualComplexF>;
-extern template class std::vector<arctic::DualComplexD>;
+template class std::vector<arctic::DualComplexF>;
+template class std::vector<arctic::DualComplexD>;
