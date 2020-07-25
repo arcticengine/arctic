@@ -30,42 +30,43 @@
 #ifndef ENGINE_DUAL_COMPLEX_H_
 #define ENGINE_DUAL_COMPLEX_H_
 
-#include <math.h>
+#include <cmath>
 #include <iostream>
 #include <vector>
+#include "engine/vec2f.h"
 
 namespace arctic {
 
 template<class T>
 class DualComplex {
 public:
-  /// coordinates which is the real part of the DualComplex
-  T real[2];
-  /// coordinates which is the complex part of the DualComplex
-  T dual[2];
+  T real_x;
+  T real_y;
+  T dual_x;
+  T dual_y;
 
   /// constructor
   DualComplex() {
-    real[0] = 0;
-    real[1] = 0;
-    dual[0] = 0;
-    dual[1] = 0;
+    real_x = 1;
+    real_y = 0;
+    dual_x = 0;
+    dual_y = 0;
   }
 
-  /** Constructor that creats DualComplex with given real and dual parts
-   @param a_real0 the x-coordinate of the real part
-   @param a_real1 the y-coordinate of the real part
-   @param a_dual0 the x-coordinate of the dual part
-   @param a_dual1 the y-coordinate of the dual part
+  /** Constructor that creates DualComplex with given real and dual parts
+   @param a_real_x the x-coordinate of the real part
+   @param a_real_y the y-coordinate of the real part
+   @param a_dual_x the x-coordinate of the dual part
+   @param a_dual_y the y-coordinate of the dual part
    */
-  DualComplex(T a_real0, T a_real1, T a_dual0, T a_dual1) {
-    real[0] = a_real0;
-    real[1] = a_real1;
-    dual[0] = a_dual0;
-    dual[1] = a_dual1;
+  DualComplex(T a_real_x, T a_real_y, T a_dual_x, T a_dual_y) {
+    real_x = a_real_x;
+    real_y = a_real_y;
+    dual_x = a_dual_x;
+    dual_y = a_dual_y;
   }
 
-  /** Constructor that creats DualComplex which represents the rotation around a given point
+  /** Constructor that creates DualComplex which represents the rotation around a given point
    @param x the x-coordinate of the center of the rotation
    @param x the y-coordinate of the center of the rotation
    @param theta the degree in radian of the rotation
@@ -75,121 +76,110 @@ public:
 //        DualComplex u(1,0,-x/2.0,-y/2.0);
 //        DualComplex w(1,0,x/2.0,y/2.0);
 //        DualComplex result = w*v*u;
-    real[0] = cos(theta / 2.0);
-    real[1] = sin(theta / 2.0);
-    dual[0] = sin(theta / 2.0) * y;
-    dual[1] = -sin(theta / 2.0) * x;
+    real_x = std::cos(theta / 2.0);
+    real_y = std::sin(theta / 2.0);
+    dual_x = std::sin(theta / 2.0) * y;
+    dual_y = -std::sin(theta / 2.0) * x;
+  }
+
+  DualComplex(Vec2F p, T theta) {
+//        DualComplex v(cos(theta/2.0),sin(theta/2.0),0,0);
+//        DualComplex u(1,0,-x/2.0,-y/2.0);
+//        DualComplex w(1,0,x/2.0,y/2.0);
+//        DualComplex result = w*v*u;
+    real_x = std::cos(theta / 2.0);
+    real_y = std::sin(theta / 2.0);
+    dual_x = std::sin(theta / 2.0) * p.y;
+    dual_y = -std::sin(theta / 2.0) * p.x;
+  }
+
+  DualComplex(T x, T y) {
+    real_x = 1;
+    real_y = 0;
+    dual_x = x;
+    dual_y = y;
   }
 
   /// conjugation
   /// @return the conjugate of the DualComplex
   DualComplex Conj() {
-    DualComplex result;
-    result.real[0] = real[0];
-    result.real[1] = -real[1];
-    result.dual[0] = dual[0];
-    result.dual[1] = dual[1];
-    return result;
+    return DualComplex(real_x, -real_y, dual_x, dual_y);
   }
 
-  /** action
-   @param dcn DualComplex which acts
-   @return the resulting DualComplex acted by dcn
-  */
-  DualComplex ActedBy(DualComplex dcn) {
-    DualComplex result;
-    result.real[0] = 1;
-    result.real[1] = 0;
-    result.dual[0] =
-      (dcn.real[0] * dcn.real[0] - dcn.real[1] * dcn.real[1]) * dual[0]
-        + 2 * (dcn.real[0] * dcn.dual[0] - dcn.real[1] * dcn.dual[1] -
-        dcn.real[0] * dcn.real[1] * dual[1]);
-    result.dual[1] =
-      (dcn.real[0] * dcn.real[0] - dcn.real[1] * dcn.real[1]) * dual[1]
-        + 2 * (dcn.real[0] * dcn.real[1] * dual[0] + dcn.real[0] * dcn.dual[1] +
-        dcn.real[1] * dcn.dual[0]);
-    return result;
+  Vec2F Transform(Vec2F vec) {
+    return Vec2F(
+      (real_x * real_x - real_y * real_y) * vec.x
+        + 2 * (real_x * dual_x - real_y * dual_y -
+        real_x * real_y * vec.y),
+      (real_x * real_x - real_y * real_y) * vec.y
+        + 2 * (real_x * real_y * vec.x + real_x * dual_y +
+        real_y * dual_x));
   }
 
   /** normalisation to unit length DualComplex
    @return DualComplex the unit length DualComplex
    */
   DualComplex Normalised() {
-    DualComplex result;
-    T norm = sqrt(real[0] * real[0] + real[1] * real[1]);
-    result.real[0] = real[0] / norm;
-    result.real[1] = real[1] / norm;
-    result.dual[0] = dual[0] / norm;
-    result.dual[1] = dual[1] / norm;
-    return result;
+    T norm = std::sqrt(real_x * real_x + real_y * real_y);
+    return DualComplex(real_x / norm, real_y / norm,
+      dual_x / norm, dual_y / norm);
   }
 
   /** norm
    @return norm of the DualComplex
    */
   T Norm() {
-    return (sqrt(real[0] * real[0] + real[1] * real[1]));
+    return (std::sqrt(real_x * real_x + real_y * real_y));
   }
 
   /// multiplication by a scalar
   DualComplex& operator*=(T scale) {
-    real[0] *= scale;
-    real[1] *= scale;
-    dual[0] *= scale;
-    dual[1] *= scale;
+    real_x *= scale;
+    real_y *= scale;
+    dual_x *= scale;
+    dual_y *= scale;
     return *this;
   }
 
   /// sum
   DualComplex& operator+=(DualComplex toSum) {
-    real[0] += toSum.real[0];
-    real[1] += toSum.real[1];
-    dual[0] += toSum.dual[0];
-    dual[1] += toSum.dual[1];
+    real_x += toSum.real_x;
+    real_y += toSum.real_y;
+    dual_x += toSum.dual_x;
+    dual_y += toSum.dual_y;
     return *this;
   }
 
   /// multiplication by a scalar
   DualComplex operator*(T scale) {
-    DualComplex result;
-    result.real[0] = real[0] * scale;
-    result.real[1] = real[1] * scale;
-    result.dual[0] = dual[0] * scale;
-    result.dual[1] = dual[1] * scale;
-    return result;
+    return DualComplex(real_x * scale, real_y * scale,
+      dual_x * scale, dual_y * scale);
   }
 
   /// substitution
   DualComplex operator=(DualComplex dcn) {
-    real[0] = dcn.real[0];
-    real[1] = dcn.real[1];
-    dual[0] = dcn.dual[0];
-    dual[1] = dcn.dual[1];
+    real_x = dcn.real_x;
+    real_y = dcn.real_y;
+    dual_x = dcn.dual_x;
+    dual_y = dcn.dual_y;
     return *this;
   }
 
   /// multiplication by a DualComplex
   DualComplex operator*(DualComplex dcn) {
-    DualComplex result;
-    result.real[0] = real[0] * dcn.real[0] - real[1] * dcn.real[1];
-    result.real[1] = real[0] * dcn.real[1] + real[1] * dcn.real[0];
-    result.dual[0] =
-      real[0] * dcn.dual[0] - real[1] * dcn.dual[1] + dual[0] * dcn.real[0] +
-        dual[1] * dcn.real[1];
-    result.dual[1] =
-      real[0] * dcn.dual[1] + real[1] * dcn.dual[0] - dual[0] * dcn.real[1] +
-        dual[1] * dcn.real[0];
-    return result;
+    return DualComplex(
+      real_x * dcn.real_x - real_y * dcn.real_y,
+      real_x * dcn.real_y + real_y * dcn.real_x,
+      real_x * dcn.dual_x - real_y * dcn.dual_y + dual_x * dcn.real_x +
+        dual_y * dcn.real_y,
+      real_x * dcn.dual_y + real_y * dcn.dual_x - dual_x * dcn.real_y +
+        dual_y * dcn.real_x);
   }
 
   /// sum
   DualComplex operator+(DualComplex dcn) {
-    DualComplex result;
-    result.real[0] = real[0] + dcn.real[0];
-    result.real[1] = real[1] + dcn.real[1];
-    result.dual[0] = dual[0] + dcn.dual[0];
-    result.dual[1] = dual[1] + dcn.dual[1];
-    return result;
+    return DualComplex(real_x + dcn.real_x, real_y + dcn.real_y,
+      dual_x + dcn.dual_x, dual_y + dcn.dual_y);
   }
 
   /** linear blend (DLB)
@@ -197,20 +187,55 @@ public:
    @param weights weights of the correspoding DualComplex's
    @return blended normalised DualComplex
    */
-  DualComplex Blend(std::vector<DualComplex> dcns, std::vector<T> weights) {
+  static DualComplex Blend(std::vector<DualComplex> dcns, std::vector<T> weights) {
     assert(dcns.size() == weights.size());
-    DualComplex result;
+    DualComplex result(0,0,0,0);
     for (int i = 0; i < dcns.size(); i++) {
       result += dcns[i] * weights[i];
     }
-    return (result.Normalised());
+    return result.Normalised();
+  }
+
+  static DualComplex Lerp(DualComplex a, DualComplex b, T t) {
+    return (a * ((T)1 - t) + b * t).Normalised();
+  }
+
+  static DualComplex Clerp(DualComplex a, DualComplex b, T t) {
+    if (a.real_x * b.real_x + a.real_y * b.real_y < (T)0) {
+      return (a * ((T)1 - t) + b * -t).Normalised();
+    }
+    return (a * ((T)1 - t) + b * t).Normalised();
+  }
+
+  static DualComplex Slerp(DualComplex a, DualComplex b, T t) {
+    T cos_theta = a.real_x * b.real_x + a.real_y * b.real_y;
+    if (cos_theta < (T) 0) {
+      cos_theta = -cos_theta;
+      b *= -1;
+    }
+    T scale_a;
+    T scale_b;
+    if ((1 - cos_theta) > 0.001) {
+      T theta = std::acos(cos_theta);
+      T sin_theta = std::sin(theta);
+      scale_a = std::sin((1 - t) * theta) / sin_theta;
+      scale_b = std::sin(t * theta) / sin_theta;
+    } else {
+      scale_a = 1 - t;
+      scale_b = t;
+    }
+    return DualComplex(
+      scale_a * a.real_x + scale_b * b.real_x,
+      scale_a * a.real_y + scale_b * b.real_y,
+      (1-t) * a.dual_x + t*b.dual_x,
+      (1-t) * a.dual_y + t*b.dual_y).Normalised();
   }
 };
 
 template<class T>
 std::ostream& operator<<(std::ostream &os, const DualComplex<T> &dt) {
-  os << dt.real[0] << "+" << dt.real[1] <<
-     " i + (" << dt.dual[0] << "+" << dt.dual[1] << "i)e";
+  os << dt.real_x << "+" << dt.real_y <<
+     " i + (" << dt.dual_x << "+" << dt.dual_y << "i)e";
   return os;
 }
 
