@@ -50,6 +50,13 @@ DecoratedFrame g_button_down;
 std::vector<Rgba> g_text_palete;
 
 
+Sound g_sound_chime;
+Sound g_sound_click;
+Sound g_sound_error;
+Sound g_sound_jingle;
+
+
+
 std::string g_project_name;  // NOLINT
 std::string g_progress;  // NOLINT
 std::string g_path;  // NOLINT
@@ -201,10 +208,11 @@ std::shared_ptr<Button> MakeButton(Ui64 tag, Vec2Si32 pos,
   Sprite button_hover = g_button_hover.DrawExternalSize(button_size);
   Sprite button_down = g_button_down.DrawExternalSize(button_size);
 
+
   Sound silent;
   std::shared_ptr<Button> button(new Button(tag, pos,
     button_normal, button_down, button_hover,
-    silent, silent, hotkey, tab_order));
+    silent, g_sound_click, hotkey, tab_order));
   std::shared_ptr<Text> button_textbox(new Text(
     0, Vec2Si32(2, 8), Vec2Si32(button_size.x - 4, button_text_size.y),
     0, g_font, kTextOriginBottom, g_palete, text, kAlignCenter));
@@ -625,6 +633,7 @@ bool ShowProgress() {
         } else {
           g_progress.append(u8"\003Can't detect Arctic Engine. ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         }
       }
         break;
@@ -636,6 +645,7 @@ bool ShowProgress() {
           g_progress.append(g_path);
           g_progress.append(u8"\" already exists. ERROR. Use another name.\n");
           step = 100500;
+          g_sound_error.Play();
         }
         break;
       case 3:
@@ -647,6 +657,7 @@ bool ShowProgress() {
           g_progress.append(g_path);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         }
         break;
       case 4:
@@ -658,6 +669,7 @@ bool ShowProgress() {
           g_progress.append(g_template);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         }
         break;
       case 5:
@@ -734,6 +746,7 @@ bool ShowProgress() {
         }
         g_progress.append(u8"Project created OK\n");
 
+        g_sound_jingle.Play();
 
         if (!g_pause_when_done) {
           return false;
@@ -796,6 +809,7 @@ bool ShowUpdateProgress() {
         } else {
           g_progress.append(u8"\003Can't detect Arctic Engine. ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         }
       }
         break;
@@ -813,6 +827,7 @@ bool ShowUpdateProgress() {
           g_progress.append(g_engine);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         }
       }
         break;
@@ -834,11 +849,13 @@ bool ShowUpdateProgress() {
           g_progress.append(g_project_directory);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         } else if (candidate_count > 1) {
           g_progress.append(u8"\003Multiple project files in\"");
           g_progress.append(g_project_directory);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         } else {
           g_project_name = candidates[0];
         }
@@ -957,6 +974,7 @@ bool ShowUpdateProgress() {
           g_progress.append(
             u8"\003No PBXBuildFile section in xcode project!\nERROR.\n");
           step = 100500;
+          g_sound_error.Play();
           break;
         }
         resulting_file << full_content.substr(cursor, next_item - cursor);
@@ -968,12 +986,14 @@ bool ShowUpdateProgress() {
           g_progress.append(
             u8"\003No PBXFileReference section in xcode project!\nERROR.\n");
           step = 100500;
+          g_sound_error.Play();
           break;
         }
         if (next_item < cursor) {
           g_progress.append(
             u8"\003Out of order PBXFileReference in xcode project!\nERROR.\n");
           step = 100500;
+          g_sound_error.Play();
           break;
         }
         resulting_file << full_content.substr(cursor, next_item - cursor);
@@ -986,6 +1006,7 @@ bool ShowUpdateProgress() {
           g_progress.append(
             u8"\003No engine_group_entry in xcode project!\nERROR.\n");
           step = 100500;
+          g_sound_error.Play();
           break;
         }
         if (next_item < cursor) {
@@ -993,6 +1014,7 @@ bool ShowUpdateProgress() {
             u8"\003Out of order engine_group_entry in xcode project!\n"
             u8"ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
           break;
         }
         next_item += engine_group_entry.size();
@@ -1007,12 +1029,14 @@ bool ShowUpdateProgress() {
           g_progress.append(
             u8"\003No buildphase_entry in xcode project!\nERROR.\n");
           step = 100500;
+          g_sound_error.Play();
           break;
         }
         if (next_item < cursor) {
           g_progress.append(
             u8"\003Out of order buildphase_entry in xcode project!\nERROR.\n");
           step = 100500;
+          g_sound_error.Play();
           break;
         }
         next_item += buildphase_entry.size();
@@ -1147,6 +1171,7 @@ bool ShowUpdateProgress() {
           if (next_item == std::string::npos) {
             g_progress.append(u8"\003No engine.h in VS project!\nERROR.\n");
             step = 100500;
+            g_sound_error.Play();
             break;
           }
           next_item += engine_h_pattern.size();
@@ -1165,12 +1190,14 @@ bool ShowUpdateProgress() {
           if (next_item == std::string::npos) {
             g_progress.append(u8"\003No engine.cpp in VS project!\nERROR.\n");
             step = 100500;
+            g_sound_error.Play();
             break;
           }
           if (next_item < cursor) {
             g_progress.append(
               u8"\003Out of order engine.cpp in VS project!\nERROR.\n");
             step = 100500;
+            g_sound_error.Play();
             break;
           }
           next_item += engine_cpp_pattern.size();
@@ -1200,6 +1227,7 @@ bool ShowUpdateProgress() {
             g_progress.append(u8"\003No engine.cpp in VS project filters!"
                 u8"\nERROR.\n");
             step = 100500;
+            g_sound_error.Play();
             break;
           }
           next_item += engine_cpp_pattern.size();
@@ -1218,12 +1246,14 @@ bool ShowUpdateProgress() {
             g_progress.append(u8"\003No engine.h in VS project filters!\n"
                 u8"ERROR.\n");
             step = 100500;
+            g_sound_error.Play();
             break;
           }
           if (next_item < cursor) {
             g_progress.append(
               u8"\003Out of order engine.h in VS project filters!\nERROR.\n");
             step = 100500;
+            g_sound_error.Play();
             break;
           }
           next_item += engine_h_pattern.size();
@@ -1251,6 +1281,7 @@ bool ShowUpdateProgress() {
           g_progress.append(g_template);
           g_progress.append(u8"\". ERROR.\n");
           step = 100500;
+          g_sound_error.Play();
         }
         break;
       case 7: {
@@ -1287,6 +1318,13 @@ bool ShowUpdateProgress() {
 }
 
 void EasyMain() {
+  g_sound_chime.Load("data/chime.wav");
+  g_sound_chime.Play();
+
+  g_sound_click.Load("data/click.wav");
+  g_sound_error.Load("data/error.wav");
+  g_sound_jingle.Load("data/jingle.wav");
+
   g_palete.emplace_back((Ui32)0xffffffff);
   g_palete.emplace_back((Ui32)0xffff9999);
   g_palete.emplace_back((Ui32)0xffffffff);

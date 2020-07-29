@@ -54,6 +54,7 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 #### Third-party data:
 
 * Living Nightmare by snowflake Ft: Blue Wave Theory ([http://dig.ccmixter.org/files/snowflake/54422](http://dig.ccmixter.org/files/snowflake/54422)) (c) copyright 2016 Licensed under a Creative Commons Attribution (3.0) license.
+* Some of the sounds in this project were created by David McKee (ViRiX) soundcloud.com/virix
 
 ## Tools used
 
