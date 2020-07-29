@@ -133,6 +133,10 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
 
   Check((wav->bits_per_sample == 8) || (wav->bits_per_sample == 16),
       "Error in LoadWav, unsupported bits_per_sample.");
+  Check(wav->block_align != 0,
+    "Error in LoadWav, block_align cannot be 0.");
+  Check(wav->sample_rate != 0,
+    "Error in LoadWav, sample_rate cannot be 0.");
 
   std::shared_ptr<easy::SoundInstance> sound;
   Ui32 in_sample_count = wav->subchunk_2_size / wav->block_align;
