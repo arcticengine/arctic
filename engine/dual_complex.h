@@ -30,6 +30,7 @@
 #ifndef ENGINE_DUAL_COMPLEX_H_
 #define ENGINE_DUAL_COMPLEX_H_
 
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include <vector>
