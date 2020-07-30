@@ -44,6 +44,7 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 * Miniz 2.1.0 (01/06/2019) Copyright 2013-2014 RAD Game Tools and Valve Software, Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC ([https://github.com/richgel999/miniz](https://github.com/richgel999/miniz))
 * OpenFBX (01/06/2019) by Mikulas Florek ([https://github.com/nem0/OpenFBX](https://github.com/nem0/OpenFBX))
 * Collection of wait-free/lock-free queues (18/07/2020) Copyright (c) 2018 Vitaliy Manushkin ([https://gitlab.com/agrianius/mt_queue](https://gitlab.com/agrianius/mt_queue))
+* [Coverage-guided fuzz testing](https://docs.gitlab.com/ee/user/application_security/coverage_fuzzing/#coverage-guided-fuzz-testing-ultimate) added by @stkerr at GitLab
 
 #### ArcticOne font:
 

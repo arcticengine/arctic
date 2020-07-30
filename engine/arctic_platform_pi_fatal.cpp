@@ -31,7 +31,13 @@
 
 #include <iostream>
 
+#ifdef ARCTIC_NO_HARD_EXIT
+#include <setjmp.h>
+extern jmp_buf arctic_jmp_env;
+#endif
+
 namespace arctic {
+
 
 void Fatal(const char *message, const char *message_postfix) {
   size_t size = 1 +
@@ -41,8 +47,15 @@ void Fatal(const char *message, const char *message_postfix) {
   memset(full_message, 0, size);
   snprintf(full_message, size, "%s%s", message,
       (message_postfix ? message_postfix : ""));
+#ifndef ARCTIC_NO_FATAL_MESSAGES
   std::cerr << "Arctic Engine ERROR: " << full_message << std::endl;
+#endif
+#ifndef ARCTIC_NO_HARD_EXIT
   exit(1);
+#else
+  free(full_message);
+  longjmp(arctic_jmp_env, 1337);
+#endif
 }
 
 void Check(bool condition, const char *error_message,
