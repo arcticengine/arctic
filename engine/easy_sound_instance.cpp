@@ -193,7 +193,7 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
       Fatal("Error in LoadWav, unsupported bits_per_sample");
     }
   } else {
-    for (Ui32 idx = 0; idx < sample_count; ++idx) {
+    for (Ui64 idx = 0; idx < sample_count; ++idx) {
       Ui64 in_sample_idx = (Ui64)wav->sample_rate * (Ui64)idx / 44100ull;
       const Ui8 *in_block = in_data + in_sample_idx * block_align;
       Si16 value1 = 0;
@@ -220,6 +220,9 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
       } else {
         Fatal("Error in LoadWav, unsupported bits_per_sample");
       }
+
+      Check(idx*2*sizeof(Si16) < sample_count * 2 * sizeof(Si16),
+        "Reading past end of sample memory buffer.");
 
       out_data[idx * 2] = value1;
       out_data[idx * 2 + 1] = value2;
