@@ -241,7 +241,7 @@ void SetCursorVisible(bool/* is_enable*/) {
 
 }  // namespace arctic
 
-
+#ifndef ARCTIC_NO_MAIN
 int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
@@ -262,5 +262,6 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+#endif // ARCTIC_NO_MAIN
 
 #endif  // ARCTIC_PLATFORM_PI_OPENGL_GLX
