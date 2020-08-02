@@ -52,9 +52,12 @@
 #include "engine/rgb.h"
 #include "engine/vec3f.h"
 
-//#include "engine/arctic_platform_macosx_sound.mm"
-
 extern void EasyMain();
+
+#ifdef ARCTIC_NO_HARD_EXIT
+#include <setjmp.h>
+extern jmp_buf arctic_jmp_env;
+#endif  // ARCTIC_NO_HARD_EXIT
 
 namespace arctic {
   KeyCode TranslateKeyCode(Ui32 key_unicode);
@@ -392,6 +395,7 @@ void Fatal(const char *message, const char *message_postfix) {
   snprintf(full_message, size, "%s%s", message,
       (message_postfix ? message_postfix : ""));
 
+#ifndef ARCTIC_NO_FATAL_MESSAGES
   NSLog(@"Fatal: %s", full_message);
 
   NSAlert *alert = [[NSAlert alloc] init];
@@ -401,7 +405,13 @@ void Fatal(const char *message, const char *message_postfix) {
     [[NSString alloc] initWithUTF8String: full_message]];
   [alert setAlertStyle: NSAlertStyleCritical];
   [alert runModal];
+#endif  // ARCTIC_NO_FATAL_MESSAGES
+#ifndef ARCTIC_NO_HARD_EXIT
   exit(1);
+#else
+  delete[] full_message;
+  longjmp(arctic_jmp_env, 1337);
+#endif  // ARCTIC_NO_HARD_EXIT
 }
 
 void PushInputKey(KeyCode key, bool is_down, std::string characters) {
@@ -862,6 +872,7 @@ std::string RelativePathFromTo(const char *from, const char *to) {
 
 }  // namespace arctic
 
+#ifndef ARCTIC_NO_MAIN
 int main(int argc, char **argv) {
   [[NSFileManager defaultManager] changeCurrentDirectoryPath:
     [NSString stringWithFormat:@"%@/Contents/Resources",
@@ -885,5 +896,6 @@ int main(int argc, char **argv) {
   [g_app terminate: nil];  // It will stop the logger
   return 0;
 }
+#endif // ARCTIC_NO_MAIN
 
 #endif
