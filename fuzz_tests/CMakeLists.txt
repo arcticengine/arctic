@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0.2 FATAL_ERROR)
 ################### Variables. ####################
 # Change if you want modify path or other values. #
 ###################################################
@@ -14,19 +14,31 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}.")
 
-set(PROJECT_NAME fuzz_harness)
+if (NOT $ENV{TEST_NAME} STREQUAL "")
+  set(PROJECT_NAME $ENV{TEST_NAME})
+else ()
+  set(PROJECT_NAME fuzz_harness)
+endif ()
+
+message(STATUS "Project name: ${PROJECT_NAME}.")
+
+
 # Output Variables
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # Folders files
 set(DATA_DIR .)
 set(CPP_DIR_1 ../engine)
-set(CPP_DIR_2 .)
 set(HEADER_DIR_1 ../engine)
-set(HEADER_DIR_2 .)
 
 file(GLOB_RECURSE RES_SOURCES "${DATA_DIR}/data/*")
 
-SET(CMAKE_CXX_COMPILER             "/usr/bin/clang++")
+IF (APPLE)
+  # Install clang with 'brew install llvm' for this to work
+  SET(CMAKE_CXX_COMPILER             "/usr/local/opt/llvm/bin/clang++")
+ELSE (APPLE)
+  SET(CMAKE_CXX_COMPILER             "/usr/bin/clang++")
+ENDIF (APPLE)
+
 set(CMAKE_CXX_STANDARD 14)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 ############## Define Project. ###############
@@ -121,23 +133,15 @@ file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
     ${CPP_DIR_1}/*.mm
     ${CPP_DIR_1}/*.c
-    ${CPP_DIR_2}/*.cpp
-    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
     ${HEADER_DIR_1}/*.hpp
-    ${HEADER_DIR_2}/*.h
-    ${HEADER_DIR_2}/*.hpp
 )
 ELSE (APPLE)
 file(GLOB SRC_FILES
     ${CPP_DIR_1}/*.cpp
     ${CPP_DIR_1}/*.c
-    ${CPP_DIR_2}/*.cpp
-    ${CPP_DIR_2}/*.c
     ${HEADER_DIR_1}/*.h
     ${HEADER_DIR_1}/*.hpp
-    ${HEADER_DIR_2}/*.h
-    ${HEADER_DIR_2}/*.hpp
 )
 ENDIF (APPLE)
 file(GLOB SRC_FILES_TO_REMOVE
@@ -158,7 +162,7 @@ macro(fuzzer name)
             ../src)
 endmacro()
 
-fuzzer( fuzz_harness )
+fuzzer( ${PROJECT_NAME} )
 
 # Add executable to build.
 SET_SOURCE_FILES_PROPERTIES(${RES_SOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/data)
