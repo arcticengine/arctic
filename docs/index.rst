@@ -4,20 +4,20 @@ Arctic Engine
 Arctic Engine will solve your problem of where to start with documentation,
 by providing a basic explanation of how to do it easily.
 
-Look how easy it is to use:
+Look how easy it is to use::
 
-#include "engine/easy.h"
+  #include "engine/easy.h"
 
-using namespace arctic;
-using namespace arctic::easy;
+  using namespace arctic;
+  using namespace arctic::easy;
 
-void EasyMain() {
-  while (!IsKeyDownward(kKeyEscape)) {
-    Clear();
-    DrawCircle(Vec2Si32(100, 100), 50, Rgba(255, 255, 255));
-    ShowFrame();
+  void EasyMain() {
+    while (!IsKeyDownward(kKeyEscape)) {
+      Clear();
+      DrawCircle(Vec2Si32(100, 100), 50, Rgba(255, 255, 255));
+      ShowFrame();
+    }
   }
-}
 
 Features
 --------
