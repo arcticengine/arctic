@@ -67,6 +67,7 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 * Visual Studio Community 2019
 ([https://www.visualstudio.com/](https://www.visualstudio.com/))
+* CLion ([https://www.jetbrains.com/?from=ArcticEngine](https://www.jetbrains.com/?from=ArcticEngine))
 
 #### Python
 
