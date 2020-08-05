@@ -21,8 +21,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-/// @file
-/// User input processing
+/** @file
+    User input processing
+*/
 
 #ifndef ENGINE_ARCTIC_INPUT_H_
 #define ENGINE_ARCTIC_INPUT_H_
@@ -192,11 +193,19 @@ struct InputMessage {
   Mouse mouse;
 };
 
-/// Obtains the next available input message from the queue
+/*! \defgroup global_functions Global functions
+    @{
+*/
+
+/// @brief Obtains the next available input message from the queue
 bool PopInputMessage(InputMessage *out_message);
-/// Pushes an input message to the queue as if it came from the user
+/// @brief Pushes an input message to the queue as if it came from the user
 void PushInputMessage(const InputMessage &message);
 
+/*! @} */
+
 }  // namespace arctic
+
+
 
 #endif  // ENGINE_ARCTIC_INPUT_H_
