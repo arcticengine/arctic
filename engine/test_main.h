@@ -156,7 +156,7 @@
 extern "C" {
 #endif  //  __cplusplus
 
-
+  /// @private
   struct test__ {
     const char* name;
     void (*func)(void);
