@@ -9,6 +9,8 @@ In the 80's and 90's it was possible for a programmer to make a game alone and i
 
 Arctic Engine returns the power to the C++ programmer and makes game development fun again.
 
+API documentation: https://huldra.gitlab.io/arctic/index.html
+
 Main discussion forum (in Russian): http://arcticengine.com/
 
 Windows:
