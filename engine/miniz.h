@@ -384,7 +384,7 @@ enum {
 
 struct mz_internal_state;
 
-//! Compression/decompression stream struct.
+//! @private Compression/decompression stream struct.
 typedef struct mz_stream_s {
     const unsigned char *next_in;  //!< pointer to next byte to read //-V122
     size_t avail_in;         //!< number of bytes available at next_in
@@ -651,6 +651,7 @@ typedef int mz_bool;
 #endif  // #ifdef MINIZ_NO_STDIO
 
 #ifdef MINIZ_NO_TIME
+/// @private
 typedef struct mz_dummy_time_t_tag {
     int m_dummy;
 } mz_dummy_time_t;
@@ -870,6 +871,7 @@ typedef enum {
 } tdefl_flush;
 
 /** tdefl's compression state structure. */
+/// @private
 typedef struct {
     tdefl_put_buf_func_ptr m_pPut_buf_func; //-V122
     void *m_pPut_buf_user; //-V122
@@ -1108,6 +1110,7 @@ enum {
     TINFL_FAST_LOOKUP_SIZE = 1 << TINFL_FAST_LOOKUP_BITS
 };
 
+/// @private
 typedef struct {
     uint8_t m_code_size[TINFL_MAX_HUFF_SYMBOLS_0];
     int16_t m_look_up[TINFL_FAST_LOOKUP_SIZE],
@@ -1128,6 +1131,7 @@ typedef uint32_t tinfl_bit_buf_t;
 #define TINFL_BITBUF_SIZE (32)
 #endif  // TINFL_USE_64BIT_BITBUF
 
+/// @private
 struct tinfl_decompressor_tag {
     uint32_t m_state, m_num_bits, m_zhdr0, m_zhdr1, m_z_adler32, m_final,
   m_type, m_check_adler32, m_dist, m_counter, m_num_extra,
@@ -1159,6 +1163,7 @@ enum {
     MZ_ZIP_MAX_ARCHIVE_FILE_COMMENT_SIZE = 512
 };
 
+/// @private
 typedef struct {
     /** Central directory file index. */
     uint32_t m_file_index;
@@ -1302,6 +1307,7 @@ typedef enum {
     MZ_ZIP_TOTAL_ERRORS
 } mz_zip_error;
 
+/// @private
 typedef struct {
     uint64_t m_archive_size;
     uint64_t m_central_directory_file_ofs;
@@ -1327,6 +1333,7 @@ typedef struct {
     mz_zip_internal_state *m_pState;
 } mz_zip_archive;
 
+/// @private
 typedef struct {
     mz_zip_archive *pZip;
     mz_uint flags;
