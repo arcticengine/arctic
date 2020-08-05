@@ -149,8 +149,9 @@ pages:
     - apk update
     - apk add doxygen ttf-freefont graphviz
   script:
-    - doxygen doc/Doxyfile
-    - mv doc/html/ public/
+    - cd doc
+    - doxygen ./Doxyfile
+    - mv ./html/ ../public/
   artifacts:
     paths:
       - public
