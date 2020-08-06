@@ -171,7 +171,7 @@ inline Vec2Si32 operator/(Vec2Si32 const &a, Vec2Si32 const &b) {
 }
 
 
-/// @addtogroup global_functions
+/// @addtogroup global_math
 /// @{
 inline Vec2Si32 Max(const Vec2Si32 &a, const Vec2Si32 &b) {
   return Vec2Si32((a.x > b.x) ? a.x : b.x, (a.y > b.y) ? a.y : b.y);

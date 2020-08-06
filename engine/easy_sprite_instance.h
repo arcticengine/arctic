@@ -67,7 +67,7 @@ class SpriteInstance {
 
 }  // namespace easy
 
-/// @addtogroup global_functions
+/// @addtogroup global_advanced
 /// @{
 
 /// @brief Creates a sprite instance from *.tga file data

@@ -25,7 +25,7 @@
 
 namespace arctic {
 
-/// @addtogroup global_functions
+/// @addtogroup global_utility
 /// @{
 
 /// @brief Exits the application with an error if condition is false

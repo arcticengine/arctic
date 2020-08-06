@@ -332,7 +332,7 @@ inline Vec4F operator/(Vec4F const &a, Vec4F const &b) {
   return Vec4F(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
 
-/// @addtogroup global_functions
+/// @addtogroup global_math
 /// @{
 
 inline Vec4F Normalize(Vec4F const &v) {

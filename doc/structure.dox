@@ -1,0 +1,38 @@
+/** 
+@defgroup global_functions Global functions
+@{
+
+ @defgroup global_math Math
+ @{
+ @}
+
+ @defgroup global_advanced Advanced
+ @{
+ @}
+
+ @defgroup global_sound Sound
+ @{
+ @}
+
+ @defgroup global_input Input
+ @{
+ @}
+
+ @defgroup global_drawing Drawing
+ @{
+ @}
+
+ @defgroup global_utility Utility
+ @{
+ @}
+
+ @defgroup global_files Files
+ @{
+ @}
+/// @}
+/// @addtogroup global_files
+/// @{
+
+
+@}
+*/

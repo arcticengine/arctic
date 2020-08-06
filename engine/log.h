@@ -28,7 +28,7 @@
 
 namespace arctic {
 
-/// @addtogroup global_functions
+/// @addtogroup global_utility
 /// @{
 
 /// @brief Writes message text to log

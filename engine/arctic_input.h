@@ -189,7 +189,7 @@ struct InputMessage {
   Mouse mouse;
 };
 
-/// @defgroup global_functions Global functions
+/// @addtogroup global_advanced
 /// @{
 
 /// @brief Obtains the next available input message from the queue

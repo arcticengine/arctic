@@ -1,0 +1,66 @@
+/** 
+\mainpage 
+Arctic Engine
+=============
+
+Getting started from scratch is always the biggest challenge and use of time.
+Arctic Engine API is so easy to use it makes it fun to learn, just like it ought to be.
+
+Look how easy it is to use:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    
+    using namespace arctic;
+    using namespace arctic::easy;
+    
+    void EasyMain() {
+      while (!IsKeyDownward(kKeyEscape)) {
+        Clear();
+        DrawCircle(Vec2Si32(100, 100), 50, Rgba(255, 255, 255));
+        ShowFrame();
+      }
+    }
+~~~~~
+
+Installation
+------------
+
+Clone `%https://gitlab.com/huldra/arctic.git` or download and unzip https://gitlab.com/huldra/arctic/-/archive/master/arctic-master.zip \n
+Enter the `wizard` directory.\n
+Build it with `cmake . && make` or open and build the project with Visual Stuio, XCode or CLion. \n
+Run the wizard and follow the instructions.
+
+A 3-minute videoguide:\n
+\htmlonly
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sGG-fGHGwQs" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+\endhtmlonly
+
+Features
+--------
+
+- Returns the power to the C++ programmer
+- Makes game development fun again
+- Easy to use
+- Quick code-build-run cycle
+
+Contribute
+----------
+
+- Issue Tracker: https://gitlab.com/huldra/arctic/-/issues
+- Source Code: https://gitlab.com/huldra/arctic/-/tree/master
+
+Support
+-------
+
+If you are having issues, please let us know: arcticengine@gmail.com
+
+MIT License
+-----------
+
+Licenses tell you what the software developers are scared of.\n
+BSD license is for those scared of having their name dragged through the mud.\n
+GPL is for those scared of having their code put into a proprietary piece of software.\n
+We fear not being useful to the community, so Arctic Engine is released under the MIT License.\n
+
+*/

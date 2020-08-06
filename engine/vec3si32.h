@@ -274,7 +274,7 @@ inline Vec3Si32 operator/(Vec3Si32 const &a, Vec3Si32 const &b) {
   return Vec3Si32(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 
-/// @addtogroup global_functions
+/// @addtogroup global_math
 /// @{
 
 inline Vec3Si32 Min(const Vec3Si32 &v, Si32 mi) {

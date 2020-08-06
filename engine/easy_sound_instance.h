@@ -55,7 +55,7 @@ class SoundInstance {
 };
 
 
-/// @addtogroup global_functions
+/// @addtogroup global_advanced
 /// @{
 
 /// @brief Creates a sound instance from the data

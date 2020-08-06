@@ -90,7 +90,7 @@ struct Rgba {
   }
 };
 
-/// @addtogroup global_functions
+/// @addtogroup global_drawing
 /// @{
 inline Rgba Mix(Rgba const &a, Rgba const &b, float const f) {
   return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),

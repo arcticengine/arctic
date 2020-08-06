@@ -27,7 +27,7 @@
 
 namespace arctic {
 
-/// @addtogroup global_functions
+/// @addtogroup global_utility
 /// @{
 
 /// @brief Transform value from the big-endian representation 

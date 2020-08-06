@@ -39,7 +39,7 @@ struct DirectoryEntry {
   Trivalent is_file = kTrivalentUnknown;
 };
 
-/// @addtogroup global_functions
+/// @addtogroup global_utility
 /// @{
 
 /// @brief Exits the program
@@ -71,6 +71,10 @@ bool IsCursorVisible();
 /// @brief Sets OS mouse cursor visibility
 /// @param is_enable true makes the cursor visible, false hides it
 void SetCursorVisible(bool is_enable);
+
+/// @}
+/// @addtogroup global_files
+/// @{
 
 /// @brief Checks if a filesystem directory exists
 /// @param [in] path Path to a directory

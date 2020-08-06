@@ -41,7 +41,7 @@
 namespace arctic {
 namespace easy {
 
-/// @addtogroup global_functions
+/// @addtogroup global_drawing
 /// @{
 
 /// @brief Draws a solid color line from point a to point b
@@ -103,6 +103,10 @@ void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color);
 
 /// @brief Show the current backbuffer and update the input state
 void ShowFrame();
+
+/// @}
+/// @addtogroup global_input
+/// @{
 
 // true if key transitioned from up to down state last frame
 /// @brief Returns true if the key with the specified key_code travelled downwards during the last frame
@@ -171,6 +175,10 @@ Si32 InputMessageCount();
 /// @brief Returns the user input message with the index specified
 const InputMessage& GetInputMessage(Si32 idx);
 
+/// @}
+/// @addtogroup global_utility
+/// @{
+
 /// @brief Get the window size in actual pixels of the OS
 Vec2Si32 WindowSize();
 /// @brief Get the backbuffer resolution in pixels
@@ -197,10 +205,18 @@ Si32 Random32(Si32 min, Si32 max);
 /// @brief Waits for the time specified before returning.
 void Sleep(double duration_seconds);
 
+/// @}
+/// @addtogroup global_files
+/// @{
+
 /// @breif Loads all data from a file specified.
 std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof = false);
 /// @brief Saved the data specified to a file.
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
+
+/// @}
+/// @addtogroup global_advanced
+/// @{
 
 /// @brief Returns a pointer to the Engine instance.
 Engine* GetEngine();

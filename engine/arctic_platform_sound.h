@@ -64,7 +64,7 @@ class SoundPlayer {
   SoundPlayerImpl *impl = nullptr;
 };
 
-/// @addtogroup global_functions
+/// @addtogroup global_advanced
 /// @{
 
 /// @brief Starts playback of a sound
@@ -76,6 +76,10 @@ void StartSoundBuffer(easy::Sound sound, float volume);
 /// @brief Stops playback of a sound
 /// @param sound Sound to play
 void StopSoundBuffer(easy::Sound sound);
+
+/// @}
+/// @addtogroup global_sound
+/// @{
 
 /// @brief Sets the master volume level
 /// @param volume Volume to set. 

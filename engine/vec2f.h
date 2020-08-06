@@ -166,7 +166,7 @@ inline Vec2F operator/(Vec2F const &a, Vec2F const &b) {
   return Vec2F(a.x / b.x, a.y / b.y);
 }
 
-/// @addtogroup global_functions
+/// @addtogroup global_math
 /// @{
 inline Vec2F floor(Vec2F const &v) {
   return Vec2F(floorf(v.x), floorf(v.y));
