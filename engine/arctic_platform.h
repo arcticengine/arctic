@@ -79,7 +79,7 @@ void SetCursorVisible(bool is_enable);
 /// @brief Checks if a filesystem directory exists
 /// @param [in] path Path to a directory
 /// @return kTrivalentFalse if the directory does not exist,
-/// kTrivalentTrue if the directory does not exist,
+/// kTrivalentTrue if the directory exists,
 /// kTrivalentUnknown if the application can not determine
 /// whether the direcotry exists.
 Trivalent DoesDirectoryExist(const char *path);

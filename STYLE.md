@@ -36,6 +36,7 @@ namespace outer {
 const int kDaysInAWeek = 7;
 const int kAndroid8_0_0 = 24;
 
+/// @private
 struct UrlTableProperties {
   string name;
   int num_entries;
@@ -45,13 +46,14 @@ struct UrlTableProperties {
 using PropertiesMap = hash_map<UrlTableProperties *, string>;
 
 enum UrlTableErrors {
-  kOK = 0,
-  kErrorOutOfMemory,
+  kOk = 0,  ///< Some documentation for the kOK value.
+  kErrorOutOfMemory,  ///< There is not enough free memory to comlete the request.
   kErrorMalformedInput,
 };
 
 // All declarations are within the namespace scope.
 // Notice the lack of indentation.
+
 class MyClass {
  public:
   void Foo(double y, const string &in, string *out) noexcept;
@@ -65,6 +67,23 @@ class MyClass {
   string table_name_;  // underscore at end.
   static Pool<TableInfo>* pool_;
 };
+
+/// @addtogroup global_style
+/// @{
+
+/// @brief Does something with some value.
+/// @param [in] x The desired value of some aspect of what the function does.
+/// @return If the function succeeds, the return value is true. \n
+///  If the function fails, the return value is false.
+///  To get extended error information, call GetErrorString.
+/// @details This function is used to do blah-blah and shoul be used
+///  for some things. For example:
+/// @code
+///  bool b = SomeGlobalFunction(nullptr);
+/// @endcode
+bool SomeGlobalFunction(float *x);
+
+/// @}
 
 }  // namespace outer
 
@@ -111,6 +130,7 @@ using ::foo::bar;
 
 // Definition of functions is within scope of the namespace.
 // Consider std::string_view.
+
 void MyClass::Foo(double double_value, const string &in, string *out) noexcept {
   int j = Goo();
   std::vector<int> v = {1, 2};

@@ -223,7 +223,7 @@ void Sleep(double duration_seconds);
 /// @addtogroup global_files
 /// @{
 
-/// @breif Loads all data from a file specified.
+/// @brief Loads all data from a file specified.
 std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof = false);
 /// @brief Saved the data specified to a file.
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
