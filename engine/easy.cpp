@@ -36,7 +36,7 @@
 #include "engine/arctic_platform.h"
 
 namespace arctic {
-namespace easy {
+
 
 
 struct KeyState {
@@ -89,7 +89,7 @@ static Vec2Si32 g_mouse_pos = Vec2Si32(0, 0);
 static Vec2Si32 g_mouse_move = Vec2Si32(0, 0);
 static Si32 g_mouse_wheel_delta = 0;
 
-void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color) {
+void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color) {
   DrawLine(to_sprite, a, b, color, color);
 }
 
@@ -101,7 +101,7 @@ void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b) {
   DrawLine(GetEngine()->GetBackbuffer(), a, b, color_a, color_b);
 }
 
-void DrawLine(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
+void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
       Rgba color_a, Rgba color_b) {
     Vec2Si32 ab = b - a;
     Vec2Si32 abs_ab(std::abs(ab.x), std::abs(ab.y));
@@ -284,7 +284,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color) {
     DrawTriangle(GetEngine()->GetBackbuffer(), a, b, c, color, color, color);
 }
 
-void DrawTriangle(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color) {
+void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color) {
     DrawTriangle(to_sprite, a, b, c, color, color, color);
 }
 
@@ -490,7 +490,7 @@ void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   DrawRectangle(GetEngine()->GetBackbuffer(), ll, ur, color);
 }
 
-void DrawRectangle(easy::Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
+void DrawRectangle(Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   Vec2Si32 limit = to_sprite.Size();
   Si32 x1 = std::max(std::min(ll.x, ur.x), 0);
   Si32 x2 = std::min(std::max(ll.x, ur.x) + 1, limit.x);
@@ -513,7 +513,7 @@ void DrawRectangle(easy::Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color)
   }
 }
 
-void SetPixel(easy::Sprite to_sprite, Si32 x, Si32 y, Rgba color) {
+void SetPixel(Sprite to_sprite, Si32 x, Si32 y, Rgba color) {
   Rgba *data = to_sprite.RgbaData();
   Si32 stride = to_sprite.StridePixels();
   if (x >= 0 && x < to_sprite.Width() && y >= 0 && y < to_sprite.Height()) {
@@ -530,7 +530,7 @@ void SetPixel(Si32 x, Si32 y, Rgba color) {
   }
 }
 
-Rgba GetPixel(easy::Sprite from_sprite, Si32 x, Si32 y) {
+Rgba GetPixel(Sprite from_sprite, Si32 x, Si32 y) {
   Rgba *data = from_sprite.RgbaData();
   Si32 stride = from_sprite.StridePixels();
   if (x >= 0 && x < from_sprite.Width() && y >= 0 && y < from_sprite.Height()) {
@@ -555,7 +555,7 @@ void DrawCircle(Vec2Si32 c, Si32 r, Rgba color) {
   DrawOval(GetEngine()->GetBackbuffer(), c, Vec2Si32(r, r), color);
 }
 
-void DrawCircle(easy::Sprite to_sprite, Vec2Si32 c, Si32 r, Rgba color) {
+void DrawCircle(Sprite to_sprite, Vec2Si32 c, Si32 r, Rgba color) {
   DrawOval(to_sprite, c, Vec2Si32(r, r), color);
 }
 
@@ -563,7 +563,7 @@ void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color) {
   DrawOval(GetEngine()->GetBackbuffer(), c, r, color);
 }
 
-void DrawOval(easy::Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
+void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
   Sprite back = to_sprite;
   Vec2Si32 limit = back.Size();
   MathTables &tables = GetEngine()->GetMathTables();
@@ -994,5 +994,4 @@ Engine *GetEngine() {
   return g_engine;
 }
 
-}  // namespace easy
 }  // namespace arctic

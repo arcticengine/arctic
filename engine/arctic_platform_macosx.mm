@@ -138,7 +138,7 @@ static bool g_is_cursor_in_bounds = false;
   g_is_full_screen = !g_is_full_screen;
   
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-  arctic::easy::GetEngine()->OnWindowResize(
+  arctic::GetEngine()->OnWindowResize(
       (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
 }
 @end
@@ -691,7 +691,7 @@ void Swap() {
   PumpMessages();
 
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-  arctic::easy::GetEngine()->OnWindowResize(
+  arctic::GetEngine()->OnWindowResize(
       (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
 }
 
@@ -881,11 +881,11 @@ int main(int argc, char **argv) {
   arctic::StartLogger();
   arctic::CreateMainWindow();
 
-  arctic::easy::GetEngine()->SetArgcArgv(argc,
+  arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
 
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-  arctic::easy::GetEngine()->Init((arctic::Si32)rect.size.width,
+  arctic::GetEngine()->Init((arctic::Si32)rect.size.width,
                                   (arctic::Si32)rect.size.height);
 
   g_mixer = new arctic::SoundPlayer;

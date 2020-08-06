@@ -39,7 +39,6 @@
 #include "engine/vec2si32.h"
 
 namespace arctic {
-namespace easy {
 
 /// @addtogroup global_drawing
 /// @{
@@ -61,7 +60,7 @@ void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
 
 /// @brief Draws a solid color filled triangle to a sprite
-void DrawTriangle(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
+void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
 
 /// @brief Draws a gradient color filled triangle
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
@@ -75,19 +74,19 @@ void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color);
 
 /// @brief Draws a solid color filled rectangle to a sprite
-void DrawRectangle(easy::Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color);
+void DrawRectangle(Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color);
 
 /// @brief Returns color of a pixel at coordinates specified
 Rgba GetPixel(Si32 x, Si32 y);
 
 /// @brief Returns color of a pixel of a sprite at coordinates specified
-Rgba GetPixel(easy::Sprite from_sprite, Si32 x, Si32 y);
+Rgba GetPixel(Sprite from_sprite, Si32 x, Si32 y);
 
 /// @brief Sets color of a pixel at coordinates specified
 void SetPixel(Si32 x, Si32 y, Rgba color);
 
 /// @brief Sets color of a pixel of a sprite at coordinates specified
-void SetPixel(easy::Sprite to_sprite, Si32 x, Si32 y, Rgba color);
+void SetPixel(Sprite to_sprite, Si32 x, Si32 y, Rgba color);
 
 /// @brief Draws a solid color filled circle
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color);
@@ -242,7 +241,6 @@ bool IsKey(const char key);
 bool IsKey(const std::string &keys);
 
 
-}  // namespace easy
 }  // namespace arctic
 
 #endif  // ENGINE_EASY_H_

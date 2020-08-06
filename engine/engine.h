@@ -48,7 +48,7 @@ class Engine {
   Si32 width_ = 0;
   Si32 height_ = 0;
   Ui32 backbuffer_texture_name_ = 0;
-  easy::Sprite backbuffer_texture_;
+  Sprite backbuffer_texture_;
 
   std::vector<Ui8> visible_verts_;
   std::vector<Ui8> visible_normals_;
@@ -93,7 +93,7 @@ class Engine {
   }
   void Init(Si32 width, Si32 height);
   void Draw2d();
-  easy::Sprite GetBackbuffer() {
+  Sprite GetBackbuffer() {
     return backbuffer_texture_;
   }
   void ResizeBackbuffer(const Si32 width, const Si32 height);

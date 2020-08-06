@@ -28,7 +28,6 @@
 #include "engine/arctic_types.h"
 
 namespace arctic {
-namespace easy {
 
 struct SpanSi32 {
   Si32 begin;
@@ -65,23 +64,22 @@ class SpriteInstance {
   void ClearOpaqueSpans();
 };
 
-}  // namespace easy
 
 /// @addtogroup global_advanced
 /// @{
 
 /// @brief Creates a sprite instance from *.tga file data
-std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
+std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,
     const Si64 size);
 
 /// @brief Creates a *.tga file data from a sprite instance
-void SaveTga(std::shared_ptr<easy::SpriteInstance> sprite,
+void SaveTga(std::shared_ptr<SpriteInstance> sprite,
     std::vector<Ui8> *data);
 
 /// @}
 
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::easy::SpriteInstance>;
+extern template class std::shared_ptr<arctic::SpriteInstance>;
 
 #endif  // ENGINE_EASY_SPRITE_INSTANCE_H_

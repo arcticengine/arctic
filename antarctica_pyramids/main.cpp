@@ -31,7 +31,6 @@
 #include "engine/font.h"
 
 using namespace arctic;  // NOLINT
-using namespace arctic::easy;  // NOLINT
 
 Font g_font;
 
@@ -827,7 +826,7 @@ void Update() {
   }
   if (IsKeyDownward("n")) {
     GenerateMaze();
-    easy::GetEngine()->GetBackbuffer().Clear();
+    GetEngine()->GetBackbuffer().Clear();
   }
   if (IsKeyDownward("=+")) {
     SetMasterVolume(Clamp(GetMasterVolume() + 0.01f, 0.f, 1.f));
@@ -910,7 +909,7 @@ void Update() {
             g_is_first_level = false;
             g_upper_cell_kind = cell.kind;
             GenerateMaze();
-            easy::GetEngine()->GetBackbuffer().Clear();
+            GetEngine()->GetBackbuffer().Clear();
           }
         }
       } else {

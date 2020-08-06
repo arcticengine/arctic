@@ -684,7 +684,7 @@ void EngineThreadFunction(SystemInfo system_info) {
 
   LoadGl();
 
-  arctic::easy::GetEngine()->Init(system_info.screen_width,
+  arctic::GetEngine()->Init(system_info.screen_width,
     system_info.screen_height);
   //  Init opengl end
 
@@ -714,7 +714,7 @@ void Swap() {
     res = GetClientRect(g_system_info.inner_window_handle, &rect);
     g_window_width = wid;
     g_window_height = hei;
-    arctic::easy::GetEngine()->OnWindowResize(rect.right, rect.bottom);
+    arctic::GetEngine()->OnWindowResize(rect.right, rect.bottom);
   }
 }
 
@@ -911,7 +911,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
     &arctic::g_system_info);
   arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
 
-  arctic::easy::GetEngine()->SetArgcArgvW(num_args,
+  arctic::GetEngine()->SetArgcArgvW(num_args,
     const_cast<const wchar_t **>(args));
 
   arctic::SoundPlayer soundPlayer;

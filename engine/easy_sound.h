@@ -31,7 +31,6 @@
 struct stb_vorbis;
 
 namespace arctic {
-namespace easy {
 
 class Sound {
  private:
@@ -57,7 +56,6 @@ class Sound {
   bool IsPlaying();
 };
 
-}  // namespace easy
 }  // namespace arctic
 
 #endif  // ENGINE_EASY_SOUND_H_

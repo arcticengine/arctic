@@ -3,7 +3,6 @@
 #include "engine/easy.h"
 
 using namespace arctic;  // NOLINT
-using namespace arctic::easy;  // NOLINT
 
 const Si32 kBlockSpriteCount = 3;
 Sprite g_blocks[kBlockSpriteCount];

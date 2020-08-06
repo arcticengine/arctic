@@ -4,7 +4,6 @@
 #include <sstream>
 
 using namespace arctic;  // NOLINT
-using namespace arctic::easy;  // NOLINT
 
 void EasyMain() {
   std::stringstream str;

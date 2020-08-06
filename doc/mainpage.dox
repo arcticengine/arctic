@@ -10,9 +10,7 @@ Look how easy it is to use:
 
 ~~~~~{.cpp}
     #include "engine/easy.h"
-    
     using namespace arctic;
-    using namespace arctic::easy;
     
     void EasyMain() {
       while (!IsKeyDownward(kKeyEscape)) {

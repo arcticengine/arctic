@@ -31,15 +31,15 @@
 namespace arctic {
 
 class DecoratedFrame {
-  easy::Sprite left_;
-  easy::Sprite right_;
-  easy::Sprite top_;
-  easy::Sprite bottom_;
-  easy::Sprite upper_left_;
-  easy::Sprite upper_right_;
-  easy::Sprite lower_left_;
-  easy::Sprite lower_right_;
-  easy::Sprite background_tile_;
+  Sprite left_;
+  Sprite right_;
+  Sprite top_;
+  Sprite bottom_;
+  Sprite upper_left_;
+  Sprite upper_right_;
+  Sprite lower_left_;
+  Sprite lower_right_;
+  Sprite background_tile_;
   bool is_x_scaleable_;
   bool is_y_scaleable_;
 
@@ -47,11 +47,11 @@ class DecoratedFrame {
   DecoratedFrame() {
   }
 
-  void Load(easy::Sprite left, easy::Sprite right,
-      easy::Sprite top, easy::Sprite bottom,
-      easy::Sprite upper_left, easy::Sprite upper_right,
-      easy::Sprite lower_left, easy::Sprite lower_right,
-      easy::Sprite background,
+  void Load(Sprite left, Sprite right,
+      Sprite top, Sprite bottom,
+      Sprite upper_left, Sprite upper_right,
+      Sprite lower_left, Sprite lower_right,
+      Sprite background,
       bool is_x_scaleable, bool is_y_scaleable) {
     left_ = left;
     right_ = right;
@@ -66,7 +66,7 @@ class DecoratedFrame {
     is_y_scaleable_ = is_y_scaleable;
   }
 
-  void Split(easy::Sprite s, Si32 border_size,
+  void Split(Sprite s, Si32 border_size,
       bool is_x_scaleable, bool is_y_scaleable) {
     //    | w |
     // 0  x1  x2 x3
@@ -117,19 +117,19 @@ class DecoratedFrame {
     return size_bound;
   }
 
-  easy::Sprite DrawClientSize(Vec2Si32 client_area_size) {
+  Sprite DrawClientSize(Vec2Si32 client_area_size) {
     Vec2Si32 size = EstimateSizeForClienArea(client_area_size);
     client_area_size = ClientAreaForSize(size);
     return DrawBothSizes(client_area_size, size);
   }
 
-  easy::Sprite DrawExternalSize(Vec2Si32 size) {
+  Sprite DrawExternalSize(Vec2Si32 size) {
     Vec2Si32 client_area_size = ClientAreaForSize(size);
     return DrawBothSizes(client_area_size, size);
   }
 
-  easy::Sprite DrawBothSizes(Vec2Si32 client_size, Vec2Si32 size) {
-    easy::Sprite sprite;
+  Sprite DrawBothSizes(Vec2Si32 client_size, Vec2Si32 size) {
+    Sprite sprite;
     sprite.Create(size.x, size.y);
     sprite.Clear(Rgba(0xff000000));
     // Tile background.
@@ -143,7 +143,7 @@ class DecoratedFrame {
             std::min(background_tile_.Height(), client_size.y - pos.y));
           background_tile_.Draw(pos.x + offset.x, pos.y + offset.y,
             instance_size.x, instance_size.y,
-            0, 0, instance_size.x, instance_size.y, sprite, easy::kCopyRgba);
+            0, 0, instance_size.x, instance_size.y, sprite, kCopyRgba);
           pos.x += background_tile_.Width();
         }
         pos.y += background_tile_.Height();
@@ -156,7 +156,7 @@ class DecoratedFrame {
         top_.Width();
       top_.Draw(x + left_.Width(), size.y - top_.Height(),
         width, top_.Height(),
-        0, 0, width, top_.Height(), sprite, easy::kCopyRgba);
+        0, 0, width, top_.Height(), sprite, kCopyRgba);
     }
     for (Si32 x = 0; x < client_size.x; x += bottom_.Width()) {
       Si32 width = is_x_scaleable_ ?
@@ -164,33 +164,33 @@ class DecoratedFrame {
         bottom_.Width();
       bottom_.Draw(x + left_.Width(), 0,
         width, bottom_.Height(),
-        0, 0, width, bottom_.Height(), sprite, easy::kCopyRgba);
+        0, 0, width, bottom_.Height(), sprite, kCopyRgba);
     }
     for (Si32 y = 0; y < client_size.y; y += left_.Height()) {
       left_.Draw(0, y + bottom_.Height(),
         left_.Width(), left_.Height(),
-        0, 0, left_.Width(), left_.Height(), sprite, easy::kCopyRgba);
+        0, 0, left_.Width(), left_.Height(), sprite, kCopyRgba);
     }
     for (Si32 y = 0; y < client_size.y; y += right_.Height()) {
       right_.Draw(size.x - right_.Width(), y + bottom_.Height(),
         right_.Width(), right_.Height(),
-        0, 0, right_.Width(), right_.Height(), sprite, easy::kCopyRgba);
+        0, 0, right_.Width(), right_.Height(), sprite, kCopyRgba);
     }
     lower_left_.Draw(0, 0,
       lower_left_.Width(), lower_left_.Height(),
-      0, 0, lower_left_.Width(), lower_left_.Height(), sprite, easy::kCopyRgba);
+      0, 0, lower_left_.Width(), lower_left_.Height(), sprite, kCopyRgba);
     lower_right_.Draw(size.x - lower_right_.Width(), 0,
       lower_right_.Width(), lower_right_.Height(),
       0, 0, lower_right_.Width(), lower_right_.Height(),
-      sprite, easy::kCopyRgba);
+      sprite, kCopyRgba);
     upper_left_.Draw(0, size.y - upper_left_.Height(),
       upper_left_.Width(), upper_left_.Height(),
-      0, 0, upper_left_.Width(), upper_left_.Height(), sprite, easy::kCopyRgba);
+      0, 0, upper_left_.Width(), upper_left_.Height(), sprite, kCopyRgba);
     upper_right_.Draw(size.x - upper_right_.Width(),
       size.y - upper_right_.Height(),
       upper_right_.Width(), upper_right_.Height(),
       0, 0, upper_right_.Width(), upper_right_.Height(), sprite,
-      easy::kCopyRgba);
+      kCopyRgba);
 
     return sprite;
   }

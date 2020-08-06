@@ -24,7 +24,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t * data, size_t size) {
         return 0;
     }
 
-    std::shared_ptr<arctic::easy::SoundInstance> result = arctic::easy::LoadWav((arctic::Ui8*)fake_wav, size);
+    std::shared_ptr<arctic::SoundInstance> result = arctic::LoadWav((arctic::Ui8*)fake_wav, size);
 
     free(fake_wav);
     return 0;

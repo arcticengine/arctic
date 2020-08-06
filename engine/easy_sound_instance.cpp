@@ -30,7 +30,7 @@
 #include "engine/arctic_platform.h"
 
 namespace arctic {
-namespace easy {
+
 
 #pragma pack(1)
 struct WaveHeader {
@@ -107,7 +107,7 @@ Si32 SoundInstance::GetDurationSamples() {
   }
 }
 
-std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
+std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     const Si64 size) {
   Check(size >= sizeof(WaveHeader), "Error in LoadWav, size is too small.");
   const WaveHeader *wav = static_cast<const WaveHeader*>(
@@ -138,11 +138,11 @@ std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
   Check(wav->sample_rate != 0,
     "Error in LoadWav, sample_rate cannot be 0.");
 
-  std::shared_ptr<easy::SoundInstance> sound;
+  std::shared_ptr<SoundInstance> sound;
   Ui32 in_sample_count = wav->subchunk_2_size / wav->block_align;
   Ui32 sample_count = (Ui32)(44100ull * (Ui64)in_sample_count
       / (Ui64)wav->sample_rate);
-  sound.reset(new easy::SoundInstance(sample_count));
+  sound.reset(new SoundInstance(sample_count));
   const Ui8 *in_data = data + 44;
   Si16 *out_data = sound->GetWavData();
   Check(out_data != nullptr, "Error in LoadWav, unexpected nullptr from GetWavData");
@@ -243,7 +243,6 @@ void SoundInstance::DecPlaying() {
   playing_count_.fetch_add(-1);
 }
 
-}  // namespace easy
 }  // namespace arctic
 
-template class std::shared_ptr<arctic::easy::SoundInstance>;
+template class std::shared_ptr<arctic::SoundInstance>;

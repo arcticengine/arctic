@@ -36,7 +36,6 @@
 #include "engine/rgba.h"
 
 namespace arctic {
-namespace easy {
 
 // Just like MasterBoy wrote in HUGi 17, but without subpixel
 // see http://www.hugi.scene.org/online/coding/hugi%2017%20-%20cotriang.htm
@@ -1153,5 +1152,4 @@ void Sprite::ClearOpaqueSpans() {
   }
 }
 
-}  // namespace easy
 }  // namespace arctic

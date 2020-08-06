@@ -217,7 +217,7 @@ void SoundPlayerImpl::Deinitialize() {
   }
 }
 
-void StartSoundBuffer(easy::Sound sound, float volume) {
+void StartSoundBuffer(Sound sound, float volume) {
   if (sound.GetInstance()) {
     SoundBuffer buffer;
     buffer.sound = sound;
@@ -229,7 +229,7 @@ void StartSoundBuffer(easy::Sound sound, float volume) {
   }
 }
 
-void StopSoundBuffer(easy::Sound sound) {
+void StopSoundBuffer(Sound sound) {
   if (sound.GetInstance()) {
     SoundBuffer buffer;
     buffer.sound = sound;
