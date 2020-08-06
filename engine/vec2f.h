@@ -128,6 +128,7 @@ struct Vec2F {
   }
 };
 
+
 inline Vec2F operator+(Vec2F const &v, float const &s) {
   return Vec2F(v.x + s, v.y + s);
 }
@@ -165,6 +166,8 @@ inline Vec2F operator/(Vec2F const &a, Vec2F const &b) {
   return Vec2F(a.x / b.x, a.y / b.y);
 }
 
+/// @addtogroup global_functions
+/// @{
 inline Vec2F floor(Vec2F const &v) {
   return Vec2F(floorf(v.x), floorf(v.y));
 }
@@ -220,6 +223,8 @@ inline Vec2F cos(const Vec2F &v) {
 inline Vec2F sqrt(const Vec2F &v) {
   return Vec2F(sqrtf(v.x), sqrtf(v.y));
 }
+
+/// @}
 
 }  // namespace arctic
 

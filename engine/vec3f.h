@@ -289,6 +289,9 @@ inline Vec3F operator/(Vec3F  const &a, Vec3F  const &b) {
   return Vec3F(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 
+/// @addtogroup global_functions
+/// @{
+
 inline Vec3F floor(Vec3F const &v) {
   return Vec3F(floorf(v.x), floorf(v.y), floorf(v.z));
 }
@@ -420,6 +423,7 @@ inline Vec3F SmoothStep(float a, float b, const Vec3F &v) {
 inline float MaxComp(const Vec3F &v) {
   return (v.x > v.y) ? ((v.x > v.z) ? v.x : v.z) : ((v.y > v.z) ? v.y : v.z);
 }
+/// @}
 
 
 }  // namespace arctic

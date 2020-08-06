@@ -122,6 +122,8 @@ struct Frustum3F {
   }
 };
 
+/// @addtogroup global_functions
+/// @{
 inline Vec3F GetNearPoint(Frustum3F const &fru, const Vec2F &uv) {
   return Mix(Mix(fru.points[4], fru.points[5], uv.x),
     Mix(fru.points[7], fru.points[6], uv.x), uv.y);
@@ -279,6 +281,7 @@ inline Si32 BoxInFrustum(Frustum3F const &fru, Bound3F const &box) {
 
   return 1;
 }
+/// @}
 
 }  // namespace arctic
 

@@ -90,6 +90,8 @@ struct Rgba {
   }
 };
 
+/// @addtogroup global_functions
+/// @{
 inline Rgba Mix(Rgba const &a, Rgba const &b, float const f) {
   return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
     static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),
@@ -171,15 +173,16 @@ inline Rgba GetGray(Rgba c) {
   return Rgba(res >> 16);
 }
 
-//    ^y
-// 256+ c      d
-//    |
-//  ay+.....P
-//    |     .
-//   0+ a   .  b
-//    +-+---+--+-->x
-//      0   ax 256
-// Calculate color at point P
+/// @brief Interpolate color in a bi-linear way.
+///    ^y
+/// 256+ c      d
+///    |
+///  ay+.....P
+///    |     .
+///   0+ a   .  b
+///    +-+---+--+-->x
+///      0   ax 256
+/// Calculate color at point P
 inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   const Si32 axy = (ax * ay) >> 8u;
   Ui32 aa = a.rgba & MASK_LO;
@@ -202,6 +205,8 @@ inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
 
   return Rgba(rb | gg);
 }
+
+/// @}
 
 }  // namespace arctic
 

@@ -171,6 +171,8 @@ inline Vec2Si32 operator/(Vec2Si32 const &a, Vec2Si32 const &b) {
 }
 
 
+/// @addtogroup global_functions
+/// @{
 inline Vec2Si32 Max(const Vec2Si32 &a, const Vec2Si32 &b) {
   return Vec2Si32((a.x > b.x) ? a.x : b.x, (a.y > b.y) ? a.y : b.y);
 }
@@ -187,6 +189,7 @@ inline Vec2Si32 Clamp(const Vec2Si32 &v, Si32 mi, Si32 ma) {
   return Vec2Si32((v.x < mi) ? mi : ((v.x > ma) ? ma : v.x),
     (v.y < mi) ? mi : ((v.y > ma) ? ma : v.y));
 }
+/// @}
 
 
 }  // namespace arctic

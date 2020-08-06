@@ -57,8 +57,13 @@ struct Utf8Codepoint {
   void WriteUtf32(Ui32 codepoint);
 };
 
+/// @addtogroup global_functions
+/// @{
+
 std::string Utf32ToUtf8(const void* data);
 std::string Utf16ToUtf8(const void* data);
+
+/// @}
 
 }  // namespace arctic
 

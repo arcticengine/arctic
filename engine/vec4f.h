@@ -332,6 +332,9 @@ inline Vec4F operator/(Vec4F const &a, Vec4F const &b) {
   return Vec4F(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
 
+/// @addtogroup global_functions
+/// @{
+
 inline Vec4F Normalize(Vec4F const &v) {
   float const m2 = v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w;
   float const im = 1.0f / sqrtf(m2);
@@ -378,6 +381,8 @@ inline Vec3F IntersectPlanes(Vec4F const &p1, Vec4F const &p2,
 
   return res * (-1.0f / den);
 }
+
+/// @}
 
 }  // namespace arctic
 

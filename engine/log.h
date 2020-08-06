@@ -28,13 +28,32 @@
 
 namespace arctic {
 
+/// @addtogroup global_functions
+/// @{
+
+/// @brief Writes message text to log
 void Log(const char *text);
+
+/// @brief Writes message text to log
 void Log(const char *text1, const char *text2);
+
+/// @brief Writes message text to log
 void Log(const char *text1, const char *text2, const char *text3);
+
+/// @brief Provides a streaming interface to write log
+/// Usage example:
+/// @codebegin
+///   *Log() << "Hello World!";
+/// @codeend
 std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
 
+/// @brief Starts the logger
 void StartLogger();
+
+/// @brief Stops the logger
 void StopLogger();
+
+/// @}
 
 }  // namespace arctic
 

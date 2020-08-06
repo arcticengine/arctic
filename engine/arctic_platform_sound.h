@@ -64,11 +64,28 @@ class SoundPlayer {
   SoundPlayerImpl *impl = nullptr;
 };
 
+/// @addtogroup global_functions
+/// @{
+
+/// @brief Starts playback of a sound
+/// @param sound Sound to play
+/// @param volume Volume to play the sound at.
+/// 0.f is silent, 1.f is the original record level.
 void StartSoundBuffer(easy::Sound sound, float volume);
+
+/// @brief Stops playback of a sound
+/// @param sound Sound to play
 void StopSoundBuffer(easy::Sound sound);
 
+/// @brief Sets the master volume level
+/// @param volume Volume to set. 
 void SetMasterVolume(float volume);
+
+/// @brief Gets the master volume level
+/// @return The master volume level
 float GetMasterVolume();
+
+/// @}
 
 }  // namespace arctic
 

@@ -274,6 +274,9 @@ inline Vec3Si32 operator/(Vec3Si32 const &a, Vec3Si32 const &b) {
   return Vec3Si32(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 
+/// @addtogroup global_functions
+/// @{
+
 inline Vec3Si32 Min(const Vec3Si32 &v, Si32 mi) {
   return Vec3Si32((v.x > mi) ? mi : v.x,
     (v.y > mi) ? mi : v.y,
@@ -292,6 +295,7 @@ inline Vec3Si32 Clamp(const Vec3Si32 &v, Si32 mi, Si32 ma) {
     (v.z < mi) ? mi : ((v.z > ma) ? ma : v.z));
 }
 
+/// @}
 
 }  // namespace arctic
 

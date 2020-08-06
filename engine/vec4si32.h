@@ -313,6 +313,8 @@ inline Vec4Si32 operator/(Vec4Si32 const &a, Vec4Si32 const &b) {
     return Vec4Si32(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
 
+/// @addtogroup global_functions
+/// @{
 inline Vec4Si32 Min(const Vec4Si32 &v, Si32 mi) {
     return Vec4Si32((v.x > mi) ? mi : v.x,
         (v.y > mi) ? mi : v.y,
@@ -333,6 +335,7 @@ inline Vec4Si32 Clamp(const Vec4Si32 &v, Si32 mi, Si32 ma) {
         (v.z < mi) ? mi : ((v.z > ma) ? ma : v.z),
         (v.w < mi) ? mi : ((v.w > ma) ? ma : v.w));
 }
+/// @}
 
 }  // namespace arctic
 

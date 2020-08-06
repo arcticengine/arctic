@@ -29,6 +29,9 @@
 
 namespace arctic {
 
+/// @addtogroup global_functions
+/// @{
+
 inline Si32 Clamp(const Si32 v, const Si32 mi, const Si32 ma) {
   return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
@@ -41,6 +44,8 @@ inline float Lerp(float a, float b, float alpha) {
   float d = a + ((b - a) * alpha);
   return d;
 }
+
+/// @}
 
 }  // namespace arctic
 

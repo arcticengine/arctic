@@ -67,11 +67,18 @@ class SpriteInstance {
 
 }  // namespace easy
 
+/// @addtogroup global_functions
+/// @{
+
+/// @brief Creates a sprite instance from *.tga file data
 std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
     const Si64 size);
 
+/// @brief Creates a *.tga file data from a sprite instance
 void SaveTga(std::shared_ptr<easy::SpriteInstance> sprite,
     std::vector<Ui8> *data);
+
+/// @}
 
 }  // namespace arctic
 

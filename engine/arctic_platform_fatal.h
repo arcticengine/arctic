@@ -25,9 +25,26 @@
 
 namespace arctic {
 
+/// @addtogroup global_functions
+/// @{
+
+/// @brief Exits the application with an error if condition is false
+/// @param condition Condition to check
+/// @param [in] error_message Error message to display upon exiting
+/// @param [in] error_message_postfix A postfix to append to the error message.
+/// Nothing is appended if error_message_postfix is nullptr
+/// @return The function does not return if the condition is false
 void Check(bool condition, const char *error_message,
     const char *error_message_postfix = nullptr);
+
+/// @brief Exits the application with an error
+/// @param [in] error_message Error message to display upon exiting
+/// @param [in] error_message_postfix A postfix to append to the error message.
+/// Nothing is appended if error_message_postfix is nullptr
+/// @return The function does not return
 void Fatal(const char *error_message, const char *message_postfix = nullptr);
+
+/// @}
 
 }  // namespace arctic
 

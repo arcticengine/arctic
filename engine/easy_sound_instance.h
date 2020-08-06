@@ -54,8 +54,15 @@ class SoundInstance {
   void DecPlaying();
 };
 
+
+/// @addtogroup global_functions
+/// @{
+
+/// @brief Creates a sound instance from the data
 std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
     const Si64 size);
+
+/// @}
 
 }  // namespace easy
 }  // namespace arctic

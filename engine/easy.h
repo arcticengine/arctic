@@ -41,26 +41,64 @@
 namespace arctic {
 namespace easy {
 
+/// @addtogroup global_functions
+/// @{
+
+/// @brief Draws a solid color line from point a to point b
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color);
+
+/// @brief Draws a gradient color line from point a to point b
 void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b);
+
+/// @brief Draws a solid color line from point a to point b to a sprite
 void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color);
+
+/// @brief Draws a gradient color line from point a to point b to a sprite
 void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
     Rgba color_a, Rgba color_b);
+
+/// @brief Draws a solid color filled triangle
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
+
+/// @brief Draws a solid color filled triangle to a sprite
 void DrawTriangle(easy::Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
+
+/// @brief Draws a gradient color filled triangle
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Rgba color_a, Rgba color_b, Rgba color_c);
+
+/// @brief Draws a gradient color filled triangle to a sprite
 void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Rgba color_a, Rgba color_b, Rgba color_c);
+
+/// @brief Draws a solid color filled rectangle
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color);
+
+/// @brief Draws a solid color filled rectangle to a sprite
 void DrawRectangle(easy::Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color);
+
+/// @brief Returns color of a pixel at coordinates specified
 Rgba GetPixel(Si32 x, Si32 y);
+
+/// @brief Returns color of a pixel of a sprite at coordinates specified
 Rgba GetPixel(easy::Sprite from_sprite, Si32 x, Si32 y);
+
+/// @brief Sets color of a pixel at coordinates specified
 void SetPixel(Si32 x, Si32 y, Rgba color);
+
+/// @brief Sets color of a pixel of a sprite at coordinates specified
 void SetPixel(easy::Sprite to_sprite, Si32 x, Si32 y, Rgba color);
+
+/// @brief Draws a solid color filled circle
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color);
+
+/// @brief Draws a solid color filled circle to a sprite
 void DrawCircle(Sprite to_sprite, Vec2Si32 c, Si32 r, Rgba color);
+
+/// @brief Draws a solid color filled oval
 void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color);
+
+/// @brief Draws a solid color filled oval to a sprite
 void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color);
 
 /// @brief Show the current backbuffer and update the input state
@@ -119,11 +157,18 @@ bool IsAnyKeyUpward();
 void SetKey(const KeyCode key_code, bool is_set_down);
 void SetKey(const char key, bool is_set_down);
 
+/// @brief Returns mouse cursor position
 Vec2Si32 MousePos();
+/// @brief Returns mouse movement vector
 Vec2Si32 MouseMove();
+/// @brief Returns mouse wheel rotation delta
 Si32 MouseWheelDelta();
 
+/// @brief Returns the number of user input messages obtained by the
+/// last Swap() call
 Si32 InputMessageCount();
+
+/// @brief Returns the user input message with the index specified
 const InputMessage& GetInputMessage(Si32 idx);
 
 /// @brief Get the window size in actual pixels of the OS
@@ -134,6 +179,8 @@ Vec2Si32 ScreenSize();
 void ResizeScreen(const Si32 width, const Si32 height);
 /// @brief Set the backbuffer resolution in pixels
 void ResizeScreen(const Vec2Si32 size);
+/// @brief Enables/disables Y-coordinte inversion.
+/// By default Y axis is directed upward.
 void SetInverseY(bool is_inverse);
 
 /// @brief Clear the backbuffer with black color
@@ -141,18 +188,24 @@ void Clear();
 /// @brief Clear the backbuffer with the color specified
 void Clear(Rgba color);
 
-/// @brief Returns time in seconds since the game was started
+/// @brief Returns time in seconds since the game start
 double Time();
 /// @brief Returns a random number in range [min,max]
 Si64 Random(Si64 min, Si64 max);
 /// @brief Returns a random number in range [min,max]
 Si32 Random32(Si32 min, Si32 max);
+/// @brief Waits for the time specified before returning.
 void Sleep(double duration_seconds);
 
+/// @breif Loads all data from a file specified.
 std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof = false);
+/// @brief Saved the data specified to a file.
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size);
 
+/// @brief Returns a pointer to the Engine instance.
 Engine* GetEngine();
+
+/// @}
 
 [[deprecated("Replaced by IsKeyDownward, which has a better name")]]
 bool WasKeyPressed(const KeyCode key_code);
@@ -171,6 +224,7 @@ bool IsKey(const char *keys);
 bool IsKey(const char key);
 [[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const std::string &keys);
+
 
 }  // namespace easy
 }  // namespace arctic
