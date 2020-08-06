@@ -162,7 +162,22 @@ bool IsAnyKeyDown();
 /// @brief true if key transitioned from down to up since last frame
 bool IsAnyKeyUpward();
 
+/// @brief Changes the stored key state
+/// @param key_code The key code
+/// @param is_set_down Key state to set as if it was the last seen state of the key
+/// @details The state is set just like it would be if the key actually transitioned
+/// up or down at the end of the last frame. It may affect resuts of
+/// IsKeyDownward() IsKeyDown() IsKeyUpward() IsAnyKeyDownward() IsAnyKeyDown() and
+/// IsAnyKeyUpward() calls.
 void SetKey(const KeyCode key_code, bool is_set_down);
+
+/// @brief Changes the stored key state
+/// @param key The key character code
+/// @param is_set_down Key state to set as if it was the last seen state of the key
+/// @details The state is set just like it would be if the key actually transitioned
+/// up or down at the end of the last frame. It may affect resuts of
+/// IsKeyDownward() IsKeyDown() IsKeyUpward() IsAnyKeyDownward() IsAnyKeyDown() and
+/// IsAnyKeyUpward() calls.
 void SetKey(const char key, bool is_set_down);
 
 /// @brief Returns mouse cursor position

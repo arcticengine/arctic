@@ -14,6 +14,10 @@
  @{
  @}
 
+ @defgroup global_color Color processing
+ @{
+ @}
+
  @defgroup global_math Math
  @{
  @}
@@ -34,9 +38,9 @@
  @{
  @}
 
-/// @}
-/// @addtogroup global_files
-/// @{
+ @}
+ @addtogroup global_files
+ @{
 
 
 @}

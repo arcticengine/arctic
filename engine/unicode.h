@@ -60,7 +60,14 @@ struct Utf8Codepoint {
 /// @addtogroup global_utility
 /// @{
 
+/// @brief Convers a UTF-32 encoded string to UTF-8.
+/// @param [in] data Address of the UTF-32 encoded string.
+/// @result UTF-8 std::string.
 std::string Utf32ToUtf8(const void* data);
+
+/// @brief Convers a UTF-16 encoded string to UTF-8.
+/// @param [in] data Address of the UTF-16 encoded string.
+/// @result UTF-8 std::string.
 std::string Utf16ToUtf8(const void* data);
 
 /// @}
