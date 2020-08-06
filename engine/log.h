@@ -28,7 +28,7 @@
 
 namespace arctic {
 
-/// @addtogroup global_utility
+/// @addtogroup global_log
 /// @{
 
 /// @brief Writes message text to log
@@ -42,9 +42,9 @@ void Log(const char *text1, const char *text2, const char *text3);
 
 /// @brief Provides a streaming interface to write log
 /// Usage example:
-/// @codebegin
+/// @code
 ///   *Log() << "Hello World!";
-/// @codeend
+/// @endcode
 std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
 
 /// @brief Starts the logger

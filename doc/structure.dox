@@ -2,18 +2,6 @@
 @defgroup global_functions Global functions
 @{
 
- @defgroup global_math Math
- @{
- @}
-
- @defgroup global_advanced Advanced
- @{
- @}
-
- @defgroup global_sound Sound
- @{
- @}
-
  @defgroup global_input Input
  @{
  @}
@@ -22,13 +10,30 @@
  @{
  @}
 
+ @defgroup global_sound Sound
+ @{
+ @}
+
+ @defgroup global_math Math
+ @{
+ @}
+
+ @defgroup global_files File system 
+ @{
+ @}
+
+ @defgroup global_log Log
+ @{
+ @}
+
  @defgroup global_utility Utility
  @{
  @}
 
- @defgroup global_files Files
+ @defgroup global_advanced Advanced
  @{
  @}
+
 /// @}
 /// @addtogroup global_files
 /// @{

@@ -104,6 +104,11 @@ void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color);
 /// @brief Show the current backbuffer and update the input state
 void ShowFrame();
 
+/// @brief Clear the backbuffer with black color
+void Clear();
+/// @brief Clear the backbuffer with the color specified
+void Clear(Rgba color);
+
 /// @}
 /// @addtogroup global_input
 /// @{
@@ -190,11 +195,6 @@ void ResizeScreen(const Vec2Si32 size);
 /// @brief Enables/disables Y-coordinte inversion.
 /// By default Y axis is directed upward.
 void SetInverseY(bool is_inverse);
-
-/// @brief Clear the backbuffer with black color
-void Clear();
-/// @brief Clear the backbuffer with the color specified
-void Clear(Rgba color);
 
 /// @brief Returns time in seconds since the game start
 double Time();

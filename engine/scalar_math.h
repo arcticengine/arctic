@@ -29,7 +29,7 @@
 
 namespace arctic {
 
-/// @addtogroup global_functions
+/// @addtogroup global_math
 /// @{
 
 inline Si32 Clamp(const Si32 v, const Si32 mi, const Si32 ma) {

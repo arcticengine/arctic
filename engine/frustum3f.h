@@ -122,7 +122,7 @@ struct Frustum3F {
   }
 };
 
-/// @addtogroup global_functions
+/// @addtogroup global_math
 /// @{
 inline Vec3F GetNearPoint(Frustum3F const &fru, const Vec2F &uv) {
   return Mix(Mix(fru.points[4], fru.points[5], uv.x),

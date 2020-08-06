@@ -57,7 +57,7 @@ struct Utf8Codepoint {
   void WriteUtf32(Ui32 codepoint);
 };
 
-/// @addtogroup global_functions
+/// @addtogroup global_utility
 /// @{
 
 std::string Utf32ToUtf8(const void* data);
