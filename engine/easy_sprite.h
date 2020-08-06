@@ -33,7 +33,6 @@
 #include "engine/rgba.h"
 
 namespace arctic {
-namespace easy {
 
 enum DrawBlendingMode {
   kCopyRgba = 0, // Deprecated
@@ -199,7 +198,6 @@ class Sprite {
   void ClearOpaqueSpans();
 };
 
-}  // namespace easy
 }  // namespace arctic
 
 #endif  // ENGINE_EASY_SPRITE_H_

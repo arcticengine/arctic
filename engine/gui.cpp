@@ -40,7 +40,7 @@ GuiMessage::GuiMessage(std::shared_ptr<Panel> in_panel, GuiMessageKind in_kind)
 }
 
 Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
-      easy::Sprite background, bool is_clickable)
+      Sprite background, bool is_clickable)
     : tag_(tag)
     , pos_(pos)
     , size_(size)
@@ -79,7 +79,7 @@ void Panel::SetPos(Vec2Si32 pos) {
   pos_ = pos;
 }
 
-void Panel::SetBackground(const easy::Sprite &background) {
+void Panel::SetBackground(const Sprite &background) {
   background_ = background;
 }
 
@@ -254,8 +254,8 @@ bool Panel::IsVisible() {
 }
 
 Button::Button(Ui64 tag, Vec2Si32 pos,
-  easy::Sprite normal, easy::Sprite down, easy::Sprite hovered,
-  easy::Sound down_sound, easy::Sound up_sound,
+  Sprite normal, Sprite down, Sprite hovered,
+  Sound down_sound, Sound up_sound,
   KeyCode hotkey, Ui32 tab_order)
     : Panel(tag,
         pos,
@@ -447,7 +447,7 @@ void Text::SetText(std::string text) {
 
 void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2,
     TextSelectionMode selection_mode,
-    Rgba c1, Rgba c2, easy::Sprite backbuffer) {
+    Rgba c1, Rgba c2, Sprite backbuffer) {
   switch (selection_mode) {
     case kTextSelectionModeInvert:
       for (Si32 y = y1; y < y2; ++y) {
@@ -493,10 +493,10 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
   if (!palete_.empty()) {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
-      origin_, easy::kColorize, easy::kFilterNearest, palete_);
+      origin_, kColorize, kFilterNearest, palete_);
   } else {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
-      origin_, easy::kColorize, easy::kFilterNearest, color_);
+      origin_, kColorize, kFilterNearest, color_);
   }
 
   if (selection_begin_ != selection_end_) {
@@ -506,7 +506,7 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
         text_.substr(0, selection_end_).c_str(), true).x;
     Si32 y1 = absolute_pos.y;
     Si32 y2 = absolute_pos.y + font_.line_height_;
-    easy::Sprite backbuffer = easy::GetEngine()->GetBackbuffer();
+    Sprite backbuffer = GetEngine()->GetBackbuffer();
 
     x1 = std::max(absolute_pos.x, x1);
     x2 = std::max(absolute_pos.x, x2);
@@ -532,7 +532,7 @@ void Text::SetSelectionMode(TextSelectionMode selection_mode,
 }
 
 Progressbar::Progressbar(Ui64 tag, Vec2Si32 pos,
-      easy::Sprite incomplete, easy::Sprite complete,
+      Sprite incomplete, Sprite complete,
       std::vector<Rgba> palete, Font font,
       float total_value, float current_value)
     : Panel(tag, pos, Max(incomplete.Size(), complete.Size()), 0)
@@ -587,7 +587,7 @@ void Progressbar::SetCurrentValue(float current_value) {
 
 
 Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
-    easy::Sprite normal, easy::Sprite focused,
+    Sprite normal, Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
     TextAlignment alignment, bool is_digits,
     std::unordered_set<Ui32> white_list)
@@ -810,7 +810,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   }
 
   font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
-    origin_, easy::kColorize, easy::kFilterNearest, color_);
+    origin_, kColorize, kFilterNearest, color_);
 
   Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
   std::string left_part = text_.substr(0, cursor_pos);
@@ -822,9 +822,9 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
   a.x = std::max(pos.x + border, a.x - skip_x);
   Vec2Si32 b(a.x + space_width - 1, a.y);
-  if (fmod(easy::Time(), 0.6) < 0.3 && is_current_tab_) {
+  if (fmod(Time(), 0.6) < 0.3 && is_current_tab_) {
     for (Si32 y = 0; y < 3; ++y) {
-      easy::DrawLine(a, b, color_);
+      DrawLine(a, b, color_);
       a.y++;
       b.y++;
     }
@@ -837,7 +837,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
       text_.substr(0, selection_end_).c_str(), true).x;
     Si32 y1 = pos.y + border;
     Si32 y2 = pos.y + border + font_.line_height_;
-    easy::Sprite backbuffer = easy::GetEngine()->GetBackbuffer();
+    Sprite backbuffer = GetEngine()->GetBackbuffer();
 
     x1 = std::min(std::max(pos.x + border, x1 - skip_x),
         pos.x + border + displayable_width);
@@ -869,12 +869,12 @@ void Editbox::SetSelectionMode(TextSelectionMode selection_mode,
 
 
 HorizontalScroll::HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
-  easy::Sprite normal_background,
-  easy::Sprite focused_background, easy::Sprite normal_button_left,
-  easy::Sprite focused_button_left, easy::Sprite down_button_left,
-  easy::Sprite normal_button_right, easy::Sprite focused_button_right,
-  easy::Sprite down_button_right, easy::Sprite normal_button_cur,
-  easy::Sprite focused_button_cur, easy::Sprite down_button_cur,
+  Sprite normal_background,
+  Sprite focused_background, Sprite normal_button_left,
+  Sprite focused_button_left, Sprite down_button_left,
+  Sprite normal_button_right, Sprite focused_button_right,
+  Sprite down_button_right, Sprite normal_button_cur,
+  Sprite focused_button_cur, Sprite down_button_cur,
   Si32 min_value, Si32 max_value, Si32 value)
   : Panel(tag, pos,
       Max(normal_background.Size(),

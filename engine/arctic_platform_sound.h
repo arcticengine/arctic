@@ -71,11 +71,11 @@ class SoundPlayer {
 /// @param sound Sound to play
 /// @param volume Volume to play the sound at.
 /// 0.f is silent, 1.f is the original record level.
-void StartSoundBuffer(easy::Sound sound, float volume);
+void StartSoundBuffer(Sound sound, float volume);
 
 /// @brief Stops playback of a sound
 /// @param sound Sound to play
-void StopSoundBuffer(easy::Sound sound);
+void StopSoundBuffer(Sound sound);
 
 /// @}
 /// @addtogroup global_sound

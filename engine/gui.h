@@ -61,14 +61,14 @@ class Panel : public std::enable_shared_from_this<Panel> {
   Vec2Si32 size_;
   Ui32 tab_order_;
   bool is_current_tab_;
-  easy::Sprite background_;
+  Sprite background_;
   std::deque<std::shared_ptr<Panel>> children_;
   bool is_clickable_;
   bool is_visible_;
 
  public:
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
-    easy::Sprite background = easy::Sprite(), bool is_clickable = false);
+    Sprite background = Sprite(), bool is_clickable = false);
   Vec2Si32 GetSize() const;
   Ui32 GetTabOrder() const;
   void SetTabOrder(Ui32 tab_order);
@@ -76,7 +76,7 @@ class Panel : public std::enable_shared_from_this<Panel> {
   void SetTag(Ui64 tag);
   Vec2Si32 GetPos() const;
   void SetPos(Vec2Si32 pos);
-  void SetBackground(const easy::Sprite &background);
+  void SetBackground(const Sprite &background);
   virtual ~Panel();
   virtual void Draw(Vec2Si32 parent_absolute_pos);
   virtual bool ApplyInput(const InputMessage &message,
@@ -107,21 +107,21 @@ class Button : public Panel {
   };
 
  protected:
-  easy::Sprite normal_;
-  easy::Sprite down_;
-  easy::Sprite hovered_;
-  easy::Sound down_sound_;
-  easy::Sound up_sound_;
+  Sprite normal_;
+  Sprite down_;
+  Sprite hovered_;
+  Sound down_sound_;
+  Sound up_sound_;
   KeyCode hotkey_;
   ButtonState state_ = kNormal;
 
  public:
   Button(Ui64 tag, Vec2Si32 pos,
-    easy::Sprite normal,
-    easy::Sprite down = easy::Sprite(),
-    easy::Sprite hovered = easy::Sprite(),
-    easy::Sound down_sound = easy::Sound(),
-    easy::Sound up_sound = easy::Sound(),
+    Sprite normal,
+    Sprite down = Sprite(),
+    Sprite hovered = Sprite(),
+    Sound down_sound = Sound(),
+    Sound up_sound = Sound(),
     KeyCode hotkey = kKeyNone, Ui32 tab_order = 0);
   void Draw(Vec2Si32 parent_absolute_pos)
     override;
@@ -178,15 +178,15 @@ class Text : public Panel {
 
 class Progressbar: public Panel {
  protected:
-  easy::Sprite incomplete_;
-  easy::Sprite complete_;
+  Sprite incomplete_;
+  Sprite complete_;
   float total_value_;
   float current_value_;
   std::shared_ptr<Text> text_;
 
  public:
   Progressbar(Ui64 tag, Vec2Si32 pos,
-    easy::Sprite incomplete, easy::Sprite complete,
+    Sprite incomplete, Sprite complete,
     std::vector<Rgba> palete, Font font,
     float total_value = 1.0f, float current_value = 0.0f);
   void Draw(Vec2Si32 parent_absolute_pos) override;
@@ -202,8 +202,8 @@ class Editbox: public Panel {
   Rgba color_;
   std::string text_;
   TextAlignment alignment_;
-  easy::Sprite normal_;
-  easy::Sprite focused_;
+  Sprite normal_;
+  Sprite focused_;
   Si32 cursor_pos_;
   Si32 display_pos_;
   Si32 selection_begin_;
@@ -216,7 +216,7 @@ class Editbox: public Panel {
 
  public:
   Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
-    easy::Sprite normal, easy::Sprite focused,
+    Sprite normal, Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
     TextAlignment alignment = kAlignLeft, bool is_digits = false,
     std::unordered_set<Ui32> white_list = std::unordered_set<Ui32>());
@@ -249,17 +249,17 @@ class HorizontalScroll : public Panel {
   };
 
  protected:
-  easy::Sprite normal_background_;
-  easy::Sprite focused_background_;
-  easy::Sprite normal_button_left_;
-  easy::Sprite focused_button_left_;
-  easy::Sprite down_button_left_;
-  easy::Sprite normal_button_right_;
-  easy::Sprite focused_button_right_;
-  easy::Sprite down_button_right_;
-  easy::Sprite normal_button_cur_;
-  easy::Sprite focused_button_cur_;
-  easy::Sprite down_button_cur_;
+  Sprite normal_background_;
+  Sprite focused_background_;
+  Sprite normal_button_left_;
+  Sprite focused_button_left_;
+  Sprite down_button_left_;
+  Sprite normal_button_right_;
+  Sprite focused_button_right_;
+  Sprite down_button_right_;
+  Sprite normal_button_cur_;
+  Sprite focused_button_cur_;
+  Sprite down_button_cur_;
   Si32 min_value_;
   Si32 max_value_;
   Si32 value_;
@@ -269,12 +269,12 @@ class HorizontalScroll : public Panel {
 
  public:
   HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
-    easy::Sprite normal_background,
-    easy::Sprite focused_background, easy::Sprite normal_button_left,
-    easy::Sprite focused_button_left, easy::Sprite down_button_left,
-    easy::Sprite normal_button_right, easy::Sprite focused_button_right,
-    easy::Sprite down_button_right, easy::Sprite normal_button_cur,
-    easy::Sprite focused_button_cur, easy::Sprite down_button_cur,
+    Sprite normal_background,
+    Sprite focused_background, Sprite normal_button_left,
+    Sprite focused_button_left, Sprite down_button_left,
+    Sprite normal_button_right, Sprite focused_button_right,
+    Sprite down_button_right, Sprite normal_button_cur,
+    Sprite focused_button_cur, Sprite down_button_cur,
     Si32 min_value, Si32 max_value, Si32 value);
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,

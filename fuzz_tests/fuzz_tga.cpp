@@ -11,7 +11,6 @@
 
 jmp_buf arctic_jmp_env;
 using namespace arctic;
-using namespace easy;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   int val = setjmp(arctic_jmp_env);

@@ -40,7 +40,7 @@ struct SoundBuffer {
     kStart = 0,
     kStop = 1
   };
-  easy::Sound sound;
+  Sound sound;
   float volume = 1.0f;
   Si32 next_position = 0;
   Action action = kStart;

@@ -776,8 +776,8 @@ extern "C" {
 #endif  // ACUTEST_LINUX__
 
   void EasyMainC() {
-    arctic::Si64 argc = arctic::easy::GetEngine()->GetArgc();
-    const char *const *argv = arctic::easy::GetEngine()->GetArgv();
+    arctic::Si64 argc = arctic::GetEngine()->GetArgc();
+    const char *const *argv = arctic::GetEngine()->GetArgv();
 //    int i;
     int seen_double_dash = 0;
     test_argv0__ = argv[0];

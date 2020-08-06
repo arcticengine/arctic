@@ -30,7 +30,6 @@
 #include "engine/arctic_types.h"
 
 namespace arctic {
-namespace easy {
 
 enum SoundDataFormat {
   kSoundDataWav,
@@ -59,14 +58,13 @@ class SoundInstance {
 /// @{
 
 /// @brief Creates a sound instance from the data
-std::shared_ptr<easy::SoundInstance> LoadWav(const Ui8 *data,
+std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     const Si64 size);
 
 /// @}
 
-}  // namespace easy
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::easy::SoundInstance>;
+extern template class std::shared_ptr<arctic::SoundInstance>;
 
 #endif  // ENGINE_EASY_SOUND_INSTANCE_H_

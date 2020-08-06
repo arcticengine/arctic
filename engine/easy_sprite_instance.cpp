@@ -34,7 +34,7 @@
 #include "engine/rgba.h"
 
 namespace arctic {
-namespace easy {
+
 
   SpriteInstance::SpriteInstance(Si32 width, Si32 height)
     : width_(width)
@@ -77,8 +77,6 @@ namespace easy {
     opaque_.clear();
   }
 
-}  // namespace easy
-
 #pragma pack(1)
 struct TgaHeader {
   Ui8 id_field_length;
@@ -97,9 +95,9 @@ struct TgaHeader {
 #pragma pack()
 
 
-  std::shared_ptr<easy::SpriteInstance> LoadTga(const Ui8 *data,
+  std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,
       const Si64 size) {
-    std::shared_ptr<easy::SpriteInstance> sprite;
+    std::shared_ptr<SpriteInstance> sprite;
     Check(size >= sizeof(TgaHeader), "Error in LoadTga, size is too small.");
     const TgaHeader *tga = static_cast<const TgaHeader*>(
         static_cast<const void*>(data));
@@ -127,7 +125,7 @@ struct TgaHeader {
 
     bool is_origin_upper_left = !!(tga->image_descriptor & (1u << 5u));
 
-    sprite.reset(new easy::SpriteInstance(tga->image_width, tga->image_height));
+    sprite.reset(new SpriteInstance(tga->image_width, tga->image_height));
 
     const bool is_rle = (tga->image_type == 9 || tga->image_type == 10
         || tga->image_type == 11);
@@ -264,7 +262,7 @@ struct TgaHeader {
     return sprite;
   }
 
-  void SaveTga(std::shared_ptr<easy::SpriteInstance> sprite,
+  void SaveTga(std::shared_ptr<SpriteInstance> sprite,
       std::vector<Ui8> *data) {
     TgaHeader tga;
     memset(&tga, 0, sizeof(tga));
@@ -299,7 +297,6 @@ struct TgaHeader {
     return;
   }
 
-
 }  // namespace arctic
 
-template class std::shared_ptr<arctic::easy::SpriteInstance>;
+template class std::shared_ptr<arctic::SpriteInstance>;

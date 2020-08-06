@@ -3,7 +3,6 @@
 #include "engine/easy.h"
 
 using namespace arctic;  // NOLINT
-using namespace arctic::easy;  // NOLINT
 
 Font g_font;
 

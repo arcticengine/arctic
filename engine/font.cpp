@@ -128,7 +128,7 @@ void Font::AddGlyph(const Glyph &glyph) {
   AddGlyph(glyph.codepoint, glyph.xadvance, glyph.sprite);
 }
 
-void Font::AddGlyph(Ui32 codepoint, Si32 xadvance, easy::Sprite sprite) {
+void Font::AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite) {
   glyph_.emplace_back(codepoint, xadvance, sprite);
   if (codepoint >= codepoint_.size()) {
     codepoint_.resize(codepoint + 1, nullptr);
@@ -140,7 +140,7 @@ void Font::Load(const char *file_name) {
   codepoint_.clear();
   glyph_.clear();
 
-  std::vector<Ui8> file = easy::ReadFile(file_name);
+  std::vector<Ui8> file = ReadFile(file_name);
   Si32 pos = 0;
   // BmFontBinHeader *header = reinterpret_cast<BmFontBinHeader*>(&file[pos]);
   // header->Log();
@@ -184,7 +184,7 @@ void Font::Load(const char *file_name) {
   Check(block_type == kBlockPages, "Unexpected block type 3");
   Check(block_size >= 1, "Pages block is too small");
   Si32 inner_pos = pos;
-  std::vector<easy::Sprite> page_images;
+  std::vector<Sprite> page_images;
   page_images.resize(common->pages);
 
   size_t file_name_len = strlen(file_name);
@@ -229,11 +229,11 @@ void Font::Load(const char *file_name) {
       &file[inner_pos]);
     // chars->Log();
 
-    easy::Sprite sprite0;
+    Sprite sprite0;
     sprite0.Reference(page_images[chars->page],
       chars->x, page_images[chars->page].Height() - chars->y - chars->height,
       chars->width, chars->height);
-    easy::Sprite sprite;
+    Sprite sprite;
     sprite.Clone(sprite0);
     sprite.UpdateOpaqueSpans();
     sprite.SetPivot(arctic::Vec2Si32(
@@ -274,11 +274,11 @@ void Font::Load(const char *file_name) {
   }
 }
 
-void Font::DrawEvaluateSizeImpl(easy::Sprite to_sprite,
+void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
     const char *text, bool do_keep_xadvance,
     Si32 x, Si32 y, TextOrigin origin,
-    easy::DrawBlendingMode blending_mode,
-    easy::DrawFilterMode filter_mode,
+    DrawBlendingMode blending_mode,
+    DrawFilterMode filter_mode,
     Rgba color, const std::vector<Rgba> &palete, bool do_draw,
     Vec2Si32 *out_size) {
   Si32 next_x = x;
@@ -375,9 +375,9 @@ void Font::DrawEvaluateSizeImpl(easy::Sprite to_sprite,
 
 Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
   Vec2Si32 size;
-  easy::Sprite empty;
+  Sprite empty;
   DrawEvaluateSizeImpl(empty, text, do_keep_xadvance,
-    0, 0, kTextOriginFirstBase, easy::kCopyRgba, easy::kFilterNearest,
+    0, 0, kTextOriginFirstBase, kCopyRgba, kFilterNearest,
     Rgba(255, 255, 255), std::vector<Rgba>(), false,
     &size);
   return size;
@@ -392,22 +392,22 @@ Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
 /// @param blending_mode The blending mode to use when drawing the text
 /// @param filter_mode The filtering mode to use when drawing the text
 /// @param color The color (used for the kDrawBlendingModeColorize blending mode only)
-void Font::Draw(easy::Sprite to_sprite, const char *text,
+void Font::Draw(Sprite to_sprite, const char *text,
     const Si32 x, const Si32 y,
     const TextOrigin origin,
-    const easy::DrawBlendingMode blending_mode,
-    const easy::DrawFilterMode filter_mode,
+    const DrawBlendingMode blending_mode,
+    const DrawFilterMode filter_mode,
     const Rgba color) { //-V801
   DrawEvaluateSizeImpl(to_sprite,
     text, false, x, y, origin, blending_mode, filter_mode, color,
     std::vector<Rgba>(), true, nullptr);
 }
 
-void Font::Draw(easy::Sprite to_sprite, const char *text,
+void Font::Draw(Sprite to_sprite, const char *text,
     const Si32 x, const Si32 y,
     const TextOrigin origin,
-    const easy::DrawBlendingMode blending_mode,
-    const easy::DrawFilterMode filter_mode,
+    const DrawBlendingMode blending_mode,
+    const DrawFilterMode filter_mode,
     const std::vector<Rgba> &palete) {
   DrawEvaluateSizeImpl(to_sprite,
     text, false, x, y, origin, blending_mode, filter_mode, palete[0],
@@ -424,10 +424,10 @@ void Font::Draw(easy::Sprite to_sprite, const char *text,
 /// @param color The color (used for the kDrawBlendingModeColorize blending mode only)
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
-      const easy::DrawBlendingMode blending_mode,
-      const easy::DrawFilterMode filter_mode,
+      const DrawBlendingMode blending_mode,
+      const DrawFilterMode filter_mode,
       const Rgba color) { //-V801
-  DrawEvaluateSizeImpl(easy::GetEngine()->GetBackbuffer(),
+  DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
       text, false, x, y, origin,
       blending_mode, filter_mode, color,
       std::vector<Rgba>(), true, nullptr);
@@ -435,10 +435,10 @@ void Font::Draw(const char *text, const Si32 x, const Si32 y,
 
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin,
-    const easy::DrawBlendingMode blending_mode,
-    const easy::DrawFilterMode filter_mode,
+    const DrawBlendingMode blending_mode,
+    const DrawFilterMode filter_mode,
     const std::vector<Rgba> &palete) {
-  DrawEvaluateSizeImpl(easy::GetEngine()->GetBackbuffer(),
+  DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
       text, false, x, y, origin,
       blending_mode, filter_mode, palete[0],
       palete, true, nullptr);

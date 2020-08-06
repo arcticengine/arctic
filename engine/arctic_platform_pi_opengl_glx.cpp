@@ -202,7 +202,7 @@ void Swap() {
   glFlush();
   glXSwapBuffers(g_x_display, g_x_window);
   PumpMessages();
-  arctic::easy::GetEngine()->OnWindowResize(g_window_width, g_window_height);
+  arctic::GetEngine()->OnWindowResize(g_window_width, g_window_height);
 }
 
 bool IsVSyncSupported() {
@@ -248,10 +248,10 @@ int main(int argc, char **argv) {
   arctic::StartLogger();
   arctic::g_sound_player.Initialize();
   CreateMainWindow(&system_info);
-  arctic::easy::GetEngine();
-  arctic::easy::GetEngine()->SetArgcArgv(argc,
+  arctic::GetEngine();
+  arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
-  arctic::easy::GetEngine()->Init(system_info.screen_width,
+  arctic::GetEngine()->Init(system_info.screen_width,
       system_info.screen_height);
 
   EasyMain();

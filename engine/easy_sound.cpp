@@ -39,7 +39,6 @@
 #include "engine/stb_vorbis.inc"
 
 namespace arctic {
-namespace easy {
 
 void Sound::Load(const char *file_name) {
   Load(file_name, true);
@@ -221,5 +220,4 @@ bool Sound::IsPlaying() {
   return sound_instance_ && sound_instance_->IsPlaying();
 }
 
-}  // namespace easy
 }  // namespace arctic
