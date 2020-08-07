@@ -31,6 +31,7 @@
 #include <sstream>
 
 #include "engine/arctic_platform.h"
+#include "engine/log.h"
 #include "engine/rgba.h"
 
 namespace arctic {
@@ -95,10 +96,13 @@ struct TgaHeader {
 #pragma pack()
 
 
-  std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,
-      const Si64 size) {
+  std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data, const Si64 size) {
     std::shared_ptr<SpriteInstance> sprite;
-    Check(size >= sizeof(TgaHeader), "Error in LoadTga, size is too small.");
+    if (size < sizeof(TgaHeader)) {
+      *Log() << "Error in LoadTga, size: " << size << " < sizeof(TgaHeader): "
+        << sizeof(TgaHeader) << " is too small.";
+      return sprite;
+    }
     const TgaHeader *tga = static_cast<const TgaHeader*>(
         static_cast<const void*>(data));
 #ifdef BIGENDIAN
@@ -111,21 +115,41 @@ struct TgaHeader {
     tga->color_map_length = ((tga->color_map_length & 255) << 8)
       | (tga->color_map_length >> 8);
 #endif  // BIGENDIAN
-    Check(tga->image_width >= 2, "Error in LoadTga, tga.xres is too small.");
-    Check(tga->image_height >= 2, "Error in LoadTga, tga.yres is too small.");
-    Check((tga->pixel_depth == 24) || (tga->pixel_depth == 32)
-        || (tga->pixel_depth == 16) || (tga->pixel_depth == 15)
-        || (tga->pixel_depth == 8),
-        "Error in LoadTga, unsupported bpp.");
-    const Si32 colormap_bytes_per_entry = ((tga->color_map_entry_size + 7) / 8);
+    if (tga->image_width < 2) {
+      *Log() << "Error in LoadTga, tga.xres: " << tga->image_width << " < 2 is too small.";
+      return sprite;
+    }
+    if (tga->image_height < 2) {
+      *Log() << "Error in LoadTga, tga.yres: " << tga->image_height << " < 2 is too small.";
+      return sprite;
+    }
+    if ((tga->pixel_depth != 32) && (tga->pixel_depth != 24)
+        && (tga->pixel_depth != 16) && (tga->pixel_depth != 15)
+        && (tga->pixel_depth != 8)) {
+      *Log() << "Error in LoadTga, tga.bpp: " << tga->pixel_depth << " is unsupported.";
+      return sprite;
+    }
+    const Si32 colormap_bytes_per_entry = (((Si32)tga->color_map_entry_size + 7) / 8);
+    if (tga->id_field_length < 1) {
+      *Log() << "Error in LoadTga, id_field_length must be > 0.";
+      return sprite;
+    }
     const Ui8 *id_field = data + sizeof(TgaHeader);
+    Si32 colormapSize = tga->color_map_length * colormap_bytes_per_entry;
+    if (size < sizeof(TgaHeader) + tga->id_field_length + colormapSize) {
+      *Log() << "Error in LoadTga, size is too small.";
+      return sprite;
+    }
     const Ui8 *colormap = id_field + tga->id_field_length;
-    const Ui8 *p = colormap
-      + tga->color_map_length * colormap_bytes_per_entry;
+    const Ui8 *p = colormap + colormapSize;
 
     bool is_origin_upper_left = !!(tga->image_descriptor & (1u << 5u));
 
-    sprite.reset(new SpriteInstance(tga->image_width, tga->image_height));
+    if ((Ui64)tga->image_width * tga->image_height * sizeof(Rgba) >= (1ull << 30)) {
+      *Log() << "Error in LoadTga, sprite image is too large (" << tga->image_width
+        << "x" << tga->image_height << "x" << sizeof(Rgba) << ").";
+      return sprite;
+    }
 
     const bool is_rle = (tga->image_type == 9 || tga->image_type == 10
         || tga->image_type == 11);
@@ -139,13 +163,17 @@ struct TgaHeader {
     const Si32 colormap_origin = tga->color_map_origin;
     const Si32 colormap_size = tga->color_map_length;
     const Si32 src_bytes_per_pixel =
-      (is_palette ? 1 : ((tga->pixel_depth + 7) / 8));
+      (is_palette ? 1 : (((Si32)tga->pixel_depth + 7) / 8));
     const Si32 dst_bytes_per_pixel = sizeof(Rgba);
     const Si32 entry_bytes_per_pixel =
       (is_palette ? colormap_bytes_per_entry : src_bytes_per_pixel);
     if (is_palette) {
-      Check(tga->color_map_type == 1, "Error in LoadTga, no palette included.");
+      if (tga->color_map_type != 1) {
+        *Log() << "Error in LoadTga, no palette included.";
+        return sprite;
+      }
     }
+    sprite.reset(new SpriteInstance(tga->image_width, tga->image_height));
 
     switch (tga->image_type) {
       case 0:  // no image data included
@@ -169,8 +197,10 @@ struct TgaHeader {
                    Ui8 *to_end = to + to_line_size;
 
                    while (to < to_end) {
-                     Check(from_line < from_end,
-                         "Error in LoadTga, unexpected end of file.");
+                     if (from_line >= from_end) {
+                       *Log() << "Error in LoadTga, unexpected end of file.";
+                       return std::shared_ptr<SpriteInstance>();
+                     }
                      Si32 repetitions = tga->image_width;
                      bool is_rle_packet = false;
                      if (is_rle) {
@@ -180,23 +210,30 @@ struct TgaHeader {
                        from_line++;
                      }
                      if (is_rle_packet) {  // run length packet
-                       Check(from_line + src_bytes_per_pixel <= from_end,
-                           "Error in LoadTga, unexpected end of file.");
+                       if (from_line + src_bytes_per_pixel > from_end) {
+                         *Log() << "Error in LoadTga, unexpected end of file.";
+                         return std::shared_ptr<SpriteInstance>();
+                       }
                      } else {
-                       Check(from_line + src_bytes_per_pixel * repetitions
-                           <= from_end,
-                           "Error in LoadTga,"
-                           " unexpected end of file.");
-                       Check(to + dst_bytes_per_pixel * repetitions <= to_end,
-                           "Error in LoadTga,"
-                           " overflow in data format of file.");
+                       if (from_line + src_bytes_per_pixel * repetitions
+                           > from_end) {
+                         *Log() << "Error in LoadTga, unexpected end of file.";
+                         return std::shared_ptr<SpriteInstance>();
+                       }
+                       if (to + dst_bytes_per_pixel * repetitions > to_end) {
+                         *Log() << "Error in LoadTga,"
+                           " overflow in data format of file.";
+                         return std::shared_ptr<SpriteInstance>();
+                       }
                      }
                      for (Si32 idx = 0; idx < repetitions; ++idx) {
                        // <= is intended
                        if (is_rle_packet) {
-                         Check(to + dst_bytes_per_pixel <= to_end,
-                             "Error in LoadTga,"
-                             " overflow in data format of file.");
+                         if (to + dst_bytes_per_pixel > to_end) {
+                           *Log() << "Error in LoadTga,"
+                             " overflow in data format of file.";
+                           return std::shared_ptr<SpriteInstance>();
+                         }
                        }
                        const Ui8 *entry = from_line;
                        if (is_gray) {
@@ -207,12 +244,16 @@ struct TgaHeader {
                          if (is_palette) {
                            Si32 entry_idx = static_cast<Si32>(*from_line)
                              - colormap_origin;
-                           Check(entry_idx >= 0,
-                               "Error in LoadTga,"
-                               " entry_idx underflow in data fromat.");
-                           Check(entry_idx < colormap_size,
-                               "Error in LoadTga,"
-                               " entry_idx overflow in data fromat.");
+                           if (entry_idx < 0) {
+                             *Log() << "Error in LoadTga,"
+                               " entry_idx underflow in data fromat.";
+                             return std::shared_ptr<SpriteInstance>();
+                           }
+                           if (entry_idx >= colormap_size) {
+                             *Log() << "Error in LoadTga,"
+                               " entry_idx overflow in data fromat.";
+                             return std::shared_ptr<SpriteInstance>();
+                           }
                            entry = colormap
                              + entry_idx * colormap_bytes_per_entry;
                          }
@@ -252,18 +293,15 @@ struct TgaHeader {
                  break;
                }
       default: {
-                 std::stringstream str;
-                 str << "Error in LoadTga, unexpected file type: "
+                 *Log() << "Error in LoadTga, unexpected file type: "
                    << (Ui32)tga->image_type;
-                 Fatal(str.str().c_str());
                  break;
                }
     }
     return sprite;
   }
 
-  void SaveTga(std::shared_ptr<SpriteInstance> sprite,
-      std::vector<Ui8> *data) {
+  void SaveTga(std::shared_ptr<SpriteInstance> sprite, std::vector<Ui8> *data) {
     TgaHeader tga;
     memset(&tga, 0, sizeof(tga));
     tga.image_width = sprite->width();
