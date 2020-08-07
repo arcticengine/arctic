@@ -75,6 +75,10 @@ class DecoratedFrame {
     // |  |   |  |    h
     // |  e---f  | y1 -
     // g---------k 0
+    Si32 min_size = std::min(s.Width(), s.Height());
+    if (min_size < border_size * 2) {
+      border_size = min_size / 2;
+    }
     Si32 x1 = border_size;
     Si32 x2 = s.Width() - border_size;
     Si32 y1 = border_size;
@@ -150,31 +154,39 @@ class DecoratedFrame {
         pos.x = 0;
       }
     }
-    for (Si32 x = 0; x < client_size.x; x += top_.Width()) {
-      Si32 width = is_x_scaleable_ ?
-        std::min(top_.Width(), client_size.x - x) :
-        top_.Width();
-      top_.Draw(x + left_.Width(), size.y - top_.Height(),
-        width, top_.Height(),
-        0, 0, width, top_.Height(), sprite, kCopyRgba);
+    if (top_.Width()) {
+      for (Si32 x = 0; x < client_size.x; x += top_.Width()) {
+        Si32 width = is_x_scaleable_ ?
+          std::min(top_.Width(), client_size.x - x) :
+          top_.Width();
+        top_.Draw(x + left_.Width(), size.y - top_.Height(),
+          width, top_.Height(),
+          0, 0, width, top_.Height(), sprite, kCopyRgba);
+      }
     }
-    for (Si32 x = 0; x < client_size.x; x += bottom_.Width()) {
-      Si32 width = is_x_scaleable_ ?
-        std::min(bottom_.Width(), client_size.x - x) :
-        bottom_.Width();
-      bottom_.Draw(x + left_.Width(), 0,
-        width, bottom_.Height(),
-        0, 0, width, bottom_.Height(), sprite, kCopyRgba);
+    if (bottom_.Width()) {
+      for (Si32 x = 0; x < client_size.x; x += bottom_.Width()) {
+        Si32 width = is_x_scaleable_ ?
+          std::min(bottom_.Width(), client_size.x - x) :
+          bottom_.Width();
+        bottom_.Draw(x + left_.Width(), 0,
+          width, bottom_.Height(),
+          0, 0, width, bottom_.Height(), sprite, kCopyRgba);
+      }
     }
-    for (Si32 y = 0; y < client_size.y; y += left_.Height()) {
-      left_.Draw(0, y + bottom_.Height(),
-        left_.Width(), left_.Height(),
-        0, 0, left_.Width(), left_.Height(), sprite, kCopyRgba);
+    if (left_.Height()) {
+      for (Si32 y = 0; y < client_size.y; y += left_.Height()) {
+        left_.Draw(0, y + bottom_.Height(),
+          left_.Width(), left_.Height(),
+          0, 0, left_.Width(), left_.Height(), sprite, kCopyRgba);
+      }
     }
-    for (Si32 y = 0; y < client_size.y; y += right_.Height()) {
-      right_.Draw(size.x - right_.Width(), y + bottom_.Height(),
-        right_.Width(), right_.Height(),
-        0, 0, right_.Width(), right_.Height(), sprite, kCopyRgba);
+    if (right_.Height()) {
+      for (Si32 y = 0; y < client_size.y; y += right_.Height()) {
+        right_.Draw(size.x - right_.Width(), y + bottom_.Height(),
+          right_.Width(), right_.Height(),
+          0, 0, right_.Width(), right_.Height(), sprite, kCopyRgba);
+      }
     }
     lower_left_.Draw(0, 0,
       lower_left_.Width(), lower_left_.Height(),
