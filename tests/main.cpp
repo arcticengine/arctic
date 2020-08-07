@@ -325,7 +325,14 @@ void test_file_operations() {
   TEST_CHECK(list.size() > 0);
 }
 
+void test_tga_oom() {
+  Sprite sp;
+  sp.Load("data/oom.tga");
+}
+
+
 TEST_LIST = {
+//  {"Tga oom", test_tga_oom},
   {"Radix sort", test_radix_sort},
   {"Radix sort correctness", test_radix_sort_correctness},
   {"Rgb", test_rgb},
