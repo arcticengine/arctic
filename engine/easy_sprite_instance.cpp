@@ -129,9 +129,9 @@ struct TgaHeader {
       *Log() << "Error in LoadTga, tga.bpp: " << tga->pixel_depth << " is unsupported.";
       return sprite;
     }
-    const Si32 colormap_bytes_per_entry = (((Si32)tga->color_map_entry_size + 7) / 8);
-    Si32 colormapSize = tga->color_map_length * colormap_bytes_per_entry;
-    if (size < sizeof(TgaHeader) + tga->id_field_length + colormapSize) {
+    const Si64 colormap_bytes_per_entry = (((Si64)tga->color_map_entry_size + 7) / 8);
+    Si64 colormapSize = tga->color_map_length * colormap_bytes_per_entry;
+    if (size < (Si64)sizeof(TgaHeader) + tga->id_field_length + colormapSize) {
       *Log() << "Error in LoadTga, size is too small.";
       return sprite;
     }
