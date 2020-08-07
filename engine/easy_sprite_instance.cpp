@@ -40,7 +40,7 @@ namespace arctic {
   SpriteInstance::SpriteInstance(Si32 width, Si32 height)
     : width_(width)
       , height_(height)
-      , data_(width * height * sizeof(Rgba)) {
+      , data_(static_cast<size_t>(width) * static_cast<size_t>(height) * sizeof(Rgba)) {
       }
 
   void SpriteInstance::UpdateOpaqueSpans() {
@@ -48,12 +48,12 @@ namespace arctic {
       opaque_.clear();
       return;
     }
-    opaque_.resize(height_);
+    opaque_.resize(static_cast<size_t>(height_));
     for (Si32 y = 0; y < height_; ++y) {
       const Rgba *line = reinterpret_cast<Rgba*>(
           reinterpret_cast<void*>(data_.data())) +
         width_ * y;
-      SpanSi32 &span = opaque_[y];
+      SpanSi32 &span = opaque_[static_cast<size_t>(y)];
       span.begin = 0;
       span.end = 0;
       Si32 x = 0;
@@ -197,11 +197,11 @@ struct TgaHeader {
                        *Log() << "Error in LoadTga, unexpected end of file.";
                        return std::shared_ptr<SpriteInstance>();
                      }
-                     Si32 repetitions = tga->image_width;
+                     Si64 repetitions = tga->image_width;
                      bool is_rle_packet = false;
                      if (is_rle) {
                        Ui8 repetitionCount = *(from_line + 0);
-                       repetitions = (Si32)(repetitionCount & 0x7fu) + 1;
+                       repetitions = (Si64)(repetitionCount & 0x7fu) + 1;
                        is_rle_packet = !!(repetitionCount & 0x80u);
                        from_line++;
                      }
@@ -222,7 +222,7 @@ struct TgaHeader {
                          return std::shared_ptr<SpriteInstance>();
                        }
                      }
-                     for (Si32 idx = 0; idx < repetitions; ++idx) {
+                     for (Si64 idx = 0; idx < repetitions; ++idx) {
                        // <= is intended
                        if (is_rle_packet) {
                          if (to + dst_bytes_per_pixel > to_end) {
@@ -238,7 +238,7 @@ struct TgaHeader {
                          to[2] = *entry;
                        } else {
                          if (is_palette) {
-                           Si32 entry_idx = static_cast<Si32>(*from_line)
+                           Si64 entry_idx = static_cast<Si64>(*from_line)
                              - colormap_origin;
                            if (entry_idx < 0) {
                              *Log() << "Error in LoadTga,"
@@ -255,12 +255,12 @@ struct TgaHeader {
                          }
                          if (entry_bytes_per_pixel == 2) {
                            Ui8 b = (entry[0] & 0x1fu);
-                           Ui8 g = ((entry[1] << 3u) & 0x1cu)
-                             | ((entry[0] >> 5u) & 0x07u);
-                           Ui8 r = (entry[1] >> 2u) & 0x1fu;
-                           to[0] = (r << 3u) | (r >> 2u);
-                           to[1] = (g << 3u) | (g >> 2u);
-                           to[2] = (b << 3u) | (b >> 2u);
+                           Ui8 g = (((entry[1] << 3u) & static_cast<Ui8>(0x1cu))
+                             | ((entry[0] >> 5u) & 0x07u));
+                           Ui8 r = ((entry[1] >> 2u) & static_cast<Ui8>(0x1fu));
+                           to[0] = static_cast<Ui8>((r << 3u) | (r >> 2u));
+                           to[1] = static_cast<Ui8>((g << 3u) | (g >> 2u));
+                           to[2] = static_cast<Ui8>((b << 3u) | (b >> 2u));
                          } else {
                            to[0] = entry[2];
                            to[1] = entry[1];
@@ -300,8 +300,8 @@ struct TgaHeader {
   void SaveTga(std::shared_ptr<SpriteInstance> sprite, std::vector<Ui8> *data) {
     TgaHeader tga;
     memset(&tga, 0, sizeof(tga));
-    tga.image_width = sprite->width();
-    tga.image_height = sprite->height();
+    tga.image_width = static_cast<Ui16>(sprite->width());
+    tga.image_height = static_cast<Ui16>(sprite->height());
 #ifdef BIGENDIAN
     tga.image_width = ((tga.image_width & 255) << 8)
       | (tga.image_width >> 8);
