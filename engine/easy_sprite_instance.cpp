@@ -130,14 +130,14 @@ struct TgaHeader {
       return sprite;
     }
     const Si64 colormap_bytes_per_entry = (((Si64)tga->color_map_entry_size + 7) / 8);
-    Si64 colormapSize = tga->color_map_length * colormap_bytes_per_entry;
-    if (size < (Si64)sizeof(TgaHeader) + tga->id_field_length + colormapSize) {
+    Si64 colormap_size = tga->color_map_length * colormap_bytes_per_entry;
+    if (size < (Si64)sizeof(TgaHeader) + tga->id_field_length + colormap_size) {
       *Log() << "Error in LoadTga, size is too small.";
       return sprite;
     }
     const Ui8 *id_field = data + sizeof(TgaHeader);
     const Ui8 *colormap = id_field + tga->id_field_length;
-    const Ui8 *p = colormap + colormapSize;
+    const Ui8 *p = colormap + colormap_size;
 
     bool is_origin_upper_left = !!(tga->image_descriptor & (1u << 5u));
 
@@ -156,12 +156,12 @@ struct TgaHeader {
         || (is_palette && tga->color_map_entry_size == 32)
         || (is_palette && tga->color_map_entry_size == 16));
 
-    const Si32 colormap_origin = tga->color_map_origin;
-    const Si32 colormap_size = tga->color_map_length;
-    const Si32 src_bytes_per_pixel =
-      (is_palette ? 1 : (((Si32)tga->pixel_depth + 7) / 8));
-    const Si32 dst_bytes_per_pixel = sizeof(Rgba);
-    const Si32 entry_bytes_per_pixel =
+    const Si64 colormap_origin = tga->color_map_origin;
+    const Si64 colormap_length = tga->color_map_length;
+    const Si64 src_bytes_per_pixel =
+      (is_palette ? 1 : (((Si64)tga->pixel_depth + 7) / 8));
+    const Si64 dst_bytes_per_pixel = sizeof(Rgba);
+    const Si64 entry_bytes_per_pixel =
       (is_palette ? colormap_bytes_per_entry : src_bytes_per_pixel);
     if (is_palette) {
       if (tga->color_map_type != 1) {
@@ -245,7 +245,7 @@ struct TgaHeader {
                                " entry_idx underflow in data fromat.";
                              return std::shared_ptr<SpriteInstance>();
                            }
-                           if (entry_idx >= colormap_size) {
+                           if (entry_idx >= colormap_length) {
                              *Log() << "Error in LoadTga,"
                                " entry_idx overflow in data fromat.";
                              return std::shared_ptr<SpriteInstance>();
