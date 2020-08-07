@@ -130,16 +130,12 @@ struct TgaHeader {
       return sprite;
     }
     const Si32 colormap_bytes_per_entry = (((Si32)tga->color_map_entry_size + 7) / 8);
-    if (tga->id_field_length < 1) {
-      *Log() << "Error in LoadTga, id_field_length must be > 0.";
-      return sprite;
-    }
-    const Ui8 *id_field = data + sizeof(TgaHeader);
     Si32 colormapSize = tga->color_map_length * colormap_bytes_per_entry;
     if (size < sizeof(TgaHeader) + tga->id_field_length + colormapSize) {
       *Log() << "Error in LoadTga, size is too small.";
       return sprite;
     }
+    const Ui8 *id_field = data + sizeof(TgaHeader);
     const Ui8 *colormap = id_field + tga->id_field_length;
     const Ui8 *p = colormap + colormapSize;
 

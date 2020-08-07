@@ -670,8 +670,8 @@ void Sprite::Load(const char *file_name) {
     }
     sprite_instance_ = LoadTga(data.data(), data.size());
     ref_pos_ = Vec2Si32(0, 0);
-    ref_size_ = Vec2Si32(sprite_instance_->width(),
-      sprite_instance_->height());
+    ref_size_ = sprite_instance_ ? Vec2Si32(sprite_instance_->width(),
+      sprite_instance_->height()) : Vec2Si32(0, 0);
     pivot_ = Vec2Si32(0, 0);
   } else {
     *Log() << "Error in Sprite::Load, file: \""
@@ -1076,6 +1076,9 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 from_width, const Si32 from_height,
     Sprite to_sprite, DrawBlendingMode blending_mode,
     DrawFilterMode filter_mode, Rgba in_color) const {
+  if (!sprite_instance_) {
+    return;
+  }
   switch (filter_mode) {
       case kFilterNearest:
       switch (blending_mode) {
