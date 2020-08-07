@@ -78,6 +78,7 @@ namespace arctic {
     }
   };
 
+  static std::atomic<bool> g_is_log_enabled = ATOMIC_VAR_INIT(false);
   static SyncQueue<
     MpscVirtInfArray<std::string*, TuneDeletePayloadFlag<true>>,
     std::string> g_logger_queue;
@@ -128,27 +129,35 @@ void LoggerThreadFunction() {
   }
 
   void Log(const char *text) {
-    std::string *str = new std::string(text);
-    g_logger_queue.Enqueue(str);
+    if (g_is_log_enabled.load()) {
+      std::string *str = new std::string(text);
+      g_logger_queue.Enqueue(str);
+    }
   }
 
   void Log(const char *text1, const char *text2) {
-    std::string *str = new std::string(text1);
-    str->append(text2);
-    g_logger_queue.Enqueue(str);
+    if (g_is_log_enabled.load()) {
+      std::string *str = new std::string(text1);
+      str->append(text2);
+      g_logger_queue.Enqueue(str);
+    }
   }
 
   void Log(const char *text1, const char *text2, const char *text3) {
-    std::string *str = new std::string(text1);
-    str->append(text2);
-    str->append(text3);
-    g_logger_queue.Enqueue(str);
+    if (g_is_log_enabled.load()) {
+      std::string *str = new std::string(text1);
+      str->append(text2);
+      str->append(text3);
+      g_logger_queue.Enqueue(str);
+    }
   }
 
   void LogAndDelete(std::ostringstream *str) {
     Check(str, "Unexpected nullptr in LogAndDelete call");
-    std::string *p = new std::string(str->str());
-    g_logger_queue.Enqueue(p);
+    if (g_is_log_enabled.load()) {
+      std::string *p = new std::string(str->str());
+      g_logger_queue.Enqueue(p);
+    }
     delete str;
   }
 
@@ -160,6 +169,7 @@ void LoggerThreadFunction() {
     std::lock_guard<std::mutex> lock(g_quit_mutex);
     Check(g_quit_item == nullptr,
         "StartLogger called with g_quit_item already initialized");
+    g_is_log_enabled.store(true);
     g_quit_item = new std::string("g_quit_item");
     g_logger_thread = std::thread(arctic::LoggerThreadFunction);
   }
@@ -169,6 +179,7 @@ void LoggerThreadFunction() {
     if (g_quit_item == nullptr) {
       return;
     }
+    g_is_log_enabled.store(false);
     g_logger_queue.Enqueue(g_quit_item);
     g_logger_thread.join();
     g_quit_item = nullptr;
