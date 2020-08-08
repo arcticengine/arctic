@@ -501,9 +501,9 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
 
   if (selection_begin_ != selection_end_) {
     Si32 x1 = absolute_pos.x + font_.EvaluateSize(
-        text_.substr(0, selection_begin_).c_str(), false).x;
+        text_.substr(0, static_cast<size_t>(selection_begin_)).c_str(), false).x;
     Si32 x2 = absolute_pos.x  + font_.EvaluateSize(
-        text_.substr(0, selection_end_).c_str(), true).x;
+        text_.substr(0, static_cast<size_t>(selection_end_)).c_str(), true).x;
     Si32 y1 = absolute_pos.y;
     Si32 y2 = absolute_pos.y + font_.line_height_;
     Sprite backbuffer = GetEngine()->GetBackbuffer();
@@ -639,11 +639,11 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           *in_out_is_applied = true;
           if (text_.length()) {
             if (selection_begin_ != selection_end_) {
-              text_.erase(selection_begin_, selection_end_ - selection_begin_);
+              text_.erase(static_cast<size_t>(selection_begin_), static_cast<size_t>(selection_end_ - selection_begin_));
               selection_end_ = selection_begin_;
               cursor_pos_ = selection_begin_;
             } else if (cursor_pos_) {
-              text_.erase(cursor_pos_ - 1, 1);
+              text_.erase(static_cast<size_t>(cursor_pos_ - 1), 1);
               cursor_pos_--;
             }
           }
@@ -651,11 +651,11 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           *in_out_is_applied = true;
           if (text_.length()) {
             if (selection_begin_ != selection_end_) {
-              text_.erase(selection_begin_, selection_end_ - selection_begin_);
+              text_.erase(static_cast<size_t>(selection_begin_), static_cast<size_t>(selection_end_ - selection_begin_));
               selection_end_ = selection_begin_;
               cursor_pos_ = selection_begin_;
             } else if (cursor_pos_ >= 0 && cursor_pos_ < (Si32)text_.length()) {
-              text_.erase(cursor_pos_, 1);
+              text_.erase(static_cast<size_t>(cursor_pos_), 1);
               // cursor_pos_;
             }
           }
@@ -718,7 +718,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             }
           }
           if (selection_begin_ != selection_end_) {
-            text_.erase(selection_begin_, selection_end_ - selection_begin_);
+            text_.erase(static_cast<size_t>(selection_begin_), static_cast<size_t>(selection_end_ - selection_begin_));
             cursor_pos_ = selection_begin_;
             selection_end_ = selection_begin_;
           }
@@ -734,7 +734,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               }
             }
             if (do_insert) {
-              text_.insert(cursor_pos_, message.keyboard.characters);
+              text_.insert(static_cast<size_t>(cursor_pos_), message.keyboard.characters);
               cursor_pos_ += static_cast<Si32>(strlen(
                   message.keyboard.characters));
             }
@@ -779,12 +779,12 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     display_pos_ = std::max(0, cursor_pos_ - 1);
   } else {
     // Move display pos to the right when cursor is at the right border.
-    std::string part = text_.substr(display_pos_, cursor_pos_ - display_pos_);
+    std::string part = text_.substr(static_cast<size_t>(display_pos_), static_cast<size_t>(cursor_pos_ - display_pos_));
     Si32 w = font_.EvaluateSize(part.c_str(), true).x;
     if (available_width) {
       while (w > available_width) {
         display_pos_++;
-        part = text_.substr(display_pos_, cursor_pos_ - display_pos_);
+        part = text_.substr(static_cast<size_t>(display_pos_), static_cast<size_t>(cursor_pos_ - display_pos_));
         w = font_.EvaluateSize(part.c_str(), true).x;
         end_pos = cursor_pos_ + 1;
       }
@@ -794,7 +794,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
 
   // const char *visible = text_.c_str();
 
-  std::string display_text = text_.substr(display_pos_, end_pos - display_pos_);
+  std::string display_text = text_.substr(static_cast<size_t>(display_pos_), static_cast<size_t>(end_pos - display_pos_));
   Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
   if (available_width) {
     while (visible_width > displayable_width) {
@@ -804,7 +804,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
         desired_len = visible_len - 1;
       }
       end_pos = display_pos_ + desired_len;
-      display_text = text_.substr(display_pos_, end_pos - display_pos_);
+      display_text = text_.substr(static_cast<size_t>(display_pos_), static_cast<size_t>(end_pos - display_pos_));
       visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
     }
   }
@@ -813,11 +813,11 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     origin_, kColorize, kFilterNearest, color_);
 
   Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
-  std::string left_part = text_.substr(0, cursor_pos);
+  std::string left_part = text_.substr(0, static_cast<size_t>(cursor_pos));
   Si32 cursor_x = font_.EvaluateSize(left_part.c_str(), false).x;
 
   Si32 skip_x = font_.EvaluateSize(
-      text_.substr(0, display_pos_).c_str(), false).x;
+      text_.substr(0, static_cast<size_t>(display_pos_)).c_str(), false).x;
 
   Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
   a.x = std::max(pos.x + border, a.x - skip_x);
@@ -832,9 +832,9 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
 
   if (selection_begin_ != selection_end_ && is_current_tab_) {
     Si32 x1 = pos.x + border + font_.EvaluateSize(
-      text_.substr(0, selection_begin_).c_str(), false).x;
+      text_.substr(0, static_cast<size_t>(selection_begin_)).c_str(), false).x;
     Si32 x2 = pos.x + border + font_.EvaluateSize(
-      text_.substr(0, selection_end_).c_str(), true).x;
+      text_.substr(0, static_cast<size_t>(selection_end_)).c_str(), true).x;
     Si32 y1 = pos.y + border;
     Si32 y2 = pos.y + border + font_.line_height_;
     Sprite backbuffer = GetEngine()->GetBackbuffer();

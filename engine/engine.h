@@ -86,7 +86,7 @@ class Engine {
   void SetArgcArgvW(Si64 argc, const wchar_t **argv);
 
   Si64 GetArgc() const {
-    return cmd_line_arguments_.size();
+    return static_cast<Si64>(cmd_line_arguments_.size());
   }
   const char *const * GetArgv() const {
     return cmd_line_argv_.data();

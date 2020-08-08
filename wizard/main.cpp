@@ -237,7 +237,7 @@ bool GetOperationMode() {
   "Press ESC to leave the Snow Wizard.";
 
 
-  Ui32 y = box->GetSize().y-32;
+  Si32 y = box->GetSize().y-32;
 
   std::shared_ptr<Text> textbox(new Text(
     0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
@@ -280,7 +280,7 @@ bool GetProjectKind() {
   "Press ESC to leave the Snow Wizard.";
 
 
-  Ui32 y = box->GetSize().y-32;
+  Si32 y = box->GetSize().y-32;
 
   std::shared_ptr<Text> textbox(new Text(
     0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
@@ -451,7 +451,7 @@ bool GetProjectName() {
             break;
         }
         if (is_backspace) {
-          Si32 len = static_cast<Si32>(g_project_name.size());
+          size_t len = g_project_name.size();
           if (len) {
             g_project_name.replace(len - 1, 1, "");
           }
@@ -490,7 +490,7 @@ std::deque<std::string> GetDirectoryProjects(std::string project_directory) {
   // find *.xcodeproj folder and *.vcxproj files
   std::string xcode_ending = ".xcodeproj";
   std::string vcx_ending = ".vcxproj";
-  for (Ui32 idx = 0; idx < entries.size(); ++idx) {
+  for (size_t idx = 0; idx < entries.size(); ++idx) {
     auto &file = entries[idx];
     if (file.is_directory == kTrivalentTrue) {
       if (EndsWith(file.title, xcode_ending)) {
@@ -682,7 +682,7 @@ bool ShowProgress() {
           , "template_project_name.xcodeproj/xcshareddata"
           , "template_project_name.xcodeproj/xcshareddata/xcschemes/"
         };
-        for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
+        for (size_t idx = 0; idx < files.size(); ++idx) {
           std::string name = files[idx];
           ReplaceAll("template_project_name", g_project_name, &name);
           MakeDirectory((g_project_directory + "/" + name).c_str());
@@ -699,7 +699,7 @@ bool ShowProgress() {
           , "data/block_1.tga"
           , "data/block_2.tga"
         };
-        for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
+        for (size_t idx = 0; idx < files.size(); ++idx) {
           auto data = ReadFile((g_template + "/" + files[idx]).c_str());
           std::string name = files[idx];
           ReplaceAll("template_project_name", g_project_name, &name);
@@ -730,7 +730,7 @@ bool ShowProgress() {
           , "template_project_name.xcodeproj/"
                 "xcshareddata/xcschemes/Release.xcscheme"
         };
-        for (Si32 idx = 0; idx < static_cast<Si32>(files.size()); ++idx) {
+        for (size_t idx = 0; idx < files.size(); ++idx) {
           PatchAndCopyTemplateFile(files[idx]);
         }
 
@@ -838,7 +838,7 @@ bool ShowUpdateProgress() {
         Si32 candidate_count = (Si32)candidates.size();
         for (Si32 i = 0; i < candidate_count; ++i) {
           g_progress.append(u8"Project name candidate \"");
-          g_progress.append(candidates[i]);
+          g_progress.append(candidates[static_cast<size_t>(i)]);
           g_progress.append(u8"\"\n");
         }
 
