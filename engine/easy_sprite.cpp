@@ -601,48 +601,84 @@ Sprite::Sprite() {
 
 void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
     const char *file_name) {
-  Check(!!file_name, "Error in Sprite::Load, file_name is nullptr.");
+  if (!file_name) {
+    *Log() << "Error in Sprite::Load, file_name is nullptr."
+      " Not loading sprite.";
+    return;
+  }
+  if (data == nullptr) {
+    *Log() << "Error in Sprite::Load, file: \""
+      << file_name << "\" could not be loaded, data=nullptr."
+      " Not loading sprite.";
+    return;
+  }
   const char *last_dot = strchr(file_name, '.');
-  Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
+  if (!last_dot) {
+    *Log() << "Error in Sprite::Load, file: \""
+      << file_name << "\" has no extension."
+      " Not loading sprite.";
+    return;
+  }
   if (strcmp(last_dot, ".tga") == 0) {
     if (size_bytes == 0) {
-      Log("File \"", file_name, "\" could not be loaded (size=0)."
-          " Using empty sprite.");
-      return;
-    }
-    if (data == nullptr) {
-      Log("File \"", file_name, "\" could not be loaded (data=nullptr)."
-          " Using empty sprite.");
+      *Log() << "Error in Sprite::Load, file: \""
+        << file_name << "\" could not be loaded (size=0)."
+          " Not loading sprite.";
       return;
     }
     sprite_instance_ = LoadTga(data, size_bytes);
+    if (!sprite_instance_) {
+      *Log() << "Error in Sprite::Load, file: \""
+        << file_name << "\" could not be loaded with LoadTga."
+          " Not loading sprite.";
+      return;
+    }
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = Vec2Si32(sprite_instance_->width(),
                          sprite_instance_->height());
     pivot_ = Vec2Si32(0, 0);
   } else {
-    Fatal("Error in Sprite::Load, unknown file extension.");
+    *Log() << "Error in Sprite::Load, file: \""
+      << file_name << "\" could not be loaded,"
+        " unknown file extension: \"" << last_dot << "\"."
+        " Not loading sprite.";
+    return;
   }
   UpdateOpaqueSpans();
 }
 
 void Sprite::Load(const char *file_name) {
-  Check(!!file_name, "Error in Sprite::Load, file_name is nullptr.");
+  if (!file_name) {
+    *Log() << "Error in Sprite::Load, file_name is nullptr."
+      " Not loading sprite.";
+    return;
+  }
   const char *last_dot = strchr(file_name, '.');
-  Check(!!last_dot, "Error in Sprite::Load, file_name has no extension.");
+  if (!last_dot) {
+    *Log() << "Error in Sprite::Load, file: \""
+      << file_name << "\" has no extension."
+      " Not loading sprite.";
+    return;
+  }
   if (strcmp(last_dot, ".tga") == 0) {
     std::vector<Ui8> data = ReadFile(file_name, true);
     if (data.empty()) {
-      Log("File \"", file_name, "\" could not be loaded. Using empty sprite.");
+      *Log() << "Error in Sprite::Load, file: \""
+        << file_name << "\" could not be loaded (data is empty)."
+          " Not loading sprite.";
       return;
     }
     sprite_instance_ = LoadTga(data.data(), data.size());
     ref_pos_ = Vec2Si32(0, 0);
-    ref_size_ = Vec2Si32(sprite_instance_->width(),
-      sprite_instance_->height());
+    ref_size_ = sprite_instance_ ? Vec2Si32(sprite_instance_->width(),
+      sprite_instance_->height()) : Vec2Si32(0, 0);
     pivot_ = Vec2Si32(0, 0);
   } else {
-    Fatal("Error in Sprite::Load, unknown file extension.");
+    *Log() << "Error in Sprite::Load, file: \""
+      << file_name << "\" could not be loaded,"
+        " unknown file extension: \"" << last_dot << "\"."
+        " Not loading sprite.";
+    return;
   }
   UpdateOpaqueSpans();
 }
@@ -1040,6 +1076,9 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
     const Si32 from_width, const Si32 from_height,
     Sprite to_sprite, DrawBlendingMode blending_mode,
     DrawFilterMode filter_mode, Rgba in_color) const {
+  if (!sprite_instance_) {
+    return;
+  }
   switch (filter_mode) {
       case kFilterNearest:
       switch (blending_mode) {

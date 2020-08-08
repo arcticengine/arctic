@@ -39,7 +39,7 @@ const int kAndroid8_0_0 = 24;
 /// @private
 struct UrlTableProperties {
   string name;
-  int num_entries;
+  size_t num_entries;
   static Pool<UrlTableProperties>* pool;
 }
 
@@ -131,12 +131,12 @@ using ::foo::bar;
 // Definition of functions is within scope of the namespace.
 // Consider std::string_view.
 
-void MyClass::Foo(double double_value, const string &in, string *out) noexcept {
-  int j = Goo();
-  std::vector<int> v = {1, 2};
+void MyClass::Foo(double double_value, const string &input, string *out_value) noexcept {
+  Ui32 a_local_variable = Goo();
+  std::vector<int> another_local_variable = {1, 2};
 
-  float f = static_cast<float>(double_value);
-  int64 y = int64{1} << 42
+  float some_float_value = static_cast<float>(double_value);
+  Si64 shifted_one = Si64{1} << 42
 }
 
 }  // namespace outer

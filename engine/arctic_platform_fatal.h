@@ -33,15 +33,15 @@ namespace arctic {
 /// @param [in] error_message Error message to display upon exiting
 /// @param [in] error_message_postfix A postfix to append to the error message.
 /// Nothing is appended if error_message_postfix is nullptr
-/// @return The function does not return if the condition is false
+/// @details The function does not return if the condition is false
 void Check(bool condition, const char *error_message,
     const char *error_message_postfix = nullptr);
 
 /// @brief Exits the application with an error
 /// @param [in] error_message Error message to display upon exiting
-/// @param [in] error_message_postfix A postfix to append to the error message.
+/// @param [in] message_postfix A postfix to append to the error message.
 /// Nothing is appended if error_message_postfix is nullptr
-/// @return The function does not return
+/// @details The function does not return
 void Fatal(const char *error_message, const char *message_postfix = nullptr);
 
 /// @}
