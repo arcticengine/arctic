@@ -77,10 +77,10 @@ public:
 //        DualComplex u(1,0,-x/2.0,-y/2.0);
 //        DualComplex w(1,0,x/2.0,y/2.0);
 //        DualComplex result = w*v*u;
-    real_x = std::cos(theta / 2.0);
-    real_y = std::sin(theta / 2.0);
-    dual_x = std::sin(theta / 2.0) * y;
-    dual_y = -std::sin(theta / 2.0) * x;
+    real_x = std::cos(theta * 0.5f);
+    real_y = std::sin(theta * 0.5f);
+    dual_x = std::sin(theta * 0.5f) * y;
+    dual_y = -std::sin(theta * 0.5f) * x;
   }
 
   DualComplex(Vec2F p, T theta) {
@@ -88,10 +88,10 @@ public:
 //        DualComplex u(1,0,-x/2.0,-y/2.0);
 //        DualComplex w(1,0,x/2.0,y/2.0);
 //        DualComplex result = w*v*u;
-    real_x = std::cos(theta / 2.0);
-    real_y = std::sin(theta / 2.0);
-    dual_x = std::sin(theta / 2.0) * p.y;
-    dual_y = -std::sin(theta / 2.0) * p.x;
+    real_x = std::cos(theta * 0.5f);
+    real_y = std::sin(theta * 0.5f);
+    dual_x = std::sin(theta * 0.5f) * p.y;
+    dual_y = -std::sin(theta * 0.5f) * p.x;
   }
 
   DualComplex(T x, T y) {
@@ -109,12 +109,14 @@ public:
 
   Vec2F Transform(Vec2F vec) {
     return Vec2F(
-      (real_x * real_x - real_y * real_y) * vec.x
-        + 2 * (real_x * dual_x - real_y * dual_y -
-        real_x * real_y * vec.y),
-      (real_x * real_x - real_y * real_y) * vec.y
-        + 2 * (real_x * real_y * vec.x + real_x * dual_y +
-        real_y * dual_x));
+        static_cast<float>(
+          (real_x * real_x - real_y * real_y) * static_cast<T>(vec.x)
+          + 2 * (real_x * dual_x - real_y * dual_y -
+            real_x * real_y * static_cast<T>(vec.y))),
+        static_cast<float>(
+          (real_x * real_x - real_y * real_y) * static_cast<T>(vec.y)
+          + 2 * (real_x * real_y * static_cast<T>(vec.x) + real_x * dual_y +
+            real_y * dual_x)));
   }
 
   /** normalisation to unit length DualComplex
@@ -191,7 +193,7 @@ public:
   static DualComplex Blend(std::vector<DualComplex> dcns, std::vector<T> weights) {
     assert(dcns.size() == weights.size());
     DualComplex result(0,0,0,0);
-    for (int i = 0; i < dcns.size(); i++) {
+    for (size_t i = 0; i < dcns.size(); i++) {
       result += dcns[i] * weights[i];
     }
     return result.Normalised();

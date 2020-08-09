@@ -53,7 +53,7 @@ void Sound::Load(const char *file_name, bool do_unpack) {
   if (strcmp(last_dot, ".wav") == 0) {
     std::vector<Ui8> data = ReadFile(file_name, true);
     if (!data.empty()) {
-      sound_instance_ = LoadWav(data.data(), data.size());
+      sound_instance_ = LoadWav(data.data(), static_cast<Si64>(data.size()));
     }
   } else if (strcmp(last_dot, ".ogg") == 0) {
     std::vector<Ui8> data = ReadFile(file_name, true);
@@ -62,11 +62,11 @@ void Sound::Load(const char *file_name, bool do_unpack) {
         int error = 0;
         vorbis_codec_ = stb_vorbis_open_memory(data.data(),
           static_cast<int>(data.size()), &error, nullptr);
-        Si32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
+        Ui32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
         sound_instance_ = std::make_shared<SoundInstance>(size);
         // int res =
         stb_vorbis_get_samples_short_interleaved(
-          vorbis_codec_, 2, sound_instance_->GetWavData(), size * 2);
+          vorbis_codec_, 2, sound_instance_->GetWavData(), static_cast<Si32>(size * 2));
         // TODO(Huldra): if (res) {
         stb_vorbis_close(vorbis_codec_);
         vorbis_codec_ = nullptr;
@@ -128,11 +128,11 @@ void Sound::Stop() {
 }
 
 double Sound::Duration() const {
-  Si32 duration_samples = 0;
+  Ui32 duration_samples = 0;
   if (sound_instance_) {
     switch (sound_instance_->GetFormat()) {
     case kSoundDataWav: {
-      duration_samples = sound_instance_->GetDurationSamples();
+      duration_samples = static_cast<Ui32>(sound_instance_->GetDurationSamples());
       break;
     }
     case kSoundDataVorbis: {
@@ -176,7 +176,7 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
     }
     Si32 to_copy = std::min(std::min(size, out_buffer_samples / 2),
       sound_instance_->GetDurationSamples() - offset);
-    memcpy(out_buffer, data + offset * 2, to_copy * 4);
+    memcpy(out_buffer, data + offset * 2, static_cast<size_t>(to_copy) * 4);
     return to_copy;
   }
   case kSoundDataVorbis: {
@@ -195,7 +195,7 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
         return 0;
       }
     }
-    stb_vorbis_seek(vorbis_codec_, offset);
+    stb_vorbis_seek(vorbis_codec_, static_cast<Ui32>(offset));
     int res = stb_vorbis_get_samples_short_interleaved(
       vorbis_codec_, 2, out_buffer, out_buffer_samples);
     if (res < out_buffer_samples / 2) {

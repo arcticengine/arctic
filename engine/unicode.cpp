@@ -114,9 +114,9 @@ Ui32 Utf32FromUtf16::ReadOne() {
 Ui16 Utf32FromUtf16::Read16() {
   Ui16 ch;
   if (is_inverse_byte_order_) {
-    ch = static_cast<Ui16>(p_[1]) | (static_cast<Ui16>(p_[0]) << 8u);
+    ch = static_cast<Ui16>(static_cast<Ui16>(p_[1]) | (static_cast<Ui16>(p_[0]) << 8u));
   } else {
-    ch = static_cast<Ui16>(p_[0]) | (static_cast<Ui16>(p_[1]) << 8u);
+    ch = static_cast<Ui16>(static_cast<Ui16>(p_[0]) | (static_cast<Ui16>(p_[1]) << 8u));
   }
   if (ch) {
     p_ += 2;
@@ -193,7 +193,7 @@ std::string Utf32ToUtf8(const void* data) {
     }
     Ui32 readPos = 0;
     while (readPos < cp.size) {
-      buf[pos] = cp.buffer[readPos];
+      buf[pos] = static_cast<char>(cp.buffer[readPos]);
       pos++;
       readPos++;
     }
@@ -228,7 +228,7 @@ std::string Utf16ToUtf8(const void* data) {
 
     Ui32 readPos = 0;
     while (readPos < cp.size) {
-      buf[pos] = cp.buffer[readPos];
+      buf[pos] = static_cast<char>(cp.buffer[readPos]);
       pos++;
       readPos++;
     }

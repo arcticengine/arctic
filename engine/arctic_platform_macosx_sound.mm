@@ -92,7 +92,7 @@ void CheckStatus(OSStatus status, const char *message) {
     return;
   }
   char code[20];
-  *(UInt32 *)(code + 1) = CFSwapInt32HostToBig(status);
+  *(UInt32 *)(code + 1) = static_cast<Ui32>(ToBe(status));
   if (isprint(code[1])
       && isprint(code[2])
       && isprint(code[3])
@@ -134,12 +134,14 @@ OSStatus SoundRenderProc(void *inRefCon,
   for (Ui32 idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
     SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
 
-    Si32 size = inNumberFrames;
+    Si32 size = static_cast<Si32>(inNumberFrames);
     if (mixer->tmp.size() < inNumberFrames * 2) {
       mixer->tmp.resize(inNumberFrames * 2);
     }
-    size = sound.sound.StreamOut(sound.next_position, inNumberFrames,
-        mixer->tmp.data(), inNumberFrames * 2);
+    size = sound.sound.StreamOut(sound.next_position,
+        static_cast<Si32>(inNumberFrames),
+        mixer->tmp.data(),
+        static_cast<Si32>(inNumberFrames * 2));
     Si16 *in_data = mixer->tmp.data();
     for (Ui32 i = 0; i < size; ++i) {
       mixL[i] += static_cast<Si32>(

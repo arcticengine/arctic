@@ -43,7 +43,7 @@ void MathTables::Init() {
       / static_cast<double>(circle_16_16.size() - 1);
     double xx = std::sqrt(1.0 - yy * yy);
     Si32 x = Si32(xx * 65536.0);
-    circle_16_16[y] = x;
+    circle_16_16[static_cast<size_t>(y)] = x;
   }
 }
 
@@ -68,7 +68,7 @@ GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
     GLint infoLen = 0;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * infoLen));
+      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * static_cast<size_t>(infoLen)));
       glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
       Fatal("Error compiling shader: ", infoLog);
       free(infoLog); //-V779
@@ -169,7 +169,7 @@ void main() {
     GLint infoLen = 0;
     glGetProgramiv(g_programObject, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * infoLen));
+      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * static_cast<size_t>(infoLen)));
       glGetProgramInfoLog(g_programObject, infoLen, NULL, infoLog);
       Fatal("Error linking program: ", infoLog);
       free(infoLog); //-V779
@@ -250,17 +250,17 @@ void Engine::Draw2d() {
   tex[tex_] = Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f);
   ++tex_;
 
-  index[indices_] = idx;
+  index[indices_] = static_cast<Ui32>(idx);
   indices_++;
-  index[indices_] = idx + 1;
+  index[indices_] = static_cast<Ui32>(idx + 1);
   indices_++;
-  index[indices_] = idx + 2;
+  index[indices_] = static_cast<Ui32>(idx + 2);
   indices_++;
-  index[indices_] = idx + 2;
+  index[indices_] = static_cast<Ui32>(idx + 2);
   indices_++;
-  index[indices_] = idx + 3;
+  index[indices_] = static_cast<Ui32>(idx + 3);
   indices_++;
-  index[indices_] = idx;
+  index[indices_] = static_cast<Ui32>(idx);
   indices_++;
 
   glViewport(0, 0, width_, height_);
@@ -336,18 +336,18 @@ double Engine::GetTime() {
 
 Si64 Engine::GetRandom(Si64 min, Si64 max) {
   Check(min <= max, "GetRandom min should be <= max");
-  Si64 range = max - min + 1;
+  Ui64 range = static_cast<Ui64>(max - min) + 1ull;
   if (range < 0x1000) {
     if (range < 0x10) {
-      return min + rnd_8_() % range;
+      return min + static_cast<Si64>(rnd_8_() % range);
     } else {
-      return min + rnd_16_() % range;
+      return min + static_cast<Si64>(rnd_16_() % range);
     }
   } else {
     if (range < 0x1000000) {
-      return min + rnd_32_() % range;
+      return min + static_cast<Si64>(rnd_32_() % range);
     } else {
-      return min + rnd_64_() % range;
+      return min + static_cast<Si64>(rnd_64_() % range);
     }
   }
 }
