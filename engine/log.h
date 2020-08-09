@@ -25,6 +25,7 @@
 
 #include "engine/arctic_types.h"
 #include <memory>
+#include <sstream>
 
 namespace arctic {
 
