@@ -45,7 +45,7 @@ void BitStream::PushBit(Ui64 bit) {
     --unused_bits_;
     *write_cursor_ |= ((bit & 1ull) << unused_bits_);
   } else {
-    data_.push_back((bit & 1ull) << 7u);
+    data_.push_back(static_cast<Ui8>((bit & 1ull) << 7u));
     write_cursor_ = &data_.back();
     unused_bits_ = 7;
   }

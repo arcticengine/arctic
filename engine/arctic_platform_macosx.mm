@@ -354,25 +354,25 @@ Ui16 FromBe(Ui16 x) {
   return ntohs(x);
 }
 Si16 FromBe(Si16 x) {
-  return ntohs(x);
+  return static_cast<Si16>(ntohs(x));
 }
 Ui32 FromBe(Ui32 x) {
   return ntohl(x);
 }
 Si32 FromBe(Si32 x) {
-  return ntohl(x);
+  return static_cast<Si32>(ntohl(x));
 }
 Ui16 ToBe(Ui16 x) {
   return htons(x);
 }
 Si16 ToBe(Si16 x) {
-  return htons(x);
+  return static_cast<Si16>(htons(x));
 }
 Ui32 ToBe(Ui32 x) {
   return htonl(x);
 }
 Si32 ToBe(Si32 x) {
-  return htonl(x);
+  return static_cast<Si32>(htonl(x));
 }
 
 void Check(bool condition, const char *error_message,

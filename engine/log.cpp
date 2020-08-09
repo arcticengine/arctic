@@ -117,7 +117,7 @@ void LoggerThreadFunction() {
         return;
       }
       is_flush_needed = true;
-      out.write(message->data(), message->size());
+      out.write(message->data(), static_cast<std::streamsize>(message->size()));
       Check(!(out.rdstate() & std::ios_base::badbit),
         "Error in LoggerThreadFunction. Can't write the file, file_name: ",
         file_name);

@@ -930,7 +930,7 @@ extern "C" {
         printf("  Count of failed unit tests:  %4d\n",
             test_stat_failed_units__);
         printf("  Count of skipped unit tests: %4d\n",
-            static_cast<int>(test_list_size__ - test_stat_run_units__));
+            static_cast<int>(test_list_size__) - test_stat_run_units__);
         printf("  ");
       }
 

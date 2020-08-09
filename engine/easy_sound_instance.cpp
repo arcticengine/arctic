@@ -92,7 +92,7 @@ Ui8* SoundInstance::GetVorbisData() const {
 }
 
 Si32 SoundInstance::GetVorbisSize() const {
-  return static_cast<Ui32>(data_.size());
+  return static_cast<Si32>(data_.size());
 }
 
 SoundDataFormat SoundInstance::GetFormat() const {
@@ -180,7 +180,7 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
         }
       } else {
         for (Ui32 idx = 0; idx < sample_count; ++idx) {
-          Si16 value = *static_cast<const Ui16*>(
+          Si16 value = *static_cast<const Si16*>(
               static_cast<const void*>(in_data));
           out_data[idx * 2] = value;
           value = *static_cast<const Si16*>(

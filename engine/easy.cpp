@@ -168,7 +168,10 @@ void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
 
             if (x2 <= x1) {
                 if (x2 == x1) {
-                    Rgba color(rgba_1.x, rgba_1.y, rgba_1.z, rgba_1.w);
+                    Rgba color(static_cast<Ui8>(rgba_1.x),
+                        static_cast<Ui8>(rgba_1.y),
+                        static_cast<Ui8>(rgba_1.z),
+                        static_cast<Ui8>(rgba_1.w));
                     to_sprite.RgbaData()[
                         x1 + y1 * to_sprite.StridePixels()] = color;
                 }
@@ -182,10 +185,10 @@ void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
             Si32 stride = to_sprite.StridePixels();
             for (Si32 x = x1; x <= x2; ++x) {
                 Rgba color(
-                    rgba_16.x >> 16,
-                    rgba_16.y >> 16,
-                    rgba_16.z >> 16,
-                    rgba_16.w >> 16);
+                    static_cast<Ui8>(rgba_16.x >> 16),
+                    static_cast<Ui8>(rgba_16.y >> 16),
+                    static_cast<Ui8>(rgba_16.z >> 16),
+                    static_cast<Ui8>(rgba_16.w >> 16));
                 to_sprite.RgbaData()[x + (y_16 >> 16) * stride] = color;
                 rgba_16 += rgba_12_16_step;
                 y_16 += y12_16_step;
@@ -254,7 +257,7 @@ void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
 
             if (y2 <= y1) {
                 if (y2 == y1) {
-                    Rgba color(rgba_1.y, rgba_1.x, rgba_1.z, rgba_1.w);
+                    Rgba color((Ui8)rgba_1.y, (Ui8)rgba_1.x, (Ui8)rgba_1.z, (Ui8)rgba_1.w);
                     to_sprite.RgbaData()[
                         x1 + y1 * to_sprite.StridePixels()] = color;
                 }
@@ -268,10 +271,10 @@ void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
             Si32 stride = to_sprite.StridePixels();
             for (Si32 y = y1; y <= y2; ++y) {
                 Rgba color(
-                    rgba_16.x >> 16u,
-                    rgba_16.y >> 16u,
-                    rgba_16.z >> 16u,
-                    rgba_16.w >> 16u);
+                    static_cast<Ui8>(rgba_16.x >> 16u),
+                    static_cast<Ui8>(rgba_16.y >> 16u),
+                    static_cast<Ui8>(rgba_16.z >> 16u),
+                    static_cast<Ui8>(rgba_16.w >> 16u));
                 to_sprite.RgbaData()[(x_16 >> 16u) + y * stride] = color;
                 rgba_16 += rgba_12_16_step;
                 x_16 += x12_16_step;
@@ -341,10 +344,10 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
             Rgba *p = dst + x1c;
             for (Si32 x = x1c; x < x2c; ++x) {
                 Rgba color(
-                    rgba_16.x >> 16u,
-                    rgba_16.y >> 16u,
-                    rgba_16.z >> 16u,
-                    rgba_16.w >> 16u);
+                    static_cast<Ui8>(rgba_16.x >> 16u),
+                    static_cast<Ui8>(rgba_16.y >> 16u),
+                    static_cast<Ui8>(rgba_16.z >> 16u),
+                    static_cast<Ui8>(rgba_16.w >> 16u));
                 p->rgba = color.rgba;
                 p++;
                 rgba_16 += rgba_12_16_step;
@@ -521,6 +524,14 @@ void SetPixel(Sprite to_sprite, Si32 x, Si32 y, Rgba color) {
   }
 }
 
+void SetPixel(Sprite &to_sprite, Si32 x, Si32 y, Rgba color) {
+  Rgba *data = to_sprite.RgbaData();
+  Si32 stride = to_sprite.StridePixels();
+  if (x >= 0 && x < to_sprite.Width() && y >= 0 && y < to_sprite.Height()) {
+    data[x + y * stride] = color;
+  }
+}
+
 void SetPixel(Si32 x, Si32 y, Rgba color) {
   Sprite to_sprite = GetEngine()->GetBackbuffer();
   Rgba *data = to_sprite.RgbaData();
@@ -531,6 +542,16 @@ void SetPixel(Si32 x, Si32 y, Rgba color) {
 }
 
 Rgba GetPixel(Sprite from_sprite, Si32 x, Si32 y) {
+  Rgba *data = from_sprite.RgbaData();
+  Si32 stride = from_sprite.StridePixels();
+  if (x >= 0 && x < from_sprite.Width() && y >= 0 && y < from_sprite.Height()) {
+    return data[x + y * stride];
+  } else {
+    return Rgba(0, 0, 0);
+  }
+}
+
+Rgba GetPixel(Sprite &from_sprite, Si32 x, Si32 y) {
   Rgba *data = from_sprite.RgbaData();
   Si32 stride = from_sprite.StridePixels();
   if (x >= 0 && x < from_sprite.Width() && y >= 0 && y < from_sprite.Height()) {
@@ -579,7 +600,7 @@ void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
       if (y1 < y2) {
         for (Si32 y = y1; y < y2; ++y) {
           Si32 table_y = tables.cicrle_16_16_mask * (y - c.y) / (r.y + 1);
-          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16u;
+          Si32 table_x = (tables.circle_16_16[static_cast<size_t>(table_y)] * r.x) >> 16u;
           Si32 x1 = std::max(c.x - table_x, 0);
           Si32 x2 = std::min(c.x + table_x + 1, limit.x);
           Rgba *p = data + stride * y + x1;
@@ -598,7 +619,7 @@ void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
       if (y1 < y2) {
         for (Si32 y = y1; y < y2; ++y) {
           Si32 table_y = tables.cicrle_16_16_mask * (c.y - y) / (r.y + 1);
-          Si32 table_x = (tables.circle_16_16[table_y] * r.x) >> 16u;
+          Si32 table_x = (tables.circle_16_16[static_cast<size_t>(table_y)] * r.x) >> 16u;
           Si32 x1 = std::max(c.x - table_x, 0);
           Si32 x2 = std::min(c.x + table_x + 1, limit.x);
           Rgba *p = data + stride * y + x1;
@@ -886,7 +907,7 @@ const InputMessage& GetInputMessage(Si32 idx) {
   Check(idx >= 0, "GetInputMessage called with idx < 0");
   Check(idx < static_cast<Si32>(g_input_messages.size()),
       "GetInputMessage called with idx >= InputMessagesSize()");
-  return g_input_messages[idx];
+  return g_input_messages[static_cast<size_t>(idx)];
 }
 
 
@@ -937,7 +958,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
 
   if (static_cast<Ui64>(pos) > 0ull) {
     data.resize(static_cast<size_t>(pos));
-    in.read(reinterpret_cast<char*>(data.data()), static_cast<Ui64>(pos));
+    in.read(reinterpret_cast<char*>(data.data()), pos);
     if (in.rdstate() != std::ios_base::goodbit) {
       if (is_bulletproof) {
         in.close();
@@ -973,7 +994,7 @@ void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
         "Error in WriteFile. Can't create/open the file, file_name: ",
         file_name);
     out.exceptions(std::ios_base::goodbit);
-    out.write(reinterpret_cast<const char*>(data), data_size);
+    out.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(data_size));
     Check(!(out.rdstate() & std::ios_base::badbit),
         "Error in WriteFile. Can't write the file, file_name: ",
         file_name);

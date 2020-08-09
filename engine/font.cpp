@@ -146,9 +146,9 @@ void Font::Load(const char *file_name) {
   // header->Log();
   pos += sizeof(BmFontBinHeader);
 
-  Si8 block_type = file[pos];
+  Ui8 block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  Si32 block_size = *reinterpret_cast<Si32*>(&file[pos]);
+  Si32 block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
   pos += sizeof(Si32);
   Check(block_type == kBlockInfo, "Unexpected block type 1");
 
@@ -156,19 +156,19 @@ void Font::Load(const char *file_name) {
     sizeof(BmFontBinInfo) - sizeof(BmFontBinInfo::font_name),
     "Info block is too small");
   BmFontBinInfo info;
-  memcpy(&info, &file[pos], sizeof(info) - sizeof(info.font_name));
+  memcpy(&info, &file[static_cast<size_t>(pos)], sizeof(info) - sizeof(info.font_name));
   info.font_name = reinterpret_cast<char*>(
-    &file[pos + sizeof(info) - sizeof(info.font_name)]);
+    &file[static_cast<size_t>(pos) + sizeof(info) - sizeof(info.font_name)]);
   // info.Log();
   pos += block_size;
 
-  block_type = file[pos];
+  block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  block_size = *reinterpret_cast<Si32*>(&file[pos]);
+  block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
   pos += sizeof(Si32);
   Check(block_type == kBlockCommon, "Unexpected block type 2");
   Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
-  BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[pos]);
+  BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[static_cast<size_t>(pos)]);
   // common->Log();
 
   base_to_top_ = common->base;
@@ -177,9 +177,9 @@ void Font::Load(const char *file_name) {
 
   pos += block_size;
 
-  block_type = file[pos];
+  block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  block_size = *reinterpret_cast<Si32*>(&file[pos]);
+  block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
   pos += sizeof(Si32);
   Check(block_type == kBlockPages, "Unexpected block type 3");
   Check(block_size >= 1, "Pages block is too small");
@@ -191,7 +191,7 @@ void Font::Load(const char *file_name) {
 
   for (Si32 id = 0; id < common->pages; ++id) {
     BmFontBinPages page;
-    page.page_name = reinterpret_cast<char*>(&file[inner_pos]);
+    page.page_name = reinterpret_cast<char*>(&file[static_cast<size_t>(inner_pos)]);
     // page.Log(id);
 
     char path[8 << 10];
@@ -209,24 +209,24 @@ void Font::Load(const char *file_name) {
       ++p2;
     }
     if (end != p) {
-      memcpy(path, p, end - p);
+      memcpy(path, p, static_cast<size_t>(end - p));
     }
     strncpy(path + (end - p), page.page_name, sizeof(path) / 2);
-    page_images[id].Load(path);
+    page_images[static_cast<size_t>(id)].Load(path);
 
     inner_pos += static_cast<Si32>(std::strlen(page.page_name)) + 1;
   }
   pos += block_size;
-  block_type = file[pos];
+  block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  block_size = *reinterpret_cast<Si32*>(&file[pos]);
+  block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
   pos += sizeof(Si32);
   Check(block_type == kBlockChars, "Unexpected block type 4");
   Check(block_size >= sizeof(BmFontBinChars), "Pages block is too small");
   inner_pos = pos;
   for (Si32 id = 0; id < block_size / 20; ++id) {
     BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(
-      &file[inner_pos]);
+      &file[static_cast<size_t>(inner_pos)]);
     // chars->Log();
 
     Sprite sprite0;
@@ -245,9 +245,9 @@ void Font::Load(const char *file_name) {
   pos += block_size;
 
   if (static_cast<Si32>(file.size()) > pos) {
-    block_type = file[pos];
+    block_type = static_cast<Ui8>(file[static_cast<size_t>(pos)]);
     ++pos;
-    block_size = *reinterpret_cast<Si32*>(&file[pos]);
+    block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
     pos += sizeof(Si32);
     Check(block_type == kBlockKerningPairs, "Unexpected block type 5");
     Check(block_size >= sizeof(BmFontBinKerningPair),

@@ -52,7 +52,7 @@ struct Rgba {
     b = b_in;
     a = 255;
   }
-  // a = 255 is opaque, a = 0 is transparent.
+  /// a = 255 is opaque, a = 0 is transparent.
   explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in, Ui8 a_in) {
     r = r_in;
     g = g_in;
@@ -155,12 +155,12 @@ inline Rgba Scale(Rgba c, Ui32 alpha_1_8) {
 inline Rgba Lerp(Rgba c1, Rgba c2, Si32 alpha_1_8) {
   Ui32 a = c1.rgba & MASK_LO;
   Ui32 b = c2.rgba & MASK_LO;
-  Ui32 d = a + (((b - a) * alpha_1_8) >> 8u);
+  Ui32 d = a + (((b - a) * static_cast<Ui32>(alpha_1_8)) >> 8u);
   d = d & MASK_LO;
 
   a = (c1.rgba & MASK_HI) >> 8u;
   b = (c2.rgba & MASK_HI) >> 8u;
-  Ui32 e = (c1.rgba & MASK_HI) + ((b - a) * alpha_1_8);
+  Ui32 e = (c1.rgba & MASK_HI) + ((b - a) * static_cast<Ui32>(alpha_1_8));
   e = e & MASK_HI;
 
   return Rgba(d | e);
@@ -174,6 +174,8 @@ inline Rgba GetGray(Rgba c) {
 }
 
 /// @brief Interpolate color in a bi-linear way.
+/// @details Bilerp calculates the color at point P:
+/// @code
 ///    ^y
 /// 256+ c      d
 ///    |
@@ -182,7 +184,7 @@ inline Rgba GetGray(Rgba c) {
 ///   0+ a   .  b
 ///    +-+---+--+-->x
 ///      0   ax 256
-/// Calculate color at point P
+/// @endcode
 inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   const Si32 axy = (ax * ay) >> 8u;
   Ui32 aa = a.rgba & MASK_LO;
@@ -190,8 +192,9 @@ inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   Ui32 cc = c.rgba & MASK_LO;
   Ui32 dd = d.rgba & MASK_LO;
 
-  Ui32 rb = (aa + ((
-      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy) >> 8u))
+  Ui32 rb = (aa + (((bb - aa) * static_cast<Ui32>(ax)
+          + (cc - aa) * static_cast<Ui32>(ay)
+          + (aa + dd - bb - cc) * static_cast<Ui32>(axy)) >> 8u))
     & MASK_LO;
 
   aa = (a.rgba & MASK_HI) >> 8u;
@@ -200,7 +203,9 @@ inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   dd = (d.rgba & MASK_HI) >> 8u;
 
   Ui32 gg = ((a.rgba & MASK_HI) + (
-      (bb - aa) * ax + (cc - aa) * ay + (aa + dd - bb - cc) * axy))
+      (bb - aa) * static_cast<Ui32>(ax)
+      + (cc - aa) * static_cast<Ui32>(ay)
+      + (aa + dd - bb - cc) * static_cast<Ui32>(axy)))
     & MASK_HI;
 
   return Rgba(rb | gg);

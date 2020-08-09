@@ -101,7 +101,7 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
             Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1ul)) >> 8u;
             Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1ul)) >> 8u;
             Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1ul)) >> 8u;
-            p->rgba = Rgba(r2, g2, b2).rgba;
+            p->rgba = Rgba(Ui8(r2), Ui8(g2), Ui8(b2)).rgba;
           } else if (ca) {
             Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1ul)) >> 8u;
             Ui32 m = 255 - ca;
@@ -137,8 +137,8 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
 
       Rgba *p = dst + x1c;
       for (Si32 x = x1c; x < x2c; ++x) {
-        Si32 offset = (static_cast<Ui32>(tex_16.x) >> 16u) +
-          (static_cast<Ui32>(tex_16.y) >> 16u) * tex_stride;
+        Si32 offset = static_cast<Si32>((static_cast<Ui32>(tex_16.x) >> 16u)) +
+          static_cast<Si32>((static_cast<Ui32>(tex_16.y) >> 16u)) * tex_stride;
         if (kBlendingMode == kCopyRgba) {
           p->rgba = tex_data[offset].rgba;
         } else if (kBlendingMode == kAlphaBlend) {
@@ -162,7 +162,7 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
             Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1u)) >> 8u;
             Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1u)) >> 8u;
             Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1u)) >> 8u;
-            p->rgba = Rgba(r2, g2, b2).rgba;
+            p->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2).rgba;
           } else if (ca) {
             Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
             Ui32 m = 255 - ca;
@@ -359,7 +359,7 @@ void DrawSprite(Sprite *to_sprite,
       const Si32 from_y_disp = to_y_disp;
 
       Si32 from_x_acc = 0;
-      const SpanSi32 &span = opaque[from_y + to_y_disp];
+      const SpanSi32 &span = opaque[static_cast<size_t>(from_y + to_y_disp)];
 
       Si32 to_x_db = k_to_x_db;
       if (span.begin > from_x_ab) {
@@ -401,7 +401,7 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
             Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8u;
             Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8u;
-            to_rgba->rgba = Rgba(r2, g2, b2).rgba;
+            to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2).rgba;
           } else if (ca) {
             Ui32 m = 255 - ca;
             Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
@@ -467,7 +467,7 @@ void DrawSprite(Sprite *to_sprite,
       std::min(from_height - 1, from_y_disp + 1) * from_stride_pixels;
     Rgba *to_line = to + to_y_disp * to_stride_pixels;
 
-    Si32 from_x_8 = 0;
+    Ui32 from_x_8 = 0;
     Si32 from_x_disp_00 = from_x_b;
     Si32 from_x_disp_01 = from_x_b + 1;
     Rgba *to_rgba = to_line + to_x_db;
@@ -483,22 +483,22 @@ void DrawSprite(Sprite *to_sprite,
         Rgba color10 = *(from_line_1 + from_x_disp_00);
         Rgba color11 = *(from_line_1 + from_x_disp_00 + 1);
         color = Rgba(
-           ((Ui32(color00.r) * ((255 - from_x_8) * (255 - from_y_8))) +
+           (Ui8)(((Ui32(color00.r) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.r) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.r) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.r) * ((from_x_8) * (from_y_8)))) >> 16u,
-           ((Ui32(color00.g) * ((255 - from_x_8) * (255 - from_y_8))) +
+            (Ui32(color11.r) * ((from_x_8) * (from_y_8)))) >> 16u),
+           (Ui8)(((Ui32(color00.g) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.g) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.g) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.g) * ((from_x_8) * (from_y_8)))) >> 16u,
-           ((Ui32(color00.b) * ((255 - from_x_8) * (255 - from_y_8))) +
+            (Ui32(color11.g) * ((from_x_8) * (from_y_8)))) >> 16u),
+           (Ui8)(((Ui32(color00.b) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.b) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.b) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.b) * ((from_x_8) * (from_y_8)))) >> 16u,
-           ((Ui32(color00.a) * ((255 - from_x_8) * (255 - from_y_8))) +
+            (Ui32(color11.b) * ((from_x_8) * (from_y_8)))) >> 16u),
+           (Ui8)(((Ui32(color00.a) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.a) * ((from_x_8) * (255 - from_y_8))) +
             (Ui32(color10.a) * ((255 - from_x_8) * (from_y_8))) +
-            (Ui32(color11.a) * ((from_x_8) * (from_y_8)))) >> 16u);
+            (Ui32(color11.a) * ((from_x_8) * (from_y_8)))) >> 16u));
       }
 
 
@@ -544,7 +544,7 @@ void DrawSprite(Sprite *to_sprite,
 
       if (from_x_acc_16 > 0) {
         from_x_8 = (static_cast<Ui32>(from_x_acc_16) & 65535ul) >> 8u;
-        from_x_disp_00 = from_x_b + (static_cast<Ui32>(from_x_acc_16) >> 16u);
+        from_x_disp_00 = from_x_b + static_cast<Si32>((static_cast<Ui32>(from_x_acc_16) >> 16u));
         from_x_disp_01 = from_x_disp_00 + 1;
       }
       ++to_rgba;
@@ -626,7 +626,7 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
           " Not loading sprite.";
       return;
     }
-    sprite_instance_ = LoadTga(data, size_bytes);
+    sprite_instance_ = LoadTga(data, static_cast<Si64>(size_bytes));
     if (!sprite_instance_) {
       *Log() << "Error in Sprite::Load, file: \""
         << file_name << "\" could not be loaded with LoadTga."
@@ -668,7 +668,7 @@ void Sprite::Load(const char *file_name) {
           " Not loading sprite.";
       return;
     }
-    sprite_instance_ = LoadTga(data.data(), data.size());
+    sprite_instance_ = LoadTga(data.data(), static_cast<Si64>(data.size()));
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = sprite_instance_ ? Vec2Si32(sprite_instance_->width(),
       sprite_instance_->height()) : Vec2Si32(0, 0);
@@ -1143,7 +1143,7 @@ Vec2Si32 Sprite::Size() const {
 }
 
 Si32 Sprite::StrideBytes() const {
-  return sprite_instance_->width() * sizeof(Rgba);
+  return sprite_instance_->width() * static_cast<Si32>(sizeof(Rgba));
 }
 
 Si32 Sprite::StridePixels() const {
