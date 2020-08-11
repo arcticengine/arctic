@@ -129,6 +129,11 @@ public:
       dual_x / norm, dual_y / norm);
   }
 
+  DualComplex TranslationScaled(T scale) const {
+    return DualComplex(real_x, real_y,
+      dual_x * scale, dual_y * scale);
+  }
+
   /// @brief norm
   /// @return norm of the DualComplex
   T Norm() const {
