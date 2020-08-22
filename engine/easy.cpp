@@ -592,15 +592,15 @@ void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
   Rgba *data = back.RgbaData();
   Si32 stride = back.StridePixels();
 
-  if (r.x >= 0) {
+  if (r.x >= 0 ) {
     // from c up
     {
-      Si32 y1 = std::max(c.y, 0);
+      Si32 y1 = std::max(c.y + 1, 0);
       Si32 y2 = std::min(c.y + r.y + 1, limit.y);
       if (y1 < y2) {
         for (Si32 y = y1; y < y2; ++y) {
-          Si32 table_y = tables.cicrle_16_16_mask * (y - c.y) / (r.y + 1);
-          Si32 table_x = (tables.circle_16_16[static_cast<size_t>(table_y)] * r.x) >> 16u;
+          Si32 table_y = (tables.cicrle_16_16_mask * (y - c.y) - tables.cicrle_16_16_half_mask) / r.y;
+          Si32 table_x = ((tables.circle_16_16[static_cast<size_t>(table_y)] * r.x) + 32767)>> 16u;
           Si32 x1 = std::max(c.x - table_x, 0);
           Si32 x2 = std::min(c.x + table_x + 1, limit.x);
           Rgba *p = data + stride * y + x1;
@@ -611,6 +611,16 @@ void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
         }
       }
     }
+    // center line
+    if (c.y > 0 && c.y < limit.y) {
+      Si32 x1 = std::max(c.x - r.x, 0);
+      Si32 x2 = std::min(c.x + r.x, limit.x - 1);
+      Rgba *p = data + stride * c.y + x1;
+      Rgba *p_end = p + (x2 - x1);
+      for (; p <= p_end; ++p) {
+        p->rgba = color.rgba;
+      }
+    }
 
     // from bottom to c
     {
@@ -618,8 +628,8 @@ void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
       Si32 y2 = std::min(c.y, limit.y);
       if (y1 < y2) {
         for (Si32 y = y1; y < y2; ++y) {
-          Si32 table_y = tables.cicrle_16_16_mask * (c.y - y) / (r.y + 1);
-          Si32 table_x = (tables.circle_16_16[static_cast<size_t>(table_y)] * r.x) >> 16u;
+          Si32 table_y = (tables.cicrle_16_16_mask * (c.y - y) - tables.cicrle_16_16_mask/2) / r.y;
+          Si32 table_x = ((tables.circle_16_16[static_cast<size_t>(table_y)] * r.x) + 32767)>> 16u;
           Si32 x1 = std::max(c.x - table_x, 0);
           Si32 x2 = std::min(c.x + table_x + 1, limit.x);
           Rgba *p = data + stride * y + x1;
