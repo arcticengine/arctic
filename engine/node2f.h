@@ -41,6 +41,16 @@ namespace arctic {
 struct Transform2F {
   DualComplexF dc;
   float scale = 1.f;
+
+  void SetPosition(Vec2F position) {
+    dc.dual_x = position.x * 0.5f;
+    dc.dual_y = position.y * 0.5f;
+  }
+
+  void SetPosition(float x, float y) {
+    dc.dual_x = x * 0.5f;
+    dc.dual_y = y * 0.5f;
+  }
 };
 
 class Node2F : public std::enable_shared_from_this<Node2F> {
@@ -71,6 +81,18 @@ class Node2F : public std::enable_shared_from_this<Node2F> {
 
   void SetTransform(Transform2F transform) {
     transform_ = transform;
+  }
+
+  Transform2F &Transform() {
+    return transform_;
+  }
+
+  void SetPosition(Vec2F position) {
+    transform_.SetPosition(position);
+  }
+
+  void SetPosition(float x, float y) {
+    transform_.SetPosition(x, y);
   }
 
   Ui32 GetZOrder() const {
@@ -137,6 +159,13 @@ class Node2F : public std::enable_shared_from_this<Node2F> {
     }
   }
 
+  void Draw() {
+    DrawSelf(transform_);
+    for (auto &child: children_) {
+      child->Draw(transform_);
+    }
+  }
+
   void Draw(Transform2F parent_transform) {
     Transform2F transform;
     transform.dc = parent_transform.dc * transform_.dc.TranslationScaled(parent_transform.scale);
@@ -161,6 +190,18 @@ class SpriteNode2F : public Node2F {
   SpriteNode2F(Sprite sprite)
     : sprite_(sprite)
   {}
+
+  void SetDrawBlendingMode(DrawBlendingMode blending_mode) {
+    blending_mode_ = blending_mode;
+  }
+
+  void SetDrawFilterMode(DrawFilterMode filter_mode) {
+    filter_mode_ = filter_mode;
+  }
+
+  void SetColor(Rgba color) {
+    color_ = color;
+  }
 
   void DrawSelf(const Transform2F &transform) override {
     Vec2F pos = transform.dc.Transform(Vec2F(0.f, 0.f));

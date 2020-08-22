@@ -41,17 +41,13 @@ namespace arctic {
 template<class T>
 class DualComplex {
 public:
-  T real_x;
-  T real_y;
-  T dual_x;
-  T dual_y;
+  T real_x = 1;
+  T real_y = 0;
+  T dual_x = 0;
+  T dual_y = 0;
 
   /// @brief constructor
   DualComplex() {
-    real_x = 1;
-    real_y = 0;
-    dual_x = 0;
-    dual_y = 0;
   }
 
   /// @brief Constructor that creates DualComplex with given real and dual parts
@@ -59,11 +55,11 @@ public:
   /// @param a_real_y the y-coordinate of the real part
   /// @param a_dual_x the x-coordinate of the dual part
   /// @param a_dual_y the y-coordinate of the dual part
-  DualComplex(T a_real_x, T a_real_y, T a_dual_x, T a_dual_y) {
-    real_x = a_real_x;
-    real_y = a_real_y;
-    dual_x = a_dual_x;
-    dual_y = a_dual_y;
+  DualComplex(T a_real_x, T a_real_y, T a_dual_x, T a_dual_y)
+      : real_x(a_real_x)
+      , real_y(a_real_y)
+      , dual_x(a_dual_x)
+      , dual_y(a_dual_y) {
   }
 
   /// @brief Constructor that creates DualComplex which represents the rotation around a given point
@@ -92,11 +88,11 @@ public:
     dual_y = -std::sin(theta * 0.5f) * p.x;
   }
 
-  DualComplex(T x, T y) {
-    real_x = 1;
-    real_y = 0;
-    dual_x = x * 0.5f;
-    dual_y = y * 0.5f;
+  DualComplex(T x, T y)
+      : real_x(1)
+      , real_y(0)
+      , dual_x(x * 0.5f)
+      , dual_y(y * 0.5f) {
   }
 
   T GetAngle() const {
