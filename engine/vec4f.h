@@ -28,6 +28,9 @@
 #include "engine/arctic_types.h"
 
 namespace arctic {
+
+/// @addtogroup global_math
+/// @{
 struct Vec4F {
   union {
     struct {
@@ -332,8 +335,6 @@ inline Vec4F operator/(Vec4F const &a, Vec4F const &b) {
   return Vec4F(a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w);
 }
 
-/// @addtogroup global_math
-/// @{
 
 inline Vec4F Normalize(Vec4F const &v) {
   float const m2 = v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w;

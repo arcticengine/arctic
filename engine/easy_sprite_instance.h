@@ -29,6 +29,9 @@
 
 namespace arctic {
 
+/// @addtogroup global_advanced
+/// @{
+
 struct SpanSi32 {
   Si32 begin;
   Si32 end;
@@ -65,8 +68,6 @@ class SpriteInstance {
 };
 
 
-/// @addtogroup global_advanced
-/// @{
 
 /// @brief Creates a sprite instance from *.tga file data
 std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,

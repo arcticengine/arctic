@@ -32,6 +32,8 @@ struct stb_vorbis;
 
 namespace arctic {
 
+/// @addtogroup global_sound
+/// @{
 class Sound {
  private:
   std::shared_ptr<SoundInstance> sound_instance_;
@@ -55,6 +57,7 @@ class Sound {
   std::shared_ptr<SoundInstance> GetInstance();
   bool IsPlaying();
 };
+/// @}
 
 }  // namespace arctic
 

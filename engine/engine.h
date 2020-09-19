@@ -35,6 +35,9 @@
 
 namespace arctic {
 
+/// @addtogroup global_advanced
+/// @{
+
 struct MathTables {
   std::vector<Si32> circle_16_16;
   Si32 cicrle_16_16_size_bits = 0;
@@ -108,6 +111,7 @@ class Engine {
     return math_tables_;
   }
 };
+/// @}
 
 }  // namespace arctic
 

@@ -28,6 +28,8 @@
 #include "engine/arctic_types.h"
 
 namespace arctic {
+/// @addtogroup global_math
+/// @{
 struct Mat22F {
   float m[4];
 
@@ -70,6 +72,7 @@ inline Mat22F Rotation(Vec2F const &v) {
   return Mat22F(v.x, -v.y,
     v.y, v.x);
 }
+/// @}
 
 }  // namespace arctic
 

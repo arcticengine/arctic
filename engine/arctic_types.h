@@ -27,6 +27,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_math
+/// @{
 typedef int8_t Si8;
 typedef int16_t Si16;
 typedef int32_t Si32;
@@ -42,6 +44,7 @@ enum Trivalent {
   kTrivalentTrue = 1,
   kTrivalentUnknown = 2
 };
+/// @}
 
 }  // namespace arctic
 

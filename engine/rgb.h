@@ -27,6 +27,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_color
+/// @{
 struct Rgb {
   union {
     struct {
@@ -76,6 +78,7 @@ struct Rgb {
     return r != v.r || g != v.g || b != v.b;
   }
 };
+/// @}
 
 }  // namespace arctic
 

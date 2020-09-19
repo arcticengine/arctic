@@ -31,6 +31,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_math
+/// @{
 struct Bound3F {
   union {
     struct {
@@ -290,6 +292,7 @@ inline Bound3F Transform(Bound3F const &bbox, const Mat44F &m) {
   res = Include(res, p7);
   return res;
 }
+/// @}
 
 }  // namespace arctic
 

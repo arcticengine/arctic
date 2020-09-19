@@ -383,15 +383,6 @@ Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
   return size;
 }
 
-/// @brief Draw a UTF-8 string containing one or more lines of text to the destination sprite
-/// @param to_sprite Destinaton sprite
-/// @param text UTF-8 c-string with one or more lines of text (separated either with /n, /r or both
-/// @param x X destination sprite coordinate to draw text at
-/// @param y Y destination sprite coordinate to draw text at
-/// @param origin The origin that will be located at the specified destination sprite coordinates
-/// @param blending_mode The blending mode to use when drawing the text
-/// @param filter_mode The filtering mode to use when drawing the text
-/// @param color The color (used for the kDrawBlendingModeColorize blending mode only)
 void Font::Draw(Sprite to_sprite, const char *text,
     const Si32 x, const Si32 y,
     const TextOrigin origin,
@@ -414,14 +405,6 @@ void Font::Draw(Sprite to_sprite, const char *text,
     palete, true, nullptr);
 }
 
-/// @brief Draw a UTF-8 string containing one or more lines of text to the backbuffer
-/// @param text UTF-8 c-string with one or more lines of text (separated either with /n, /r or both
-/// @param x X screen coordinate to draw text at
-/// @param y Y screen coordinate to draw text at
-/// @param origin The origin that will be located at the specified screen coordinates
-/// @param blending_mode The blending mode to use when drawing the text
-/// @param filter_mode The filtering mode to use when drawing the text
-/// @param color The color (used for the kDrawBlendingModeColorize blending mode only)
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
       const DrawBlendingMode blending_mode,

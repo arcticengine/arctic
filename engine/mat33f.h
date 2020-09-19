@@ -28,6 +28,8 @@
 #include "engine/arctic_types.h"
 
 namespace arctic {
+/// @addtogroup global_math
+/// @{
 struct Mat33F {
   float m[9];
 
@@ -238,6 +240,7 @@ inline Mat33F BuildBase(const Vec3F &nn) {
     uu.y, vv.y, nn.y,
     uu.z, vv.z, nn.z);
 }
+/// @}
 
 }  // namespace arctic
 

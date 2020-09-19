@@ -29,6 +29,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_input
+/// @{
 enum KeyCode {
   kKeyNone = 0,   ///< Indicates absence of any key, like SQL null
   kKeyUnknown = 1,   ///< Indicates an unidentified key
@@ -188,6 +190,7 @@ struct InputMessage {
   Keyboard keyboard;
   Mouse mouse;
 };
+/// @}
 
 /// @addtogroup global_advanced
 /// @{
