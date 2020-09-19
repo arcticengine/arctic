@@ -31,6 +31,9 @@
 
 namespace arctic {
 
+/// @addtogroup global_advanced
+/// @{
+
 #pragma pack(push, 1)
 enum BmFontBlockType {
   kBlockInfo = 1,
@@ -149,12 +152,17 @@ struct Glyph {
     , sprite(in_sprite) {
   }
 };
+/// @}
 
+/// @addtogroup global_drawing
+/// @{
+
+/// The origin point used for rendering
 enum TextOrigin {
-  kTextOriginBottom = 0,
-  kTextOriginFirstBase = 1,
-  kTextOriginLastBase = 2,
-  kTextOriginTop = 3
+  kTextOriginBottom = 0, ///< The bottom of the last text line
+  kTextOriginFirstBase = 1, ///< The base of the first text line
+  kTextOriginLastBase = 2, ///< The base of the last text line
+  kTextOriginTop = 3 ///< The top of the first text line
 };
 
 struct Font {
@@ -164,10 +172,34 @@ struct Font {
   Si32 base_to_bottom_ = 0;
   Si32 line_height_ = 0;
 
+  /// @brief Creates an empty font with no glyphs
+  /// @param [in] base_to_top Glyph height from base to top.
   void CreateEmpty(Si32 base_to_top, Si32 line_height);
+
+  /// @brief Adds a glyph to the font
+  /// @param [in] glyph Glyph to add.
   void AddGlyph(const Glyph &glyph);
+  /// @brief Adds a glyph to the font
+  /// @param [in] codepoint UTF32 codepoint the glyph represents.
+  /// @param [in] xadvance The increment of the 'cursor' x position used
+  ///   for font rendering.
+  ///   \code
+  /// |XXXXXXX  |XXXXXXX
+  /// X       X X       X
+  /// X       X X       X
+  /// |XXXXXXX  |XXXXXXX
+  /// |         |
+  /// |<------->|
+  ///  xadvance
+  ///   \endcode
+  /// @param [in] sprite The Sprite containing the graphical representation of
+  ///   the glyph.
   void AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite);
+
+  /// @brief Loads the font from file
+  /// @param [in] file_name Path to the font file to load.
   void Load(const char *file_name);
+
   void DrawEvaluateSizeImpl(Sprite to_sprite,
       const char *text, bool do_keep_xadvance,
       Si32 x, Si32 y, TextOrigin origin,
@@ -176,29 +208,90 @@ struct Font {
       Rgba color, const std::vector<Rgba> &palete, bool do_draw,
       Vec2Si32 *out_size);
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
+
+  /// @brief Draws a UTF-8 string containing one or more lines of text to the
+  ///   destination sprite
+  /// @param [in] to_sprite Destination sprite.
+  /// @param [in] text UTF-8 c-string with one or more lines of text
+  ///   (separated either with `/n`, `/r` or both)
+  /// @param [in] x X destination sprite coordinate to draw text at.
+  /// @param [in] y Y destination sprite coordinate to draw text at.
+  /// @param [in] origin The origin that will be located at the specified
+  ///   coordinates.
+  /// @param [in] blending_mode The blending mode to use when drawing the text.
+  /// @param [in] filter_mode The filtering mode to use when drawing the text.
+  /// @param [in] color The color used by some blending modes (for example,
+  ///   the kDrawBlendingModeColorize blending mode).
   void Draw(Sprite to_sprite, const char *text,
       const Si32 x, const Si32 y,
       const TextOrigin origin = kTextOriginBottom,
-      const DrawBlendingMode blending_mode = kAlphaBlend,
+      const DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       const DrawFilterMode filter_mode = kFilterNearest,
       const Rgba color = Rgba(0xffffffff));
+
+  /// @brief Draws a UTF-8 string containing one or more lines of text to the
+  ///   destination sprite
+  /// @param [in] to_sprite Destination sprite.
+  /// @param [in] text UTF-8 c-string with one or more lines of text
+  ///   (separated either with `/n`, `/r` or both)
+  /// @param [in] x X destination sprite coordinate to draw text at.
+  /// @param [in] y Y destination sprite coordinate to draw text at.
+  /// @param [in] origin The origin that will be located at the specified
+  ///   coordinates.
+  /// @param [in] blending_mode The blending mode to use when drawing the text.
+  /// @param [in] filter_mode The filtering mode to use when drawing the text.
+  /// @param [in] palete The vector of Rgba colors used to colorize the text
+  ///   by some blending modes (for example, the kDrawBlendingModeColorize
+  ///   blending mode). Characters with codepoints <= 8 are considered the
+  ///   color-control characters and select the color from the palatte for the
+  ///   following text.
   void Draw(Sprite to_sprite, const char *text,
-      const Si32 x, const Si32 y,
-      const TextOrigin origin,
-      const DrawBlendingMode blending_mode,
-      const DrawFilterMode filter_mode,
-      const std::vector<Rgba> &palete);
+    const Si32 x, const Si32 y,
+    const TextOrigin origin,
+    const DrawBlendingMode blending_mode,
+    const DrawFilterMode filter_mode,
+    const std::vector<Rgba> &palete);
+
+  /// @brief Draws a UTF-8 string containing one or more lines of text to the
+  ///   backbuffer
+  /// @param [in] text UTF-8 c-string with one or more lines of text
+  ///   (separated either with `/n`, `/r` or both)
+  /// @param [in] x X screen coordinate to draw text at.
+  /// @param [in] y Y screen coordinate to draw text at.
+  /// @param [in] origin The origin that will be located at the specified screen
+  ///   coordinates.
+  /// @param [in] blending_mode The blending mode to use when drawing the text.
+  /// @param [in] filter_mode The filtering mode to use when drawing the text.
+  /// @param [in] color The color used by some blending modes (for example,
+  ///   the kDrawBlendingModeColorize blending mode).
   void Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin = kTextOriginBottom,
-      const DrawBlendingMode blending_mode = kAlphaBlend,
+      const DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       const DrawFilterMode filter_mode = kFilterNearest,
       const Rgba color = Rgba(0xffffffff));
+
+  /// @brief Draws a UTF-8 string containing one or more lines of text to the
+  ///   backbuffer
+  /// @param [in] text UTF-8 c-string with one or more lines of text
+  ///   (separated either with `/n`, `/r` or both)
+  /// @param [in] x X screen coordinate to draw text at.
+  /// @param [in] y Y screen coordinate to draw text at.
+  /// @param [in] origin The origin that will be located at the specified screen
+  ///   coordinates.
+  /// @param [in] blending_mode The blending mode to use when drawing the text.
+  /// @param [in] filter_mode The filtering mode to use when drawing the text.
+  /// @param [in] palete The vector of Rgba colors used to colorize the text
+  ///   by some blending modes (for example, the kDrawBlendingModeColorize
+  ///   blending mode). Characters with codepoints <= 8 are considered the
+  ///   color-control characters and select the color from the palatte for the
+  ///   following text.
   void Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
       const DrawBlendingMode blending_mode,
       const DrawFilterMode filter_mode,
       const std::vector<Rgba> &palete);
 };
+/// @}
 
 }  // namespace arctic
 

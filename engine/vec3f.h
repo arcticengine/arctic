@@ -31,6 +31,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_math
+/// @{
 struct Vec3F {
   union {
     struct {
@@ -289,8 +291,6 @@ inline Vec3F operator/(Vec3F  const &a, Vec3F  const &b) {
   return Vec3F(a.x / b.x, a.y / b.y, a.z / b.z);
 }
 
-/// @addtogroup global_math
-/// @{
 
 inline Vec3F floor(Vec3F const &v) {
   return Vec3F(floorf(v.x), floorf(v.y), floorf(v.z));

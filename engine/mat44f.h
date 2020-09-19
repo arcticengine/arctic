@@ -30,7 +30,8 @@
 
 namespace arctic {
 
-
+/// @addtogroup global_math
+/// @{
 struct Mat44F {
   float m[16];
 
@@ -834,6 +835,7 @@ inline Mat44F SetLookat(const Vec3F &eye, const Vec3F &tar, const Vec3F &up) {
 
   return mat;
 }
+/// @}
 
 }  // namespace arctic
 

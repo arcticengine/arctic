@@ -32,6 +32,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_color
+/// @{
 struct Rgba {
   union {
     struct {
@@ -90,8 +92,6 @@ struct Rgba {
   }
 };
 
-/// @addtogroup global_color
-/// @{
 inline Rgba Mix(Rgba const &a, Rgba const &b, float const f) {
   return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
     static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),

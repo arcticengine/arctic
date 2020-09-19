@@ -33,11 +33,14 @@
 
 namespace arctic {
 
+/// @addtogroup global_files
+/// @{
 struct DirectoryEntry {
   std::string title;  ///< entries own full name, like "pet" or "font.tga"
   Trivalent is_directory = kTrivalentUnknown;
   Trivalent is_file = kTrivalentUnknown;
 };
+/// @}
 
 /// @addtogroup global_utility
 /// @{

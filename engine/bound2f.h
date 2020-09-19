@@ -29,6 +29,9 @@
 #include "engine/vec2f.h"
 
 namespace arctic {
+
+/// @addtogroup global_math
+/// @{
 struct Bound2F {
   union {
     struct {
@@ -100,6 +103,7 @@ inline bool Contains(Bound2F const &b, Vec2F const &p) {
   }
   return true;
 }
+/// @}
 
 }  // namespace arctic
 

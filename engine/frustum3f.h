@@ -30,6 +30,9 @@
 
 namespace arctic {
 
+/// @addtogroup global_math
+/// @{
+
 struct Frustum3F {
   Vec4F planes[6];
   Vec3F points[8];
@@ -122,8 +125,6 @@ struct Frustum3F {
   }
 };
 
-/// @addtogroup global_math
-/// @{
 inline Vec3F GetNearPoint(Frustum3F const &fru, const Vec2F &uv) {
   return Mix(Mix(fru.points[4], fru.points[5], uv.x),
     Mix(fru.points[7], fru.points[6], uv.x), uv.y);

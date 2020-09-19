@@ -35,6 +35,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_utility
+/// @{
 class CsvRow {
  private:
   const std::vector<std::string> header_;
@@ -114,6 +116,7 @@ class CsvTable {
   std::vector<CsvRow *> content_;
   std::string error_description;
 };
+/// @}
 
 }  // namespace arctic
 

@@ -35,6 +35,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_sound
+/// @{
 struct SoundBuffer {
   enum Action {
     kStart = 0,
@@ -119,6 +121,8 @@ struct SoundMixerState {
 };
 
 extern template class MpscVirtInfArray<SoundBuffer*, TuneDeletePayloadFlag<true>>;
+
+/// @}
 
 }  // namespace arctic
 

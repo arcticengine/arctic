@@ -30,6 +30,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_advanced
+/// @{
 class SoundPlayerImpl;
 
 class AudioDeviceInfo {
@@ -64,8 +66,6 @@ class SoundPlayer {
   SoundPlayerImpl *impl = nullptr;
 };
 
-/// @addtogroup global_advanced
-/// @{
 
 /// @brief Starts playback of a sound
 /// @param sound Sound to play

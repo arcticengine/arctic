@@ -29,6 +29,9 @@
 
 namespace arctic {
 
+/// @addtogroup global_utility
+/// @{
+
 struct Utf32Reader {
   const Ui8 *begin = nullptr;
   const Ui8 *p = nullptr;
@@ -57,8 +60,6 @@ struct Utf8Codepoint {
   void WriteUtf32(Ui32 codepoint);
 };
 
-/// @addtogroup global_utility
-/// @{
 
 /// @brief Convers a UTF-32 encoded string to UTF-8.
 /// @param [in] data Address of the UTF-32 encoded string.

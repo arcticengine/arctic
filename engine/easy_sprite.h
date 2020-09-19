@@ -33,6 +33,9 @@
 #include "engine/rgba.h"
 
 namespace arctic {
+  
+/// @addtogroup global_drawing
+/// @{
 
 enum DrawBlendingMode {
   kCopyRgba = 0, // Deprecated
@@ -197,6 +200,8 @@ class Sprite {
   /// @brief Clear the opaque span parameters of the sprite so that each pixel of the sprite is drawn
   void ClearOpaqueSpans();
 };
+
+/// @}
 
 }  // namespace arctic
 

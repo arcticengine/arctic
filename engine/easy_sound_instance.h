@@ -31,6 +31,9 @@
 
 namespace arctic {
 
+/// @addtogroup global_advanced
+/// @{
+
 enum SoundDataFormat {
   kSoundDataWav,
   kSoundDataVorbis
@@ -53,9 +56,6 @@ class SoundInstance {
   void DecPlaying();
 };
 
-
-/// @addtogroup global_advanced
-/// @{
 
 /// @brief Creates a sound instance from the data
 std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,

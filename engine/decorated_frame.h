@@ -30,6 +30,9 @@
 
 namespace arctic {
 
+
+/// @addtogroup global_drawing
+/// @{
 class DecoratedFrame {
   Sprite left_;
   Sprite right_;
@@ -207,6 +210,7 @@ class DecoratedFrame {
     return sprite;
   }
 };
+/// @}
 
 }  // namespace arctic
 

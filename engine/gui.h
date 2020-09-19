@@ -37,6 +37,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_gui
+/// @{
 enum GuiMessageKind {
   kGuiButtonClick,
   kGuiButtonDown,
@@ -285,6 +287,7 @@ class HorizontalScroll : public Panel {
   void SetValue(Si32 value);
   Si32 GetValue() const;
 };
+/// @}
 
 }  // namespace arctic
 

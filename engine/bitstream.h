@@ -31,6 +31,8 @@
 
 namespace arctic {
 
+/// @addtogroup global_utility
+/// @{
 class BitStream {
   // Single bit is represented with 1 byte of 10000000 or 0x80
   // sequence of 10001001 becomes 1 byte of 0x89
@@ -51,6 +53,7 @@ class BitStream {
   Ui8 ReadBit();
   const std::deque<Ui8>& GetData();
 };
+/// @}
 
 }  // namespace arctic
 
