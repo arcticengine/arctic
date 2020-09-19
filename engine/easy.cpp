@@ -516,16 +516,8 @@ void DrawRectangle(Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   }
 }
 
-void SetPixel(Sprite to_sprite, Si32 x, Si32 y, Rgba color) {
-  Rgba *data = to_sprite.RgbaData();
-  Si32 stride = to_sprite.StridePixels();
-  if (x >= 0 && x < to_sprite.Width() && y >= 0 && y < to_sprite.Height()) {
-    data[x + y * stride] = color;
-  }
-}
-
-void SetPixel(Sprite &to_sprite, Si32 x, Si32 y, Rgba color) {
-  Rgba *data = to_sprite.RgbaData();
+void SetPixel(const Sprite &to_sprite, Si32 x, Si32 y, Rgba color) {
+  Rgba *data = const_cast<Rgba*>(to_sprite.RgbaData());
   Si32 stride = to_sprite.StridePixels();
   if (x >= 0 && x < to_sprite.Width() && y >= 0 && y < to_sprite.Height()) {
     data[x + y * stride] = color;

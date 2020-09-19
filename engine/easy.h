@@ -89,10 +89,7 @@ Rgba GetPixel(Sprite &from_sprite, Si32 x, Si32 y);
 void SetPixel(Si32 x, Si32 y, Rgba color);
 
 /// @brief Sets color of a pixel of a sprite at coordinates specified
-void SetPixel(Sprite to_sprite, Si32 x, Si32 y, Rgba color);
-
-/// @brief Sets color of a pixel of a sprite at coordinates specified
-void SetPixel(Sprite &to_sprite, Si32 x, Si32 y, Rgba color);
+void SetPixel(const Sprite &to_sprite, Si32 x, Si32 y, Rgba color);
 
 /// @brief Draws a solid color filled circle
 void DrawCircle(Vec2Si32 c, Si32 r, Rgba color);
