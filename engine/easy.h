@@ -70,6 +70,13 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     Rgba color_a, Rgba color_b, Rgba color_c);
 
+
+void DrawTriangle(Sprite to_sprite,
+  Vec2F a, Vec2F b, Vec2F c,
+  Vec2F ta, Vec2F tb, Vec2F tc,
+  Sprite texture,
+  DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color);
+
 /// @brief Draws a solid color filled rectangle
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color);
 

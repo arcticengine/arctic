@@ -47,6 +47,8 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
     Vec2F dtdy1, Vec2F dtdy2,
     Si32 width, Si32 height,
     Si32 y1, Si32 y2, Sprite texture, Rgba in_color) {
+
+  assert(static_cast<Si32>((static_cast<Ui32>(tex_b->x))) < texture.Width());
   Si32 y = y1;
   if (y1 < 0) {
     Si32 yc = std::min(0, y2);
@@ -56,18 +58,21 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
     *x2 += dxdy2 * d;
     *tex_a += dtdy1 * d;
     *tex_b += dtdy2 * d;
+    assert(static_cast<Si32>((static_cast<Ui32>(tex_b->x))) < texture.Width());
   }
-  Si32 ye = std::min(height, y2);
+  Si32 ye = std::min(height-1, y2);
   dst += y * stride;
   Si32 tex_stride = texture.StridePixels();
   Rgba *tex_data = texture.RgbaData();
-  for (; y < ye; y++) {
+  assert(static_cast<Si32>((static_cast<Ui32>(tex_b->x + (ye - y)*dtdy2.x))) < texture.Width());
+  for (; y <= ye; y++) {
+    assert(static_cast<Si32>((static_cast<Ui32>(tex_b->x))) < texture.Width());
     Si32 x1i = static_cast<Si32>(*x1);
     Si32 x2i = static_cast<Si32>(*x2);
 
     Si32 x12i = x2i - x1i;
     Si32 x1c = std::max(0, x1i);
-    Si32 x2c = std::min(width, x2i);
+    Si32 x2c = std::min(width-1, x2i);
 
     if (x2c <= x1c) {
       if (x2c == x1c && x2c < width) {
@@ -122,10 +127,13 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
         }
       }
     } else {
+      assert(static_cast<Si32>((static_cast<Ui32>(tex_a->x))) < texture.Width());
+      assert(static_cast<Si32>((static_cast<Ui32>(tex_b->x))) < texture.Width());
       Vec2F tex_ab = *tex_b - *tex_a;
       Vec2F tex_1c = (x1c == x1i ? *tex_a :
         *tex_a + tex_ab * static_cast<float>(x1c - x1i) /
         static_cast<float>(x12i));
+      assert(x12i);
       Vec2F tex_2c = (x2c == x2i ? *tex_b :
         *tex_a + tex_ab * static_cast<float>(x2c - x1i) /
         static_cast<float>(x12i));
@@ -136,7 +144,10 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
       Vec2Si32 tex_12_16_step = tex_12_16 / (x2c - x1c);
 
       Rgba *p = dst + x1c;
-      for (Si32 x = x1c; x < x2c; ++x) {
+      for (Si32 x = x1c; x <= x2c; ++x) {
+
+        assert(static_cast<Si32>((static_cast<Ui32>(tex_16.x) >> 16u)) < texture.Width());
+        assert(static_cast<Si32>((static_cast<Ui32>(tex_16.y) >> 16u)) < texture.Height());
         Si32 offset = static_cast<Si32>((static_cast<Ui32>(tex_16.x) >> 16u)) +
           static_cast<Si32>((static_cast<Ui32>(tex_16.y) >> 16u)) * tex_stride;
         if (kBlendingMode == kCopyRgba) {
@@ -193,6 +204,219 @@ inline void DrawTrianglePart(Rgba *dst, Si32 stride,
   }
 }
 
+struct Edge {
+  float x;
+  Vec2F tex;
+};
+
+template<DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode>
+void DrawTriangle(Sprite to_sprite,
+    Vec2F a, Vec2F b, Vec2F c,
+    Vec2F tex_a, Vec2F tex_b, Vec2F tex_c,
+    Sprite texture, Rgba in_color) {
+  if (a.y > b.y) {
+    std::swap(a, b);
+    std::swap(tex_a, tex_b);
+  }
+  if (a.y > c.y) {
+    std::swap(a, c);
+    std::swap(tex_a, tex_c);
+  }
+  if (b.y > c.y) {
+    std::swap(b, c);
+    std::swap(tex_b, tex_c);
+  }
+
+  Si32 stride = to_sprite.StridePixels();
+  Rgba *dst = to_sprite.RgbaData();
+  Si32 width = to_sprite.Width();
+  Si32 height = to_sprite.Height();
+  float height_f = static_cast<float>(height);
+  float width_f = static_cast<float>(width);
+
+  Edge *edge = static_cast<Edge*>(alloca(sizeof(Edge) * height * 2));
+  Si32 first_y;
+  Si32 last_y;
+
+  if (a.y == c.y) {
+    if (a.y < 0.f || a.y >= height_f) {
+      return;
+    }
+    Si32 y = static_cast<Si32>(a.y);
+    first_y = y;
+    last_y = y;
+    Edge &edge_l = edge[y * 2];
+    Edge &edge_r = edge[y * 2 + 1];
+    if (b.x < a.x) {
+      edge_l.x = b.x;
+      edge_l.tex = tex_b;
+      edge_r.x = a.x;
+      edge_r.tex = tex_a;
+    } else {
+      edge_l.x = a.x;
+      edge_l.tex = tex_a;
+      edge_r.x = b.x;
+      edge_r.tex = tex_b;
+    }
+    if (edge_l.x > c.x) {
+      edge_l.x = c.x;
+      edge_l.tex = tex_c;
+    } else if (edge_r.x < c.x) {
+      edge_r.x = c.x;
+      edge_r.tex = tex_c;
+    }
+  } else {
+    Edge *edge_ac;
+    Edge *edge_abc;
+    // Assign edges
+    {
+      Vec2F ac = c - a;
+      float ac_x_at_b_y = a.x + ac.x * (b.y - a.y) / ac.y;
+      bool is_b_at_the_right_side = ac_x_at_b_y < b.x;
+      edge_ac = is_b_at_the_right_side ? edge : edge + 1;
+      edge_abc = is_b_at_the_right_side ? edge + 1 : edge;
+    }
+
+    // ac
+    {
+      Vec2F ac = c - a;
+      Vec2F tex_ac = tex_c - tex_a;
+      float y1 = std::max(0.f, a.y);
+      float y2 = std::min(height_f - 1.f, c.y);
+      Si32 y1_i = static_cast<Si32>(y1);
+      Si32 y2_i = static_cast<Si32>(y2);
+      if (y1_i > y2_i) {
+        // Out of destination sprite
+        return;
+      }
+      first_y = y1_i;
+      last_y = y2_i;
+      float x1 = a.x + ac.x * (y1 - a.y) / ac.y;
+      float x2 = a.x + ac.x * (y2 - a.y) / ac.y;
+      Vec2F tex1 = tex_a + tex_ac * (y1 - a.y) / ac.y;
+      Vec2F tex2 = tex_a + tex_ac * (y2 - a.y) / ac.y;
+      float dy = static_cast<float>(y2_i - y1_i);
+      if (dy != 0) {
+        float dxdy = (x2 - x1) / dy;
+        Vec2F dtdy = (tex2 - tex1) / dy;
+        for (Si32 y = y1_i; y <= y2_i; ++y) {
+          Edge &e = edge_ac[y * 2];
+          e.x = x1;
+          e.tex = tex1;
+          x1 += dxdy;
+          tex1 += dtdy;
+        }
+      } else {
+        // TODO(Huldra): Consider x1 > x2 and left side vs right side
+        Edge &e = edge_ac[y1_i * 2];
+        e.x = x1;
+        e.tex = tex1;
+      }
+    }
+    // ab
+    {
+      Vec2F ab = b - a;
+      Vec2F tex_ab = tex_b - tex_a;
+      float y1 = std::max(0.f, a.y);
+      float y2 = std::min(height_f - 1.f, b.y);
+      Si32 y1_i = static_cast<Si32>(y1);
+      Si32 y2_i = static_cast<Si32>(y2);
+      if (y1_i < y2_i) {
+        float x1 = a.x + ab.x * (y1 - a.y) / ab.y;
+        float x2 = a.x + ab.x * (y2 - a.y) / ab.y;
+        Vec2F tex1 = tex_a + tex_ab * (y1 - a.y) / ab.y;
+        Vec2F tex2 = tex_a + tex_ab * (y2 - a.y) / ab.y;
+        float dy = static_cast<float>(y2_i - y1_i);
+        float dxdy = (x2 - x1) / dy;
+        Vec2F dtdy = (tex2 - tex1) / dy;
+        for (Si32 y = y1_i; y <= y2_i; ++y) {
+          Edge &e = edge_abc[y * 2];
+          e.x = x1;
+          e.tex = tex1;
+          x1 += dxdy;
+          tex1 += dtdy;
+        }
+      } else if (y1_i == y2_i) {
+        if (ab.y > 0.f) {
+          float x1 = a.x + ab.x * (y1 - a.y) / ab.y;
+          Vec2F tex1 = tex_a + tex_ab * (y1 - a.y) / ab.y;
+          Edge &e = edge_abc[y1_i * 2];
+          e.x = x1;
+          e.tex = tex1;
+        }
+      }
+    }
+    // bc
+    {
+      Vec2F bc = c - b;
+      Vec2F tex_bc = tex_c - tex_b;
+      float y1 = std::max(0.f, b.y);
+      float y2 = std::min(height_f - 1.f, c.y);
+      Si32 y1_i = static_cast<Si32>(y1);
+      Si32 y2_i = static_cast<Si32>(y2);
+      if (y1_i < y2_i) {
+        float x1 = b.x + bc.x * (y1 - b.y) / bc.y;
+        float x2 = b.x + bc.x * (y2 - b.y) / bc.y;
+        Vec2F tex1 = tex_b + tex_bc * (y1 - b.y) / bc.y;
+        Vec2F tex2 = tex_b + tex_bc * (y2 - b.y) / bc.y;
+        float dy = static_cast<float>(y2_i - y1_i);
+        float dxdy = (x2 - x1) / dy;
+        Vec2F dtdy = (tex2 - tex1) / dy;
+        for (Si32 y = y1_i; y <= y2_i; ++y) {
+          Edge &e = edge_abc[y * 2];
+          e.x = x1;
+          e.tex = tex1;
+          x1 += dxdy;
+          tex1 += dtdy;
+        }
+      } else if (y1_i == y2_i) {
+        if (bc.y > 0.f) {
+          float x1 = b.x + bc.x * (y1 - b.y) / bc.y;
+          Vec2F tex1 = tex_b + tex_bc * (y1 - b.y) / bc.y;
+          Edge &e = edge_abc[y1_i * 2];
+          e.x = x1;
+          e.tex = tex1;
+        } else {
+          Edge &e = edge_abc[y1_i * 2];
+          e.x = b.x;
+          e.tex = tex_b;
+        }
+      }
+    }
+  }
+
+  // fill
+  Si32 tex_stride = texture.StridePixels();
+  Rgba *tex_data = texture.RgbaData();
+  for (Si32 y = first_y; y <= last_y; ++y) {
+    Edge &edge_l = edge[y * 2];
+    Edge &edge_r = edge[y * 2 + 1];
+    float x1 = std::max(0.f, edge_l.x);
+    float x2 = std::min(width_f - 1.f, edge_r.x);
+    Si32 x1_i = static_cast<Si32>(x1);
+    Si32 x2_i = static_cast<Si32>(x2);
+    if (x1_i < x2_i) {
+      float lr = edge_r.x - edge_l.x;
+      Vec2F tex_lr = edge_r.tex - edge_l.tex;
+      float w = x2 - x1;
+      Vec2F tex1 = edge_l.tex + tex_lr * (x1 - edge_l.x) / lr;
+      Vec2F tex2 = edge_l.tex + tex_lr * (x2 - edge_l.x) / lr;
+      float dx = static_cast<float>(x2_i - x1_i);
+      Vec2F dtdx = (tex2 - tex1) / dx;
+      for (Si32 x = x1_i; x <= x2_i; ++x) {
+        Si32 offset = static_cast<Si32>(tex1.x) +
+          static_cast<Si32>(tex1.y) * tex_stride;
+        Rgba *p = dst + y * stride + x;
+        p->rgba = tex_data[offset].rgba;
+
+        tex1 += dtdx;
+      }
+
+    }
+  }
+
+}
+
 template<DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode>
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
   Vec2F tex_a, Vec2F tex_b, Vec2F tex_c,
@@ -209,13 +433,43 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
     std::swap(b, c);
     std::swap(tex_b, tex_c);
   }
-  if (a.y == c.y) {
-    return;
-  }
+
   Si32 stride = to_sprite.StridePixels();
   Rgba *dst = to_sprite.RgbaData();
   Si32 width = to_sprite.Width();
   Si32 height = to_sprite.Height();
+
+  if (a.y == c.y) {
+    if (a.x > b.x) {
+      std::swap(a, b);
+      std::swap(tex_a, tex_b);
+    }
+    if (a.x > c.x) {
+      std::swap(a, c);
+      std::swap(tex_a, tex_c);
+    }
+    if (b.x > c.x) {
+      std::swap(b, c);
+      std::swap(tex_b, tex_c);
+    }
+    if (a.x == c.x) {
+      float x1 = static_cast<float>(a.x);
+      Vec2F zero(0.f, 0.f);
+      DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x1,
+        &tex_a, &tex_a,
+        0.f, 0.f,
+        zero, zero, width, height, a.y, a.y + 1, texture, in_color);
+    } else {
+      float x1 = static_cast<float>(a.x);
+      float x2 = static_cast<float>(c.x);
+      Vec2F zero(0.f, 0.f);
+      DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
+        &tex_a, &tex_b,
+        0.f, 0.f,
+        zero, zero, width, height, a.y, a.y + 1, texture, in_color);
+    }
+    return;
+  }
 
   float dxdy_ac = static_cast<float>(c.x - a.x) /
     static_cast<float>(c.y - a.y);
@@ -224,9 +478,12 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
   float dxdy_ab = static_cast<float>(b.x - a.x) /
     static_cast<float>(b.y - a.y);
 
-  Vec2F dcdy_ac = (tex_c - tex_a) / static_cast<float>(c.y - a.y);
-  Vec2F dcdy_bc = (tex_c - tex_b) / static_cast<float>(c.y - b.y);
-  Vec2F dcdy_ab = (tex_b - tex_a) / static_cast<float>(b.y - a.y);
+  Vec2F dcdy_ac = (c.y != a.y) ?
+    (tex_c - tex_a) / static_cast<float>(c.y - a.y) : Vec2F(0.f, 0.f);
+  Vec2F dcdy_bc = (c.y != b.y) ?
+    (tex_c - tex_b) / static_cast<float>(c.y - b.y) : Vec2F(0.f, 0.f);
+  Vec2F dcdy_ab = (b.y != a.y) ?
+    (tex_b - tex_a) / static_cast<float>(b.y - a.y) : Vec2F(0.f, 0.f);
 
   float x1;
   float x2;
@@ -247,11 +504,13 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       x2 = static_cast<float>(b.x);
       dtdy2 = dcdy_bc;
       tex1 = tex_a;
-      tex2 = tex_b;
-      DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
+
+      assert(static_cast<Si32>((static_cast<Ui32>(tex2.x+dtdy2.x*(c.y-a.y)))) < texture.Width());
+      /*DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
           &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, a.y, c.y, texture, in_color);
+        */
       return;
     }
     if (a.y < b.y) {
@@ -261,20 +520,23 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       dtdy2 = dcdy_ab;
       tex1 = tex_a;
       tex2 = tex_a;
-      DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
+      /*DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
           &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, a.y, b.y, texture, in_color);
+        */
     }
     if (b.y < c.y) {
       dxdy2 = dxdy_bc;
       x2 = static_cast<float>(b.x);
       dtdy2 = dcdy_bc;
       tex2 = tex_b;
+      /*
       DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
           &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, b.y, c.y, texture, in_color);
+        */
     }
   } else {
     // b is at the left side
@@ -287,10 +549,12 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       dtdy1 = dcdy_bc;
       tex1 = tex_b;
       tex2 = tex_a;
+      /*
       DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
           &tex1, &tex2,
         dxdy1, dxdy2,
         dtdy1, dtdy2, width, height, a.y, c.y, texture, in_color);
+        */
       return;
     }
     if (a.y < b.y) {
@@ -300,6 +564,9 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       dtdy1 = dcdy_ab;
       tex1 = tex_a;
       tex2 = tex_a;
+
+      assert(static_cast<Si32>((static_cast<Ui32>(tex1.x+dtdy1.x*(b.y-a.y)))) < texture.Width());
+      assert(static_cast<Si32>((static_cast<Ui32>(tex2.x+dtdy2.x*(b.y-a.y)))) < texture.Width());
       DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
           &tex1, &tex2,
         dxdy1, dxdy2,
@@ -310,6 +577,7 @@ void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
       x1 = static_cast<float>(b.x);
       dtdy1 = dcdy_bc;
       tex1 = tex_b;
+      assert(static_cast<Si32>((static_cast<Ui32>(tex2.x + (c.y - b.y)*dtdy2.x))) < texture.Width());
       DrawTrianglePart<kBlendingMode, kFilterMode>(dst, stride, &x1, &x2,
           &tex1, &tex2,
         dxdy1, dxdy2,
@@ -938,68 +1206,110 @@ void Sprite::Draw(const Si32 to_x, const Si32 to_y,
   float sin_a = sinf(angle_radians) * zoom;
   float cos_a = cosf(angle_radians) * zoom;
   Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x);
-  Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(Width() - pivot_.x);
-  Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - pivot_.y);
+  Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(Width() - 1 - pivot_.x);
+  Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - 1 - pivot_.y);
   Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y);
 
   // d c
   // a b
-  Vec2Si32 a(pivot + left + down + 0.5f);
-  Vec2Si32 b(pivot + right + down + 0.5f);
-  Vec2Si32 c(pivot + right + up + 0.5f);
-  Vec2Si32 d(pivot + left + up + 0.5f);
+  Vec2F a(pivot + left + down + 0.5f);
+  Vec2F b(pivot + right + down + 0.5f);
+  Vec2F c(pivot + right + up + 0.5f);
+  Vec2F d(pivot + left + up + 0.5f);
 
-  Vec2F ta(0.001f,
-    0.001f);
-  Vec2F tb(static_cast<float>(ref_size_.x) - 0.001f,
-    0.001f);
-  Vec2F tc(static_cast<float>(ref_size_.x) - 0.001f,
-    static_cast<float>(ref_size_.y) - 0.001f);
-  Vec2F td(0.001f,
-    static_cast<float>(ref_size_.y) - 0.001f);
+  Vec2F ta(0.01f,
+    0.01f);
+  Vec2F tb(static_cast<float>(ref_size_.x) - 0.01f,
+    0.01f);
+  Vec2F tc(static_cast<float>(ref_size_.x) - 0.01f,
+    static_cast<float>(ref_size_.y) - 0.01f);
+  Vec2F td(0.01f,
+    static_cast<float>(ref_size_.y) - 0.01f);
 
   switch (filter_mode) {
     case kFilterNearest:
       switch (blending_mode) {
         case kCopyRgba:
-          DrawTriangle<kCopyRgba, kFilterNearest>(a, b, c, ta, tb, tc, *this,
-                                                  to_sprite, in_color);
-          DrawTriangle<kCopyRgba, kFilterNearest>(c, d, a, tc, td, ta, *this,
-                                                  to_sprite, in_color);
+          DrawTriangle<kCopyRgba, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kCopyRgba, kFilterNearest>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
           break;
         case kAlphaBlend:
-          DrawTriangle<kAlphaBlend, kFilterNearest>(a, b, c, ta, tb, tc, *this,
-                                                    to_sprite, in_color);
-          DrawTriangle<kAlphaBlend, kFilterNearest>(c, d, a, tc, td, ta, *this,
-                                                    to_sprite, in_color);
+          DrawTriangle<kAlphaBlend, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kAlphaBlend, kFilterNearest>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
           break;
         case kColorize:
-          DrawTriangle<kColorize, kFilterNearest>(a, b, c, ta, tb, tc, *this,
-                                                  to_sprite, in_color);
-          DrawTriangle<kColorize, kFilterNearest>(c, d, a, tc, td, ta, *this,
-                                                  to_sprite, in_color);
+          DrawTriangle<kColorize, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kColorize, kFilterNearest>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
           break;
       }
       break;
     case kFilterBilinear:
       switch (blending_mode) {
         case kCopyRgba:
-          DrawTriangle<kCopyRgba, kFilterBilinear>(a, b, c, ta, tb, tc, *this,
-                                                  to_sprite, in_color);
-          DrawTriangle<kCopyRgba, kFilterBilinear>(c, d, a, tc, td, ta, *this,
-                                                  to_sprite, in_color);
+          DrawTriangle<kCopyRgba, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kCopyRgba, kFilterBilinear>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
           break;
         case kAlphaBlend:
-          DrawTriangle<kAlphaBlend, kFilterBilinear>(a, b, c, ta, tb, tc, *this,
-                                                    to_sprite, in_color);
-          DrawTriangle<kAlphaBlend, kFilterBilinear>(c, d, a, tc, td, ta, *this,
-                                                    to_sprite, in_color);
+          DrawTriangle<kAlphaBlend, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kAlphaBlend, kFilterBilinear>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
           break;
         case kColorize:
-          DrawTriangle<kColorize, kFilterBilinear>(a, b, c, ta, tb, tc, *this,
-                                                  to_sprite, in_color);
-          DrawTriangle<kColorize, kFilterBilinear>(c, d, a, tc, td, ta, *this,
-                                                  to_sprite, in_color);
+          DrawTriangle<kColorize, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kColorize, kFilterBilinear>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
+          break;
+      }
+
+      break;
+  }
+}
+
+void DrawTriangle(Sprite to_sprite,
+    Vec2F a, Vec2F b, Vec2F c,
+    Vec2F ta, Vec2F tb, Vec2F tc,
+    Sprite texture,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+  switch (filter_mode) {
+    case kFilterNearest:
+      switch (blending_mode) {
+        case kCopyRgba:
+          DrawTriangle<kCopyRgba, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+        case kAlphaBlend:
+          DrawTriangle<kAlphaBlend, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+        case kColorize:
+          DrawTriangle<kColorize, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+      }
+      break;
+    case kFilterBilinear:
+      switch (blending_mode) {
+        case kCopyRgba:
+          DrawTriangle<kCopyRgba, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+        case kAlphaBlend:
+          DrawTriangle<kAlphaBlend, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+        case kColorize:
+          DrawTriangle<kColorize, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
           break;
       }
 
