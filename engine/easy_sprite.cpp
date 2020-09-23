@@ -386,8 +386,8 @@ void DrawTriangle(Sprite to_sprite,
         Rgba color11 = *(tex_data + static_cast<Si32>(tex1.x+1) +
           static_cast<Si32>(tex1.y+1) * tex_stride);
 
-        Ui32 from_x_8 = (tex1.x - static_cast<Si32>(tex1.x))*255.f;
-        Ui32 from_y_8 = (tex1.y - static_cast<Si32>(tex1.y))*255.f;
+        Ui32 from_x_8 = static_cast<Ui32>((tex1.x - floorf(tex1.x))*255.f);
+        Ui32 from_y_8 = static_cast<Ui32>((tex1.y - floorf(tex1.y))*255.f);
         color = Rgba(
            (Ui8)(((Ui32(color00.r) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.r) * ((from_x_8) * (255 - from_y_8))) +
