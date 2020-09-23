@@ -39,4 +39,9 @@ Vec4Si32::Vec4Si32(const struct Vec4F &s) {
   w = static_cast<Si32>(s.w);
 }
 
+std::ostream& operator<<(std::ostream& os, const Vec2F& vec) {
+  os << "(" << vec.x << ", " << vec.y << ")";
+  return os;
+}
+
 }  // namespace arctic
