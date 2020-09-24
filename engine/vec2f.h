@@ -25,6 +25,7 @@
 #define ENGINE_VEC2F_H_
 
 #include <cmath>
+#include <ostream>
 #include "engine/arctic_types.h"
 #include "engine/vec2si32.h"
 
@@ -128,6 +129,8 @@ struct Vec2F {
   Vec2F yy() const {
     return Vec2F(y, y);
   }
+
+  friend std::ostream& operator<<(std::ostream& os, const Vec2F& vec);
 };
 
 
