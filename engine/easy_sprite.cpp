@@ -66,18 +66,16 @@ void DrawTriangle(Sprite to_sprite,
   Si32 height = to_sprite.Height();
   float height_f = static_cast<float>(height);
   float width_f = static_cast<float>(width);
+  if (c.y < 0 || a.y >= height_f) {
+    return;
+  }
 
   Edge *edge = static_cast<Edge*>(alloca(sizeof(Edge) * height * 2));
-  Si32 first_y;
-  Si32 last_y;
+  Si32 first_y = static_cast<Si32>(a.y);
+  Si32 last_y = static_cast<Si32>(c.y);
 
-  if (a.y == c.y) {
-    if (a.y < 0.f || a.y >= height_f) {
-      return;
-    }
-    Si32 y = static_cast<Si32>(a.y);
-    first_y = y;
-    last_y = y;
+  if (first_y == last_y) {
+    Si32 y = first_y;
     Edge &edge_l = edge[y * 2];
     Edge &edge_r = edge[y * 2 + 1];
     if (b.x < a.x) {
@@ -131,7 +129,7 @@ void DrawTriangle(Sprite to_sprite,
       Vec2F tex1 = tex_a + tex_ac * (y1 - a.y) / ac.y;
       Vec2F tex2 = tex_a + tex_ac * (y2 - a.y) / ac.y;
       float dy = static_cast<float>(y2_i - y1_i);
-      if (dy != 0) {
+      if (dy > 0) {
         //         xCx
         //      xxxxxxB  rb, x2 > x1, x1 then move
         //   xxxxx
@@ -172,10 +170,21 @@ void DrawTriangle(Sprite to_sprite,
           x1 += dxdy;
           tex1 += dtdy;
         }
+      } else if (dy == 0) {
+        if (is_b_at_the_right_side ? x1 > x2 : x2 < x1) {
+          Edge &e = edge_ac[y1_i * 2];
+          e.x = x1;
+          e.tex = tex1;
+        } else {
+          Edge &e = edge_ac[y1_i * 2];
+          e.x = x2;
+          e.tex = tex2;
+        }
+
       }
     }
     // Edge ab
-    {
+    if (b.y >= 0.f) {
       Vec2F ab = b - a;
       Vec2F tex_ab = tex_b - tex_a;
       float y1 = std::max(0.f, a.y);
@@ -270,7 +279,7 @@ void DrawTriangle(Sprite to_sprite,
       }
     }
     // Edge bc
-    {
+    if (b.y < height_f) {
       Vec2F bc = c - b;
       Vec2F tex_bc = tex_c - tex_b;
       float y1 = std::max(0.f, b.y);
@@ -347,6 +356,9 @@ void DrawTriangle(Sprite to_sprite,
   for (Si32 y = first_y; y <= last_y; ++y) {
     const Edge &edge_l = edge[y * 2];
     const Edge &edge_r = edge[y * 2 + 1];
+    if (edge_r.x < 0.f || edge_l.x >= width) {
+      continue;
+    }
     float x1 = std::max(0.f, edge_l.x);
     float x2 = std::min(width_f - 1.f, edge_r.x);
     Si32 x1_i = static_cast<Si32>(x1);
