@@ -433,10 +433,10 @@ void DrawTriangle(Sprite to_sprite,
       continue;
     }
     Rgba * const p_line = dst + y * stride;
-    Si32 tex1_x_16 = tex1.x * 65536.f;
-    Si32 tex1_y_16 = tex1.y * 65536.f;
-    Si32 dtdx_x_16 = dtdx.x * 65536.f;
-    Si32 dtdx_y_16 = dtdx.y * 65536.f;
+    Si32 tex1_x_16 = static_cast<Si32>(tex1.x * 65536.f);
+    Si32 tex1_y_16 = static_cast<Si32>(tex1.y * 65536.f);
+    Si32 dtdx_x_16 = static_cast<Si32>(dtdx.x * 65536.f);
+    Si32 dtdx_y_16 = static_cast<Si32>(dtdx.y * 65536.f);
     for (Si32 x = x1_i; x <= x2_i; ++x) {
       // output to p_line[x]
       // texture at tex1
