@@ -130,6 +130,11 @@ void DrawTriangle(Sprite to_sprite,
       Vec2F tex2 = tex_a + tex_ac * (y2 - a.y) / ac.y;
       float dy = static_cast<float>(y2_i - y1_i);
       if (dy > 0) {
+
+        //       xxxxxC  lb, x2 > x1, x1 then move
+        // Bxxxxxx
+        // Axx
+
         //         xCx
         //      xxxxxxB  rb, x2 > x1, x1 then move
         //   xxxxx
@@ -141,7 +146,7 @@ void DrawTriangle(Sprite to_sprite,
         //         xxxA
 
         //         xCx
-        //      xxxxxxB  Lb, x1 > x1, x1 then move slow
+        //      xxxxxxB  Lb, x2 > x1, x1 then move slow
         //   xxxxx
         // Axx
 
@@ -155,20 +160,38 @@ void DrawTriangle(Sprite to_sprite,
         //       xAx
         float dxdy = (x2 - x1) / dy;
         Vec2F dtdy = (tex2 - tex1) / dy;
-        {
-          Edge &e = edge_ac[y1_i * 2];
-          e.x = x1;
-          e.tex = tex1;
-        }
-        float frac_y =  static_cast<float>(y1_i + 1) - y1;
-        x1 += dxdy*frac_y;
-        tex1 += dtdy*frac_y;
-        for (Si32 y = y1_i + 1; y <= y2_i; ++y) {
-          Edge &e = edge_ac[y * 2];
-          e.x = x1;
-          e.tex = tex1;
-          x1 += dxdy;
-          tex1 += dtdy;
+        if (is_b_at_the_right_side ? x2 < x1 : x2 > x1) {
+          float frac_y =  static_cast<float>(y1_i + 1) - y1;
+          if (frac_y < 1.f) {
+            x1 += dxdy * frac_y;
+            tex1 += dtdy * frac_y;
+          }
+          for (Si32 y = y1_i; y < y2_i; ++y) {
+            Edge &e = edge_ac[y * 2];
+            e.x = x1;
+            e.tex = tex1;
+            x1 += dxdy;
+            tex1 += dtdy;
+          }
+          Edge &e = edge_ac[y2_i * 2];
+          e.x = x2;
+          e.tex = tex2;
+        } else {
+          {
+            Edge &e = edge_ac[y1_i * 2];
+            e.x = x1;
+            e.tex = tex1;
+          }
+          float frac_y =  static_cast<float>(y1_i + 1) - y1;
+          x1 += dxdy*frac_y;
+          tex1 += dtdy*frac_y;
+          for (Si32 y = y1_i + 1; y <= y2_i; ++y) {
+            Edge &e = edge_ac[y * 2];
+            e.x = x1;
+            e.tex = tex1;
+            x1 += dxdy;
+            tex1 += dtdy;
+          }
         }
       } else if (dy == 0) {
         if (is_b_at_the_right_side ? x1 > x2 : x2 < x1) {
@@ -177,8 +200,13 @@ void DrawTriangle(Sprite to_sprite,
           e.tex = tex1;
         } else {
           Edge &e = edge_ac[y1_i * 2];
-          e.x = x2;
-          e.tex = tex2;
+          if (y2 < y1) {
+            e.x = x1;
+            e.tex = tex1;
+          } else {
+            e.x = x2;
+            e.tex = tex2;
+          }
         }
 
       }
@@ -253,6 +281,9 @@ void DrawTriangle(Sprite to_sprite,
       } else if (y1_i == y2_i) {
         if (ab.y > 0.f) {
           if (is_b_at_the_right_side) {
+            if (y2 < y1) {
+              y2 = y1;
+            }
             float x2 = a.x + ab.x * (y2 - a.y) / ab.y;
             Vec2F tex2 = tex_a + tex_ab * (y2 - a.y) / ab.y;
             Edge &e = edge_abc[y1_i * 2];
@@ -309,7 +340,29 @@ void DrawTriangle(Sprite to_sprite,
         //         xxC
         //     xxxxx
         // Bxxxxxx  Lb, x2 > x1, x1 then move slow
-        {//is_b_at_the_right_side ? x2 < x1 : x2 > x1) {
+
+        //             xxxC
+        //         xxxxxx
+        //     xxxxxBxx
+        // Axxx
+
+        if (is_b_at_the_right_side ? x2 >= x1 : x2 <= x1) {
+          float frac_y =  static_cast<float>(y1_i + 1) - y1;
+          if (frac_y < 1.f) {
+            x1 += dxdy * frac_y;
+            tex1 += dtdy * frac_y;
+          }
+          for (Si32 y = y1_i; y < y2_i; ++y) {
+            Edge &e = edge_abc[y * 2];
+            e.x = x1;
+            e.tex = tex1;
+            x1 += dxdy;
+            tex1 += dtdy;
+          }
+          Edge &e = edge_abc[y2_i * 2];
+          e.x = x2;
+          e.tex = tex2;
+        } else {
           {
             Edge &e = edge_abc[y1_i * 2];
             e.x = x1;
@@ -335,11 +388,11 @@ void DrawTriangle(Sprite to_sprite,
             e.x = x1;
             e.tex = tex1;
           } else {
-            float x2 = b.x + bc.x * (y2 - b.y) / bc.y;
-            Vec2F tex2 = tex_b + tex_bc * (y2 - b.y) / bc.y;
+            float x1 = b.x + bc.x * (y1 - b.y) / bc.y;
+            Vec2F tex1 = tex_b + tex_bc * (y1 - b.y) / bc.y;
             Edge &e = edge_abc[y1_i * 2];
-            e.x = x2;
-            e.tex = tex2;
+            e.x = x1;
+            e.tex = tex1;
           }
         } else {
           Edge &e = edge_abc[y1_i * 2];
@@ -380,26 +433,28 @@ void DrawTriangle(Sprite to_sprite,
       continue;
     }
     Rgba * const p_line = dst + y * stride;
+    Si32 tex1_x_16 = static_cast<Si32>(tex1.x * 65536.f);
+    Si32 tex1_y_16 = static_cast<Si32>(tex1.y * 65536.f);
+    Si32 dtdx_x_16 = static_cast<Si32>(dtdx.x * 65536.f);
+    Si32 dtdx_y_16 = static_cast<Si32>(dtdx.y * 65536.f);
     for (Si32 x = x1_i; x <= x2_i; ++x) {
       // output to p_line[x]
       // texture at tex1
       Rgba * const to_rgba = p_line + x;
       Rgba color;
       if (kFilterMode == kFilterNearest) {
-        color = *(tex_data + static_cast<Si32>(tex1.x + 0.5f) +
-                  static_cast<Si32>(tex1.y + 0.5f) * tex_stride);
+        color = *(tex_data + ((tex1_x_16 + 32768) >> 16) + ((tex1_y_16 + 32768) >> 16) * tex_stride);
       } else if (kFilterMode == kFilterBilinear) {
-        Rgba color00 = *(tex_data + static_cast<Si32>(tex1.x) +
-          static_cast<Si32>(tex1.y) * tex_stride);
-        Rgba color01 = *(tex_data + static_cast<Si32>(tex1.x+1) +
-          static_cast<Si32>(tex1.y) * tex_stride);
-        Rgba color10 = *(tex_data + static_cast<Si32>(tex1.x) +
-          static_cast<Si32>(tex1.y+1) * tex_stride);
-        Rgba color11 = *(tex_data + static_cast<Si32>(tex1.x+1) +
-          static_cast<Si32>(tex1.y+1) * tex_stride);
+        const Rgba* t1 = tex_data + (tex1_x_16 >> 16) + (tex1_y_16 >> 16) * tex_stride;
 
-        Ui32 from_x_8 = static_cast<Ui32>((tex1.x - floorf(tex1.x))*255.f);
-        Ui32 from_y_8 = static_cast<Ui32>((tex1.y - floorf(tex1.y))*255.f);
+        Rgba color00 = *(t1);
+        Rgba color01 = *(t1 + 1);
+        Rgba color10 = *(t1 + tex_stride);
+        Rgba color11 = *(t1 + 1 + tex_stride);
+
+        Ui32 from_x_8 = ((tex1_x_16 >> 8) & 255);
+        Ui32 from_y_8 = ((tex1_y_16 >> 8) & 255);
+
         color = Rgba(
            (Ui8)(((Ui32(color00.r) * ((255 - from_x_8) * (255 - from_y_8))) +
             (Ui32(color01.r) * ((from_x_8) * (255 - from_y_8))) +
@@ -418,7 +473,6 @@ void DrawTriangle(Sprite to_sprite,
             (Ui32(color10.a) * ((255 - from_x_8) * (from_y_8))) +
             (Ui32(color11.a) * ((from_x_8) * (from_y_8)))) >> 16u));
       }
-
 
       if (kBlendingMode == kCopyRgba) {
         to_rgba->rgba = color.rgba;
@@ -460,7 +514,8 @@ void DrawTriangle(Sprite to_sprite,
         to_rgba->rgba = color.rgba;
       }
 
-      tex1 += dtdx;
+      tex1_x_16 += dtdx_x_16;
+      tex1_y_16 += dtdx_y_16;
     }
   }
 
@@ -1051,38 +1106,38 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
        blending_mode, filter_mode, color);
 }
 
-void Sprite::Draw(const Vec2Si32 to, float angle_radians,
+void Sprite::Draw(const Vec2F to, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   Draw(to.x, to.y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const Si32 to_x, const Si32 to_y, float angle_radians,
+void Sprite::Draw(const float to_x, const float to_y, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   Draw(to_x, to_y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const Vec2Si32 to, float angle_radians, float zoom,
+void Sprite::Draw(const Vec2F to, float angle_radians, float zoom,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   Draw(to.x, to.y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const Si32 to_x, const Si32 to_y,
+void Sprite::Draw(const float to_x, const float to_y,
     float angle_radians, float zoom,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const Si32 to_x, const Si32 to_y,
+void Sprite::Draw(const float to_x, const float to_y,
     float angle_radians, float zoom, Sprite to_sprite,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   if (!sprite_instance_) {
     return;
   }
-  Vec2F pivot = Vec2F(Vec2Si32(to_x, to_y));
+  Vec2F pivot = Vec2F(to_x, to_y);
   float sin_a = sinf(angle_radians) * zoom;
   float cos_a = cosf(angle_radians) * zoom;
   Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x);
