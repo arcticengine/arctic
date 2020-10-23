@@ -474,9 +474,9 @@ void DrawTriangle(Sprite to_sprite,
             (Ui32(color11.a) * ((from_x_8) * (from_y_8)))) >> 16u));
       }
 
-      if (kBlendingMode == kCopyRgba) {
+      if (kBlendingMode == kDrawBlendingModeCopyRgba) {
         to_rgba->rgba = color.rgba;
-      } else if (kBlendingMode == kAlphaBlend) {
+      } else if (kBlendingMode == kDrawBlendingModeAlphaBlend) {
         if (color.a == 255) {
           to_rgba->rgba = color.rgba;;
         } else if (color.a) {
@@ -489,7 +489,7 @@ void DrawTriangle(Sprite to_sprite,
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
           ((g + g2) & 0x0000ff00ul);
         }
-      } else if (kBlendingMode == kColorize) {
+      } else if (kBlendingMode == kDrawBlendingModeColorize) {
         Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
         if (ca == 255) {
           Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
@@ -510,6 +510,14 @@ void DrawTriangle(Sprite to_sprite,
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
         }
+      } else if (kBlendingMode == kDrawBlendingModeAdd) {
+        Ui32 r2 = Ui32(color.r) + Ui32(to_rgba->r);
+        Ui32 g2 = Ui32(color.g) + Ui32(to_rgba->g);
+        Ui32 b2 = Ui32(color.b) + Ui32(to_rgba->b);
+        r2 = r2 > 255 ? 255 : r2;
+        g2 = g2 > 255 ? 255 : g2;
+        b2 = b2 > 255 ? 255 : b2;
+        to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2).rgba;
       } else {  // Unknown blending mode!
         to_rgba->rgba = color.rgba;
       }
@@ -583,9 +591,9 @@ void DrawSprite(Sprite *to_sprite,
         from_x_acc++;
         const Rgba *from_rgba = from_line + from_x_disp;
         Rgba color = *from_rgba;
-        if (kBlendingMode == kCopyRgba) {
+        if (kBlendingMode == kDrawBlendingModeCopyRgba) {
           to_rgba->rgba = from_rgba->rgba;
-        } else if (kBlendingMode == kAlphaBlend) {
+        } else if (kBlendingMode == kDrawBlendingModeAlphaBlend) {
           if (color.a == 255) {
             to_rgba->rgba = color.rgba;
           } else if (color.a) {
@@ -598,7 +606,7 @@ void DrawSprite(Sprite *to_sprite,
             to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
           }
-        } else if (kBlendingMode == kColorize) {
+        } else if (kBlendingMode == kDrawBlendingModeColorize) {
           Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
           if (ca == 255) {
             Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
@@ -619,6 +627,14 @@ void DrawSprite(Sprite *to_sprite,
             to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
               ((g + g2) & 0x0000ff00ul);
           }
+        } else if (kBlendingMode == kDrawBlendingModeAdd) {
+          Ui32 r2 = Ui32(color.r) + Ui32(to_rgba->r);
+          Ui32 g2 = Ui32(color.g) + Ui32(to_rgba->g);
+          Ui32 b2 = Ui32(color.b) + Ui32(to_rgba->b);
+          r2 = r2 > 255 ? 255 : r2;
+          g2 = g2 > 255 ? 255 : g2;
+          b2 = b2 > 255 ? 255 : b2;
+          to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2).rgba;
         } else {  // Unknown blending mode!
           to_rgba->rgba = color.rgba;
         }
@@ -705,9 +721,9 @@ void DrawSprite(Sprite *to_sprite,
       }
 
 
-      if (kBlendingMode == kCopyRgba) {
+      if (kBlendingMode == kDrawBlendingModeCopyRgba) {
         to_rgba->rgba = color.rgba;
-      } else if (kBlendingMode == kAlphaBlend) {
+      } else if (kBlendingMode == kDrawBlendingModeAlphaBlend) {
         if (color.a == 255) {
           to_rgba->rgba = color.rgba;
         } else if (color.a) {
@@ -720,7 +736,7 @@ void DrawSprite(Sprite *to_sprite,
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
         }
-      } else if (kBlendingMode == kColorize) {
+      } else if (kBlendingMode == kDrawBlendingModeColorize) {
         Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1)) >> 8u;
         if (ca == 255) {
           Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
@@ -741,6 +757,14 @@ void DrawSprite(Sprite *to_sprite,
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
           ((g + g2) & 0x0000ff00ul);
         }
+      } else if (kBlendingMode == kDrawBlendingModeAdd) {
+        Ui32 r2 = Ui32(color.r) + Ui32(to_rgba->r);
+        Ui32 g2 = Ui32(color.g) + Ui32(to_rgba->g);
+        Ui32 b2 = Ui32(color.b) + Ui32(to_rgba->b);
+        r2 = r2 > 255 ? 255 : r2;
+        g2 = g2 > 255 ? 255 : g2;
+        b2 = b2 > 255 ? 255 : b2;
+        to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2).rgba;
       } else {  // Unknown blending mode!
         to_rgba->rgba = color.rgba;
       }
@@ -758,37 +782,37 @@ void DrawSprite(Sprite *to_sprite,
   }
 }
 
-template void DrawSprite<kCopyRgba, kFilterNearest>(
+template void DrawSprite<kDrawBlendingModeCopyRgba, kFilterNearest>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
-template void DrawSprite<kAlphaBlend, kFilterNearest>(
+template void DrawSprite<kDrawBlendingModeAlphaBlend, kFilterNearest>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
-template void DrawSprite<kColorize, kFilterNearest>(
+template void DrawSprite<kDrawBlendingModeColorize, kFilterNearest>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
-template void DrawSprite<kCopyRgba, kFilterBilinear>(
+template void DrawSprite<kDrawBlendingModeCopyRgba, kFilterBilinear>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
-template void DrawSprite<kAlphaBlend, kFilterBilinear>(
+template void DrawSprite<kDrawBlendingModeAlphaBlend, kFilterBilinear>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
-template void DrawSprite<kColorize, kFilterBilinear>(
+template void DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
@@ -981,7 +1005,7 @@ void Sprite::Clone(Sprite from, CloneTransform transform) {
   if (transform == kCloneUntransformed) {
     Create(from.Width(), from.Height());
     from.Draw(from.Pivot().x, from.Pivot().y, from.Width(), from.Height(),
-      0, 0, from.Width(), from.Height(), *this, kCopyRgba);
+      0, 0, from.Width(), from.Height(), *this, kDrawBlendingModeCopyRgba);
     SetPivot(from.Pivot());
     UpdateOpaqueSpans();
     return;
@@ -1051,22 +1075,29 @@ void Sprite::Draw(Sprite to_sprite,
   switch (filter_mode) {
     case kFilterNearest:
       switch (blending_mode) {
-        case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterNearest>(&to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawSprite<kDrawBlendingModeAlphaBlend, kFilterNearest>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(),
             color);
           break;
-        case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterNearest>(&to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawSprite<kDrawBlendingModeCopyRgba, kFilterNearest>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(),
             color);
           break;
-        case kColorize:
-          DrawSprite<kColorize, kFilterNearest>(&to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawSprite<kDrawBlendingModeColorize, kFilterNearest>(&to_sprite,
+            to_x_pivot, to_y_pivot,
+            Width(), Height(),
+            *this, 0, 0, Width(), Height(),
+            color);
+          break;
+        case kDrawBlendingModeAdd:
+          DrawSprite<kDrawBlendingModeAdd, kFilterNearest>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(),
@@ -1076,20 +1107,26 @@ void Sprite::Draw(Sprite to_sprite,
       break;
     case kFilterBilinear:
       switch (blending_mode) {
-        case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterBilinear>(&to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawSprite<kDrawBlendingModeAlphaBlend, kFilterBilinear>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(), color);
           break;
-        case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterBilinear>(&to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawSprite<kDrawBlendingModeCopyRgba, kFilterBilinear>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(), color);
           break;
-        case kColorize:
-          DrawSprite<kColorize, kFilterBilinear>(&to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(&to_sprite,
+            to_x_pivot, to_y_pivot,
+            Width(), Height(),
+            *this, 0, 0, Width(), Height(), color);
+          break;
+        case kDrawBlendingModeAdd:
+          DrawSprite<kDrawBlendingModeAdd, kFilterBilinear>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(), color);
@@ -1164,44 +1201,56 @@ void Sprite::Draw(const float to_x, const float to_y,
   switch (filter_mode) {
     case kFilterNearest:
       switch (blending_mode) {
-        case kCopyRgba:
-          DrawTriangle<kCopyRgba, kFilterNearest>(to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawTriangle<kDrawBlendingModeCopyRgba, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
-          DrawTriangle<kCopyRgba, kFilterNearest>(to_sprite,
+          DrawTriangle<kDrawBlendingModeCopyRgba, kFilterNearest>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
-        case kAlphaBlend:
-          DrawTriangle<kAlphaBlend, kFilterNearest>(to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
-          DrawTriangle<kAlphaBlend, kFilterNearest>(to_sprite,
+          DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterNearest>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
-        case kColorize:
-          DrawTriangle<kColorize, kFilterNearest>(to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawTriangle<kDrawBlendingModeColorize, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
-          DrawTriangle<kColorize, kFilterNearest>(to_sprite,
+          DrawTriangle<kDrawBlendingModeColorize, kFilterNearest>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
+          break;
+        case kDrawBlendingModeAdd:
+          DrawTriangle<kDrawBlendingModeAdd, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kDrawBlendingModeAdd, kFilterNearest>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
       }
       break;
     case kFilterBilinear:
       switch (blending_mode) {
-        case kCopyRgba:
-          DrawTriangle<kCopyRgba, kFilterBilinear>(to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawTriangle<kDrawBlendingModeCopyRgba, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
-          DrawTriangle<kCopyRgba, kFilterBilinear>(to_sprite,
+          DrawTriangle<kDrawBlendingModeCopyRgba, kFilterBilinear>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
-        case kAlphaBlend:
-          DrawTriangle<kAlphaBlend, kFilterBilinear>(to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
-          DrawTriangle<kAlphaBlend, kFilterBilinear>(to_sprite,
+          DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterBilinear>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
-        case kColorize:
-          DrawTriangle<kColorize, kFilterBilinear>(to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
-          DrawTriangle<kColorize, kFilterBilinear>(to_sprite,
+          DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
+          break;
+        case kDrawBlendingModeAdd:
+          DrawTriangle<kDrawBlendingModeAdd, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kDrawBlendingModeAdd, kFilterBilinear>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
       }
@@ -1218,32 +1267,40 @@ void DrawTriangle(Sprite to_sprite,
   switch (filter_mode) {
     case kFilterNearest:
       switch (blending_mode) {
-        case kCopyRgba:
-          DrawTriangle<kCopyRgba, kFilterNearest>(to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawTriangle<kDrawBlendingModeCopyRgba, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
-        case kAlphaBlend:
-          DrawTriangle<kAlphaBlend, kFilterNearest>(to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
-        case kColorize:
-          DrawTriangle<kColorize, kFilterNearest>(to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawTriangle<kDrawBlendingModeColorize, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+        case kDrawBlendingModeAdd:
+          DrawTriangle<kDrawBlendingModeAdd, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
       }
       break;
     case kFilterBilinear:
       switch (blending_mode) {
-        case kCopyRgba:
-          DrawTriangle<kCopyRgba, kFilterBilinear>(to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawTriangle<kDrawBlendingModeCopyRgba, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
-        case kAlphaBlend:
-          DrawTriangle<kAlphaBlend, kFilterBilinear>(to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
-        case kColorize:
-          DrawTriangle<kColorize, kFilterBilinear>(to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+        case kDrawBlendingModeAdd:
+          DrawTriangle<kDrawBlendingModeAdd, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
       }
@@ -1328,20 +1385,20 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
       case kFilterNearest:
       switch (blending_mode) {
         default:
-        case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterNearest>(&to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawSprite<kDrawBlendingModeCopyRgba, kFilterNearest>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
-        case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterNearest>(&to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawSprite<kDrawBlendingModeAlphaBlend, kFilterNearest>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
-        case kColorize:
-          DrawSprite<kColorize, kFilterNearest>(&to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawSprite<kDrawBlendingModeColorize, kFilterNearest>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
@@ -1351,20 +1408,20 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
       case kFilterBilinear:
       switch (blending_mode) {
         default:
-        case kCopyRgba:
-          DrawSprite<kCopyRgba, kFilterBilinear>(&to_sprite,
+        case kDrawBlendingModeCopyRgba:
+          DrawSprite<kDrawBlendingModeCopyRgba, kFilterBilinear>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
-        case kAlphaBlend:
-          DrawSprite<kAlphaBlend, kFilterBilinear>(&to_sprite,
+        case kDrawBlendingModeAlphaBlend:
+          DrawSprite<kDrawBlendingModeAlphaBlend, kFilterBilinear>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
-        case kColorize:
-          DrawSprite<kColorize, kFilterBilinear>(&to_sprite,
+        case kDrawBlendingModeColorize:
+          DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);

@@ -377,7 +377,7 @@ Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
   Vec2Si32 size;
   Sprite empty;
   DrawEvaluateSizeImpl(empty, text, do_keep_xadvance,
-    0, 0, kTextOriginFirstBase, kCopyRgba, kFilterNearest,
+    0, 0, kTextOriginFirstBase, kDrawBlendingModeCopyRgba, kFilterNearest,
     Rgba(255, 255, 255), std::vector<Rgba>(), false,
     &size);
   return size;
