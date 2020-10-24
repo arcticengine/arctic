@@ -973,7 +973,7 @@ void Render() {
   for (Si32 kind = kItemNone; kind < kItemKindCount; ++kind) {
     Sprite &sprite = ItemSprite(static_cast<ItemKind>(kind));
     for (Si32 idx = 0; idx < Hero().items[kind]; ++idx) {
-      sprite.Draw(Vec2F(item_x, 0) + Vec2F(sprite.Pivot()),
+      sprite.Draw(Vec2F(static_cast<float>(item_x), 0.f) + Vec2F(sprite.Pivot()),
         static_cast<float>(Time()) + static_cast<float>(idx));
       item_x += 5;
     }

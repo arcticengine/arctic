@@ -150,7 +150,7 @@ class DecoratedFrame {
             std::min(background_tile_.Height(), client_size.y - pos.y));
           background_tile_.Draw(pos.x + offset.x, pos.y + offset.y,
             instance_size.x, instance_size.y,
-            0, 0, instance_size.x, instance_size.y, sprite, kCopyRgba);
+            0, 0, instance_size.x, instance_size.y, sprite, kDrawBlendingModeCopyRgba);
           pos.x += background_tile_.Width();
         }
         pos.y += background_tile_.Height();
@@ -164,7 +164,7 @@ class DecoratedFrame {
           top_.Width();
         top_.Draw(x + left_.Width(), size.y - top_.Height(),
           width, top_.Height(),
-          0, 0, width, top_.Height(), sprite, kCopyRgba);
+          0, 0, width, top_.Height(), sprite, kDrawBlendingModeCopyRgba);
       }
     }
     if (bottom_.Width()) {
@@ -174,38 +174,38 @@ class DecoratedFrame {
           bottom_.Width();
         bottom_.Draw(x + left_.Width(), 0,
           width, bottom_.Height(),
-          0, 0, width, bottom_.Height(), sprite, kCopyRgba);
+          0, 0, width, bottom_.Height(), sprite, kDrawBlendingModeCopyRgba);
       }
     }
     if (left_.Height()) {
       for (Si32 y = 0; y < client_size.y; y += left_.Height()) {
         left_.Draw(0, y + bottom_.Height(),
           left_.Width(), left_.Height(),
-          0, 0, left_.Width(), left_.Height(), sprite, kCopyRgba);
+          0, 0, left_.Width(), left_.Height(), sprite, kDrawBlendingModeCopyRgba);
       }
     }
     if (right_.Height()) {
       for (Si32 y = 0; y < client_size.y; y += right_.Height()) {
         right_.Draw(size.x - right_.Width(), y + bottom_.Height(),
           right_.Width(), right_.Height(),
-          0, 0, right_.Width(), right_.Height(), sprite, kCopyRgba);
+          0, 0, right_.Width(), right_.Height(), sprite, kDrawBlendingModeCopyRgba);
       }
     }
     lower_left_.Draw(0, 0,
       lower_left_.Width(), lower_left_.Height(),
-      0, 0, lower_left_.Width(), lower_left_.Height(), sprite, kCopyRgba);
+      0, 0, lower_left_.Width(), lower_left_.Height(), sprite, kDrawBlendingModeCopyRgba);
     lower_right_.Draw(size.x - lower_right_.Width(), 0,
       lower_right_.Width(), lower_right_.Height(),
       0, 0, lower_right_.Width(), lower_right_.Height(),
-      sprite, kCopyRgba);
+      sprite, kDrawBlendingModeCopyRgba);
     upper_left_.Draw(0, size.y - upper_left_.Height(),
       upper_left_.Width(), upper_left_.Height(),
-      0, 0, upper_left_.Width(), upper_left_.Height(), sprite, kCopyRgba);
+      0, 0, upper_left_.Width(), upper_left_.Height(), sprite, kDrawBlendingModeCopyRgba);
     upper_right_.Draw(size.x - upper_right_.Width(),
       size.y - upper_right_.Height(),
       upper_right_.Width(), upper_right_.Height(),
       0, 0, upper_right_.Width(), upper_right_.Height(), sprite,
-      kCopyRgba);
+      kDrawBlendingModeCopyRgba);
 
     return sprite;
   }

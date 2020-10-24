@@ -41,37 +41,31 @@ namespace arctic {
 template<class T>
 class DualComplex {
 public:
-  T real_x;
-  T real_y;
-  T dual_x;
-  T dual_y;
+  T real_x = 1;
+  T real_y = 0;
+  T dual_x = 0;
+  T dual_y = 0;
 
-  /// constructor
+  /// @brief constructor
   DualComplex() {
-    real_x = 1;
-    real_y = 0;
-    dual_x = 0;
-    dual_y = 0;
   }
 
-  /** Constructor that creates DualComplex with given real and dual parts
-   @param a_real_x the x-coordinate of the real part
-   @param a_real_y the y-coordinate of the real part
-   @param a_dual_x the x-coordinate of the dual part
-   @param a_dual_y the y-coordinate of the dual part
-   */
-  DualComplex(T a_real_x, T a_real_y, T a_dual_x, T a_dual_y) {
-    real_x = a_real_x;
-    real_y = a_real_y;
-    dual_x = a_dual_x;
-    dual_y = a_dual_y;
+  /// @brief Constructor that creates DualComplex with given real and dual parts
+  /// @param a_real_x the x-coordinate of the real part
+  /// @param a_real_y the y-coordinate of the real part
+  /// @param a_dual_x the x-coordinate of the dual part
+  /// @param a_dual_y the y-coordinate of the dual part
+  DualComplex(T a_real_x, T a_real_y, T a_dual_x, T a_dual_y)
+      : real_x(a_real_x)
+      , real_y(a_real_y)
+      , dual_x(a_dual_x)
+      , dual_y(a_dual_y) {
   }
 
-  /** Constructor that creates DualComplex which represents the rotation around a given point
-   @param x the x-coordinate of the center of the rotation
-   @param x the y-coordinate of the center of the rotation
-   @param theta the degree in radian of the rotation
-   */
+  /// @brief Constructor that creates DualComplex which represents the rotation around a given point
+  /// @param x the x-coordinate of the center of the rotation
+  /// @param y the y-coordinate of the center of the rotation
+  /// @param theta the degree in radian of the rotation
   DualComplex(T x, T y, T theta) {
 //        DualComplex v(cos(theta/2.0),sin(theta/2.0),0,0);
 //        DualComplex u(1,0,-x/2.0,-y/2.0);
@@ -94,20 +88,24 @@ public:
     dual_y = -std::sin(theta * 0.5f) * p.x;
   }
 
-  DualComplex(T x, T y) {
-    real_x = 1;
-    real_y = 0;
-    dual_x = x;
-    dual_y = y;
+  DualComplex(T x, T y)
+      : real_x(1)
+      , real_y(0)
+      , dual_x(x * 0.5f)
+      , dual_y(y * 0.5f) {
   }
 
-  /// conjugation
+  T GetAngle() const {
+    return std::acos(real_x) * (real_y >= (T)0 ? 2.f : -2.f);
+  }
+
+  /// @brief Conjugation
   /// @return the conjugate of the DualComplex
-  DualComplex Conj() {
+  DualComplex Conj() const {
     return DualComplex(real_x, -real_y, dual_x, dual_y);
   }
 
-  Vec2F Transform(Vec2F vec) {
+  Vec2F Transform(Vec2F vec) const {
     return Vec2F(
         static_cast<float>(
           (real_x * real_x - real_y * real_y) * static_cast<T>(vec.x)
@@ -119,23 +117,26 @@ public:
             real_y * dual_x)));
   }
 
-  /** normalisation to unit length DualComplex
-   @return DualComplex the unit length DualComplex
-   */
-  DualComplex Normalised() {
+  /// @brief normalisation to unit length DualComplex
+  /// @return DualComplex the unit length DualComplex
+  DualComplex Normalised() const {
     T norm = std::sqrt(real_x * real_x + real_y * real_y);
     return DualComplex(real_x / norm, real_y / norm,
       dual_x / norm, dual_y / norm);
   }
 
-  /** norm
-   @return norm of the DualComplex
-   */
-  T Norm() {
+  DualComplex TranslationScaled(T scale) const {
+    return DualComplex(real_x, real_y,
+      dual_x * scale, dual_y * scale);
+  }
+
+  /// @brief norm
+  /// @return norm of the DualComplex
+  T Norm() const {
     return (std::sqrt(real_x * real_x + real_y * real_y));
   }
 
-  /// multiplication by a scalar
+  /// @brief multiplication by a scalar
   DualComplex& operator*=(T scale) {
     real_x *= scale;
     real_y *= scale;
@@ -144,7 +145,7 @@ public:
     return *this;
   }
 
-  /// sum
+  /// @brief sum
   DualComplex& operator+=(DualComplex toSum) {
     real_x += toSum.real_x;
     real_y += toSum.real_y;
@@ -153,13 +154,13 @@ public:
     return *this;
   }
 
-  /// multiplication by a scalar
-  DualComplex operator*(T scale) {
+  /// @brief multiplication by a scalar
+  DualComplex operator*(T scale) const {
     return DualComplex(real_x * scale, real_y * scale,
       dual_x * scale, dual_y * scale);
   }
 
-  /// substitution
+  /// @brief substitution
   DualComplex operator=(DualComplex dcn) {
     real_x = dcn.real_x;
     real_y = dcn.real_y;
@@ -168,8 +169,8 @@ public:
     return *this;
   }
 
-  /// multiplication by a DualComplex
-  DualComplex operator*(DualComplex dcn) {
+  /// @brief multiplication by a DualComplex
+  DualComplex operator*(DualComplex dcn) const {
     return DualComplex(
       real_x * dcn.real_x - real_y * dcn.real_y,
       real_x * dcn.real_y + real_y * dcn.real_x,
@@ -179,17 +180,16 @@ public:
         dual_y * dcn.real_x);
   }
 
-  /// sum
-  DualComplex operator+(DualComplex dcn) {
+  /// @brief sum
+  DualComplex operator+(DualComplex dcn) const {
     return DualComplex(real_x + dcn.real_x, real_y + dcn.real_y,
       dual_x + dcn.dual_x, dual_y + dcn.dual_y);
   }
 
-  /** linear blend (DLB)
-   @param dcns array of DualComplex's to be blended
-   @param weights weights of the correspoding DualComplex's
-   @return blended normalised DualComplex
-   */
+  /// @brief linear blend (DLB)
+  /// @param dcns array of DualComplex's to be blended
+  /// @param weights weights of the correspoding DualComplex's
+  /// @return blended normalised DualComplex
   static DualComplex Blend(std::vector<DualComplex> dcns, std::vector<T> weights) {
     assert(dcns.size() == weights.size());
     DualComplex result(0,0,0,0);

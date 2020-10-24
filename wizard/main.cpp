@@ -475,7 +475,7 @@ bool GetProjectName() {
     char text[1024];
     snprintf(text, sizeof(text), welcome, g_project_name.c_str());
     g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
-                kColorize, kFilterNearest, g_palete);
+                kDrawBlendingModeColorize, kFilterNearest, g_palete);
     ShowFrame();
   }
   return false;
@@ -575,7 +575,7 @@ bool SelectProject() {
     }
 
     g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop,
-      kColorize, kFilterNearest, g_palete);
+      kDrawBlendingModeColorize, kFilterNearest, g_palete);
     ShowFrame();
     if (is_done) {
       return true;
@@ -771,7 +771,7 @@ bool ShowProgress() {
         g_project_name.c_str(), g_current_directory.c_str(),
         g_progress.c_str());
     g_font.Draw(text, 32, ScreenSize().y - 32,  kTextOriginTop,
-                kColorize, kFilterNearest, g_palete);
+                kDrawBlendingModeColorize, kFilterNearest, g_palete);
     ShowFrame();
   }
   return false;
@@ -1310,7 +1310,7 @@ bool ShowUpdateProgress() {
              g_project_name.c_str(), g_current_directory.c_str(),
              g_progress.c_str());
     g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
-                kColorize, kFilterNearest, g_palete);
+                kDrawBlendingModeColorize, kFilterNearest, g_palete);
     ShowFrame();
   }
   return false;

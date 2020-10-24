@@ -38,12 +38,13 @@ namespace arctic {
 /// @{
 
 enum DrawBlendingMode {
-  kCopyRgba = 0, // Deprecated
+  kCopyRgba [[deprecated("Use kDrawBlendingModeCopyRgba instead of kCopyRgba")]] = 0, // Deprecated
   kDrawBlendingModeCopyRgba = 0,
-  kAlphaBlend = 1, // Deprecated
+  kAlphaBlend [[deprecated("Use kDrawBlendingModeAlphaBlend instead of kAlphaBlend")]] = 1, // Deprecated
   kDrawBlendingModeAlphaBlend = 1,
-  kColorize = 2, // Deprecated
-  kDrawBlendingModeColorize = 2
+  kColorize [[deprecated("User kDrawBlendingModeColorize instead of kColorize")]] = 2, // Deprecated
+  kDrawBlendingModeColorize = 2,
+  kDrawBlendingModeAdd = 3
 };
 
 enum DrawFilterMode {
@@ -99,23 +100,23 @@ class Sprite {
   /// @brief Get the coordinates of the pivot point of the sprite
   Vec2Si32 Pivot() const;
   void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
-    DrawBlendingMode blending_mode = kAlphaBlend,
+    DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
     Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
-    DrawBlendingMode blending_mode = kAlphaBlend,
+    DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
     Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
@@ -124,58 +125,58 @@ class Sprite {
     const Si32 from_width, const Si32 from_height,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color);
   void Draw(Sprite to_sprite, const Vec2Si32 to_pos,
-    DrawBlendingMode blending_mode = kAlphaBlend,
+    DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
     Rgba in_color = Rgba(0xffffffff));
   void Draw(Sprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode,
     Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
     const Vec2Si32 from_pos, const Vec2Si32 from_size,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height,
-            Sprite to_sprite, DrawBlendingMode blending_mode = kAlphaBlend,
+            Sprite to_sprite, DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) const;
   void Draw(const Vec2F to, float angle_radians,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const float to_x, const float to_y, float angle_radians,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2F to, float angle_radians, float zoom,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const float to_x, const float to_y,
     float angle_radians, float zoom,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   void Draw(const float to_x, const float to_y,
             float angle_radians, float zoom, Sprite to_sprite,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
 
   [[deprecated("Replaced with Vec2F version")]]
   void Draw(const Vec2Si32 to, float angle_radians,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) {
     Draw(static_cast<float>(to.x), static_cast<float>(to.y),
@@ -183,7 +184,7 @@ class Sprite {
   }
   [[deprecated("Replaced with float version")]]
   void Draw(const Si32 to_x, const Si32 to_y, float angle_radians,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) {
     Draw(static_cast<float>(to_x), static_cast<float>(to_y),
@@ -191,7 +192,7 @@ class Sprite {
   }
   [[deprecated("Replaced with Vec2F version")]]
   void Draw(const Vec2Si32 to, float angle_radians, float zoom,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) {
     Draw(static_cast<float>(to.x), static_cast<float>(to.y),
@@ -200,7 +201,7 @@ class Sprite {
   [[deprecated("Replaced with float version")]]
   void Draw(const Si32 to_x, const Si32 to_y,
             float angle_radians, float zoom,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) {
     Draw(static_cast<float>(to_x), static_cast<float>(to_y),
@@ -209,7 +210,7 @@ class Sprite {
   [[deprecated("Replaced with float version")]]
   void Draw(const Si32 to_x, const Si32 to_y,
             float angle_radians, float zoom, Sprite to_sprite,
-            DrawBlendingMode blending_mode = kAlphaBlend,
+            DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) {
     Draw(static_cast<float>(to_x), static_cast<float>(to_y),
