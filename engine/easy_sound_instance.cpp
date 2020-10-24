@@ -164,6 +164,11 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     *Log() << "Error in LoadWav, sample_rate cannot be 0.";
     return nullptr;
   }
+  if (wav->sample_rate < 1000) {
+    *Log() << "Error in LoadWav, sample_rate of " << wav->sample_rate
+      << " is too low, use at least 1000";
+    return nullptr;
+  }
 
   std::shared_ptr<SoundInstance> sound;
   Ui32 in_sample_count = wav->subchunk_2_size / wav->block_align;
