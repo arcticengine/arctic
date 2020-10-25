@@ -26,6 +26,7 @@
 
 #include "engine/bound2f.h"
 #include "engine/bound3f.h"
+#include "engine/easing.h"
 #include "engine/frustum3f.h"
 #include "engine/mat22f.h"
 #include "engine/mat33f.h"
