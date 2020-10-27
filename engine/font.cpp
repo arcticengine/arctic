@@ -159,6 +159,7 @@ void Font::Load(const char *file_name) {
   memcpy(&info, &file[static_cast<size_t>(pos)], sizeof(info) - sizeof(info.font_name));
   info.font_name = reinterpret_cast<char*>(
     &file[static_cast<size_t>(pos) + sizeof(info) - sizeof(info.font_name)]);
+  outline_ = info.outline;
   // info.Log();
   pos += block_size;
 
@@ -281,11 +282,11 @@ void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
     DrawFilterMode filter_mode,
     Rgba color, const std::vector<Rgba> &palete, bool do_draw,
     Vec2Si32 *out_size) {
-  Si32 next_x = x;
+  Si32 next_x = x + outline_;
   Si32 next_y = y;
   if (do_draw) {
     if (origin == kTextOriginTop) {
-      next_y = y - base_to_top_ + line_height_;
+      next_y = y - base_to_top_ + line_height_ - outline_;
     } else if (origin == kTextOriginFirstBase) {
       next_y = y + line_height_;
     } else {
@@ -294,7 +295,7 @@ void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
         x, y, origin, blending_mode, filter_mode, color, palete, false,
         &size);
       if (origin == kTextOriginBottom) {
-        next_y = y + size.y - base_to_top_ + line_height_;
+        next_y = y + size.y - base_to_top_ + line_height_ - outline_;
       } else if (origin == kTextOriginLastBase) {
         next_y = y + size.y;
       }
@@ -319,7 +320,8 @@ void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
       }
       max_width = std::max(max_width, width);
       if (out_size) {
-        *out_size = Vec2Si32(max_width, lines * line_height_);
+        *out_size = Vec2Si32(max_width + outline_*2,
+          lines * line_height_+outline_*2);
       }
       return;
     }
@@ -350,7 +352,7 @@ void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
           }
           max_width = std::max(max_width, width);
           width = 0;
-          next_x = x;
+          next_x = x + outline_;
           lines += newline_count;
           next_y -= newline_count * line_height_;
           newline_count = 0;

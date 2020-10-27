@@ -171,6 +171,12 @@ struct Font {
   Si32 base_to_top_ = 0;
   Si32 base_to_bottom_ = 0;
   Si32 line_height_ = 0;
+  Si32 outline_ = 0;
+
+  /// @brief Returns outline size in pixels. Outline*2 is counted towards size.
+  Si32 GetOutlineSize() {
+    return outline_;
+  }
 
   /// @brief Creates an empty font with no glyphs
   /// @param [in] base_to_top Glyph height from base to top.
