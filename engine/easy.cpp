@@ -901,6 +901,22 @@ Si32 Random32(Si32 min, Si32 max) {
   return static_cast<Si32>(GetEngine()->GetRandom(min, max));
 }
 
+Ui64 Random64() {
+  return GetEngine()->GetRandom64();
+}
+
+Ui32 Random32() {
+  return GetEngine()->GetRandom32();
+}
+
+Ui16 Random16() {
+  return GetEngine()->GetRandom16();
+}
+
+Ui8 Random8() {
+  return GetEngine()->GetRandom8();
+}
+
 Si32 InputMessageCount() {
   return static_cast<Si32>(g_input_messages.size());
 }

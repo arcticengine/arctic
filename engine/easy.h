@@ -226,6 +226,15 @@ double Time();
 Si64 Random(Si64 min, Si64 max);
 /// @brief Returns a random number in range [min,max]
 Si32 Random32(Si32 min, Si32 max);
+/// @brief Returns a random Ui64
+Ui64 Random64();
+/// @brief Returns a random Ui32
+Ui32 Random32();
+/// @brief Returns a random Ui16
+Ui16 Random16();
+/// @brief Returns a random Ui8
+Ui8 Random8();
+
 /// @brief Waits for the time specified before returning.
 void Sleep(double duration_seconds);
 

@@ -103,6 +103,10 @@ class Engine {
   void ResizeBackbuffer(const Si32 width, const Si32 height);
   double GetTime();
   Si64 GetRandom(Si64 min, Si64 max);
+  Ui64 GetRandom64();
+  Ui32 GetRandom32();
+  Ui16 GetRandom16();
+  Ui8 GetRandom8();
   Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
   void OnWindowResize(Si32 width, Si32 height);
   Vec2Si32 GetWindowSize() const;

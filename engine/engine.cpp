@@ -353,6 +353,23 @@ Si64 Engine::GetRandom(Si64 min, Si64 max) {
   }
 }
 
+
+Ui64 Engine::GetRandom64() {
+  return rnd_64_();
+}
+
+Ui32 Engine::GetRandom32() {
+  return static_cast<Ui32>(rnd_32_());
+}
+
+Ui16 Engine::GetRandom16() {
+  return static_cast<Ui32>(rnd_16_());
+}
+
+Ui8 Engine::GetRandom8() {
+  return static_cast<Ui32>(rnd_8_());
+}
+
 Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
   Vec2F rel_pos = pos - Vec2F(0.5f, 0.5f);
   float aspect = static_cast<float>(width_) / static_cast<float>(height_);
