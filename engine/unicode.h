@@ -37,6 +37,9 @@ struct Utf32Reader {
   const Ui8 *p = nullptr;
 
   void Reset(const Ui8 *data);
+  inline void Reset(const char *data) {
+    Reset(reinterpret_cast<const Ui8 *>(data));
+  }
   void Rewind();
   Ui32 ReadOne();  // Read one Utf32 character while converting it from Utf8
 };
@@ -44,6 +47,9 @@ struct Utf32Reader {
 class Utf32FromUtf16 {
  public:
   void Reset(const Ui8 *data);
+  inline void Reset(const char *data) {
+    Reset(reinterpret_cast<const Ui8 *>(data));
+  }
   void Rewind();
   Ui32 ReadOne();
 
