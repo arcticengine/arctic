@@ -108,4 +108,4 @@ void *SPMC_ArrayImpl::dequeue() {
 }
 
 
-} // namespace arctic
+}  // namespace arctic

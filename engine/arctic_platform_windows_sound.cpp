@@ -110,9 +110,9 @@ void StartSoundBuffer(Sound sound, float volume) {
     SoundBuffer buffer;
     buffer.sound = sound;
     buffer.volume = volume;
-    buffer.next_position = 0; //-V1048
+    buffer.next_position = 0;  //-V1048
     buffer.sound.GetInstance()->IncPlaying();
-    buffer.action = SoundBuffer::kStart; //-V1048
+    buffer.action = SoundBuffer::kStart;  //-V1048
     g_sound_mixer_state.AddSoundTask(buffer);
   }
 }
@@ -122,7 +122,7 @@ void StopSoundBuffer(Sound sound) {
     SoundBuffer buffer;
     buffer.sound = sound;
     buffer.volume = 0.f;
-    buffer.next_position = 0; //-V1048
+    buffer.next_position = 0;  //-V1048
     buffer.action = SoundBuffer::kStop;
     g_sound_mixer_state.AddSoundTask(buffer);
   }
@@ -156,17 +156,31 @@ void SoundMixerThreadFunction() {
   MMRESULT result = waveOutOpen(&wave_out_handle, WAVE_MAPPER,
     &format, reinterpret_cast<DWORD_PTR>(hEvent), 0,
     CALLBACK_EVENT | WAVE_FORMAT_DIRECT);
-  
+
   const char *postfix = nullptr;
   switch (result) {
-  case MMSYSERR_ALLOCATED: postfix = "Specified resource is already allocated."; break;
-  case MMSYSERR_BADDEVICEID: postfix = "Specified device identifier is out of range."; break;
-  case MMSYSERR_NODRIVER: postfix = "No device driver is present."; break;
-  case MMSYSERR_NOMEM: postfix = "Unable to allocate or lock memory."; break;
-  case WAVERR_BADFORMAT: postfix = "Attempted to open with an unsupported waveform - audio format."; break;
-  case WAVERR_SYNC: postfix = "The device is synchronous but waveOutOpen was called without using the WAVE_ALLOWSYNC flag."; break;
-  };
-  Check(result == MMSYSERR_NOERROR, "Error in SoundMixerThreadFunction during waweOutOpen:", postfix);
+  case MMSYSERR_ALLOCATED:
+      postfix = "Specified resource is already allocated.";
+      break;
+  case MMSYSERR_BADDEVICEID:
+      postfix = "Specified device identifier is out of range.";
+      break;
+  case MMSYSERR_NODRIVER:
+      postfix = "No device driver is present.";
+      break;
+  case MMSYSERR_NOMEM:
+      postfix = "Unable to allocate or lock memory.";
+      break;
+  case WAVERR_BADFORMAT:
+      postfix = "Attempted to open with an unsupported waveform-audio format.";
+      break;
+  case WAVERR_SYNC:
+      postfix = "The device is synchronous but waveOutOpen was called"
+          " without using the WAVE_ALLOWSYNC flag.";
+      break;
+  }
+  Check(result == MMSYSERR_NOERROR,
+      "Error in SoundMixerThreadFunction during waweOutOpen:", postfix);
 
   Ui32 buffer_count = 10ull;
   Ui64 buffer_duration_us = 5000ull;

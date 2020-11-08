@@ -82,7 +82,7 @@ void StopSoundBuffer(Sound sound);
 /// @{
 
 /// @brief Sets the master volume level
-/// @param volume Volume to set. 
+/// @param volume Volume to set.
 void SetMasterVolume(float volume);
 
 /// @brief Gets the master volume level

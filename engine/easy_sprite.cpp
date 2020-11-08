@@ -130,7 +130,6 @@ void DrawTriangle(Sprite to_sprite,
       Vec2F tex2 = tex_a + tex_ac * (y2 - a.y) / ac.y;
       float dy = static_cast<float>(y2_i - y1_i);
       if (dy > 0) {
-
         //       xxxxxC  lb, x2 > x1, x1 then move
         // Bxxxxxx
         // Axx
@@ -208,7 +207,6 @@ void DrawTriangle(Sprite to_sprite,
             e.tex = tex2;
           }
         }
-
       }
     }
     // Edge ab
@@ -443,9 +441,11 @@ void DrawTriangle(Sprite to_sprite,
       Rgba * const to_rgba = p_line + x;
       Rgba color;
       if (kFilterMode == kFilterNearest) {
-        color = *(tex_data + ((tex1_x_16 + 32768) >> 16) + ((tex1_y_16 + 32768) >> 16) * tex_stride);
+        color = *(tex_data + ((tex1_x_16 + 32768) >> 16)
+          + ((tex1_y_16 + 32768) >> 16) * tex_stride);
       } else if (kFilterMode == kFilterBilinear) {
-        const Rgba* t1 = tex_data + (tex1_x_16 >> 16) + (tex1_y_16 >> 16) * tex_stride;
+        const Rgba* t1 = tex_data + (tex1_x_16 >> 16)
+          + (tex1_y_16 >> 16) * tex_stride;
 
         Rgba color00 = *(t1);
         Rgba color01 = *(t1 + 1);
@@ -526,7 +526,6 @@ void DrawTriangle(Sprite to_sprite,
       tex1_y_16 += dtdx_y_16;
     }
   }
-
 }
 
 template<DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode>
@@ -741,7 +740,8 @@ void DrawSprite(Sprite *to_sprite,
         if (ca == 255) {
           Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
           Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) & 0xff00u;
-          Ui32 b2 = ((Ui32(color.b) * (Ui32(in_color.b) + 1)) << 8u) & 0xff0000ull;
+          Ui32 b2 = ((Ui32(color.b) * (Ui32(in_color.b) + 1)) << 8u)
+            & 0xff0000ull;
           to_rgba->rgba = r2 | g2 | b2;
         } else if (ca) {
           Ui32 m = 255 - ca;
@@ -1178,7 +1178,8 @@ void Sprite::Draw(const float to_x, const float to_y,
   float sin_a = sinf(angle_radians) * zoom;
   float cos_a = cosf(angle_radians) * zoom;
   Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x);
-  Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(Width() - 1 - pivot_.x);
+  Vec2F right = Vec2F(cos_a, sin_a) *
+    static_cast<float>(Width() - 1 - pivot_.x);
   Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - 1 - pivot_.y);
   Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y);
 

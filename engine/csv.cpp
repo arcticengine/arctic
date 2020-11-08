@@ -155,7 +155,7 @@ CsvRow *CsvTable::GetRow(Ui64 row_position) const {
 CsvRow &CsvTable::operator[](Ui64 row_position) const {
   CsvRow *row = CsvTable::GetRow(row_position);
   // Check(row, "row_position out of bounds in CvsTable");
-   return *row;
+  return *row;
 }
 
 std::string CsvTable::GetErrorDescription() const {

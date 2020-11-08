@@ -30,7 +30,7 @@ namespace arctic {
 /// @addtogroup global_utility
 /// @{
 
-/// @brief Transform value from the big-endian representation 
+/// @brief Transform value from the big-endian representation
 /// @param [in] x Big-endian value to transform
 /// @return Transformed value in local cpu-specific representation
 Ui16 FromBe(Ui16 x);
@@ -44,7 +44,7 @@ Ui32 FromBe(Ui32 x);
 /// @copydoc FromBe()
 Si32 FromBe(Si32 x);
 
-/// @brief Transform value to the big-endian representation 
+/// @brief Transform value to the big-endian representation
 /// @param [in] x Local cpu-specific representation of a value to transform
 /// @return Transformed value in big-endian representation
 Ui16 ToBe(Ui16 x);

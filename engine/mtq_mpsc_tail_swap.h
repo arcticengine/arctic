@@ -57,7 +57,7 @@ struct Node {
 
 template<typename PayloadType>
 class MPSC_TailSwap_Impl {
-public:
+ public:
   explicit
   MPSC_TailSwap_Impl() noexcept(noexcept(new Node<PayloadType>)) = default;
 
@@ -89,8 +89,8 @@ public:
     old_tail->next.store(new_node, MO_RELEASE);
   }
 
-  bool dequeue(PayloadType &item)
-  noexcept(DeleteTheObjectIsNoexcept<Node<PayloadType>>) {
+  bool dequeue(PayloadType *item)
+      noexcept(DeleteTheObjectIsNoexcept<Node<PayloadType>>) {
     Node<PayloadType> *next_head = head->next.load(MO_RELAXED);
     if (next_head == nullptr) {
       return false;
@@ -98,11 +98,11 @@ public:
     std::atomic_thread_fence(MO_ACQUIRE);
     delete head;
     head = next_head;
-    item = std::move(next_head->payload);
+    *item = std::move(next_head->payload);
     return true;
   }
 
-protected:
+ protected:
   void delete_list()
   noexcept(DeleteTheObjectIsNoexcept<Node<PayloadType>>) {
     std::atomic_thread_fence(MO_ACQUIRE);
@@ -125,7 +125,7 @@ struct JustArrayInside {
 };
 
 
-} // namespace dtl
+}  // namespace dtl
 
 
 template<typename PayloadType,
@@ -137,18 +137,18 @@ class MPSC_TailSwap;
 
 template<typename PayloadType>
 class MPSC_TailSwap<PayloadType, true> {
-public:
+ public:
   void enqueue(PayloadType &&item)
   noexcept(noexcept(new dtl::Node<PayloadType>)) {
     impl.enqueue(reinterpret_cast<ImplItemType &&>(item));
   }
 
-  bool dequeue(PayloadType &item)
-  noexcept(dtl::DeleteTheObjectIsNoexcept<dtl::Node<PayloadType>>) {
-    return impl.dequeue(reinterpret_cast<ImplItemType &>(item));
+  bool dequeue(PayloadType *item)
+      noexcept(dtl::DeleteTheObjectIsNoexcept<dtl::Node<PayloadType>>) {
+    return impl.dequeue(reinterpret_cast<ImplItemType *>(item));
   }
 
-protected:
+ protected:
   using ImplItemType = dtl::JustArrayInside<sizeof(PayloadType)>;
 
   dtl::MPSC_TailSwap_Impl<ImplItemType> impl;
@@ -161,6 +161,6 @@ class MPSC_TailSwap<PayloadType, false>
 };
 
 
-} // namespace arctic
+}  // namespace arctic
 
 #endif  // ENGINE_MTQ_MPSC_TAIL_SWAP_H_

@@ -92,4 +92,4 @@ size_t inline FixedBlockQueue_Gears::getItemCount(
 }
 
 
-} // namespace arctic
+}  // namespace arctic

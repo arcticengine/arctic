@@ -27,8 +27,8 @@
 #ifndef ENGINE_MTQ_BASE_COMMON_H_
 #define ENGINE_MTQ_BASE_COMMON_H_
 
-#include "engine/arctic_types.h"
 #include <atomic>
+#include "engine/arctic_types.h"
 
 namespace arctic {
 
@@ -42,6 +42,6 @@ static constexpr auto MO_ACQUIRE = std::memory_order_acquire;
 static constexpr auto MO_RELEASE = std::memory_order_release;
 static constexpr auto MO_ACQUIRE_RELEASE = std::memory_order_acq_rel;
 
-}
+}  // namespace arctic
 
 #endif  // ENGINE_MTQ_BASE_COMMON_H_

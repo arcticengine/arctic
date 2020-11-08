@@ -40,7 +40,8 @@ namespace arctic {
   SpriteInstance::SpriteInstance(Si32 width, Si32 height)
     : width_(width)
       , height_(height)
-      , data_(static_cast<size_t>(width) * static_cast<size_t>(height) * sizeof(Rgba)) {
+      , data_(static_cast<size_t>(width) *
+          static_cast<size_t>(height) * sizeof(Rgba)) {
       }
 
   void SpriteInstance::UpdateOpaqueSpans() {
@@ -116,20 +117,24 @@ struct TgaHeader {
       | (tga->color_map_length >> 8);
 #endif  // BIGENDIAN
     if (tga->image_width < 2) {
-      *Log() << "Error in LoadTga, tga.xres: " << tga->image_width << " < 2 is too small.";
+      *Log() << "Error in LoadTga, tga.xres: " << tga->image_width
+        << " < 2 is too small.";
       return sprite;
     }
     if (tga->image_height < 2) {
-      *Log() << "Error in LoadTga, tga.yres: " << tga->image_height << " < 2 is too small.";
+      *Log() << "Error in LoadTga, tga.yres: " << tga->image_height
+        << " < 2 is too small.";
       return sprite;
     }
     if ((tga->pixel_depth != 32) && (tga->pixel_depth != 24)
         && (tga->pixel_depth != 16) && (tga->pixel_depth != 15)
         && (tga->pixel_depth != 8)) {
-      *Log() << "Error in LoadTga, tga.bpp: " << tga->pixel_depth << " is unsupported.";
+      *Log() << "Error in LoadTga, tga.bpp: " << tga->pixel_depth
+        << " is unsupported.";
       return sprite;
     }
-    const Si64 colormap_bytes_per_entry = (((Si64)tga->color_map_entry_size + 7) / 8);
+    const Si64 colormap_bytes_per_entry =
+      (((Si64)tga->color_map_entry_size + 7) / 8);
     Si64 colormap_size = tga->color_map_length * colormap_bytes_per_entry;
     if (size < (Si64)sizeof(TgaHeader) + tga->id_field_length + colormap_size) {
       *Log() << "Error in LoadTga, size is too small.";

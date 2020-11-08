@@ -47,7 +47,7 @@ class BitStream {
   Ui64 read_bit_shift_ = 0;
  public:
   BitStream();
-  explicit BitStream(std::vector<Ui8> &data);
+  explicit BitStream(const std::vector<Ui8> &data);
   void PushBit(Ui64 bit);
   void BeginRead();
   Ui8 ReadBit();

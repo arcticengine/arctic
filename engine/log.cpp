@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 
 #include "engine/log.h"
-#include "engine/mtq_mpsc_vinfarr.h"
 
 #include <condition_variable>  // NOLINT
 #include <fstream>
@@ -34,57 +33,59 @@
 #include <string>
 #include <thread>  // NOLINT
 
+#include "engine/mtq_mpsc_vinfarr.h"
 #include "engine/arctic_platform.h"
 
 namespace arctic {
 
-  template <class TQueue, class TItem>
-  class SyncQueue{
-    std::atomic<bool> is_going_to_sleep = ATOMIC_VAR_INIT(false);
-    std::mutex sleep_mutex;
-    std::condition_variable sleep_condvar;
-    TQueue queue;
-  public:
-    void Enqueue(TItem *item) {
-      queue.enqueue(item);
-      if (is_going_to_sleep.load()) {
-        sleep_condvar.notify_one();
-      }
-    }
+template <class TQueue, class TItem>
+class SyncQueue{
+  std::atomic<bool> is_going_to_sleep = ATOMIC_VAR_INIT(false);
+  std::mutex sleep_mutex;
+  std::condition_variable sleep_condvar;
+  TQueue queue;
 
-    TItem* TryDequeue() {
-      return queue.dequeue();
+ public:
+  void Enqueue(TItem *item) {
+    queue.enqueue(item);
+    if (is_going_to_sleep.load()) {
+      sleep_condvar.notify_one();
     }
+  }
 
-    TItem* SyncDequeue() {
-      TItem *item = queue.dequeue();
-      if (item) {
-        return item;
-      }
-      is_going_to_sleep.store(true);
-      {
-        while (true) {
-          item = queue.dequeue();
-          if (item) {
-            is_going_to_sleep.store(false);
-            return item;
-          }
-          {
-            std::unique_lock<std::mutex> lock(sleep_mutex);
-            sleep_condvar.wait(lock);
-          }
+  TItem* TryDequeue() {
+    return queue.dequeue();
+  }
+
+  TItem* SyncDequeue() {
+    TItem *item = queue.dequeue();
+    if (item) {
+      return item;
+    }
+    is_going_to_sleep.store(true);
+    {
+      while (true) {
+        item = queue.dequeue();
+        if (item) {
+          is_going_to_sleep.store(false);
+          return item;
+        }
+        {
+          std::unique_lock<std::mutex> lock(sleep_mutex);
+          sleep_condvar.wait(lock);
         }
       }
     }
-  };
+  }
+};
 
-  static std::atomic<bool> g_is_log_enabled = ATOMIC_VAR_INIT(false);
-  static SyncQueue<
-    MpscVirtInfArray<std::string*, TuneDeletePayloadFlag<true>>,
-    std::string> g_logger_queue;
-  static std::thread g_logger_thread;
-  static std::string *g_quit_item = nullptr;
-  static std::mutex g_quit_mutex;
+static std::atomic<bool> g_is_log_enabled = ATOMIC_VAR_INIT(false);
+static SyncQueue<
+  MpscVirtInfArray<std::string*, TuneDeletePayloadFlag<true>>,
+  std::string> g_logger_queue;
+static std::thread g_logger_thread;
+static std::string *g_quit_item = nullptr;
+static std::mutex g_quit_mutex;
 
 void LoggerThreadFunction() {
     const char *file_name = "log.txt";
@@ -162,7 +163,8 @@ void LoggerThreadFunction() {
   }
 
   std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log() {
-    return std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)>(new std::ostringstream, LogAndDelete);
+    return std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)>
+      (new std::ostringstream, LogAndDelete);
   }
 
   void StartLogger() {

@@ -33,16 +33,16 @@
 #include "engine/rgba.h"
 
 namespace arctic {
-  
+
 /// @addtogroup global_drawing
 /// @{
 
 enum DrawBlendingMode {
-  kCopyRgba [[deprecated("Use kDrawBlendingModeCopyRgba instead of kCopyRgba")]] = 0, // Deprecated
+  kCopyRgba [[deprecated("Use kDrawBlendingModeCopyRgba instead of kCopyRgba")]] = 0,  // Deprecated
   kDrawBlendingModeCopyRgba = 0,
-  kAlphaBlend [[deprecated("Use kDrawBlendingModeAlphaBlend instead of kAlphaBlend")]] = 1, // Deprecated
+  kAlphaBlend [[deprecated("Use kDrawBlendingModeAlphaBlend instead of kAlphaBlend")]] = 1,  // Deprecated
   kDrawBlendingModeAlphaBlend = 1,
-  kColorize [[deprecated("User kDrawBlendingModeColorize instead of kColorize")]] = 2, // Deprecated
+  kColorize [[deprecated("User kDrawBlendingModeColorize instead of kColorize")]] = 2,  // Deprecated
   kDrawBlendingModeColorize = 2,
   kDrawBlendingModeAdd = 3
 };

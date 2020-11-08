@@ -88,9 +88,12 @@ void StartNewTetramino() {
   for (Si32 y = 0; y < kTetraminoSide; ++y) {
     for (Si32 x = 0; x < kTetraminoSide; ++x) {
       g_current[0][y][x] = g_tetraminoes[y + idx * kTetraminoSide][x];
-      g_current[1][x][kTetraminoSide - 1 - y] = g_tetraminoes[y + idx * kTetraminoSide][x];
-      g_current[2][kTetraminoSide - 1 - y][kTetraminoSide - 1 - x] = g_tetraminoes[y + idx * kTetraminoSide][x];
-      g_current[3][kTetraminoSide - 1 - x][y] = g_tetraminoes[y + idx * kTetraminoSide][x];
+      g_current[1][x][kTetraminoSide - 1 - y] =
+        g_tetraminoes[y + idx * kTetraminoSide][x];
+      g_current[2][kTetraminoSide - 1 - y][kTetraminoSide - 1 - x] =
+        g_tetraminoes[y + idx * kTetraminoSide][x];
+      g_current[3][kTetraminoSide - 1 - x][y] =
+        g_tetraminoes[y + idx * kTetraminoSide][x];
     }
   }
   g_current_x = (kFieldWidth - kTetraminoSide + 1) / 2;
@@ -108,7 +111,8 @@ void Init() {
   g_blocks[1].Load("data/block_1.tga");
   g_blocks[2].Load("data/block_2.tga");
   g_blocks[0].Create(g_blocks[1].Size());
-  g_blocks[1].Draw(g_blocks[0], 0, 0, kDrawBlendingModeColorize, kFilterNearest, Rgba(0, 0, 48));
+  g_blocks[1].Draw(g_blocks[0], 0, 0,
+      kDrawBlendingModeColorize, kFilterNearest, Rgba(0, 0, 48));
   ResizeScreen(800, 500);
   StartNewTetramino();
   g_prev_time = Time();
@@ -119,8 +123,10 @@ bool IsPositionOk(Si32 test_x, Si32 test_y, Si32 test_orientation) {
   for (Si32 y = 0; y < kTetraminoSide; ++y) {
     for (Si32 x = 0; x < kTetraminoSide; ++x) {
       if (g_current[test_orientation][y][x]) {
-        if (x + test_x < 0 || x + test_x >= kFieldWidth || y + test_y >= kFieldHeight
-              || g_field[y + test_y][x + test_x]) {
+        if (x + test_x < 0
+            || x + test_x >= kFieldWidth
+            || y + test_y >= kFieldHeight
+            || g_field[y + test_y][x + test_x]) {
           return false;
         }
       }
@@ -223,14 +229,16 @@ void Render() {
   Si32 x_offset = (ScreenSize().x - 25 * kFieldWidth) / 2;
   for (Si32 y = 0; y < kFieldHeight; ++y) {
     for (Si32 x = 0; x < kFieldWidth; ++x) {
-      g_blocks[g_field[y][x]].Draw(x_offset + x * 25, (kFieldHeight - 1 - y) * 25);
+      g_blocks[g_field[y][x]].Draw(
+          x_offset + x * 25, (kFieldHeight - 1 - y) * 25);
     }
   }
   for (Si32 y = 0; y < kTetraminoSide; ++y) {
     for (Si32 x = 0; x < kTetraminoSide; ++x) {
       if (g_current[g_current_orientation][y][x]) {
         g_blocks[g_current[g_current_orientation][y][x]].Draw(
-          x_offset + (x + g_current_x) * 25, (kFieldHeight - 1 - y - g_current_y) * 25);
+          x_offset + (x + g_current_x) * 25,
+          (kFieldHeight - 1 - y - g_current_y) * 25);
       }
     }
   }

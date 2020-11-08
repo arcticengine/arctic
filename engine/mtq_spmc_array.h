@@ -44,13 +44,13 @@ namespace arctic {
 using std::atomic;
 
 class SPMC_ArrayImpl {
-public:
-  SPMC_ArrayImpl(size_t size);
+ public:
+  explicit SPMC_ArrayImpl(size_t size);
 
   bool enqueue(void *elem);
   void *dequeue();
 
-protected:
+ protected:
   struct Slot {
     atomic<void *> item;
     atomic<Ui64> seq;
@@ -70,8 +70,8 @@ protected:
 
 template<typename Payload, bool Delete = true>
 class SpmcArray {
-public:
-  SpmcArray(size_t size)
+ public:
+  explicit SpmcArray(size_t size)
     : impl(size) {}
 
   ~SpmcArray() {
@@ -90,15 +90,15 @@ public:
     return reinterpret_cast<Payload *>(impl.dequeue());
   }
 
-protected:
+ protected:
   SPMC_ArrayImpl impl;
 };
 
 
 template<bool Delete>
 class SpmcArray<void, Delete> {
-public:
-  SpmcArray(Ui64 size)
+ public:
+  explicit SpmcArray(Ui64 size)
     : impl(size) {}
 
   ~SpmcArray() {
@@ -117,7 +117,7 @@ public:
     return impl.dequeue();
   }
 
-protected:
+ protected:
   SPMC_ArrayImpl impl;
 };
 
