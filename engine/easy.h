@@ -54,21 +54,22 @@ void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color);
 
 /// @brief Draws a gradient color line from point a to point b to a sprite
 void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
-    Rgba color_a, Rgba color_b);
+  Rgba color_a, Rgba color_b);
 
 /// @brief Draws a solid color filled triangle
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
 
 /// @brief Draws a solid color filled triangle to a sprite
-void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c, Rgba color);
+void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
+  Rgba color);
 
 /// @brief Draws a gradient color filled triangle
 void DrawTriangle(Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
-    Rgba color_a, Rgba color_b, Rgba color_c);
+  Rgba color_a, Rgba color_b, Rgba color_c);
 
 /// @brief Draws a gradient color filled triangle to a sprite
 void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
-    Rgba color_a, Rgba color_b, Rgba color_c);
+  Rgba color_a, Rgba color_b, Rgba color_c);
 
 
 void DrawTriangle(Sprite to_sprite,
@@ -90,7 +91,7 @@ Rgba GetPixel(Si32 x, Si32 y);
 Rgba GetPixel(Sprite from_sprite, Si32 x, Si32 y);
 
 /// @brief Returns color of a pixel of a sprite at coordinates specified
-Rgba GetPixel(Sprite &from_sprite, Si32 x, Si32 y);
+Rgba GetPixel(const Sprite &from_sprite, Si32 x, Si32 y);
 
 /// @brief Sets color of a pixel at coordinates specified
 void SetPixel(Si32 x, Si32 y, Rgba color);
@@ -184,10 +185,10 @@ void SetKey(const KeyCode key_code, bool is_set_down);
 /// @brief Changes the stored key state
 /// @param key The key character code
 /// @param is_set_down Key state to set as if it was the last seen state of the key
-/// @details The state is set just like it would be if the key actually transitioned
-/// up or down at the end of the last frame. It may affect resuts of
-/// IsKeyDownward() IsKeyDown() IsKeyUpward() IsAnyKeyDownward() IsAnyKeyDown() and
-/// IsAnyKeyUpward() calls.
+/// @details The state is set just like it would be if the key actually
+/// transitioned up or down at the end of the last frame. It may affect
+/// resuts of IsKeyDownward() IsKeyDown() IsKeyUpward() IsAnyKeyDownward()
+/// IsAnyKeyDown() and IsAnyKeyUpward() calls.
 void SetKey(const char key, bool is_set_down);
 
 /// @brief Returns mouse cursor position

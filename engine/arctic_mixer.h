@@ -62,11 +62,11 @@ struct SoundMixerState {
 
   SoundMixerState()
       : pool(16) {
-  };
+  }
 
-  void SetError(std::string description) { //-V813
+  void SetError(std::string description) {  //-V813
     std::lock_guard<std::mutex> lock(error_mutex);
-    error_description = description; //-V820
+    error_description = description;  //-V820
     is_ok = false;
   }
 
@@ -120,7 +120,8 @@ struct SoundMixerState {
   }
 };
 
-extern template class MpscVirtInfArray<SoundBuffer*, TuneDeletePayloadFlag<true>>;
+extern template class MpscVirtInfArray
+    <SoundBuffer*, TuneDeletePayloadFlag<true>>;
 
 /// @}
 

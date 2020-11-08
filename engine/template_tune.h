@@ -24,8 +24,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_TEMPLTE_TUNE_H_
-#define ENGINE_TEMPLTE_TUNE_H_
+#ifndef ENGINE_TEMPLATE_TUNE_H_
+#define ENGINE_TEMPLATE_TUNE_H_
 
 namespace arctic {
 
@@ -90,6 +90,6 @@ struct FuseParams<BaseType, FuseType>
         };                                             \
     }
 
-}
+}  // namespace arctic
 
-#endif  // ENGINE_TEMPLTE_TUNE_H_
+#endif  // ENGINE_TEMPLATE_TUNE_H_

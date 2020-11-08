@@ -140,7 +140,7 @@ void Fatal(const char *message, const char *message_postfix) {
   Log(full_message);
   MessageBox(NULL, full_message, "Arctic Engine", MB_OK | MB_ICONERROR);
   StopLogger();
-  ExitProcess(1); //-V2014
+  ExitProcess(1);  //-V2014
 }
 
 static void FatalWithLastError(const char* message_prefix,
@@ -213,7 +213,7 @@ static Si32 g_window_height = 0;
 static std::atomic<bool> g_is_cursor_desired = true;
 static std::atomic<bool> g_is_cursor_visible = true;
 
-KeyCode TranslateKeyCode(WPARAM word_param) { //-V2008
+KeyCode TranslateKeyCode(WPARAM word_param) {  //-V2008
   if (word_param >= 'A' && word_param <= 'Z') {
     return static_cast<KeyCode>(word_param - 'A' + kKeyA);
   }
@@ -690,11 +690,11 @@ void EngineThreadFunction(SystemInfo system_info) {
 
   EasyMain();
 
-  ExitProcess(0); //-V2014
+  ExitProcess(0);  //-V2014
 }
 
 void ExitProgram(Si32 exit_code) {
-  ExitProcess(exit_code); //-V2014
+  ExitProcess(exit_code);  //-V2014
 }
 
 void Swap() {
@@ -938,7 +938,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   arctic::StopLogger();
   LocalFree(args);
-  ExitProcess(0); //-V2014
+  ExitProcess(0);  //-V2014
   return 0;
 }
 

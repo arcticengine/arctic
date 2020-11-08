@@ -23,9 +23,9 @@
 
 // Library for Anti-commutative Dual Complex Numbers
 // For the detail, look at
-// G. Matsuda, S. Kaji, and H. Ochiai, Anti-commutative Dual Complex Numbers and 2D Rigid Transformation,
-//Mathematical Progress in Expressive Image Synthesis I, Springer-Japan, 2014.
-// http://arxiv.org/abs/1601.01754
+// G. Matsuda, S. Kaji, and H. Ochiai, Anti-commutative Dual Complex Numbers
+// and 2D Rigid Transformation, Mathematical Progress in Expressive Image
+// Synthesis I, Springer-Japan, 2014. http://arxiv.org/abs/1601.01754
 
 #ifndef ENGINE_DUAL_COMPLEX_H_
 #define ENGINE_DUAL_COMPLEX_H_
@@ -40,7 +40,7 @@ namespace arctic {
 
 template<class T>
 class DualComplex {
-public:
+ public:
   T real_x = 1;
   T real_y = 0;
   T dual_x = 0;
@@ -192,7 +192,7 @@ public:
   /// @return blended normalised DualComplex
   static DualComplex Blend(std::vector<DualComplex> dcns, std::vector<T> weights) {
     assert(dcns.size() == weights.size());
-    DualComplex result(0,0,0,0);
+    DualComplex result(0, 0, 0, 0);
     for (size_t i = 0; i < dcns.size(); i++) {
       result += dcns[i] * weights[i];
     }

@@ -32,6 +32,7 @@
 
 #include <cstddef>
 #include <new>
+#include <utility>
 #include "engine/mtq_mempool_allocator.h"
 
 #pragma warning(push)
@@ -40,7 +41,7 @@
 namespace arctic {
 
 class FixedBlockQueue_Gears {
-protected:
+ protected:
   void prepare_slot(I_FixedSizeAllocator *pool, size_t item_size);
   void *get_front(I_FixedSizeAllocator *pool, size_t item_size);
   void front_cleanup(I_FixedSizeAllocator *pool, size_t item_size);
@@ -82,7 +83,7 @@ protected:
 
 template<typename ElemType>
 class FixedBlockQueue : protected FixedBlockQueue_Gears {
-public:
+ public:
   void push_back(ElemType elem, I_FixedSizeAllocator *pool) {
     prepare_slot(pool, sizeof(ElemType));
     // state is absolutely not nullptr after prepare_slot
@@ -113,7 +114,7 @@ public:
 };
 
 
-} // namespace arctic
+}  // namespace arctic
 
 #pragma warning(pop)
 

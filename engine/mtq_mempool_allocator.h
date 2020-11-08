@@ -30,12 +30,12 @@
 namespace arctic {
 
 class I_FixedSizeAllocator {
-public:
+ public:
   virtual void *alloc() = 0;
   virtual void free(void *ptr) = 0;
   virtual size_t getBlockSize() = 0;
 };
 
-} // namespace arctic
+}  // namespace arctic
 
 #endif  // ENGINE_MTQ_MEMPOOL_ALLOCATOR_H_

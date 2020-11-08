@@ -238,6 +238,6 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-#endif // ARCTIC_NO_MAIN
+#endif  // ARCTIC_NO_MAIN
 
 #endif  // ARCTIC_PLATFORM_PI_ES_EGL

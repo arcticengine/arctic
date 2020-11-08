@@ -27,6 +27,7 @@
 #include <memory>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "engine/arctic_types.h"
@@ -112,7 +113,9 @@ class Node2F : public std::enable_shared_from_this<Node2F> {
   }
 
   void SetRelativeZOrder(bool is_relative) {
-    flags_ = is_relative ? (flags_ | kFlagRelativeZOrder) : (flags_ & ~kFlagRelativeZOrder);
+    flags_ = is_relative
+      ? (flags_ | kFlagRelativeZOrder)
+      : (flags_ & ~kFlagRelativeZOrder);
   }
 
   bool IsRelativeZOrder() const {
@@ -147,7 +150,8 @@ class Node2F : public std::enable_shared_from_this<Node2F> {
         *Log() << "Error: child is not located at child_idx_";
         return;
       }
-      std::shared_ptr<Node2F> this_ptr(std::move(parent_->children_[child_idx_]));
+      std::shared_ptr<Node2F> this_ptr(
+          std::move(parent_->children_[child_idx_]));
       if (child_idx_ != parent_->children_.size() - 1) {
         parent_->children_[child_idx_] = std::move(parent_->children_.back());
         parent_->children_[child_idx_]->child_idx_ = child_idx_;
@@ -161,17 +165,18 @@ class Node2F : public std::enable_shared_from_this<Node2F> {
 
   void Draw() {
     DrawSelf(transform_);
-    for (auto &child: children_) {
+    for (auto &child : children_) {
       child->Draw(transform_);
     }
   }
 
   void Draw(Transform2F parent_transform) {
     Transform2F transform;
-    transform.dc = parent_transform.dc * transform_.dc.TranslationScaled(parent_transform.scale);
+    transform.dc = parent_transform.dc * transform_.dc.TranslationScaled(
+        parent_transform.scale);
     transform.scale = parent_transform.scale * transform_.scale;
     DrawSelf(transform);
-    for (auto &child: children_) {
+    for (auto &child : children_) {
       child->Draw(transform);
     }
   }
@@ -186,8 +191,9 @@ class SpriteNode2F : public Node2F {
   DrawBlendingMode blending_mode_ = kDrawBlendingModeCopyRgba;
   DrawFilterMode filter_mode_ = kFilterNearest;
   Rgba color_ = Rgba(255, 255, 255);
+
  public:
-  SpriteNode2F(Sprite sprite)
+  explicit SpriteNode2F(Sprite sprite)
     : sprite_(sprite)
   {}
 

@@ -543,9 +543,9 @@ static OptionalError<Property*> readProperty(Cursor* cursor) {
     }
     case 'Y': cursor->current += 2; break;
     case 'C': cursor->current += 1; break;
-    case 'I': cursor->current += 4; break; //-V1037
+    case 'I': cursor->current += 4; break;  //-V1037
     case 'F': cursor->current += 4; break;
-    case 'D': cursor->current += 8; break; //-V1037
+    case 'D': cursor->current += 8; break;  //-V1037
     case 'L': cursor->current += 8; break;
     case 'R': {
       OptionalError<Ui32> len = read<Ui32>(cursor);
@@ -1260,8 +1260,8 @@ struct ClusterImpl : Cluster {
     int* ir = old_indices.empty() ? nullptr : &old_indices[0];
     double* wr = old_weights.empty() ? nullptr : &old_weights[0];
     for (std::size_t i = 0, c = old_indices.size(); i < c; ++i) {
-      int old_idx = ir[i]; //-V522
-      double w = wr[i]; //-V522
+      int old_idx = ir[i];  //-V522
+      double w = wr[i];  //-V522
       GeometryImpl::NewVertex* n = &geom->to_new_vertices[old_idx];
       if (n->index == -1) continue;  // skip vertices which aren't indexed.
       while (n) {
@@ -1712,9 +1712,9 @@ template <typename T> static bool parseArrayRaw(const Property& property,
 
     int elem_size = 1;
     switch (property.type) {
-      case 'l': elem_size = 8; break; //-V1037
+      case 'l': elem_size = 8; break;  //-V1037
       case 'd': elem_size = 8; break;
-      case 'f': elem_size = 4; break; //-V1037
+      case 'f': elem_size = 4; break;  //-V1037
       case 'i': elem_size = 4; break;
       default: return false;
     }
@@ -1876,7 +1876,7 @@ template <typename T> static bool parseBinaryArray(const Property& property,
     int elem_size = 1;
     switch (property.type) {
       case 'd': elem_size = 8; break;
-      case 'f': elem_size = 4; break; //-V1037
+      case 'f': elem_size = 4; break;  //-V1037
       case 'i': elem_size = 4; break;
       default: return false;
     }
@@ -2367,9 +2367,9 @@ static float getFramerateFromTimeMode(FrameRate time_mode,
     case FrameRate_60: return 60;
     case FrameRate_50: return 50;
     case FrameRate_48: return 48;
-    case FrameRate_30: return 30; //-V1037
+    case FrameRate_30: return 30;  //-V1037
     case FrameRate_30_DROP: return 30;
-    case FrameRate_NTSC_DROP_FRAME: return 29.9700262f; //-V1037
+    case FrameRate_NTSC_DROP_FRAME: return 29.9700262f;  //-V1037
     case FrameRate_NTSC_FULL_FRAME: return 29.9700262f;
     case FrameRate_PAL: return 25;
     case FrameRate_CINEMA: return 24;
@@ -2432,7 +2432,7 @@ if (node->first_property->value == name) { \
 }
 
 
-static bool parseObjects(const Element& root, Scene* scene) { //-V2008
+static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
   const Element* objs = findChild(root, "Objects");
   if (!objs)
     return true;

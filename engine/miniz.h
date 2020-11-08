@@ -873,24 +873,24 @@ typedef enum {
 /** tdefl's compression state structure. */
 /// @private
 typedef struct {
-    tdefl_put_buf_func_ptr m_pPut_buf_func; //-V122
-    void *m_pPut_buf_user; //-V122
+    tdefl_put_buf_func_ptr m_pPut_buf_func;  //-V122
+    void *m_pPut_buf_user;  //-V122
     mz_uint m_flags, m_max_probes[2];
     int m_greedy_parsing;
     mz_uint m_adler32, m_lookahead_pos, m_lookahead_size, m_dict_size;
-    uint8_t *m_pLZ_code_buf, *m_pLZ_flags, *m_pOutput_buf, *m_pOutput_buf_end; //-V122
+    uint8_t *m_pLZ_code_buf, *m_pLZ_flags, *m_pOutput_buf, *m_pOutput_buf_end;  //-V122
     mz_uint m_num_flags_left, m_total_lz_bytes, m_lz_code_buf_dict_pos,
   m_bits_in, m_bit_buffer;
     mz_uint m_saved_match_dist, m_saved_match_len, m_saved_lit,
   m_output_flush_ofs, m_output_flush_remaining, m_finished, m_block_index,
   m_wants_to_finish;
     tdefl_status m_prev_return_status;
-    const void *m_pIn_buf; //-V122
-    void *m_pOut_buf; //-V122
-    size_t *m_pIn_buf_size, *m_pOut_buf_size; //-V122
+    const void *m_pIn_buf;  //-V122
+    void *m_pOut_buf;  //-V122
+    size_t *m_pIn_buf_size, *m_pOut_buf_size;  //-V122
     tdefl_flush m_flush;
-    const uint8_t *m_pSrc; //-V122
-    size_t m_src_buf_left, m_out_buf_ofs; //-V122
+    const uint8_t *m_pSrc;  //-V122
+    size_t m_src_buf_left, m_out_buf_ofs;  //-V122
     uint8_t m_dict[TDEFL_LZ_DICT_SIZE + TDEFL_MAX_MATCH_LEN - 1];
     uint16_t m_huff_count[TDEFL_MAX_HUFF_TABLES][TDEFL_MAX_HUFF_SYMBOLS];
     uint16_t m_huff_codes[TDEFL_MAX_HUFF_TABLES][TDEFL_MAX_HUFF_SYMBOLS];
@@ -1133,13 +1133,13 @@ typedef uint32_t tinfl_bit_buf_t;
 
 /// @private
 struct tinfl_decompressor_tag {
-    uint32_t m_state, m_num_bits, m_zhdr0, m_zhdr1, m_z_adler32, m_final,
-  m_type, m_check_adler32, m_dist, m_counter, m_num_extra,
-  m_table_sizes[TINFL_MAX_HUFF_TABLES];
-    tinfl_bit_buf_t m_bit_buf;
-    size_t m_dist_from_out_buf_start; //-V122
-    tinfl_huff_table m_tables[TINFL_MAX_HUFF_TABLES];
-    uint8_t m_raw_header[4],
+  uint32_t m_state, m_num_bits, m_zhdr0, m_zhdr1, m_z_adler32, m_final,
+    m_type, m_check_adler32, m_dist, m_counter, m_num_extra,
+    m_table_sizes[TINFL_MAX_HUFF_TABLES];
+  tinfl_bit_buf_t m_bit_buf;
+  size_t m_dist_from_out_buf_start;  //-V122
+  tinfl_huff_table m_tables[TINFL_MAX_HUFF_TABLES];
+  uint8_t m_raw_header[4],
   m_len_codes[TINFL_MAX_HUFF_SYMBOLS_0 + TINFL_MAX_HUFF_SYMBOLS_1 + 137];
 };
 

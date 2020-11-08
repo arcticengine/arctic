@@ -26,13 +26,15 @@
 
 #include "engine/bitstream.h"
 
+#include <algorithm>
+
 namespace arctic {
 
 BitStream::BitStream()
   : write_cursor_(&zero_)
   , read_cursor_(&zero_) {}
 
-BitStream::BitStream(std::vector<Ui8> &data)
+BitStream::BitStream(const std::vector<Ui8> &data)
     : write_cursor_(&zero_)
     , read_cursor_(&zero_) {
   data_.resize(data.size());

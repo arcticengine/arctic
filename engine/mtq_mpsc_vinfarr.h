@@ -54,11 +54,12 @@
 #ifndef ENGINE_MTQ_MPSC_VINFARR_H_
 #define ENGINE_MTQ_MPSC_VINFARR_H_
 
-#include <new>
-#include <cstring>
-#include <deque>
 #include <memory.h>
 #include <cstdint>
+#include <cstring>
+#include <deque>
+#include <new>
+#include <utility>
 
 #include "engine/mtq_base_common.h"
 #include "engine/mtq_fixed_block_queue.h"
@@ -147,7 +148,7 @@ struct InfArrayChunk<true> final {
     return slot[chunk_slot].load(MO_RELAXED);
   }
 
-private:
+ private:
   InfArrayChunk(
     SelfType *prev,
     Ui64 start_slot,
@@ -157,8 +158,8 @@ private:
     std::memset(&slot, 0, sizeof(slot[0]) * size);
   }
 
-  InfArrayChunk(InfArrayChunk const & );            // undefined
-  InfArrayChunk& operator=(InfArrayChunk const & ); // undefined
+  InfArrayChunk(InfArrayChunk const &);             // undefined
+  InfArrayChunk& operator=(InfArrayChunk const &);  // undefined
 
 
   // payload data
@@ -269,7 +270,8 @@ struct InfArrayChunk<false> final {
 
   static constexpr size_t
   getNumberOfSlotsForSize(size_t size, size_t payload_size) {
-    const size_t pack_size = getPackPayloadSize(payload_size) + sizeof(SlotPack);
+    const size_t pack_size =
+      getPackPayloadSize(payload_size) + sizeof(SlotPack);
     const size_t total_packs = size / pack_size;
     const size_t pack_tail = size % pack_size;
     if (pack_tail < sizeof(SlotPack) + payload_size) {
@@ -280,7 +282,7 @@ struct InfArrayChunk<false> final {
     return total_packs * NUMBER_OF_SLOTS_IN_PACK + tail_number_of_slots;
   }
 
-private:
+ private:
   InfArrayChunk(
     SelfType *prev,
     Ui64 start_slot,
@@ -303,8 +305,8 @@ private:
     atomic<std::uintmax_t> ReadyFlags;
     char Payload[0];
 
-    SlotPack(SlotPack const & );            // undefined
-    SlotPack& operator=(SlotPack const & ); // undefined
+    SlotPack(SlotPack const &);             // undefined
+    SlotPack& operator=(SlotPack const &);  // undefined
   };
 
   static constexpr size_t
@@ -318,7 +320,7 @@ private:
 
   SlotPack &getPack(size_t pack_num, size_t payload_size) {
     size_t pack_size = getPackPayloadSize(payload_size) + sizeof(SlotPack);
-    return *(SlotPack *) (&slot_pack[0] + pack_size * pack_num);
+    return *reinterpret_cast<SlotPack *>(&slot_pack[0] + pack_size * pack_num);
   }
 
   // payload data
@@ -339,10 +341,10 @@ class AuxiliaryChunkSize;
 
 template<>
 class AuxiliaryChunkSize<false, true> {
-protected:
+ protected:
   typedef InfArrayChunk<true> ChunkType;
 
-  AuxiliaryChunkSize(size_t number_of_slots_in_chunk)
+  explicit AuxiliaryChunkSize(size_t number_of_slots_in_chunk)
     : numberOfSlotsInChunk(number_of_slots_in_chunk) {}
 
   inline ChunkType *
@@ -382,10 +384,10 @@ protected:
 
 template<>
 class AuxiliaryChunkSize<true, true> {
-protected:
+ protected:
   typedef InfArrayChunk<true> ChunkType;
 
-  AuxiliaryChunkSize(I_FixedSizeAllocator *pool_)
+  explicit AuxiliaryChunkSize(I_FixedSizeAllocator *pool_)
     : numberOfSlotsInChunk(calculateNumberOfSlots(pool_))
     , pool(pool_) {}
 
@@ -437,7 +439,7 @@ protected:
 
 template<>
 class AuxiliaryChunkSize<false, false> {
-protected:
+ protected:
   typedef InfArrayChunk<false> ChunkType;
 
   AuxiliaryChunkSize(size_t payload_size, size_t number_of_slots_in_chunk)
@@ -475,7 +477,7 @@ protected:
 
 template<>
 class AuxiliaryChunkSize<true, false> {
-protected:
+ protected:
   typedef InfArrayChunk<false> ChunkType;
 
   AuxiliaryChunkSize(size_t payload_size, I_FixedSizeAllocator *pool_)
@@ -537,7 +539,7 @@ struct SimpleQueueSelector<true, ElemType> {
 
 
 class NoCopyable {
-public:
+ public:
   NoCopyable(const NoCopyable &) = delete;
   NoCopyable &operator=(const NoCopyable &) = delete;
 
@@ -617,9 +619,9 @@ template<bool ForMemoryPool, bool PtrPayload>
 class MPSC_VirtInfArray_Impl
   : public AuxiliaryChunkSize<ForMemoryPool, PtrPayload>
     , public NoCopyable {
-public:
+ public:
   template<typename...Params>
-  MPSC_VirtInfArray_Impl(Params &&...params)
+  explicit MPSC_VirtInfArray_Impl(Params &&...params)
     : AuxiliaryChunkSize<ForMemoryPool, PtrPayload>(
     std::forward<Params>(params)...) {}
 
@@ -640,7 +642,7 @@ public:
   void enqueue(void *item);
   bool dequeue(void *result);
 
-protected:
+ protected:
   template<bool>
   friend
   struct InfArrayChunk;
@@ -760,7 +762,6 @@ void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
         set = current_chunk->ReleaseCounter.compare_exchange_strong(
           release_counter, current_tail_counter, MO_SEQUENCE);
       } while (!set && release_counter > current_tail_counter);
-
     } while (current_chunk->StartSlot + numberOfSlotsInChunk <= slot);
 
     delete cache;
@@ -779,14 +780,14 @@ bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::dequeue(void *result) {
     ChunkType *chunk = frontRetry().chunk;
     bool ready = getSlot(result, chunk, chunk_slot);
     if (ready) {
-      popFrontRetry(); // no-throw
+      popFrontRetry();  // no-throw
       if (skippedSlots.empty()) {
         checkForRelease();
       }
       return true;
     }
-    pushBackSkipped(frontRetry()); // may throw
-    popFrontRetry(); // no-throw
+    pushBackSkipped(frontRetry());  // may throw
+    popFrontRetry();  // no-throw
   }
 
   next_slot:
@@ -807,7 +808,7 @@ bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::dequeue(void *result) {
      * with new lastKnownTailCounter */
     if (headCounter == lastKnownTailCounter) {
       return false;
-    } // no items in the queue
+    }  // no items in the queue
   }
 
   size_t head_slot = size_t(headCounter - head->StartSlot);
@@ -817,7 +818,7 @@ bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::dequeue(void *result) {
     if (new_head == nullptr) {
       if (skippedSlots.empty()) {
         return false;
-      } // no items in the queue
+      }  // no items in the queue
       std::swap(skippedSlots, retrySlots);
       goto look_through_skipped_slots;
     }
@@ -870,12 +871,12 @@ class MPSC_VirtInfArray_ConstructorSelector;
 
 template<typename Params, typename...ForwardParams>
 class MPSC_VirtInfArray_ConstructorSelector<Params, false, ForwardParams...> {
-public:
+ public:
   MPSC_VirtInfArray_ConstructorSelector(
     ForwardParams...params, size_t size = Params::DEFAULT_CHUNK_SIZE)
     : impl(params..., size) {}
 
-protected:
+ protected:
   MPSC_VirtInfArray_Impl<
     Params::FOR_MEMORY_POOL,
     std::is_pointer<typename Params::PayloadType>::value> impl;
@@ -884,12 +885,12 @@ protected:
 
 template<typename Params, typename...ForwardParams>
 class MPSC_VirtInfArray_ConstructorSelector<Params, true, ForwardParams...> {
-public:
+ public:
   MPSC_VirtInfArray_ConstructorSelector(
     ForwardParams...params, I_FixedSizeAllocator *pool)
     : impl(pool, params...) {}
 
-protected:
+ protected:
   MPSC_VirtInfArray_Impl<
     Params::FOR_MEMORY_POOL,
     std::is_pointer<typename Params::PayloadType>::value> impl;
@@ -906,10 +907,10 @@ class MPSC_VirtInfArray_DeleteSelector {
 
 template<typename Params, typename ForwardType>
 class MPSC_VirtInfArray_DeleteSelector<Params, ForwardType, true, false> {
-private:
+ private:
   using PayloadType = typename Params::PayloadType;
 
-public:
+ public:
   ~MPSC_VirtInfArray_DeleteSelector()
   noexcept(std::is_nothrow_destructible<PayloadType>::value) {
     for (;;) {
@@ -924,7 +925,7 @@ public:
 
 template<typename Params, typename ForwardType>
 class MPSC_VirtInfArray_DeleteSelector<Params, ForwardType, true, true> {
-public:
+ public:
   ~MPSC_VirtInfArray_DeleteSelector() {
     for (;;) {
       void *item = static_cast<ForwardType *>(this)->dequeue();
@@ -976,16 +977,16 @@ class MpscVirtInfArray_Aux<Params, EnqueueDequeueAPIEnum::POINTER>
     Params, Params::FOR_MEMORY_POOL>
     , public MPSC_VirtInfArray_DeleteSelector<
     Params, MpscVirtInfArray_Aux<Params>> {
-private:
+ private:
   typedef typename Params::PayloadType PayloadType;
   typedef
   MPSC_VirtInfArray_ConstructorSelector<
     Params, Params::FOR_MEMORY_POOL>
     BaseType;
 
-public:
+ public:
   template<typename...CallParams>
-  inline MpscVirtInfArray_Aux(CallParams &&...params)
+  explicit inline MpscVirtInfArray_Aux(CallParams &&...params)
     : BaseType(std::forward<CallParams>(params)...) {}
 
   void enqueue(PayloadType item) {
@@ -1009,16 +1010,16 @@ class MpscVirtInfArray_Aux<Params, EnqueueDequeueAPIEnum::OTHER>
     Params, Params::FOR_MEMORY_POOL, size_t>
     , public MPSC_VirtInfArray_DeleteSelector<
     Params, MpscVirtInfArray_Aux<Params>> {
-private:
+ private:
   typedef typename Params::PayloadType PayloadType;
   typedef
   MPSC_VirtInfArray_ConstructorSelector<
     Params, Params::FOR_MEMORY_POOL, size_t>
     BaseType;
 
-public:
+ public:
   template<typename...CallParams>
-  inline MpscVirtInfArray_Aux(CallParams &&...params)
+  explicit inline MpscVirtInfArray_Aux(CallParams &&...params)
     : BaseType(sizeof(typename Params::PayloadType),
     std::forward<CallParams>(params)...) {}
 
@@ -1038,16 +1039,16 @@ class MpscVirtInfArray_Aux<Params, EnqueueDequeueAPIEnum::ARRAY>
     Params, Params::FOR_MEMORY_POOL, size_t>
     , public MPSC_VirtInfArray_DeleteSelector<
     Params, MpscVirtInfArray_Aux<Params>> {
-private:
+ private:
   typedef typename Params::PayloadType PayloadType;
   typedef
   MPSC_VirtInfArray_ConstructorSelector<
     Params, Params::FOR_MEMORY_POOL, size_t>
     BaseType;
 
-public:
+ public:
   template<typename...CallParams>
-  inline MpscVirtInfArray_Aux(CallParams &&...params)
+  explicit inline MpscVirtInfArray_Aux(CallParams &&...params)
     : BaseType(sizeof(typename Params::PayloadType),
     std::forward<CallParams>(params)...) {}
 
@@ -1068,7 +1069,7 @@ struct MpscVirtInfArray_Default_Params {
 };
 
 
-} // namespace dtl
+}  // namespace dtl
 
 
 DECLARE_TUNE_TYPE_PARAM(TunePayload, PayloadType);
@@ -1088,7 +1089,7 @@ class MpscVirtInfArray
       MoreParams...
     >
   > {
-private:
+ private:
   using BaseType =
   dtl::MpscVirtInfArray_Aux<
     FuseParams<
@@ -1097,9 +1098,9 @@ private:
       MoreParams...
     >
   >;
-public:
+ public:
   template<typename...CallParams>
-  inline MpscVirtInfArray(CallParams &&...params)
+  explicit inline MpscVirtInfArray(CallParams &&...params)
     : BaseType(std::forward<CallParams>(params)...) {}
 
   bool isOK() noexcept {
@@ -1108,7 +1109,7 @@ public:
 };
 
 
-} // namespace arctic
+}  // namespace arctic
 
 #pragma warning(pop)
 

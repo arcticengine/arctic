@@ -69,10 +69,11 @@ GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
     GLint infoLen = 0;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * static_cast<size_t>(infoLen)));
+      char* infoLog = reinterpret_cast<char*>(
+        malloc(sizeof(char) * static_cast<size_t>(infoLen)));
       glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
       Fatal("Error compiling shader: ", infoLog);
-      free(infoLog); //-V779
+      free(infoLog);  //-V779
     }
     glDeleteShader(shader);
     return 0;
@@ -170,10 +171,11 @@ void main() {
     GLint infoLen = 0;
     glGetProgramiv(g_programObject, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(malloc(sizeof(char) * static_cast<size_t>(infoLen)));
+      char* infoLog = reinterpret_cast<char*>(
+        malloc(sizeof(char) * static_cast<size_t>(infoLen)));
       glGetProgramInfoLog(g_programObject, infoLen, NULL, infoLog);
       Fatal("Error linking program: ", infoLog);
-      free(infoLog); //-V779
+      free(infoLog);  //-V779
     }
     glDeleteProgram(g_programObject);
     Fatal("Unknown error linking program");

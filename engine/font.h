@@ -159,10 +159,10 @@ struct Glyph {
 
 /// The origin point used for rendering
 enum TextOrigin {
-  kTextOriginBottom = 0, ///< The bottom of the last text line
-  kTextOriginFirstBase = 1, ///< The base of the first text line
-  kTextOriginLastBase = 2, ///< The base of the last text line
-  kTextOriginTop = 3 ///< The top of the first text line
+  kTextOriginBottom = 0,  ///< The bottom of the last text line
+  kTextOriginFirstBase = 1,  ///< The base of the first text line
+  kTextOriginLastBase = 2,  ///< The base of the last text line
+  kTextOriginTop = 3  ///< The top of the first text line
 };
 
 struct Font {

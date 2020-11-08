@@ -156,7 +156,8 @@ void Font::Load(const char *file_name) {
     sizeof(BmFontBinInfo) - sizeof(BmFontBinInfo::font_name),
     "Info block is too small");
   BmFontBinInfo info;
-  memcpy(&info, &file[static_cast<size_t>(pos)], sizeof(info) - sizeof(info.font_name));
+  memcpy(&info, &file[static_cast<size_t>(pos)],
+    sizeof(info) - sizeof(info.font_name));
   info.font_name = reinterpret_cast<char*>(
     &file[static_cast<size_t>(pos) + sizeof(info) - sizeof(info.font_name)]);
   outline_ = info.outline;
@@ -169,7 +170,8 @@ void Font::Load(const char *file_name) {
   pos += sizeof(Si32);
   Check(block_type == kBlockCommon, "Unexpected block type 2");
   Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
-  BmFontBinCommon *common = reinterpret_cast<BmFontBinCommon*>(&file[static_cast<size_t>(pos)]);
+  BmFontBinCommon *common =
+    reinterpret_cast<BmFontBinCommon*>(&file[static_cast<size_t>(pos)]);
   // common->Log();
 
   base_to_top_ = common->base;
@@ -192,7 +194,8 @@ void Font::Load(const char *file_name) {
 
   for (Si32 id = 0; id < common->pages; ++id) {
     BmFontBinPages page;
-    page.page_name = reinterpret_cast<char*>(&file[static_cast<size_t>(inner_pos)]);
+    page.page_name =
+      reinterpret_cast<char*>(&file[static_cast<size_t>(inner_pos)]);
     // page.Log(id);
 
     char path[8 << 10];
@@ -390,7 +393,7 @@ void Font::Draw(Sprite to_sprite, const char *text,
     const TextOrigin origin,
     const DrawBlendingMode blending_mode,
     const DrawFilterMode filter_mode,
-    const Rgba color) { //-V801
+    const Rgba color) {  //-V801
   DrawEvaluateSizeImpl(to_sprite,
     text, false, x, y, origin, blending_mode, filter_mode, color,
     std::vector<Rgba>(), true, nullptr);
@@ -411,7 +414,7 @@ void Font::Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
       const DrawBlendingMode blending_mode,
       const DrawFilterMode filter_mode,
-      const Rgba color) { //-V801
+      const Rgba color) {  //-V801
   DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
       text, false, x, y, origin,
       blending_mode, filter_mode, color,

@@ -66,7 +66,8 @@ void Sound::Load(const char *file_name, bool do_unpack) {
         sound_instance_ = std::make_shared<SoundInstance>(size);
         // int res =
         stb_vorbis_get_samples_short_interleaved(
-          vorbis_codec_, 2, sound_instance_->GetWavData(), static_cast<Si32>(size * 2));
+          vorbis_codec_, 2,
+          sound_instance_->GetWavData(), static_cast<Si32>(size * 2));
         // TODO(Huldra): if (res) {
         stb_vorbis_close(vorbis_codec_);
         vorbis_codec_ = nullptr;
@@ -132,7 +133,8 @@ double Sound::Duration() const {
   if (sound_instance_) {
     switch (sound_instance_->GetFormat()) {
     case kSoundDataWav: {
-      duration_samples = static_cast<Ui32>(sound_instance_->GetDurationSamples());
+      duration_samples = static_cast<Ui32>(
+        sound_instance_->GetDurationSamples());
       break;
     }
     case kSoundDataVorbis: {

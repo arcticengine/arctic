@@ -265,7 +265,7 @@ inline float InOutBounce(float t, float b, float c, float d) {
   v = OutBounce(t * 2.f - d, 0.f, c, d);
   return v * 0.5f + c * 0.5f + b;
 }
-}  // namespace internal
+}  // namespace easings_internal
 #undef INTERNAL_PI
 
 /// @addtogroup global_math
