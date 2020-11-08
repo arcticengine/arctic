@@ -68,7 +68,7 @@ Ui8 BitStream::ReadBit() {
   } else {
     read_bit_shift_ = 7;
     read_byte_idx_++;
-    if (read_byte_idx_ < static_cast<Ui64>(data_.size())) {
+    if (read_byte_idx_ < data_.size()) {
       read_cursor_ = &data_[read_byte_idx_];
     } else {
       read_cursor_ = &zero_;
