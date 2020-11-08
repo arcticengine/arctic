@@ -164,7 +164,7 @@ void AppendDeprecated(std::unordered_set<std::string> *in_out_data) {
 
 void UpdateResolution() {
   Vec2Si32 size = WindowSize();
-  while (size.x > 1600 && size.y > 1000) {
+  while (size.x > 1920 && size.y > 1400) {
     size = size / 2;
   }
   if (ScreenSize() != size) {
