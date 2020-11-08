@@ -94,7 +94,7 @@ git clone https://gitlab.com/huldra/arctic.git
 cd ~/arctic
 cd ./wizard
 cmake .
-make all
+make -j 4
 ./wizard
 ```
 
