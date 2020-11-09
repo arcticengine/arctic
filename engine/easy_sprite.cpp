@@ -27,12 +27,16 @@
 
 #include <cstring>
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 #include <vector>
+#include <sstream>
 
-#include "engine/easy.h"
+#include "engine/arctic_types.h"
+#include "engine/vec2f.h"
+#include "engine/log.h"
+#include "engine/easy_advanced.h"
+#include "engine/easy_files.h"
 #include "engine/rgba.h"
 
 namespace arctic {

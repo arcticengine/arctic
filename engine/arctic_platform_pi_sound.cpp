@@ -30,7 +30,6 @@
 #include <alsa/asoundlib.h>
 #include <alsa/control.h>
 
-#include <algorithm>
 #include <deque>
 #include <iostream>
 #include <string>

@@ -25,7 +25,7 @@
 #define ENGINE_VEC2F_H_
 
 #include <cmath>
-#include <ostream>
+#include <iosfwd>
 #include "engine/arctic_types.h"
 #include "engine/vec2si32.h"
 

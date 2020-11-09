@@ -32,7 +32,7 @@
 
 #include <cassert>
 #include <cmath>
-#include <iostream>
+#include <iosfwd>
 #include <vector>
 #include "engine/vec2f.h"
 
@@ -235,12 +235,6 @@ class DualComplex {
   }
 };
 
-template<class T>
-std::ostream& operator<<(std::ostream &os, const DualComplex<T> &dt) {
-  os << dt.real_x << "+" << dt.real_y <<
-     " i + (" << dt.dual_x << "+" << dt.dual_y << "i)e";
-  return os;
-}
 
 extern template class DualComplex<float>;
 extern template class DualComplex<double>;
@@ -248,8 +242,8 @@ extern template class DualComplex<double>;
 typedef DualComplex<float> DualComplexF;
 typedef DualComplex<double> DualComplexD;
 
-extern template std::ostream& operator<<(std::ostream &os, const DualComplexF &dt);
-extern template std::ostream& operator<<(std::ostream &os, const DualComplexD &dt);
+std::ostream& operator<<(std::ostream &os, const DualComplexF &dt);
+std::ostream& operator<<(std::ostream &os, const DualComplexD &dt);
 
 }  // namespace arctic
 

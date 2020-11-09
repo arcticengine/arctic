@@ -25,13 +25,15 @@
 
 #include "engine/gui.h"
 
-#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <utility>
-#include "engine/easy.h"
+#include "engine/easy_advanced.h"
+#include "engine/easy_drawing.h"
+#include "engine/easy_util.h"
 #include "engine/unicode.h"
 #include "engine/arctic_platform.h"
+#include "engine/scalar_math.h"
 
 namespace arctic {
 

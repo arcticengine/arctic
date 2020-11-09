@@ -24,9 +24,7 @@
 #ifndef ENGINE_DECORATED_FRAME_H_
 #define ENGINE_DECORATED_FRAME_H_
 
-#include <algorithm>
-
-#include "engine/easy.h"
+#include "engine/easy_sprite.h"
 
 namespace arctic {
 

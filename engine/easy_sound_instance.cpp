@@ -26,6 +26,7 @@
 #include "engine/easy_sound_instance.h"
 
 #include <cstring>
+#include <sstream>
 
 #include "engine/arctic_platform.h"
 #include "engine/log.h"

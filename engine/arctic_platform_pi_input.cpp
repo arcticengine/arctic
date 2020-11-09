@@ -40,8 +40,6 @@
 #include <X11/keysymdef.h>
 #include <X11/Xatom.h>
 
-#include <algorithm>
-
 #include "engine/easy.h"
 
 extern void EasyMain();

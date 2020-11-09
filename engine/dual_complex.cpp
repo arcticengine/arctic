@@ -22,13 +22,24 @@
 
 #include "engine/dual_complex.h"
 
+#include <iostream>
+
 namespace arctic {
 
 template class DualComplex<float>;
 template class DualComplex<double>;
 
-template std::ostream& operator<<(std::ostream &os, const DualComplexF &dt);
-template std::ostream& operator<<(std::ostream &os, const DualComplexD &dt);
+std::ostream& operator<<(std::ostream &os, const DualComplexF &dt) {
+  os << dt.real_x << "+" << dt.real_y <<
+     " i + (" << dt.dual_x << "+" << dt.dual_y << "i)e";
+  return os;
+}
+std::ostream& operator<<(std::ostream &os, const DualComplexD &dt) {
+  os << dt.real_x << "+" << dt.real_y <<
+     " i + (" << dt.dual_x << "+" << dt.dual_y << "i)e";
+  return os;
+}
+
 
 }  // namespace arctic
 
