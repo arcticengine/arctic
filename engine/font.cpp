@@ -24,96 +24,86 @@
 // IN THE SOFTWARE.
 
 #include <cstring>
-#include <algorithm>
-#include <iostream>
 #include <vector>
-#include <list>
+#include <sstream>
 
 #include "engine/font.h"
 #include "engine/arctic_types.h"
-#include "engine/easy.h"
+#include "engine/arctic_platform_fatal.h"
+#include "engine/easy_advanced.h"
+#include "engine/easy_files.h"
+#include "engine/log.h"
 #include "engine/unicode.h"
+
 
 namespace arctic {
 
 void BmFontBinHeader::Log() const {
-  // TODO(Huldra): Use log here
-  std::cerr << "header";
-  std::cerr << " bmf=" << ((b == 66 && m == 77 && f == 70) ? 1 : 0);
-  std::cerr << " version=" << static_cast<Si32>(version);
-  std::cerr << std::endl;
+  *arctic::Log() << "header"
+    << " bmf=" << ((b == 66 && m == 77 && f == 70) ? 1 : 0)
+    << " version=" << static_cast<Si32>(version);
 }
 
 
 void BmFontBinInfo::Log() const {
-  // TODO(Huldra): Use log here
-  std::cerr << "info";
-  std::cerr << " face=\"" << font_name << "\"";
-  std::cerr << " size=" << font_size;
-  std::cerr << " bold=" << ((bits & kBold) ? 1 : 0);
-  std::cerr << " italic=" << ((bits & kItalic) ? 1 : 0);
-  std::cerr << " charset=" << static_cast<Si32>(char_set);
-  std::cerr << " unicode=" << ((bits & kUnicode) ? 1 : 0);
-  std::cerr << " stretchH=" << stretch_h;
-  std::cerr << " smooth=" << ((bits & kSmooth) ? 1 : 0);
-  std::cerr << " aa=" << static_cast<Si32>(aa);
-  std::cerr << " padding=" << static_cast<Si32>(padding_up);
-  std::cerr << "," << static_cast<Si32>(padding_right);
-  std::cerr << "," << static_cast<Si32>(padding_down);
-  std::cerr << "," << static_cast<Si32>(padding_left);
-  std::cerr << " spacing=" << static_cast<Si32>(spacing_horiz);
-  std::cerr << "," << static_cast<Si32>(spacing_vert);
-  std::cerr << " outline=" << static_cast<Si32>(outline);
-  std::cerr << std::endl;
+  *arctic::Log() << "info"
+    << " face=\"" << font_name << "\""
+    << " size=" << font_size
+    << " bold=" << ((bits & kBold) ? 1 : 0)
+    << " italic=" << ((bits & kItalic) ? 1 : 0)
+    << " charset=" << static_cast<Si32>(char_set)
+    << " unicode=" << ((bits & kUnicode) ? 1 : 0)
+    << " stretchH=" << stretch_h
+    << " smooth=" << ((bits & kSmooth) ? 1 : 0)
+    << " aa=" << static_cast<Si32>(aa)
+    << " padding=" << static_cast<Si32>(padding_up)
+    << "," << static_cast<Si32>(padding_right)
+    << "," << static_cast<Si32>(padding_down)
+    << "," << static_cast<Si32>(padding_left)
+    << " spacing=" << static_cast<Si32>(spacing_horiz)
+    << "," << static_cast<Si32>(spacing_vert)
+    << " outline=" << static_cast<Si32>(outline);
 }
 
 void BmFontBinCommon::Log() const {
-  // TODO(Huldra): Use log here
-  std::cerr << "common";
-  std::cerr << " lineHeight=" << line_height;
-  std::cerr << " base=" << base;
-  std::cerr << " scaleW=" << scale_w;
-  std::cerr << " scaleH=" << scale_h;
-  std::cerr << " pages=" << pages;
-  std::cerr << " packed=" << ((bits & kPacked) ? 1 : 0);
-  std::cerr << " alphaChnl=" << static_cast<Si32>(alpha_chnl);
-  std::cerr << " redChnl=" << static_cast<Si32>(red_chnl);
-  std::cerr << " greenChnl=" << static_cast<Si32>(green_chnl);
-  std::cerr << " blueChnl=" << static_cast<Si32>(blue_chnl);
-  std::cerr << std::endl;
+  *arctic::Log() << "common"
+    << " lineHeight=" << line_height
+    << " base=" << base
+    << " scaleW=" << scale_w
+    << " scaleH=" << scale_h
+    << " pages=" << pages
+    << " packed=" << ((bits & kPacked) ? 1 : 0)
+    << " alphaChnl=" << static_cast<Si32>(alpha_chnl)
+    << " redChnl=" << static_cast<Si32>(red_chnl)
+    << " greenChnl=" << static_cast<Si32>(green_chnl)
+    << " blueChnl=" << static_cast<Si32>(blue_chnl);
 }
 
 void BmFontBinPages::Log(Si32 id) const {
-  // TODO(Huldra): Use log here
-  std::cerr << "page";
-  std::cerr << " id=" << id;
-  std::cerr << " file=\"" << page_name << "\"";
-  std::cerr << std::endl;
+  *arctic::Log() << "page"
+    << " id=" << id
+    << " file=\"" << page_name << "\"";
 }
 
 void BmFontBinChars::Log() const {
-  // TODO(Huldra): Use log here
-  std::cerr << "char";
-  std::cerr << " id=" << id;
-  std::cerr << "\tx=" << x;
-  std::cerr << "  \ty=" << y;
-  std::cerr << "  \twidth=" << width;
-  std::cerr << "  \theight=" << height;
-  std::cerr << "  \txoffset=" << xoffset;
-  std::cerr << "\tyoffset=" << yoffset;
-  std::cerr << "\txadvance=" << xadvance;
-  std::cerr << "\tpage=" << static_cast<Si32>(page);
-  std::cerr << "\tchnl=" << static_cast<Si32>(chnl);
-  std::cerr << std::endl;
+  *arctic::Log() << "char"
+    << " id=" << id
+    << "\tx=" << x
+    << "  \ty=" << y
+    << "  \twidth=" << width
+    << "  \theight=" << height
+    << "  \txoffset=" << xoffset
+    << "\tyoffset=" << yoffset
+    << "\txadvance=" << xadvance
+    << "\tpage=" << static_cast<Si32>(page)
+    << "\tchnl=" << static_cast<Si32>(chnl);
 }
 
 void BmFontBinKerningPair::Log() const {
-  // TODO(Huldra): Use log here
-  std::cerr << "kerning";
-  std::cerr << " first=" << first;
-  std::cerr << "\tsecond=" << second;
-  std::cerr << "\tamount=" << amount;
-  std::cerr << std::endl;
+  *arctic::Log() << "kerning"
+    << " first=" << first
+    << "\tsecond=" << second
+    << "\tamount=" << amount;
 }
 
 void Font::CreateEmpty(Si32 base_to_top, Si32 line_height) {

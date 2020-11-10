@@ -23,9 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/easy.h"
-
-#include <algorithm>
 #include <chrono>  // NOLINT
 #include <deque>
 #include <fstream>
@@ -34,6 +31,17 @@
 #include <utility>
 
 #include "engine/arctic_platform.h"
+#include "engine/easy_advanced.h"
+#include "engine/easy_drawing.h"
+#include "engine/easy_files.h"
+#include "engine/easy_input.h"
+#include "engine/easy_sound.h"
+#include "engine/easy_sprite.h"
+#include "engine/easy_util.h"
+#include "engine/log.h"
+#include "engine/vec4si32.h"
+#include "engine/vec4f.h"
+
 
 namespace arctic {
 

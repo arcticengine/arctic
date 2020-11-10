@@ -20,27 +20,21 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_H_
-#define ENGINE_EASY_H_
+#ifndef ENGINE_EASY_ADVANCED_H_
+#define ENGINE_EASY_ADVANCED_H_
 
-#include "engine/arctic_input.h"
-#include "engine/arctic_types.h"
-#include "engine/csv.h"
-#include "engine/easy_advanced.h"
-#include "engine/easy_drawing.h"
-#include "engine/easy_files.h"
-#include "engine/easy_input.h"
-#include "engine/easy_sound.h"
-#include "engine/easy_sprite.h"
-#include "engine/easy_util.h"
 #include "engine/engine.h"
-#include "engine/font.h"
-#include "engine/gui.h"
-#include "engine/log.h"
-#include "engine/rgba.h"
-#include "engine/vec2si32.h"
-#include "engine/mat22f.h"
-#include "engine/scalar_math.h"
 
+namespace arctic {
 
-#endif  // ENGINE_EASY_H_
+/// @addtogroup global_advanced
+/// @{
+
+/// @brief Returns a pointer to the Engine instance.
+Engine* GetEngine();
+
+/// @}
+
+}  // namespace arctic
+
+#endif  // ENGINE_EASY_ADVANCED_H_

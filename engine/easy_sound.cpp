@@ -25,12 +25,13 @@
 
 #include "engine/easy_sound.h"
 
-#include <algorithm>
 #include <memory>
 #include <vector>
+#include <sstream>
 
 #include "engine/arctic_platform.h"
-#include "engine/easy.h"
+#include "engine/log.h"
+#include "engine/easy_files.h"
 #include "engine/easy_sound_instance.h"
 
 #define STB_VORBIS_NO_PUSHDATA_API

@@ -24,7 +24,8 @@
 #define ENGINE_LOG_H_
 
 #include <memory>
-#include <sstream>
+//#include <sstream>
+#include <iosfwd>
 #include "engine/arctic_types.h"
 
 namespace arctic {

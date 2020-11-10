@@ -42,7 +42,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <algorithm>
 #include <cmath>
 #include <deque>
 #include <fstream>

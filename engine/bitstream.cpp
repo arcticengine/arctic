@@ -26,8 +26,6 @@
 
 #include "engine/bitstream.h"
 
-#include <algorithm>
-
 namespace arctic {
 
 BitStream::BitStream()

@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 
 #include "engine/arctic_math.h"
+#include <ostream>
 
 namespace arctic {
 

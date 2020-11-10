@@ -36,7 +36,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <memory>
@@ -45,7 +44,7 @@
 #include <vector>
 
 #include "engine/engine.h"
-#include "engine/easy.h"
+#include "engine/scalar_math.h"
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform.h"
 

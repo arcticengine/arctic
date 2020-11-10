@@ -35,16 +35,14 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include <algorithm>
 #include <cmath>
-#include <fstream>
 #include <memory>
 #include <sstream>
 #include <thread>  // NOLINT
 #include <vector>
 
 #include "engine/engine.h"
-#include "engine/easy.h"
+#include "engine/easy_advanced.h"
 #include "engine/arctic_input.h"
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform.h"

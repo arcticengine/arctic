@@ -20,27 +20,49 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_H_
-#define ENGINE_EASY_H_
+#ifndef ENGINE_EASY_UTIL_H_
+#define ENGINE_EASY_UTIL_H_
 
-#include "engine/arctic_input.h"
 #include "engine/arctic_types.h"
-#include "engine/csv.h"
-#include "engine/easy_advanced.h"
-#include "engine/easy_drawing.h"
-#include "engine/easy_files.h"
-#include "engine/easy_input.h"
-#include "engine/easy_sound.h"
-#include "engine/easy_sprite.h"
-#include "engine/easy_util.h"
-#include "engine/engine.h"
-#include "engine/font.h"
-#include "engine/gui.h"
-#include "engine/log.h"
-#include "engine/rgba.h"
 #include "engine/vec2si32.h"
-#include "engine/mat22f.h"
-#include "engine/scalar_math.h"
 
+namespace arctic {
 
-#endif  // ENGINE_EASY_H_
+/// @addtogroup global_utility
+/// @{
+
+/// @brief Get the window size in actual pixels of the OS
+Vec2Si32 WindowSize();
+/// @brief Get the backbuffer resolution in pixels
+Vec2Si32 ScreenSize();
+/// @brief Set the backbuffer resolution in pixels
+void ResizeScreen(const Si32 width, const Si32 height);
+/// @brief Set the backbuffer resolution in pixels
+void ResizeScreen(const Vec2Si32 size);
+/// @brief Enables/disables Y-coordinte inversion.
+/// By default Y axis is directed upward.
+void SetInverseY(bool is_inverse);
+
+/// @brief Returns time in seconds since the game start
+double Time();
+/// @brief Returns a random number in range [min,max]
+Si64 Random(Si64 min, Si64 max);
+/// @brief Returns a random number in range [min,max]
+Si32 Random32(Si32 min, Si32 max);
+/// @brief Returns a random Ui64
+Ui64 Random64();
+/// @brief Returns a random Ui32
+Ui32 Random32();
+/// @brief Returns a random Ui16
+Ui16 Random16();
+/// @brief Returns a random Ui8
+Ui8 Random8();
+
+/// @brief Waits for the time specified before returning.
+void Sleep(double duration_seconds);
+
+/// @}
+
+}  // namespace arctic
+
+#endif  // ENGINE_EASY_UTIL_H_
