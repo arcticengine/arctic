@@ -63,8 +63,8 @@ inline double Determinant(Mat22D const &m) {
 }
 
 inline Mat22D Rotation(const double t) {
-  const double co = cosf(t);
-  const double si = sinf(t);
+  const double co = std::cos(t);
+  const double si = std::sin(t);
 
   return Mat22D(co, -si,
     si, co);
