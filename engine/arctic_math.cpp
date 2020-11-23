@@ -33,6 +33,11 @@ Vec2Si32::Vec2Si32(const struct Vec2F &s) {
   y = static_cast<Si32>(s.y);
 }
 
+Vec2Si32::Vec2Si32(const struct Vec2D &s) {
+  x = static_cast<Si32>(s.x);
+  y = static_cast<Si32>(s.y);
+}
+
 Vec4Si32::Vec4Si32(const struct Vec4F &s) {
   x = static_cast<Si32>(s.x);
   y = static_cast<Si32>(s.y);
@@ -41,6 +46,11 @@ Vec4Si32::Vec4Si32(const struct Vec4F &s) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Vec2F& vec) {
+  os << "(" << vec.x << ", " << vec.y << ")";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Vec2D& vec) {
   os << "(" << vec.x << ", " << vec.y << ")";
   return os;
 }
