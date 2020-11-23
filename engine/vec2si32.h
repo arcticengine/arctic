@@ -43,6 +43,7 @@ struct Vec2Si32 {
   Vec2Si32() {}
 
   explicit Vec2Si32(const struct Vec2F &s);
+  explicit Vec2Si32(const struct Vec2D &s);
 
   explicit Vec2Si32(Si32 a, Si32 b) noexcept {
     x = a;
