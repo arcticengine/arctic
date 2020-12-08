@@ -78,9 +78,6 @@ void DrawRectangle(Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color);
 Rgba GetPixel(Si32 x, Si32 y);
 
 /// @brief Returns color of a pixel of a sprite at coordinates specified
-Rgba GetPixel(Sprite from_sprite, Si32 x, Si32 y);
-
-/// @brief Returns color of a pixel of a sprite at coordinates specified
 Rgba GetPixel(const Sprite &from_sprite, Si32 x, Si32 y);
 
 /// @brief Sets color of a pixel at coordinates specified

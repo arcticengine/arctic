@@ -241,6 +241,7 @@ struct TgaHeader {
                          to[0] = *entry;
                          to[1] = *entry;
                          to[2] = *entry;
+                         to[3] = 255;
                        } else {
                          if (is_palette) {
                            Si64 entry_idx = static_cast<Si64>(*from_line)
