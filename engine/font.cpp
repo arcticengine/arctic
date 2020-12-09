@@ -268,6 +268,35 @@ void Font::Load(const char *file_name) {
   }
 }
 
+void Font::LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
+    Si32 base_to_top, Si32 line_height, Si32 space_width) {
+  CreateEmpty(base_to_top, line_height);
+  Si32 begin_x = 0;
+  Utf32Reader reader;
+  reader.Reset(utf8_letters);
+  for (Si32 x = 0; x < sprite.Width(); ++x) {
+    bool is_empty = true;
+    for (Si32 y = 0; y < sprite.Height(); ++y) {
+      if (sprite.RgbaData()[x + y * sprite.StridePixels()].a != 0) {
+        is_empty = false;
+      }
+    }
+    if (is_empty) {
+      if (x != begin_x) {
+        Sprite letter;
+        letter.Reference(sprite, begin_x, 0, x - begin_x, sprite.Height());
+        Sprite ls;
+        ls.Clone(letter);
+        Ui32 codepoint = reader.ReadOne();
+        AddGlyph(codepoint, x - begin_x + 1, ls);
+      }
+      begin_x = x + 1;
+    }
+  }
+  Sprite space;
+  AddGlyph(32, space_width, space);
+}
+
 void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
     const char *text, bool do_keep_xadvance,
     Si32 x, Si32 y, TextOrigin origin,

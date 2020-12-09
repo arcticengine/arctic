@@ -542,16 +542,6 @@ void SetPixel(Si32 x, Si32 y, Rgba color) {
   }
 }
 
-Rgba GetPixel(Sprite from_sprite, Si32 x, Si32 y) {
-  Rgba *data = from_sprite.RgbaData();
-  Si32 stride = from_sprite.StridePixels();
-  if (x >= 0 && x < from_sprite.Width() && y >= 0 && y < from_sprite.Height()) {
-    return data[x + y * stride];
-  } else {
-    return Rgba(0, 0, 0);
-  }
-}
-
 Rgba GetPixel(const Sprite &from_sprite, Si32 x, Si32 y) {
   const Rgba *data = from_sprite.RgbaData();
   Si32 stride = from_sprite.StridePixels();

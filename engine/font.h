@@ -206,6 +206,14 @@ struct Font {
   /// @param [in] file_name Path to the font file to load.
   void Load(const char *file_name);
 
+  /// @brief Loads the font from a sprite containing a stripe of letters
+  /// @param [in] sprite Sprite containing 1 pixel divided glyphs in a horizontal stripe.
+  /// @param [in] utf8_letters A zero-terminated UTF8 string containing codepoints that
+  ///   correspond to the glyphs of the sprite.
+  /// @param [in] base_to_top Glyph height from base to top.
+  void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
+      Si32 base_to_top, Si32 line_height, Si32 space_width);
+
   void DrawEvaluateSizeImpl(Sprite to_sprite,
       const char *text, bool do_keep_xadvance,
       Si32 x, Si32 y, TextOrigin origin,
