@@ -1028,14 +1028,16 @@ void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
 }
 
 Engine *GetEngine() {
-  if (!g_engine) {
+  if (g_engine) {
+    return g_engine;
+  } else {
     for (Si32 i = 0; i < kKeyCount; ++i) {
       g_key_state[i].Init();
     }
     Log("\r\nStarting the engine.");
     g_engine = new Engine();
+    return g_engine;
   }
-  return g_engine;
 }
 
 }  // namespace arctic

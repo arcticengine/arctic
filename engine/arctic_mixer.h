@@ -60,8 +60,14 @@ struct SoundMixerState {
   std::atomic<float> master_volume = ATOMIC_VAR_INIT(0.7f);
   std::vector<SoundBuffer> buffers;
 
+  static constexpr Si32 kPoolSize = 1024;
+
   SoundMixerState()
-      : pool(16) {
+      : pool(kPoolSize) {
+    for (Si32 i = 0; i < kPoolSize; ++i) {
+      pool.enqueue(new SoundBuffer);
+    }
+    buffers.reserve(kPoolSize);
   }
 
   void SetError(std::string description) {  //-V813
@@ -97,7 +103,7 @@ struct SoundMixerState {
       }
       switch (task->action) {
       case SoundBuffer::kStart:
-        buffers.push_back(*task);
+        buffers.push_back(std::move(*task));
         break;
       case SoundBuffer::kStop:
         for (size_t idx = 0; idx < buffers.size(); ++idx) {
