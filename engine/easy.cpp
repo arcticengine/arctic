@@ -542,6 +542,22 @@ void SetPixel(Si32 x, Si32 y, Rgba color) {
   }
 }
 
+void ReplaceColor(Sprite to_sprite, Rgba old_color, Rgba new_color) {
+  Rgba *data = to_sprite.RgbaData();
+  Si32 stride = to_sprite.StridePixels();
+  const Si32 height = to_sprite.Height();
+  const Si32 width = to_sprite.Width();
+  for (Si32 y = 0; y < height; ++y) {
+    Rgba *p_begin = data + stride * y;
+    Rgba *p_end = p_begin + width;
+    for (Rgba *p = p_begin; p < p_end; ++p) {
+      if (*p == old_color) {
+        *p = new_color;
+      }
+    }
+  }
+}
+
 Rgba GetPixel(const Sprite &from_sprite, Si32 x, Si32 y) {
   const Rgba *data = from_sprite.RgbaData();
   Si32 stride = from_sprite.StridePixels();
@@ -848,6 +864,12 @@ void SetKey(const char key, bool is_pressed) {
       - static_cast<Ui32>('a'), is_pressed);
   }
   return SetKeyImpl(static_cast<Ui32>(key), is_pressed);
+}
+
+void ClearKeyStateTransitions() {
+  for (Si32 i = 0; i < kKeyCount; ++i) {
+    g_key_state[i].OnShowFrame();
+  }
 }
 
 Vec2Si32 MousePos() {

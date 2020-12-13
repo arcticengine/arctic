@@ -102,6 +102,14 @@ void SetKey(const KeyCode key_code, bool is_set_down);
 /// IsAnyKeyDown() and IsAnyKeyUpward() calls.
 void SetKey(const char key, bool is_set_down);
 
+/// @brief Clears key state transition information
+/// @details IsKeyDownward() IsKeyUpward() IsAnyKeyDownward() and IsAnyKeyUpward()
+/// calls will return false after a ClearKeyStateTransitions() call
+/// untill the ShowFrame() call fills the key state transition infromation with
+/// the information on new transitions.
+/// IsKeyDown() IsAnyKeyDown() calls are not affected and return the actual state.
+void ClearKeyStateTransitions();
+
 /// @brief Returns mouse cursor position
 Vec2Si32 MousePos();
 /// @brief Returns mouse movement vector
