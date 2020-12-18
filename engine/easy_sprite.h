@@ -84,6 +84,9 @@ class Sprite {
   void Create(const Vec2Si32 size);
   /// @brief Make current sprite an empty sprite of the specified size
   void Create(const Si32 width, const Si32 height);
+  /// @brief Make current sprite reference to a rectangular part of another sprite using inverted y
+  void InvReference(const Sprite &from, const Si32 from_x, const Si32 from_inv_y,
+    const Si32 from_width, const Si32 from_height);
   /// @brief Make current sprite reference to a rectangular part of another sprite
   void Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height);

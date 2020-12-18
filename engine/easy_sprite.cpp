@@ -954,8 +954,13 @@ void Sprite::Create(const Si32 width, const Si32 height) {
   Clear();
 }
 
+void Sprite::InvReference(const Sprite &from, const Si32 from_x, const Si32 from_inv_y,
+    const Si32 from_width, const Si32 from_height) {
+  Reference(from, from_x, from.ref_size_.y - from_inv_y - from_height, from_width , from_height);
+}
+
 void Sprite::Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
-  const Si32 from_width, const Si32 from_height) {
+    const Si32 from_width, const Si32 from_height) {
   ref_pos_ = Vec2Si32(
     from.ref_pos_.x + std::min(std::max(from_x, 0), from.ref_size_.x - 1),
     from.ref_pos_.y + std::min(std::max(from_y, 0), from.ref_size_.y - 1));
