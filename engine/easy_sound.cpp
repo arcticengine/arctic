@@ -63,15 +63,17 @@ void Sound::Load(const char *file_name, bool do_unpack) {
         int error = 0;
         vorbis_codec_ = stb_vorbis_open_memory(data.data(),
           static_cast<int>(data.size()), &error, nullptr);
-        Ui32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
-        sound_instance_ = std::make_shared<SoundInstance>(size);
-        // int res =
-        stb_vorbis_get_samples_short_interleaved(
-          vorbis_codec_, 2,
-          sound_instance_->GetWavData(), static_cast<Si32>(size * 2));
-        // TODO(Huldra): if (res) {
-        stb_vorbis_close(vorbis_codec_);
-        vorbis_codec_ = nullptr;
+        if (vorbis_codec_) {
+          Ui32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
+          sound_instance_ = std::make_shared<SoundInstance>(size);
+          // int res =
+          stb_vorbis_get_samples_short_interleaved(
+            vorbis_codec_, 2,
+            sound_instance_->GetWavData(), static_cast<Si32>(size * 2));
+          // TODO(Huldra): if (res) {
+          stb_vorbis_close(vorbis_codec_);
+          vorbis_codec_ = nullptr;
+        }
       } else {
         sound_instance_ = std::make_shared<SoundInstance>(data);
       }
