@@ -5,6 +5,7 @@
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
 // Copyright (c) 2017 - 2019 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -89,6 +90,11 @@ PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
 PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLUNIFORM1IPROC glUniform1i = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
+PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = nullptr;
+PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers = nullptr;
+PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = nullptr;
+PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = nullptr;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = nullptr;
 
 namespace arctic {
 
@@ -562,6 +568,11 @@ void LoadGl() {
   LoadGlFunction("glUseProgram", &glUseProgram);
   LoadGlFunction("glUniform1i", &glUniform1i);
   LoadGlFunction("glVertexAttribPointer", &glVertexAttribPointer);
+  LoadGlFunction("glGenFramebuffers", &glGenFramebuffers);
+  LoadGlFunction("glDeleteFramebuffers", &glDeleteFramebuffers);
+  LoadGlFunction("glBindFramebuffer", &glBindFramebuffer);
+  LoadGlFunction("glFramebufferTexture2D", &glFramebufferTexture2D);
+  LoadGlFunction("glCheckFramebufferStatus", &glCheckFramebufferStatus);
 }
 
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
