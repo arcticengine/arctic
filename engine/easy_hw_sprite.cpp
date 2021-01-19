@@ -197,17 +197,11 @@ void HwSprite::Clear(Rgba color) {
     return;
   }
 
-  Ui32 color_tex_id = 0;
-  glGenTextures(1, &color_tex_id);
-  glBindTexture(GL_TEXTURE_2D, color_tex_id);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
+  std::vector<Rgba> data;
+  data.resize(Width()*Height(), color);
 
-  glBindTexture(GL_READ_BUFFER, color_tex_id);
   glBindTexture(GL_TEXTURE_2D, sprite_instance_->texture_id());
-  glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, sprite_instance_->width(), sprite_instance_->height());
-
-  glBindTexture(GL_READ_BUFFER, 0);
-  glDeleteTextures(1, &color_tex_id);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sprite_instance_->width(), sprite_instance_->height(), GL_RGBA, GL_UNSIGNED_BYTE, data.data());
 }
 
 /*void HwSprite::Clone(HwSprite from, CloneTransform transform) {

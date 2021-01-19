@@ -166,6 +166,10 @@ class HwSprite {
   Vec2Si32 Size() const;
   /// @brief Returns true if the sprite is actually a reference to another sprite
   bool IsRef() const;
+
+  std::shared_ptr<HwSpriteInstance> sprite_instance() const {
+    return sprite_instance_;
+  }
 };
 
 /// @}
