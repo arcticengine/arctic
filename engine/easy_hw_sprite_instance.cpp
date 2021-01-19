@@ -43,7 +43,8 @@ namespace arctic {
   HwSpriteInstance::HwSpriteInstance(Si32 width, Si32 height)
     : width_(width)
       , height_(height)
-      , texture_id_(0) {
+      , texture_id_(0)
+      , framebuffer_id_(0) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glGenTextures(1, &texture_id_);
@@ -59,12 +60,24 @@ namespace arctic {
         GL_UNSIGNED_BYTE, nullptr);
 
     {
-        GLenum errCode = glGetError();
-        *Log() << "gl sprite instance creation code: " << (Ui64)errCode;
+      GLenum errCode = glGetError();
+      *Log() << "gl sprite instance creation code: " << (Ui64)errCode;
+    }
+
+    glGenFramebuffers(1, &framebuffer_id_);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id_, 0);
+    glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    {
+      GLenum errCode = glGetError();
+      *Log() << "gl sprite instance creation framebuffer code: " << (Ui64)errCode;
     }
   }
 
   HwSpriteInstance::~HwSpriteInstance() {
+    glDeleteFramebuffers(1, &framebuffer_id_);
     glDeleteTextures(1, &texture_id_);
   }
 

@@ -38,6 +38,7 @@ class HwSpriteInstance {
   Si32 width_;
   Si32 height_;
   Ui32 texture_id_;
+  Ui32 framebuffer_id_;
 
  public:
   HwSpriteInstance(Si32 width, Si32 height);
@@ -53,6 +54,10 @@ class HwSpriteInstance {
 
   Ui32 texture_id() const {
     return texture_id_;
+  }
+
+  Ui32 framebuffer_id() const {
+    return framebuffer_id_;
   }
 
   /// @brief Creates a sprite instance from *.tga file data
