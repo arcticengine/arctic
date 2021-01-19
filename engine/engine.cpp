@@ -183,6 +183,7 @@ void main() {
 }
 
 void Engine::Draw2d() {
+  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
       backbuffer_texture_.Width(), backbuffer_texture_.Height(), GL_RGBA,
       GL_UNSIGNED_BYTE, static_cast<GLvoid*>(backbuffer_texture_.RawData()));
@@ -266,6 +267,7 @@ void Engine::Draw2d() {
   index[indices_] = static_cast<Ui32>(idx);
   indices_++;
 
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, width_, height_);
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,
@@ -277,9 +279,6 @@ void Engine::Draw2d() {
 
   GLint loc = glGetUniformLocation(g_programObject, "s_texture");
   Check(loc >= 0, "s_texture not found");
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
-
 
   glUniform1i(loc, 0);
   glUseProgram(g_programObject);
@@ -288,13 +287,22 @@ void Engine::Draw2d() {
   glGetProgramiv(g_programObject, GL_ACTIVE_UNIFORMS, &ufs);
   Check(ufs == 1, "no ufs");
 
+  glActiveTexture(GL_TEXTURE0);
+
+  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
       visible_indices_.data());
+
+  hw_backbuffer_texture_.Clear(Rgba(127, 127, 255));
+
+  glBindTexture(GL_TEXTURE_2D, hw_backbuffer_texture_.sprite_instance()->texture_id());
+  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
 
   Swap();
 }
 
 void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
+  hw_backbuffer_texture_.Create(width, height);
   backbuffer_texture_.Create(width, height);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

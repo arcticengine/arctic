@@ -30,6 +30,7 @@
 
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
+#include "engine/easy_hw_sprite.h"
 #include "engine/vec2f.h"
 #include "engine/opengl.h"
 
@@ -53,6 +54,7 @@ class Engine {
   Si32 height_ = 0;
   Ui32 backbuffer_texture_name_ = 0;
   Sprite backbuffer_texture_;
+  HwSprite hw_backbuffer_texture_;
 
   std::vector<Ui8> visible_verts_;
   std::vector<Ui8> visible_normals_;
@@ -99,6 +101,9 @@ class Engine {
   void Draw2d();
   Sprite GetBackbuffer() {
     return backbuffer_texture_;
+  }
+  HwSprite GetHwBackbuffer() {
+      return hw_backbuffer_texture_;
   }
   void ResizeBackbuffer(const Si32 width, const Si32 height);
   double GetTime();
