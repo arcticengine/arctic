@@ -163,7 +163,7 @@ void HwSprite::Create(const Vec2Si32 size) {
 }
 
 void HwSprite::Create(const Si32 width, const Si32 height) {
-  sprite_instance_ = std::make_shared<SpriteInstance>(width, height);
+  sprite_instance_ = std::make_shared<HwSpriteInstance>(width, height);
   ref_pos_ = Vec2Si32(0, 0);
   ref_size_ = Vec2Si32(width, height);
   pivot_ = Vec2Si32(0, 0);
