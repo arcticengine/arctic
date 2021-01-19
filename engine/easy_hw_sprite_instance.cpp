@@ -25,7 +25,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/easy_gl_sprite_instance.h"
+#include "engine/easy_hw_sprite_instance.h"
 
 #include <cstring>
 #include <memory>
@@ -39,7 +39,7 @@
 namespace arctic {
 
 
-  GLSpriteInstance::GLSpriteInstance(Si32 width, Si32 height)
+  HwSpriteInstance::HwSpriteInstance(Si32 width, Si32 height)
     : width_(width)
       , height_(height)
       , texture_id_(0) {
@@ -63,7 +63,7 @@ namespace arctic {
     }
   }
 
-  GLSpriteInstance::~GLSpriteInstance() {
+  HwSpriteInstance::~HwSpriteInstance() {
     glDeleteTextures(1, &texture_id_);
   }
 
@@ -85,8 +85,8 @@ struct TgaHeader {
 #pragma pack()
 
 
-  std::shared_ptr<GLSpriteInstance> GLSpriteInstance::LoadTga(const Ui8 *data, const Si64 size) {
-    std::shared_ptr<GLSpriteInstance> sprite;
+  std::shared_ptr<HwSpriteInstance> HwSpriteInstance::LoadTga(const Ui8 *data, const Si64 size) {
+    std::shared_ptr<HwSpriteInstance> sprite;
     if (size < sizeof(TgaHeader)) {
       *Log() << "Error in LoadTga, size: " << size << " < sizeof(TgaHeader): "
         << sizeof(TgaHeader) << " is too small.";
@@ -162,7 +162,7 @@ struct TgaHeader {
         return sprite;
       }
     }
-    sprite.reset(new GLSpriteInstance(tga->image_width, tga->image_height));
+    sprite.reset(new HwSpriteInstance(tga->image_width, tga->image_height));
 
     switch (tga->image_type) {
       case 0:  // no image data included
@@ -191,7 +191,7 @@ struct TgaHeader {
                    while (to < to_end) {
                      if (from_line >= from_end) {
                        *Log() << "Error in LoadTga, unexpected end of file.";
-                       return std::shared_ptr<GLSpriteInstance>();
+                       return std::shared_ptr<HwSpriteInstance>();
                      }
                      Si64 repetitions = tga->image_width;
                      bool is_rle_packet = false;
@@ -204,18 +204,18 @@ struct TgaHeader {
                      if (is_rle_packet) {  // run length packet
                        if (from_line + src_bytes_per_pixel > from_end) {
                          *Log() << "Error in LoadTga, unexpected end of file.";
-                         return std::shared_ptr<GLSpriteInstance>();
+                         return std::shared_ptr<HwSpriteInstance>();
                        }
                      } else {
                        if (from_line + src_bytes_per_pixel * repetitions
                            > from_end) {
                          *Log() << "Error in LoadTga, unexpected end of file.";
-                         return std::shared_ptr<GLSpriteInstance>();
+                         return std::shared_ptr<HwSpriteInstance>();
                        }
                        if (to + dst_bytes_per_pixel * repetitions > to_end) {
                          *Log() << "Error in LoadTga,"
                            " overflow in data format of file.";
-                         return std::shared_ptr<GLSpriteInstance>();
+                         return std::shared_ptr<HwSpriteInstance>();
                        }
                      }
                      for (Si64 idx = 0; idx < repetitions; ++idx) {
@@ -224,7 +224,7 @@ struct TgaHeader {
                          if (to + dst_bytes_per_pixel > to_end) {
                            *Log() << "Error in LoadTga,"
                              " overflow in data format of file.";
-                           return std::shared_ptr<GLSpriteInstance>();
+                           return std::shared_ptr<HwSpriteInstance>();
                          }
                        }
                        const Ui8 *entry = from_line;
@@ -240,12 +240,12 @@ struct TgaHeader {
                            if (entry_idx < 0) {
                              *Log() << "Error in LoadTga,"
                                " entry_idx underflow in data fromat.";
-                             return std::shared_ptr<GLSpriteInstance>();
+                             return std::shared_ptr<HwSpriteInstance>();
                            }
                            if (entry_idx >= colormap_length) {
                              *Log() << "Error in LoadTga,"
                                " entry_idx overflow in data fromat.";
-                             return std::shared_ptr<GLSpriteInstance>();
+                             return std::shared_ptr<HwSpriteInstance>();
                            }
                            entry = colormap
                              + entry_idx * colormap_bytes_per_entry;
@@ -303,7 +303,7 @@ struct TgaHeader {
     return sprite;
   }
 
-  void GLSpriteInstance::SaveTga(std::shared_ptr<GLSpriteInstance> sprite, std::vector<Ui8> *data) {
+  void HwSpriteInstance::SaveTga(std::shared_ptr<HwSpriteInstance> sprite, std::vector<Ui8> *data) {
     TgaHeader tga;
     memset(&tga, 0, sizeof(tga));
     tga.image_width = static_cast<Ui16>(sprite->width());
@@ -350,4 +350,4 @@ struct TgaHeader {
 
 }  // namespace arctic
 
-template class std::shared_ptr<arctic::GLSpriteInstance>;
+template class std::shared_ptr<arctic::HwSpriteInstance>;

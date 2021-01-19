@@ -21,8 +21,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_GL_SPRITE_INSTANCE_H_
-#define ENGINE_EASY_GL_SPRITE_INSTANCE_H_
+#ifndef ENGINE_EASY_HW_SPRITE_INSTANCE_H_
+#define ENGINE_EASY_HW_SPRITE_INSTANCE_H_
 
 #include <memory>
 #include <vector>
@@ -33,15 +33,15 @@ namespace arctic {
 /// @addtogroup global_advanced
 /// @{
 
-class GLSpriteInstance {
+class HwSpriteInstance {
  private:
   Si32 width_;
   Si32 height_;
   Ui32 texture_id_;
 
  public:
-  GLSpriteInstance(Si32 width, Si32 height);
-  ~GLSpriteInstance();
+  HwSpriteInstance(Si32 width, Si32 height);
+  ~HwSpriteInstance();
 
   Si32 width() const {
     return width_;
@@ -56,11 +56,11 @@ class GLSpriteInstance {
   }
 
   /// @brief Creates a sprite instance from *.tga file data
-  static std::shared_ptr<GLSpriteInstance> LoadTga(const Ui8 *data,
+  static std::shared_ptr<HwSpriteInstance> LoadTga(const Ui8 *data,
       const Si64 size);
 
   /// @brief Creates a *.tga file data from a sprite instance
-  static void SaveTga(std::shared_ptr<GLSpriteInstance> sprite,
+  static void SaveTga(std::shared_ptr<HwSpriteInstance> sprite,
       std::vector<Ui8> *data);
 };
 
@@ -68,6 +68,6 @@ class GLSpriteInstance {
 
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::GLSpriteInstance>;
+extern template class std::shared_ptr<arctic::HwSpriteInstance>;
 
-#endif  // ENGINE_EASY_GL_SPRITE_INSTANCE_H_
+#endif  // ENGINE_EASY_HW_SPRITE_INSTANCE_H_
