@@ -145,7 +145,11 @@ precision mediump float;
 varying vec2 v_texCoord;
 uniform sampler2D s_texture;
 void main() {
-  gl_FragColor = texture2D(s_texture, v_texCoord);
+  vec4 texel = texture2D(s_texture, v_texCoord);
+  if (texel.a < 1.0) {
+    discard;
+  }
+  gl_FragColor = texel;
 }
 )SHADER";
 
@@ -267,9 +271,6 @@ void Engine::Draw2d() {
   index[indices_] = static_cast<Ui32>(idx);
   indices_++;
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, width_, height_);
-
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,
       visible_verts_.data());
   glEnableVertexAttribArray(0);
@@ -287,16 +288,20 @@ void Engine::Draw2d() {
   glGetProgramiv(g_programObject, GL_ACTIVE_UNIFORMS, &ufs);
   Check(ufs == 1, "no ufs");
 
+
+  hw_backbuffer_texture_.Clear(Rgba(127, 127, 255)); // dev-version only
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, width_, height_);
+
   glActiveTexture(GL_TEXTURE0);
+
+  glBindTexture(GL_TEXTURE_2D, hw_backbuffer_texture_.sprite_instance()->texture_id());
+  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
 
   glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
       visible_indices_.data());
-
-  hw_backbuffer_texture_.Clear(Rgba(127, 127, 255));
-
-  glBindTexture(GL_TEXTURE_2D, hw_backbuffer_texture_.sprite_instance()->texture_id());
-  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
 
   Swap();
 }
