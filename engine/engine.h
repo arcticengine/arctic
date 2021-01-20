@@ -119,6 +119,9 @@ class Engine {
   MathTables &GetMathTables() {
     return math_tables_;
   }
+  GLuint GetProgramObject() const {
+    return g_programObject;
+  }
 };
 /// @}
 

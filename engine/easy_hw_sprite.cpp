@@ -4,7 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2020 Huldra
-// Copyright (c) 2021 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@
 
 #include "engine/arctic_types.h"
 #include "engine/vec2f.h"
+#include "engine/vec3f.h"
 #include "engine/log.h"
 #include "engine/easy_advanced.h"
 #include "engine/easy_files.h"
@@ -275,103 +276,72 @@ Vec2Si32 HwSprite::Pivot() const {
   return pivot_;
 }
 
-void HwSprite::SimpleDraw(const Si32 to_x, const Si32 to_y) {
-    /*visible_verts_.resize(16 << 20);
-    visible_normals_.resize(16 << 20);
-    visible_indices_.resize(16 << 20);
-    tex_coords_.resize(16 << 20);
-
-    verts_ = 0;
-    normals_ = 0;
-    tex_ = 0;
-    indices_ = 0;
-
-    Vec3F *vertex = static_cast<Vec3F*>(reinterpret_cast<void*>(
-        visible_verts_.data()));
-    Vec3F *normal = static_cast<Vec3F*>(reinterpret_cast<void*>(
-        visible_normals_.data()));
-    Vec2F *tex = static_cast<Vec2F*>(reinterpret_cast<void*>(
-        tex_coords_.data()));
-    Ui32 *index = static_cast<Ui32*>(reinterpret_cast<void*>(
-        visible_indices_.data()));
-
-    float aspect = static_cast<float>(width_) / static_cast<float>(height_);
+void HwSprite::Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y, DrawFilterMode filter_mode, Rgba in_color) {
+    /*float aspect = static_cast<float>(width_) / static_cast<float>(height_);
     float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
         static_cast<float>(backbuffer_texture_.Height());
     float ratio = back_aspect / aspect;
     float x_aspect = aspect < back_aspect ? 1.f : ratio;
-    float y_aspect = aspect < back_aspect ? 1.f / ratio : 1.f;
+    float y_aspect = aspect < back_aspect ? 1.f / ratio : 1.f;*/
 
-    Vec3F base = Vec3F(-1.f * x_aspect, -1.f * y_aspect, 0.f);
-    Vec3F tx = Vec3F(2.f * x_aspect, 0.f, 0.f);
-    Vec3F ty = Vec3F(0.f, 2.f * y_aspect, 0.f);
-    Vec3F n = Vec3F(0.f, 0.f, 1.f);
+    Vec3F base = Vec3F(-1.0f, -1.0f, 0.0f);
+    Vec3F tx = Vec3F(2.0f*0.1, 0.0f, 0.0f);
+    Vec3F ty = Vec3F(0.0f, 2.0f*0.1, 0.0f);
+    //Vec3F n = Vec3F(0.0f, 0.0f, 1.0f);
 
-    Si32 idx = verts_;
-    vertex[verts_] = base;
-    ++verts_;
-    vertex[verts_] = base + tx;
-    ++verts_;
-    vertex[verts_] = base + ty + tx;
-    ++verts_;
-    vertex[verts_] = base + ty;
-    ++verts_;
+    const Vec3F verts[] = {
+        base,
+        base + tx,
+        base + ty + tx,
+        base + ty,
+    };
 
-    normal[normals_] = n;
-    ++normals_;
-    normal[normals_] = n;
-    ++normals_;
-    normal[normals_] = n;
-    ++normals_;
-    normal[normals_] = n;
-    ++normals_;
+    //const Vec3F normals[] = {
+    //    n, n, n, n,
+    //};
 
-    tex[tex_] = Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f);
-    ++tex_;
-    tex[tex_] = Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f);
-    ++tex_;
-    tex[tex_] = Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f);
-    ++tex_;
-    tex[tex_] = Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f);
-    ++tex_;
+    const Vec2F tex_coords[] = {
+        Vec2F(0.0f, 0.0f),
+        Vec2F(1.0f, 0.0f),
+        Vec2F(1.0f, 1.0f),
+        Vec2F(0.0f, 1.0f),
+    };
 
-    index[indices_] = static_cast<Ui32>(idx);
-    indices_++;
-    index[indices_] = static_cast<Ui32>(idx + 1);
-    indices_++;
-    index[indices_] = static_cast<Ui32>(idx + 2);
-    indices_++;
-    index[indices_] = static_cast<Ui32>(idx + 2);
-    indices_++;
-    index[indices_] = static_cast<Ui32>(idx + 3);
-    indices_++;
-    index[indices_] = static_cast<Ui32>(idx);
-    indices_++;
-
-    glViewport(0, 0, width_, height_);
+    const Ui32 indices[] = {
+        0, 1, 2, 2, 3, 0,
+    };
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,
-        visible_verts_.data());
+        verts);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-        tex_coords_.data());
+        tex_coords);
     glEnableVertexAttribArray(1);
 
-    GLint loc = glGetUniformLocation(g_programObject, "s_texture");
+    GLint loc = glGetUniformLocation(GetEngine()->GetProgramObject(), "s_texture");
     Check(loc >= 0, "s_texture not found");
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
-
 
     glUniform1i(loc, 0);
-    glUseProgram(g_programObject);
+    glUseProgram(GetEngine()->GetProgramObject());
 
     GLint ufs;
-    glGetProgramiv(g_programObject, GL_ACTIVE_UNIFORMS, &ufs);
+    glGetProgramiv(GetEngine()->GetProgramObject(), GL_ACTIVE_UNIFORMS, &ufs);
     Check(ufs == 1, "no ufs");
 
+
+    //hw_backbuffer_texture_.Clear(Rgba(127, 127, 255)); // dev-version only
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, width_, height_);
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindTexture(GL_TEXTURE_2D, hw_backbuffer_texture_.sprite_instance()->texture_id());
+    glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
+
+    glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
     glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
-        visible_indices_.data());*/
+        visible_indices_.data());
 }
 
 /*void HwSprite::Draw(HwSprite to_sprite,
