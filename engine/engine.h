@@ -33,6 +33,7 @@
 #include "engine/easy_hw_sprite.h"
 #include "engine/vec2f.h"
 #include "engine/opengl.h"
+#include "engine/gl_texture2d.h"
 
 namespace arctic {
 
@@ -52,7 +53,7 @@ class Engine {
  private:
   Si32 width_ = 0;
   Si32 height_ = 0;
-  Ui32 backbuffer_texture_name_ = 0;
+  GLTexture2D gl_backbuffer_texture_;
   Sprite backbuffer_texture_;
   HwSprite hw_backbuffer_texture_;
 

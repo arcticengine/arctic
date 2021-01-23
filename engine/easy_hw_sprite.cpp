@@ -201,8 +201,7 @@ void HwSprite::Clear(Rgba color) {
   std::vector<Rgba> data;
   data.resize(Width()*Height(), color);
 
-  glBindTexture(GL_TEXTURE_2D, sprite_instance_->texture_id());
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sprite_instance_->width(), sprite_instance_->height(), GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+  sprite_instance_->texture().UpdateData(data.data());
 }
 
 /*void HwSprite::Clone(HwSprite from, CloneTransform transform) {

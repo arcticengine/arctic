@@ -41,32 +41,12 @@ namespace arctic {
 
 
   HwSpriteInstance::HwSpriteInstance(Si32 width, Si32 height)
-    : width_(width)
-      , height_(height)
-      , texture_id_(0)
-      , framebuffer_id_(0) {
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glGenTextures(1, &texture_id_);
-    glBindTexture(GL_TEXTURE_2D, texture_id_);
-    Check(glIsTexture(texture_id_), "no texture");
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, nullptr);
-
-    {
-      GLenum errCode = glGetError();
-      *Log() << "gl sprite instance creation code: " << (Ui64)errCode;
-    }
+    : framebuffer_id_(0) {
+    texture_.Create(width, height);
 
     glGenFramebuffers(1, &framebuffer_id_);
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_id_, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_.texture_id(), 0);
     glCheckFramebufferStatus(GL_FRAMEBUFFER);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -78,7 +58,6 @@ namespace arctic {
 
   HwSpriteInstance::~HwSpriteInstance() {
     glDeleteFramebuffers(1, &framebuffer_id_);
-    glDeleteTextures(1, &texture_id_);
   }
 
   std::shared_ptr<HwSpriteInstance> HwSpriteInstance::LoadTga(const Ui8 *data, const Si64 size) {
@@ -86,29 +65,15 @@ namespace arctic {
     std::shared_ptr<HwSpriteInstance> sprite = std::make_shared<HwSpriteInstance>(sw_sprite->width(), sw_sprite->height());
 
     if (sw_sprite) {
-        glBindTexture(GL_TEXTURE_2D, sprite->texture_id());
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sprite->width(), sprite->height(), GL_RGBA, GL_UNSIGNED_BYTE, sw_sprite->RawData());
-
-        {
-            GLenum errCode = glGetError();
-            *Log() << "gl sprite loading code: " << (Ui64)errCode;
-        }
+        sprite->texture_.SetData(sw_sprite->RawData(), sw_sprite->width(), sw_sprite->height());
     }
 
     return sprite;
   }
 
   void HwSpriteInstance::SaveTga(std::shared_ptr<HwSpriteInstance> sprite, std::vector<Ui8> *data) {
-    std::shared_ptr<SpriteInstance> sw_sprite = std::make_shared<SpriteInstance>(sprite->width(), sprite->height());
-
-    glBindTexture(GL_TEXTURE_2D, sprite->texture_id());
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, sw_sprite->RawData());
-
-    {
-        GLenum errCode = glGetError();
-        *Log() << "gl sprite instance saving code: " << (Ui64)errCode;
-    }
-
+    std::shared_ptr<SpriteInstance> sw_sprite = std::make_shared<SpriteInstance>(sprite->texture().width(), sprite->texture().height());
+    sprite->texture().ReadData(sw_sprite->RawData());
     arctic::SaveTga(sw_sprite, data);
   }
 

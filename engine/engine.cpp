@@ -187,13 +187,9 @@ void main() {
 }
 
 void Engine::Draw2d() {
-  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-      backbuffer_texture_.Width(), backbuffer_texture_.Height(), GL_RGBA,
-      GL_UNSIGNED_BYTE, static_cast<GLvoid*>(backbuffer_texture_.RawData()));
+  gl_backbuffer_texture_.UpdateData(backbuffer_texture_.RawData());
 
   // render
-
 
   glClearColor(0.f, 0.f, 0.f, 0.f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -294,12 +290,10 @@ void Engine::Draw2d() {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, width_, height_);
 
-  glActiveTexture(GL_TEXTURE0);
-
-  glBindTexture(GL_TEXTURE_2D, hw_backbuffer_texture_.sprite_instance()->texture_id());
+  hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
 
-  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
+  gl_backbuffer_texture_.Bind(0);
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
       visible_indices_.data());
 
@@ -310,26 +304,7 @@ void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
   hw_backbuffer_texture_.Create(width, height);
   backbuffer_texture_.Create(width, height);
 
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  glGenTextures(1, &backbuffer_texture_name_);
-  // generate a texture handler really reccomanded (mandatory in openGL 3.0)
-  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
-  // tell openGL that we are using the texture
-  Check(glIsTexture(backbuffer_texture_name_), "no texture");
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-      GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
-  {
-    GLenum errCode = glGetError();
-    *Log() << "code: " << (Ui64)errCode;
-  }
-  // send the texture data
+  gl_backbuffer_texture_.Create(width, height);
 }
 
 double Engine::GetTime() {

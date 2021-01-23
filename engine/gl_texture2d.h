@@ -1,6 +1,5 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2018 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,57 +20,53 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_HW_SPRITE_INSTANCE_H_
-#define ENGINE_EASY_HW_SPRITE_INSTANCE_H_
+#ifndef ENGINE_GL_TEXTURE2D_H_
+#define ENGINE_GL_TEXTURE2D_H_
 
-#include <memory>
-#include <vector>
 #include "engine/arctic_types.h"
-#include "engine/gl_texture2d.h"
+#include "engine/opengl.h"
 
 namespace arctic {
 
 /// @addtogroup global_advanced
 /// @{
 
-class HwSpriteInstance {
+class GLTexture2D {
  private:
-  GLTexture2D texture_;
-  Ui32 framebuffer_id_;
+  GLTexture2D(GLTexture2D &other) = delete;
+  GLTexture2D(GLTexture2D &&other) = delete;
+  GLTexture2D &operator=(GLTexture2D &other) = delete;
+  GLTexture2D &operator=(GLTexture2D &&other) = delete;
+
+  Si32 width_;
+  Si32 height_;
+  GLuint texture_id_;
 
  public:
-  HwSpriteInstance(Si32 width, Si32 height);
-  ~HwSpriteInstance();
+  GLTexture2D();
+  ~GLTexture2D();
 
-  GLTexture2D &texture() {
-    return texture_;
-  }
+  void Create(Si32 w, Si32 h);
+  void Bind(Ui32 slot) const;
+  void SetData(const void *data, Si32 w, Si32 h);
+  void UpdateData(const void *data);
+  void ReadData(void *dst) const;
 
   Si32 width() const {
-    return texture_.width();
+    return width_;
   }
 
   Si32 height() const {
-      return texture_.height();
+    return height_;
   }
 
-  Ui32 framebuffer_id() const {
-    return framebuffer_id_;
+  GLuint texture_id() const {
+    return texture_id_;
   }
-
-  /// @brief Creates a sprite instance from *.tga file data
-  static std::shared_ptr<HwSpriteInstance> LoadTga(const Ui8 *data,
-      const Si64 size);
-
-  /// @brief Creates a *.tga file data from a sprite instance
-  static void SaveTga(std::shared_ptr<HwSpriteInstance> sprite,
-      std::vector<Ui8> *data);
 };
 
 /// @}
 
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::HwSpriteInstance>;
-
-#endif  // ENGINE_EASY_HW_SPRITE_INSTANCE_H_
+#endif  // ENGINE_GL_TEXTURE2D_H_
