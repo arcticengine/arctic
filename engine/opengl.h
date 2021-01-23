@@ -34,6 +34,23 @@
 #include <GL/glu.h>
 #include "engine/glext.h"
 
+#define ARCTIC_GL_CALL(opengl_call) do { \
+    opengl_call; \
+    GLenum error_code = glGetError(); \
+    const char *error_str = ""; \
+    switch (error_code) { \
+        case GL_INVALID_ENUM:                  error_str = "INVALID_ENUM"; break; \
+        case GL_INVALID_VALUE:                 error_str = "INVALID_VALUE"; break; \
+        case GL_INVALID_OPERATION:             error_str = "INVALID_OPERATION"; break; \
+        case GL_STACK_OVERFLOW:                error_str = "STACK_OVERFLOW"; break; \
+        case GL_STACK_UNDERFLOW:               error_str = "STACK_UNDERFLOW"; break; \
+        case GL_OUT_OF_MEMORY:                 error_str = "OUT_OF_MEMORY"; break; \
+        case GL_INVALID_FRAMEBUFFER_OPERATION: error_str = "INVALID_FRAMEBUFFER_OPERATION"; break; \
+    } \
+    if (error_code != GL_NO_ERROR) { \
+        *Log() << "OpenGL Error: " << #opengl_call << " -> " << error_str << " (" << error_code << ")"; \
+    } \
+} while(false)
 
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLATTACHSHADERPROC glAttachShader;
