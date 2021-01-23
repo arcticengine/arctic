@@ -43,6 +43,10 @@ GLFramebuffer::~GLFramebuffer() {
 }
 
 void GLFramebuffer::Create(GLTexture2D &texture) {
+    if (framebuffer_id_ != 0) {
+        glDeleteFramebuffers(1, &framebuffer_id_);
+    }
+
     ARCTIC_GL_CALL(glGenFramebuffers(1, &framebuffer_id_));
     ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
     ARCTIC_GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture_id(), 0));
