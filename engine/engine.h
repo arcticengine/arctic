@@ -34,6 +34,7 @@
 #include "engine/vec2f.h"
 #include "engine/opengl.h"
 #include "engine/gl_texture2d.h"
+#include "engine/gl_program.h"
 
 namespace arctic {
 
@@ -81,12 +82,10 @@ class Engine {
 
   MathTables math_tables_;
 
-  GLuint g_program_object;
+  GLProgram gl_program_;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
-
-  GLuint LoadShader(const char *shaderSrc, GLenum type);
 
  public:
   void SetArgcArgv(Si64 argc, const char **argv);
@@ -120,8 +119,8 @@ class Engine {
   MathTables &GetMathTables() {
     return math_tables_;
   }
-  GLuint GetProgramObject() const {
-    return g_program_object;
+  GLProgram &GetGLProgram() {
+    return gl_program_;
   }
 };
 /// @}

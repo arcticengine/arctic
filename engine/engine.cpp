@@ -48,39 +48,6 @@ void MathTables::Init() {
   }
 }
 
-GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
-  // Create the shader object
-  GLuint shader = glCreateShader(type);
-  if (shader == 0) {
-    GLenum errCode = glGetError();
-    std::stringstream info;
-    info << "Can't create shader, code: " << (Ui64)errCode;
-    Fatal(info.str().c_str());
-    return 0;
-  }
-  // Load the shader source
-  glShaderSource(shader, 1, &shaderSrc, NULL);
-  // Compile the shader
-  glCompileShader(shader);
-  // Check the compile status
-  GLint compiled;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-  if (!compiled) {
-    GLint infoLen = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-    if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(
-        malloc(sizeof(char) * static_cast<size_t>(infoLen)));
-      glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
-      Fatal("Error compiling shader: ", infoLog);
-      free(infoLog);  //-V779
-    }
-    glDeleteShader(shader);
-    return 0;
-  }
-  return shader;
-}
-
 void Engine::SetArgcArgv(Si64 argc, const char **argv) {
   cmd_line_arguments_.resize(static_cast<size_t>(argc));
   cmd_line_argv_.resize(static_cast<size_t>(argc));
@@ -153,37 +120,7 @@ void main() {
 }
 )SHADER";
 
-  // Load the vertex/fragment shaders
-  GLuint vertexShader = LoadShader(vShaderStr, GL_VERTEX_SHADER);
-  GLuint fragmentShader = LoadShader(fShaderStr, GL_FRAGMENT_SHADER);
-  // Create the program object
-  g_program_object = glCreateProgram();
-  if (g_program_object == 0) {
-    Fatal("Unknown error creating program");
-  }
-  glAttachShader(g_program_object, vertexShader);
-  glAttachShader(g_program_object, fragmentShader);
-  // Bind vPosition to attribute 0
-  glBindAttribLocation(g_program_object, 0, "vPosition");
-  glBindAttribLocation(g_program_object, 1, "vTex");
-  // Link the program
-  glLinkProgram(g_program_object);
-  // Check the link status
-  GLint linked;
-  glGetProgramiv(g_program_object, GL_LINK_STATUS, &linked);
-  if (!linked) {
-    GLint infoLen = 0;
-    glGetProgramiv(g_program_object, GL_INFO_LOG_LENGTH, &infoLen);
-    if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(
-        malloc(sizeof(char) * static_cast<size_t>(infoLen)));
-      glGetProgramInfoLog(g_program_object, infoLen, NULL, infoLog);
-      Fatal("Error linking program: ", infoLog);
-      free(infoLog);  //-V779
-    }
-    glDeleteProgram(g_program_object);
-    Fatal("Unknown error linking program");
-  }
+  gl_program_.Create(vShaderStr, fShaderStr);
 }
 
 void Engine::Draw2d() {
@@ -274,15 +211,10 @@ void Engine::Draw2d() {
       tex_coords_.data());
   glEnableVertexAttribArray(1);
 
-  GLint loc = glGetUniformLocation(g_program_object, "s_texture");
-  Check(loc >= 0, "s_texture not found");
+  gl_program_.Bind();
+  gl_program_.SetUniform("s_texture", 0);
 
-  glUniform1i(loc, 0);
-  glUseProgram(g_program_object);
-
-  GLint ufs;
-  glGetProgramiv(g_program_object, GL_ACTIVE_UNIFORMS, &ufs);
-  Check(ufs == 1, "no ufs");
+  gl_program_.CheckActiveUniforms();
 
 
   hw_backbuffer_texture_.Clear(Rgba(127, 127, 255)); // dev-version only
