@@ -81,7 +81,7 @@ class Engine {
 
   MathTables math_tables_;
 
-  GLuint g_programObject;
+  GLuint g_program_object;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
@@ -121,7 +121,7 @@ class Engine {
     return math_tables_;
   }
   GLuint GetProgramObject() const {
-    return g_programObject;
+    return g_program_object;
   }
 };
 /// @}

@@ -157,31 +157,31 @@ void main() {
   GLuint vertexShader = LoadShader(vShaderStr, GL_VERTEX_SHADER);
   GLuint fragmentShader = LoadShader(fShaderStr, GL_FRAGMENT_SHADER);
   // Create the program object
-  g_programObject = glCreateProgram();
-  if (g_programObject == 0) {
+  g_program_object = glCreateProgram();
+  if (g_program_object == 0) {
     Fatal("Unknown error creating program");
   }
-  glAttachShader(g_programObject, vertexShader);
-  glAttachShader(g_programObject, fragmentShader);
+  glAttachShader(g_program_object, vertexShader);
+  glAttachShader(g_program_object, fragmentShader);
   // Bind vPosition to attribute 0
-  glBindAttribLocation(g_programObject, 0, "vPosition");
-  glBindAttribLocation(g_programObject, 1, "vTex");
+  glBindAttribLocation(g_program_object, 0, "vPosition");
+  glBindAttribLocation(g_program_object, 1, "vTex");
   // Link the program
-  glLinkProgram(g_programObject);
+  glLinkProgram(g_program_object);
   // Check the link status
   GLint linked;
-  glGetProgramiv(g_programObject, GL_LINK_STATUS, &linked);
+  glGetProgramiv(g_program_object, GL_LINK_STATUS, &linked);
   if (!linked) {
     GLint infoLen = 0;
-    glGetProgramiv(g_programObject, GL_INFO_LOG_LENGTH, &infoLen);
+    glGetProgramiv(g_program_object, GL_INFO_LOG_LENGTH, &infoLen);
     if (infoLen > 1) {
       char* infoLog = reinterpret_cast<char*>(
         malloc(sizeof(char) * static_cast<size_t>(infoLen)));
-      glGetProgramInfoLog(g_programObject, infoLen, NULL, infoLog);
+      glGetProgramInfoLog(g_program_object, infoLen, NULL, infoLog);
       Fatal("Error linking program: ", infoLog);
       free(infoLog);  //-V779
     }
-    glDeleteProgram(g_programObject);
+    glDeleteProgram(g_program_object);
     Fatal("Unknown error linking program");
   }
 }
@@ -274,14 +274,14 @@ void Engine::Draw2d() {
       tex_coords_.data());
   glEnableVertexAttribArray(1);
 
-  GLint loc = glGetUniformLocation(g_programObject, "s_texture");
+  GLint loc = glGetUniformLocation(g_program_object, "s_texture");
   Check(loc >= 0, "s_texture not found");
 
   glUniform1i(loc, 0);
-  glUseProgram(g_programObject);
+  glUseProgram(g_program_object);
 
   GLint ufs;
-  glGetProgramiv(g_programObject, GL_ACTIVE_UNIFORMS, &ufs);
+  glGetProgramiv(g_program_object, GL_ACTIVE_UNIFORMS, &ufs);
   Check(ufs == 1, "no ufs");
 
 
