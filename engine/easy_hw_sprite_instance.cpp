@@ -40,24 +40,9 @@
 namespace arctic {
 
 
-  HwSpriteInstance::HwSpriteInstance(Si32 width, Si32 height)
-    : framebuffer_id_(0) {
+  HwSpriteInstance::HwSpriteInstance(Si32 width, Si32 height) {
     texture_.Create(width, height);
-
-    glGenFramebuffers(1, &framebuffer_id_);
-    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_.texture_id(), 0);
-    glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    {
-      GLenum errCode = glGetError();
-      *Log() << "gl sprite instance creation framebuffer code: " << (Ui64)errCode;
-    }
-  }
-
-  HwSpriteInstance::~HwSpriteInstance() {
-    glDeleteFramebuffers(1, &framebuffer_id_);
+    framebuffer_.Create(texture_);
   }
 
   std::shared_ptr<HwSpriteInstance> HwSpriteInstance::LoadTga(const Ui8 *data, const Si64 size) {

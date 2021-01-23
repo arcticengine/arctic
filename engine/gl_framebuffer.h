@@ -1,6 +1,5 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2018 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,57 +20,34 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_HW_SPRITE_INSTANCE_H_
-#define ENGINE_EASY_HW_SPRITE_INSTANCE_H_
+#ifndef ENGINE_GL_FRAMEBUFFER_H_
+#define ENGINE_GL_FRAMEBUFFER_H_
 
-#include <memory>
-#include <vector>
 #include "engine/arctic_types.h"
+#include "engine/opengl.h"
 #include "engine/gl_texture2d.h"
-#include "engine/gl_framebuffer.h"
 
 namespace arctic {
 
 /// @addtogroup global_advanced
 /// @{
 
-class HwSpriteInstance {
+class GLFramebuffer {
  private:
-  GLTexture2D texture_;
-  GLFramebuffer framebuffer_;
+  GLuint framebuffer_id_;
 
  public:
-  HwSpriteInstance(Si32 width, Si32 height);
+  GLFramebuffer();
+  ~GLFramebuffer();
 
-  GLTexture2D &texture() {
-    return texture_;
-  }
+  void Create(GLTexture2D &texture);
+  void Bind();
 
-  GLFramebuffer &framebuffer() {
-    return framebuffer_;
-  }
-
-  Si32 width() const {
-    return texture_.width();
-  }
-
-  Si32 height() const {
-      return texture_.height();
-  }
-
-  /// @brief Creates a sprite instance from *.tga file data
-  static std::shared_ptr<HwSpriteInstance> LoadTga(const Ui8 *data,
-      const Si64 size);
-
-  /// @brief Creates a *.tga file data from a sprite instance
-  static void SaveTga(std::shared_ptr<HwSpriteInstance> sprite,
-      std::vector<Ui8> *data);
+  static void BindDefault();
 };
 
 /// @}
 
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::HwSpriteInstance>;
-
-#endif  // ENGINE_EASY_HW_SPRITE_INSTANCE_H_
+#endif  // ENGINE_GL_FRAMEBUFFER_H_

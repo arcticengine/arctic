@@ -1,6 +1,8 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2018 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,57 +23,40 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_HW_SPRITE_INSTANCE_H_
-#define ENGINE_EASY_HW_SPRITE_INSTANCE_H_
-
-#include <memory>
-#include <vector>
-#include "engine/arctic_types.h"
-#include "engine/gl_texture2d.h"
 #include "engine/gl_framebuffer.h"
+
+#include <sstream>
+#include "engine/arctic_platform.h"
+#include "engine/log.h"
+#include "engine/rgba.h"
+#include "engine/opengl.h"
 
 namespace arctic {
 
-/// @addtogroup global_advanced
-/// @{
 
-class HwSpriteInstance {
- private:
-  GLTexture2D texture_;
-  GLFramebuffer framebuffer_;
+GLFramebuffer::GLFramebuffer()
+    : framebuffer_id_(0) {
+}
 
- public:
-  HwSpriteInstance(Si32 width, Si32 height);
+GLFramebuffer::~GLFramebuffer() {
+    ARCTIC_GL_CALL(glDeleteFramebuffers(1, &framebuffer_id_));
+}
 
-  GLTexture2D &texture() {
-    return texture_;
-  }
+void GLFramebuffer::Create(GLTexture2D &texture) {
+    ARCTIC_GL_CALL(glGenFramebuffers(1, &framebuffer_id_));
+    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
+    ARCTIC_GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture_id(), 0));
+    ARCTIC_GL_CALL(glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+}
 
-  GLFramebuffer &framebuffer() {
-    return framebuffer_;
-  }
+void GLFramebuffer::Bind() {
+    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
+}
 
-  Si32 width() const {
-    return texture_.width();
-  }
+void GLFramebuffer::BindDefault() {
+    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+}
 
-  Si32 height() const {
-      return texture_.height();
-  }
-
-  /// @brief Creates a sprite instance from *.tga file data
-  static std::shared_ptr<HwSpriteInstance> LoadTga(const Ui8 *data,
-      const Si64 size);
-
-  /// @brief Creates a *.tga file data from a sprite instance
-  static void SaveTga(std::shared_ptr<HwSpriteInstance> sprite,
-      std::vector<Ui8> *data);
-};
-
-/// @}
 
 }  // namespace arctic
-
-extern template class std::shared_ptr<arctic::HwSpriteInstance>;
-
-#endif  // ENGINE_EASY_HW_SPRITE_INSTANCE_H_
