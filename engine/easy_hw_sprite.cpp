@@ -319,6 +319,24 @@ Vec2Si32 HwSprite::Pivot() const {
   return pivot_;
 }
 
+void HwSprite::Draw(const Vec2F to, float angle_radians,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to.x, to.y, angle_radians, 1.f, GetEngine()->GetHwBackbuffer(),
+        blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const float to_x, const float to_y, float angle_radians,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_x, to_y, angle_radians, 1.f, GetEngine()->GetHwBackbuffer(),
+        blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const Vec2F to, float angle_radians, float zoom,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to.x, to.y, angle_radians, zoom, GetEngine()->GetHwBackbuffer(),
+        blending_mode, filter_mode, in_color);
+}
+
 void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
     Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetHwBackbuffer(),
