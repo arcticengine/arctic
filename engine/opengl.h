@@ -35,7 +35,7 @@
 #include "engine/glext.h"
 
 #define ARCTIC_GL_CALL(opengl_call) do { \
-    opengl_call; \
+    opengl_call; int call_line = __LINE__; \
     GLenum error_code = glGetError(); \
     const char *error_str = ""; \
     switch (error_code) { \
@@ -48,7 +48,8 @@
         case GL_INVALID_FRAMEBUFFER_OPERATION: error_str = "INVALID_FRAMEBUFFER_OPERATION"; break; \
     } \
     if (error_code != GL_NO_ERROR) { \
-        *Log() << "OpenGL Error: " << #opengl_call << " -> " << error_str << " (" << error_code << ")"; \
+        *Log() << "OpenGL Error: " << #opengl_call << " -> " << error_str << " (" << error_code << ")" \
+               << "\nFile: " << __FILE__ << "\nLine: " << call_line; \
     } \
 } while(false)
 
