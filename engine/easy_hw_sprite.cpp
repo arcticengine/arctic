@@ -179,6 +179,15 @@ void HwSprite::Load(const std::string &file_name) {
   Load(file_name.c_str());
 }
 
+void HwSprite::LoadFromSoftwareSprite(Sprite sw_sprite) {
+    const std::shared_ptr<SpriteInstance> &sw_sprite_instance = sw_sprite.SpriteInstance();
+    sprite_instance_ = std::make_shared<HwSpriteInstance>(sw_sprite_instance->width(), sw_sprite_instance->height());
+    sprite_instance_->texture().UpdateData(sw_sprite_instance->RawData());
+    ref_pos_ = sw_sprite.RefPos();
+    ref_size_ = sw_sprite.Size();
+    pivot_ = sw_sprite.Pivot();
+}
+
 void HwSprite::Save(const char *file_name) {
   std::vector<Ui8> data = SaveToData(file_name);
   if (!data.empty()) {

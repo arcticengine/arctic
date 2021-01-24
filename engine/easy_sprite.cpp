@@ -4,6 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -947,7 +948,7 @@ void Sprite::Create(const Vec2Si32 size) {
 }
 
 void Sprite::Create(const Si32 width, const Si32 height) {
-  sprite_instance_ = std::make_shared<SpriteInstance>(width, height);
+  sprite_instance_ = std::make_shared<arctic::SpriteInstance>(width, height);
   ref_pos_ = Vec2Si32(0, 0);
   ref_size_ = Vec2Si32(width, height);
   pivot_ = Vec2Si32(0, 0);
@@ -1442,6 +1443,10 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
   return;
 }
 
+Vec2Si32 Sprite::RefPos() const {
+    return ref_pos_;
+}
+
 Si32 Sprite::Width() const {
   return ref_size_.x;
 }
@@ -1485,6 +1490,10 @@ const Rgba* Sprite::RgbaData() const {
       sprite_instance_->RawData())) +
     ref_pos_.y * StridePixels() +
     ref_pos_.x);
+}
+
+const std::shared_ptr<SpriteInstance> &Sprite::SpriteInstance() const {
+    return sprite_instance_;
 }
 
 const std::vector<SpanSi32> &Sprite::Opaque() const {

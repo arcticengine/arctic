@@ -53,6 +53,8 @@ class HwSprite {
   void Load(const char *file_name);
   /// @brief Load sprite data from file
   void Load(const std::string &file_name);
+  /// @brief Load sprite data from software sprite
+  void LoadFromSoftwareSprite(Sprite sw_sprite);
   /// @brief Load sprite data from file
   void Save(const char *file_name);
   /// @brief Load sprite data from file

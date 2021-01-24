@@ -1,6 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -220,6 +221,7 @@ class Sprite {
         angle_radians, zoom, to_sprite, blending_mode, filter_mode, in_color);
   }
 
+  Vec2Si32 RefPos() const;
   /// @brief Get width of the sprite in pixels
   Si32 Width() const;
   /// @brief Get height of the sprite in pixels
@@ -238,6 +240,7 @@ class Sprite {
   Rgba* RgbaData();
   /// @brief Returns a pointer to the read-only Rgba data of the sprite
   const Rgba* RgbaData() const;
+  const std::shared_ptr<SpriteInstance> &SpriteInstance() const;
   const std::vector<SpanSi32> &Opaque() const;
   /// @brief Update the opaque span parameters of the sprite
   /// @details
