@@ -204,11 +204,9 @@ void Engine::Draw2d() {
   index[indices_] = static_cast<Ui32>(idx);
   indices_++;
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,
-      visible_verts_.data());
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, visible_verts_.data());
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-      tex_coords_.data());
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data());
   glEnableVertexAttribArray(1);
 
   gl_program_.Bind();
@@ -216,18 +214,14 @@ void Engine::Draw2d() {
 
   gl_program_.CheckActiveUniforms();
 
-
-  //hw_backbuffer_texture_.Clear(Rgba(127, 127, 255)); // dev-version only
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  GLFramebuffer::BindDefault();
   glViewport(0, 0, width_, height_);
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
 
-  //gl_backbuffer_texture_.Bind(0);
-  //glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
-  //    visible_indices_.data());
+  gl_backbuffer_texture_.Bind(0);
+  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
 
   Swap();
 }

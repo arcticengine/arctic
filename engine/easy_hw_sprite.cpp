@@ -55,7 +55,7 @@ void DrawTriangle(HwSprite to_sprite, Vec2F a, Vec2F b, Vec2F c, Vec2F tex_a, Ve
         1.0f / texture.Height()
     );
 
-    /*const Vec3F verts[] = {
+    const Vec3F verts[] = {
         Vec3F(a, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
         Vec3F(b, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
         Vec3F(c, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
@@ -64,16 +64,6 @@ void DrawTriangle(HwSprite to_sprite, Vec2F a, Vec2F b, Vec2F c, Vec2F tex_a, Ve
         tex_a * texture_pixel_coords_to_uv,
         tex_b * texture_pixel_coords_to_uv,
         tex_c * texture_pixel_coords_to_uv,
-    };*/
-    /*const float verts[] = {
-        -1, 1, 0,
-         0, 1, 0,
-        -1, 0, 0,
-    };
-    const float texcoords[] = {
-        0.0f, 1.0f,
-        1.0f, 1.0f,
-        0.0f, 0.0f,
     };
 
     ARCTIC_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts));
@@ -86,57 +76,11 @@ void DrawTriangle(HwSprite to_sprite, Vec2F a, Vec2F b, Vec2F c, Vec2F tex_a, Ve
 
     GetEngine()->GetGLProgram().CheckActiveUniforms();
 
-    to_sprite.Clear(Rgba(64, 0, 0));
-
     to_sprite.sprite_instance()->framebuffer().Bind();
+    glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height());
+
     texture.sprite_instance()->texture().Bind(0);
     ARCTIC_GL_CALL(glDrawArrays(GL_TRIANGLES, 0, 3));
-
-    GLFramebuffer::BindDefault();*/
-
-    Vec3F base = Vec3F(-1.0f, -1.0f, 0.0f);
-    Vec3F tx = Vec3F(2.0f, 0.0f, 0.0f);
-    Vec3F ty = Vec3F(0.0f, 2.0f, 0.0f);
-    Vec3F n = Vec3F(0.0f, 0.0f, 1.0f);
-
-    const Vec3F verts[] = {
-        base,
-        base + tx,
-        base + ty + tx,
-        base + ty,
-    };
-    const Vec3F normals[] = {
-        n, n, n, n,
-    };
-    const Vec2F texcoords[] = {
-        Vec2F(0.0f, 0.0f),
-        Vec2F(1.0f, 0.0f),
-        Vec2F(1.0f, 1.0f),
-        Vec2F(0.0f, 1.0f),
-    };
-    const Ui32 indices[] = {
-        0, 1, 2,
-        2, 3, 0,
-    };
-
-    ARCTIC_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts));
-    ARCTIC_GL_CALL(glEnableVertexAttribArray(0));
-    ARCTIC_GL_CALL(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, texcoords));
-    ARCTIC_GL_CALL(glEnableVertexAttribArray(1));
-
-    GetEngine()->GetGLProgram().Bind();
-    GetEngine()->GetGLProgram().SetUniform("s_texture", 0);
-
-    GetEngine()->GetGLProgram().CheckActiveUniforms();
-
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //glViewport(0, 0, width_, height_);
-
-    to_sprite.Clear(Rgba(64, 0, 0));
-
-    to_sprite.sprite_instance()->framebuffer().Bind();
-    texture.sprite_instance()->texture().Bind(0);
-    ARCTIC_GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices));
 
     GLFramebuffer::BindDefault();
 }
@@ -390,9 +334,8 @@ void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, flo
     float sin_a = sinf(angle_radians) * zoom;
     float cos_a = cosf(angle_radians) * zoom;
     Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x);
-    Vec2F right = Vec2F(cos_a, sin_a) *
-        static_cast<float>(Width() - 1 - pivot_.x);
-    Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - 1 - pivot_.y);
+    Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(Width() - pivot_.x);
+    Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - pivot_.y);
     Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y);
 
     // d c
@@ -402,14 +345,10 @@ void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, flo
     Vec2F c(pivot + right + up);
     Vec2F d(pivot + left + up);
 
-    Vec2F ta(0.01f,
-        0.01f);
-    Vec2F tb(static_cast<float>(ref_size_.x) - 1.01f,
-        0.01f);
-    Vec2F tc(static_cast<float>(ref_size_.x) - 1.01f,
-        static_cast<float>(ref_size_.y) - 1.01f);
-    Vec2F td(0.01f,
-        static_cast<float>(ref_size_.y) - 1.01f);
+    Vec2F ta(0.0f, 0.0f);
+    Vec2F tb(static_cast<float>(ref_size_.x), 0.0f);
+    Vec2F tc(static_cast<float>(ref_size_.x), static_cast<float>(ref_size_.y));
+    Vec2F td(0.0f, static_cast<float>(ref_size_.y));
 
     switch (filter_mode) {
         case kFilterNearest:

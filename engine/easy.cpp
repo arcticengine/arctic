@@ -909,10 +909,12 @@ void SetInverseY(bool is_inverse) {
 
 void Clear() {
   GetEngine()->GetBackbuffer().Clear();
+  GetEngine()->GetHwBackbuffer().Clear();
 }
 
 void Clear(Rgba color) {
   GetEngine()->GetBackbuffer().Clear(color);
+  GetEngine()->GetHwBackbuffer().Clear(color);
 }
 
 double Time() {
