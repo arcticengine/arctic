@@ -81,7 +81,13 @@ class HwSprite {
   /// @brief Get the coordinates of the pivot point of the sprite
   Vec2Si32 Pivot() const;
 
-  // ********
+  void Draw(const float to_x, const float to_y, float angle_radians, float zoom,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const float to_x, const float to_y, float angle_radians, float zoom, HwSprite to_sprite,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend, DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Get width of the sprite in pixels
   Si32 Width() const;

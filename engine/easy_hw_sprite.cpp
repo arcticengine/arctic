@@ -43,6 +43,106 @@
 
 namespace arctic {
 
+template<DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode>
+void DrawTriangle(HwSprite to_sprite, Vec2F a, Vec2F b, Vec2F c, Vec2F tex_a, Vec2F tex_b, Vec2F tex_c, HwSprite texture, Rgba in_color) {
+    Vec3F target_sprite_coords_to_ndc = Vec3F(
+        2.0f / static_cast<float>(to_sprite.Width()),
+        2.0f / static_cast<float>(to_sprite.Height()),
+        1.0f
+    );
+    Vec2F texture_pixel_coords_to_uv = Vec2F(
+        1.0f / texture.Width(),
+        1.0f / texture.Height()
+    );
+
+    /*const Vec3F verts[] = {
+        Vec3F(a, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
+        Vec3F(b, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
+        Vec3F(c, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
+    };
+    const Vec2F texcoords[] = {
+        tex_a * texture_pixel_coords_to_uv,
+        tex_b * texture_pixel_coords_to_uv,
+        tex_c * texture_pixel_coords_to_uv,
+    };*/
+    /*const float verts[] = {
+        -1, 1, 0,
+         0, 1, 0,
+        -1, 0, 0,
+    };
+    const float texcoords[] = {
+        0.0f, 1.0f,
+        1.0f, 1.0f,
+        0.0f, 0.0f,
+    };
+
+    ARCTIC_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts));
+    ARCTIC_GL_CALL(glEnableVertexAttribArray(0));
+    ARCTIC_GL_CALL(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, texcoords));
+    ARCTIC_GL_CALL(glEnableVertexAttribArray(1));
+
+    GetEngine()->GetGLProgram().Bind();
+    GetEngine()->GetGLProgram().SetUniform("s_texture", 0);
+
+    GetEngine()->GetGLProgram().CheckActiveUniforms();
+
+    to_sprite.Clear(Rgba(64, 0, 0));
+
+    to_sprite.sprite_instance()->framebuffer().Bind();
+    texture.sprite_instance()->texture().Bind(0);
+    ARCTIC_GL_CALL(glDrawArrays(GL_TRIANGLES, 0, 3));
+
+    GLFramebuffer::BindDefault();*/
+
+    Vec3F base = Vec3F(-1.0f, -1.0f, 0.0f);
+    Vec3F tx = Vec3F(2.0f, 0.0f, 0.0f);
+    Vec3F ty = Vec3F(0.0f, 2.0f, 0.0f);
+    Vec3F n = Vec3F(0.0f, 0.0f, 1.0f);
+
+    const Vec3F verts[] = {
+        base,
+        base + tx,
+        base + ty + tx,
+        base + ty,
+    };
+    const Vec3F normals[] = {
+        n, n, n, n,
+    };
+    const Vec2F texcoords[] = {
+        Vec2F(0.0f, 0.0f),
+        Vec2F(1.0f, 0.0f),
+        Vec2F(1.0f, 1.0f),
+        Vec2F(0.0f, 1.0f),
+    };
+    const Ui32 indices[] = {
+        0, 1, 2,
+        2, 3, 0,
+    };
+
+    ARCTIC_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts));
+    ARCTIC_GL_CALL(glEnableVertexAttribArray(0));
+    ARCTIC_GL_CALL(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, texcoords));
+    ARCTIC_GL_CALL(glEnableVertexAttribArray(1));
+
+    GetEngine()->GetGLProgram().Bind();
+    GetEngine()->GetGLProgram().SetUniform("s_texture", 0);
+
+    GetEngine()->GetGLProgram().CheckActiveUniforms();
+
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //glViewport(0, 0, width_, height_);
+
+    to_sprite.Clear(Rgba(64, 0, 0));
+
+    to_sprite.sprite_instance()->framebuffer().Bind();
+    texture.sprite_instance()->texture().Bind(0);
+    ARCTIC_GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, indices));
+
+    GLFramebuffer::BindDefault();
+}
+
+
+
 HwSprite::HwSprite() {
   ref_pos_ = Vec2Si32(0, 0);
   ref_size_ = Vec2Si32(0, 0);
@@ -275,7 +375,102 @@ Vec2Si32 HwSprite::Pivot() const {
   return pivot_;
 }
 
-// *********
+void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetHwBackbuffer(),
+        blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom, HwSprite to_sprite,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    if (!sprite_instance_) {
+        return;
+    }
+    Vec2F pivot = Vec2F(to_x, to_y);
+    float sin_a = sinf(angle_radians) * zoom;
+    float cos_a = cosf(angle_radians) * zoom;
+    Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x);
+    Vec2F right = Vec2F(cos_a, sin_a) *
+        static_cast<float>(Width() - 1 - pivot_.x);
+    Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - 1 - pivot_.y);
+    Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y);
+
+    // d c
+    // a b
+    Vec2F a(pivot + left + down);
+    Vec2F b(pivot + right + down);
+    Vec2F c(pivot + right + up);
+    Vec2F d(pivot + left + up);
+
+    Vec2F ta(0.01f,
+        0.01f);
+    Vec2F tb(static_cast<float>(ref_size_.x) - 1.01f,
+        0.01f);
+    Vec2F tc(static_cast<float>(ref_size_.x) - 1.01f,
+        static_cast<float>(ref_size_.y) - 1.01f);
+    Vec2F td(0.01f,
+        static_cast<float>(ref_size_.y) - 1.01f);
+
+    switch (filter_mode) {
+        case kFilterNearest:
+            switch (blending_mode) {
+                case kDrawBlendingModeCopyRgba:
+                    DrawTriangle<kDrawBlendingModeCopyRgba, kFilterNearest>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeCopyRgba, kFilterNearest>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+                case kDrawBlendingModeAlphaBlend:
+                    DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterNearest>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterNearest>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+                case kDrawBlendingModeColorize:
+                    DrawTriangle<kDrawBlendingModeColorize, kFilterNearest>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeColorize, kFilterNearest>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+                case kDrawBlendingModeAdd:
+                    DrawTriangle<kDrawBlendingModeAdd, kFilterNearest>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeAdd, kFilterNearest>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+            }
+            break;
+        case kFilterBilinear:
+            switch (blending_mode) {
+                case kDrawBlendingModeCopyRgba:
+                    DrawTriangle<kDrawBlendingModeCopyRgba, kFilterBilinear>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeCopyRgba, kFilterBilinear>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+                case kDrawBlendingModeAlphaBlend:
+                    DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterBilinear>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeAlphaBlend, kFilterBilinear>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+                case kDrawBlendingModeColorize:
+                    DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+                case kDrawBlendingModeAdd:
+                    DrawTriangle<kDrawBlendingModeAdd, kFilterBilinear>(to_sprite,
+                        a, b, c, ta, tb, tc, *this, in_color);
+                    DrawTriangle<kDrawBlendingModeAdd, kFilterBilinear>(to_sprite,
+                        d, a, c, td, ta, tc, *this, in_color);
+                    break;
+            }
+
+            break;
+    }
+}
 
 Si32 HwSprite::Width() const {
   return ref_size_.x;

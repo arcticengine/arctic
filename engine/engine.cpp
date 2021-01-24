@@ -217,7 +217,7 @@ void Engine::Draw2d() {
   gl_program_.CheckActiveUniforms();
 
 
-  hw_backbuffer_texture_.Clear(Rgba(127, 127, 255)); // dev-version only
+  //hw_backbuffer_texture_.Clear(Rgba(127, 127, 255)); // dev-version only
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glViewport(0, 0, width_, height_);
@@ -225,9 +225,9 @@ void Engine::Draw2d() {
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
 
-  gl_backbuffer_texture_.Bind(0);
-  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
-      visible_indices_.data());
+  //gl_backbuffer_texture_.Bind(0);
+  //glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
+  //    visible_indices_.data());
 
   Swap();
 }
