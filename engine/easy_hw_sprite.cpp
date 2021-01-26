@@ -45,7 +45,7 @@ namespace arctic {
 
 void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
     const HwSprite &from_sprite, const float from_x, const float from_y, const float from_width, const float from_height,
-    Rgba in_color, DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode, float angle_radians, float zoom) {
+    Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians, float zoom) {
 
     Vec2F pivot = Vec2F(to_x_pivot, to_y_pivot);
     float sin_a = sinf(angle_radians) * zoom;
@@ -109,9 +109,18 @@ void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pi
     GetEngine()->GetGLProgram().CheckActiveUniforms();
 
     to_sprite.sprite_instance()->framebuffer().Bind();
-    glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height());
+    ARCTIC_GL_CALL(glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height()));
 
-    from_sprite.sprite_instance()->texture().Bind(0);
+    GLTexture2D &texture = from_sprite.sprite_instance()->texture();
+    switch (filter_mode) {
+        case kFilterNearest:
+            texture.SetFilterMode(GL_NEAREST, GL_NEAREST);
+            break;
+        case kFilterBilinear:
+            texture.SetFilterMode(GL_LINEAR, GL_LINEAR);
+            break;
+    }
+    texture.Bind(0);
     ARCTIC_GL_CALL(glDrawArrays(GL_TRIANGLES, 0, 6));
 
     GLFramebuffer::BindDefault();

@@ -51,6 +51,7 @@ class GLTexture2D {
   void SetData(const void *data, Si32 w, Si32 h);
   void UpdateData(const void *data);
   void ReadData(void *dst) const;
+  void SetFilterMode(GLint min, GLint mag);
 
   Si32 width() const {
     return width_;

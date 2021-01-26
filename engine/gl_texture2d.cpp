@@ -60,8 +60,7 @@ void GLTexture2D::Create(Si32 w, Si32 h) {
 
     ARCTIC_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     ARCTIC_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    ARCTIC_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-    ARCTIC_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    SetFilterMode(GL_LINEAR, GL_NEAREST);
 
     ARCTIC_GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
         GL_UNSIGNED_BYTE, nullptr));
@@ -88,6 +87,12 @@ void GLTexture2D::UpdateData(const void *data) {
 void GLTexture2D::ReadData(void *dst) const {
     ARCTIC_GL_CALL(glBindTexture(GL_TEXTURE_2D, texture_id_));
     ARCTIC_GL_CALL(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, dst));
+}
+
+void GLTexture2D::SetFilterMode(GLint min, GLint mag) {
+    ARCTIC_GL_CALL(glBindTexture(GL_TEXTURE_2D, texture_id_));
+    ARCTIC_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min));
+    ARCTIC_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag));
 }
 
 
