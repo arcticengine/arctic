@@ -44,7 +44,7 @@ GLFramebuffer::~GLFramebuffer() {
 
 void GLFramebuffer::Create(GLTexture2D &texture) {
     if (framebuffer_id_ != 0) {
-        glDeleteFramebuffers(1, &framebuffer_id_);
+        ARCTIC_GL_CALL(glDeleteFramebuffers(1, &framebuffer_id_));
     }
 
     ARCTIC_GL_CALL(glGenFramebuffers(1, &framebuffer_id_));

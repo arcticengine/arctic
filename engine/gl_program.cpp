@@ -49,17 +49,17 @@ GLuint LoadShader(const char *shaderSrc, GLenum type) {
     ARCTIC_GL_CALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled));
     if (!compiled) {
         GLint infoLen = 0;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
+        ARCTIC_GL_CALL(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen));
         if (infoLen > 1) {
             //char* infoLog = reinterpret_cast<char*>(
             //    malloc(sizeof(char) * static_cast<size_t>(infoLen)));
             std::string infoLog;
             infoLog.resize(infoLen + 1);
-            glGetShaderInfoLog(shader, infoLen, NULL, &infoLog.front());
+            ARCTIC_GL_CALL(glGetShaderInfoLog(shader, infoLen, NULL, &infoLog.front()));
             Fatal("Error compiling shader: ", infoLog.data());
             //free(infoLog);  //-V779
         }
-        glDeleteShader(shader);
+        ARCTIC_GL_CALL(glDeleteShader(shader));
         return 0;
     }
     return shader;
@@ -116,14 +116,15 @@ void GLProgram::Bind() {
 }
 
 void GLProgram::SetUniform(const char *name, int value) {
-    GLint loc = glGetUniformLocation(program_id_, name);
+    GLint loc;
+    ARCTIC_GL_CALL(loc = glGetUniformLocation(program_id_, name));
     Check(loc >= 0, name, " not found");
-    glUniform1i(loc, value);
+    ARCTIC_GL_CALL(glUniform1i(loc, value));
 }
 
 void GLProgram::CheckActiveUniforms() {
     GLint ufs;
-    glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs);
+    ARCTIC_GL_CALL(glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs));
     Check(ufs == 1, "no ufs");
 }
 

@@ -129,8 +129,8 @@ void Engine::Draw2d() {
 
   // render
 
-  glClearColor(0.f, 0.f, 0.f, 0.f);
-  glClear(GL_COLOR_BUFFER_BIT);
+  ARCTIC_GL_CALL(glClearColor(0.f, 0.f, 0.f, 0.f));
+  ARCTIC_GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
   // draw quad
 
   visible_verts_.resize(16 << 20);
@@ -205,10 +205,10 @@ void Engine::Draw2d() {
   index[indices_] = static_cast<Ui32>(idx);
   indices_++;
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, visible_verts_.data());
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data());
-  glEnableVertexAttribArray(1);
+  ARCTIC_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, visible_verts_.data()));
+  ARCTIC_GL_CALL(glEnableVertexAttribArray(0));
+  ARCTIC_GL_CALL(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data()));
+  ARCTIC_GL_CALL(glEnableVertexAttribArray(1));
 
   gl_program_.Bind();
   gl_program_.SetUniform("s_texture", 0);
@@ -216,13 +216,13 @@ void Engine::Draw2d() {
   gl_program_.CheckActiveUniforms();
 
   GLFramebuffer::BindDefault();
-  glViewport(0, 0, width_, height_);
+  ARCTIC_GL_CALL(glViewport(0, 0, width_, height_));
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
-  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
+  ARCTIC_GL_CALL(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
 
   gl_backbuffer_texture_.Bind(0);
-  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data());
+  ARCTIC_GL_CALL(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
 
   Swap();
 }
