@@ -227,6 +227,10 @@ inline Vec2F sqrt(const Vec2F &v) {
   return Vec2F(sqrtf(v.x), sqrtf(v.y));
 }
 
+inline bool IsInRange(const Vec2F &v, const Vec2F &mi, const Vec2F &ma) {
+  return (v.x >= mi.x && v.y >= mi.y && v.x <= ma.x && v.y <= ma.y);
+}
+
 /// @}
 
 }  // namespace arctic
