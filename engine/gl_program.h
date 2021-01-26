@@ -32,7 +32,12 @@ namespace arctic {
 /// @{
 
 class GLProgram {
- private:
+private:
+  GLProgram(GLProgram &other) = delete;
+  GLProgram(GLProgram &&other) = delete;
+  GLProgram &operator=(GLProgram &other) = delete;
+  GLProgram &operator=(GLProgram &&other) = delete;
+
   GLuint program_id_;
 
  public:

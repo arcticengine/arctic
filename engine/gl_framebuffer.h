@@ -33,8 +33,13 @@ namespace arctic {
 /// @{
 
 class GLFramebuffer {
- private:
-  GLuint framebuffer_id_;
+private:
+    GLFramebuffer(GLFramebuffer &other) = delete;
+    GLFramebuffer(GLFramebuffer &&other) = delete;
+    GLFramebuffer &operator=(GLFramebuffer &other) = delete;
+    GLFramebuffer &operator=(GLFramebuffer &&other) = delete;
+
+    GLuint framebuffer_id_;
 
  public:
   GLFramebuffer();
