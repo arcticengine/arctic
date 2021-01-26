@@ -43,7 +43,7 @@
 
 namespace arctic {
 
-void DrawSpriteNew(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
+void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
     const HwSprite &from_sprite, const float from_x, const float from_y, const float from_width, const float from_height,
     Rgba in_color, DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode, float angle_radians, float zoom) {
 
@@ -364,7 +364,7 @@ void HwSprite::Draw(HwSprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_p
     if (!sprite_instance_) {
         return;
     }
-    DrawSpriteNew(to_sprite, static_cast<float>(to_x_pivot), static_cast<float>(to_y_pivot), static_cast<float>(Width()), static_cast<float>(Height()),
+    DrawSprite(to_sprite, static_cast<float>(to_x_pivot), static_cast<float>(to_y_pivot), static_cast<float>(Width()), static_cast<float>(Height()),
         *this, 0, 0, static_cast<float>(Width()), static_cast<float>(Height()), color, blending_mode, filter_mode, 0.0f, 1.0f);
 }
 
@@ -411,7 +411,7 @@ void HwSprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot, const Si32 to_
     if (!sprite_instance_) {
         return;
     }
-    DrawSpriteNew(to_sprite, static_cast<float>(to_x_pivot), static_cast<float>(to_y_pivot), static_cast<float>(to_width), static_cast<float>(to_height), *this,
+    DrawSprite(to_sprite, static_cast<float>(to_x_pivot), static_cast<float>(to_y_pivot), static_cast<float>(to_width), static_cast<float>(to_height), *this,
         static_cast<float>(from_x), static_cast<float>(from_y), static_cast<float>(from_width), static_cast<float>(from_height), in_color, blending_mode, filter_mode, 0.0f, 1.0f);
 }
 
@@ -435,7 +435,7 @@ void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, flo
     if (!sprite_instance_) {
         return;
     }
-    DrawSpriteNew(to_sprite, static_cast<float>(to_x), static_cast<float>(to_y), static_cast<float>(Width()), static_cast<float>(Height()), *this,
+    DrawSprite(to_sprite, static_cast<float>(to_x), static_cast<float>(to_y), static_cast<float>(Width()), static_cast<float>(Height()), *this,
         0, 0, static_cast<float>(Width()), static_cast<float>(Height()), in_color, blending_mode, filter_mode, angle_radians, zoom);
 }
 
