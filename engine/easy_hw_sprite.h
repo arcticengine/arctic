@@ -83,6 +83,59 @@ class HwSprite {
   /// @brief Get the coordinates of the pivot point of the sprite
   Vec2Si32 Pivot() const;
 
+  void Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const Si32 to_x, const Si32 to_y,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const Si32 to_x, const Si32 to_y,
+      const Si32 to_width, const Si32 to_height,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const Si32 to_x, const Si32 to_y,
+      const Si32 to_width, const Si32 to_height,
+      const Si32 from_x, const Si32 from_y,
+      const Si32 from_width, const Si32 from_height,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y,
+      const Si32 to_width, const Si32 to_height,
+      const Si32 from_x, const Si32 from_y,
+      const Si32 from_width, const Si32 from_height,
+      DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color);
+  void Draw(HwSprite to_sprite, const Vec2Si32 to_pos,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(HwSprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size,
+      DrawBlendingMode blending_mode, DrawFilterMode filter_mode,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const Vec2Si32 to_pos,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
+      const Vec2Si32 from_pos, const Vec2Si32 from_size,
+      DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff));
+  void Draw(const Si32 to_x, const Si32 to_y,
+      const Si32 to_width, const Si32 to_height,
+      const Si32 from_x, const Si32 from_y,
+      const Si32 from_width, const Si32 from_height,
+      HwSprite to_sprite, DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      DrawFilterMode filter_mode = kFilterNearest,
+      Rgba in_color = Rgba(0xffffffff)) const;
+
   void Draw(const Vec2F to, float angle_radians,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,

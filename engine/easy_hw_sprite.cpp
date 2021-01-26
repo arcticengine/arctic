@@ -85,6 +85,48 @@ void DrawTriangle(HwSprite to_sprite, Vec2F a, Vec2F b, Vec2F c, Vec2F tex_a, Ve
     GLFramebuffer::BindDefault();
 }
 
+template<DrawBlendingMode kBlendingMode, DrawFilterMode kFilterMode>
+void DrawSprite(HwSprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot, const Si32 to_width, const Si32 to_height,
+    const HwSprite &from_sprite, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height, Rgba in_color) {
+    if (!from_width || !from_height || !to_width || !to_height) {
+        return;
+    }
+
+    const float angle_radians = 0.0f;
+    const float zoom = 1.0f;
+
+    Vec2F pivot = Vec2F(static_cast<float>(to_x_pivot), static_cast<float>(to_y_pivot));
+    float sin_a = sinf(angle_radians) * zoom;
+    float cos_a = cosf(angle_radians) * zoom;
+    Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(from_sprite.Pivot().x);
+    Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(from_sprite.Width() - from_sprite.Pivot().x);
+    Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(from_sprite.Height() - from_sprite.Pivot().y);
+    Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(from_sprite.Pivot().y);
+
+    const float scale_x = static_cast<float>(to_width) / static_cast<float>(from_width);
+    const float scale_y = static_cast<float>(to_height) / static_cast<float>(from_height);
+
+    left *= scale_x;
+    right *= scale_x;
+    up *= scale_y;
+    down *= scale_y;
+
+    // d c
+    // a b
+    Vec2F a(pivot + left + down);
+    Vec2F b(pivot + right + down);
+    Vec2F c(pivot + right + up);
+    Vec2F d(pivot + left + up);
+
+    Vec2F ta(0.0f, 0.0f);
+    Vec2F tb(static_cast<float>(from_sprite.Size().x), 0.0f);
+    Vec2F tc(static_cast<float>(from_sprite.Size().x), static_cast<float>(from_sprite.Size().y));
+    Vec2F td(0.0f, static_cast<float>(from_sprite.Size().y));
+
+    DrawTriangle<kBlendingMode, kFilterMode>(*to_sprite, a, b, c, ta, tb, tc, from_sprite, in_color);
+    DrawTriangle<kBlendingMode, kFilterMode>(*to_sprite, d, a, c, td, ta, tc, from_sprite, in_color);
+}
+
 
 
 HwSprite::HwSprite() {
@@ -326,6 +368,122 @@ void HwSprite::SetPivot(Vec2Si32 pivot) {
 
 Vec2Si32 HwSprite::Pivot() const {
   return pivot_;
+}
+
+void HwSprite::Draw(HwSprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba color) {
+    if (!sprite_instance_) {
+        return;
+    }
+    switch (filter_mode) {
+        case kFilterNearest:
+            switch (blending_mode) {
+                case kDrawBlendingModeAlphaBlend:
+                    DrawSprite<kDrawBlendingModeAlphaBlend, kFilterNearest>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+                case kDrawBlendingModeCopyRgba:
+                    DrawSprite<kDrawBlendingModeCopyRgba, kFilterNearest>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+                case kDrawBlendingModeColorize:
+                    DrawSprite<kDrawBlendingModeColorize, kFilterNearest>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+                case kDrawBlendingModeAdd:
+                    DrawSprite<kDrawBlendingModeAdd, kFilterNearest>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+            }
+            break;
+        case kFilterBilinear:
+            switch (blending_mode) {
+                case kDrawBlendingModeAlphaBlend:
+                    DrawSprite<kDrawBlendingModeAlphaBlend, kFilterBilinear>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+                case kDrawBlendingModeCopyRgba:
+                    DrawSprite<kDrawBlendingModeCopyRgba, kFilterBilinear>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+                case kDrawBlendingModeColorize:
+                    DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+                case kDrawBlendingModeAdd:
+                    DrawSprite<kDrawBlendingModeAdd, kFilterBilinear>(&to_sprite, to_x_pivot, to_y_pivot, Width(), Height(), *this, 0, 0, Width(), Height(), color);
+                    break;
+            }
+            break;
+    }
+}
+
+void HwSprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba color) {
+    Draw(GetEngine()->GetHwBackbuffer(), to_x_pivot, to_y_pivot, blending_mode, filter_mode, color);
+}
+
+void HwSprite::Draw(const Si32 to_x, const Si32 to_y, const Si32 to_width, const Si32 to_height, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_x, to_y, to_width, to_height, 0, 0, ref_size_.x, ref_size_.y, blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const Si32 to_x, const Si32 to_y, const Si32 to_width, const Si32 to_height, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_x, to_y, to_width, to_height, from_x, from_y, from_width, from_height, GetEngine()->GetHwBackbuffer(), blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y, const Si32 to_width, const Si32 to_height, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_x, to_y, to_width, to_height, from_x, from_y, from_width, from_height, to_sprite, blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(HwSprite to_sprite, const Vec2Si32 to_pos, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_sprite, to_pos.x, to_pos.y, blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(HwSprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_sprite, to_pos.x, to_pos.y, to_size.x, to_size.y, 0, 0, ref_size_.x, ref_size_.y, blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const Vec2Si32 to_pos, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_pos.x, to_pos.y, blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_pos.x, to_pos.y, to_size.x, to_size.y, 0, 0, ref_size_.x, ref_size_.y, blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size, const Vec2Si32 from_pos, const Vec2Si32 from_size, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+    Draw(to_pos.x, to_pos.y, to_size.x, to_size.y, from_pos.x, from_pos.y, from_size.x, from_size.y, blending_mode, filter_mode, in_color);
+}
+
+void HwSprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot, const Si32 to_width, const Si32 to_height, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height,
+    HwSprite to_sprite, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) const {
+    if (!sprite_instance_) {
+        return;
+    }
+    switch (filter_mode) {
+        case kFilterNearest:
+            switch (blending_mode) {
+                default:
+                case kDrawBlendingModeCopyRgba:
+                    DrawSprite<kDrawBlendingModeCopyRgba, kFilterNearest>(&to_sprite, to_x_pivot, to_y_pivot, to_width, to_height, *this, from_x, from_y, from_width, from_height, in_color);
+                    break;
+                case kDrawBlendingModeAlphaBlend:
+                    DrawSprite<kDrawBlendingModeAlphaBlend, kFilterNearest>(&to_sprite, to_x_pivot, to_y_pivot, to_width, to_height, *this, from_x, from_y, from_width, from_height, in_color);
+                    break;
+                case kDrawBlendingModeColorize:
+                    DrawSprite<kDrawBlendingModeColorize, kFilterNearest>(&to_sprite, to_x_pivot, to_y_pivot, to_width, to_height, *this, from_x, from_y, from_width, from_height, in_color);
+                    break;
+            }
+            break;
+        case kFilterBilinear:
+            switch (blending_mode) {
+                default:
+                case kDrawBlendingModeCopyRgba:
+                    DrawSprite<kDrawBlendingModeCopyRgba, kFilterBilinear>(&to_sprite, to_x_pivot, to_y_pivot, to_width, to_height, *this, from_x, from_y, from_width, from_height, in_color);
+                    break;
+                case kDrawBlendingModeAlphaBlend:
+                    DrawSprite<kDrawBlendingModeAlphaBlend, kFilterBilinear>(&to_sprite, to_x_pivot, to_y_pivot, to_width, to_height, *this, from_x, from_y, from_width, from_height, in_color);
+                    break;
+                case kDrawBlendingModeColorize:
+                    DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(&to_sprite, to_x_pivot, to_y_pivot, to_width, to_height, *this, from_x, from_y, from_width, from_height, in_color);
+                    break;
+            }
+            break;
+    }
+    return;
 }
 
 void HwSprite::Draw(const Vec2F to, float angle_radians,
