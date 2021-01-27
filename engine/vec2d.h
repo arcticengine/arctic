@@ -228,6 +228,10 @@ inline Vec2D sqrt(const Vec2D &v) {
   return Vec2D(std::sqrt(v.x), std::sqrt(v.y));
 }
 
+inline bool IsInRange(const Vec2D &v, const Vec2D &mi, const Vec2D &ma) {
+  return (v.x >= mi.x && v.y >= mi.y && v.x <= ma.x && v.y <= ma.y);
+}
+
 /// @}
 
 }  // namespace arctic

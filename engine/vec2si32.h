@@ -190,6 +190,10 @@ inline Vec2Si32 Clamp(const Vec2Si32 &v, Si32 mi, Si32 ma) {
   return Vec2Si32((v.x < mi) ? mi : ((v.x > ma) ? ma : v.x),
     (v.y < mi) ? mi : ((v.y > ma) ? ma : v.y));
 }
+
+inline bool IsInRange(const Vec2Si32 &v, const Vec2Si32 &mi, const Vec2Si32 &ma) {
+  return (v.x >= mi.x && v.y >= mi.y && v.x <= ma.x && v.y <= ma.y);
+}
 /// @}
 
 
