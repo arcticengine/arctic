@@ -31,20 +31,20 @@ namespace arctic {
 /// @addtogroup global_advanced
 /// @{
 
-class GLTexture2D {
+class GlTexture2D {
  private:
-  GLTexture2D(GLTexture2D &other) = delete;
-  GLTexture2D(GLTexture2D &&other) = delete;
-  GLTexture2D &operator=(GLTexture2D &other) = delete;
-  GLTexture2D &operator=(GLTexture2D &&other) = delete;
+  GlTexture2D(GlTexture2D &other) = delete;
+  GlTexture2D(GlTexture2D &&other) = delete;
+  GlTexture2D &operator=(GlTexture2D &other) = delete;
+  GlTexture2D &operator=(GlTexture2D &&other) = delete;
 
   Si32 width_;
   Si32 height_;
   GLuint texture_id_;
 
  public:
-  GLTexture2D();
-  ~GLTexture2D();
+  GlTexture2D();
+  ~GlTexture2D();
 
   void Create(Si32 w, Si32 h);
   void Bind(Ui32 slot) const;
