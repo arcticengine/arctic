@@ -106,8 +106,6 @@ void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pi
     GetEngine()->GetGLProgram().Bind();
     GetEngine()->GetGLProgram().SetUniform("s_texture", 0);
 
-    GetEngine()->GetGLProgram().CheckActiveUniforms();
-
     to_sprite.sprite_instance()->framebuffer().Bind();
     ARCTIC_GL_CHECK_ERROR(glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height()));
 
@@ -121,6 +119,40 @@ void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pi
             break;
     }
     texture.Bind(0);
+
+    switch (blending_mode) {
+        case kDrawBlendingModeCopyRgba:
+            ARCTIC_GL_CHECK_ERROR(glDisable(GL_BLEND));
+            GetEngine()->GetGLProgram().SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
+            break;
+        case kDrawBlendingModeAlphaBlend:
+            ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
+            ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+            GetEngine()->GetGLProgram().SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
+            break;
+        case kDrawBlendingModeColorize:
+            ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
+            ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+            GetEngine()->GetGLProgram().SetUniform("in_color", Vec4F(
+                static_cast<float>(in_color.r) / 255.0f,
+                static_cast<float>(in_color.g) / 255.0f,
+                static_cast<float>(in_color.b) / 255.0f,
+                static_cast<float>(in_color.a) / 255.0f
+            ));
+            break;
+        case kDrawBlendingModeAdd:
+            ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
+            ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_ONE, GL_ONE));
+            GetEngine()->GetGLProgram().SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
+            break;
+        default:
+            ARCTIC_GL_CHECK_ERROR(glDisable(GL_BLEND));
+            GetEngine()->GetGLProgram().SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
+            break;
+    }
+
+    GetEngine()->GetGLProgram().CheckActiveUniforms(2);
+
     ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 
     GlFramebuffer::BindDefault();

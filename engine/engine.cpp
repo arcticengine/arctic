@@ -112,12 +112,9 @@ precision mediump float;
 #endif
 varying vec2 v_texCoord;
 uniform sampler2D s_texture;
+uniform vec4 in_color;
 void main() {
-  vec4 texel = texture2D(s_texture, v_texCoord);
-  if (texel.a < 1.0) {
-    discard;
-  }
-  gl_FragColor = texel;
+  gl_FragColor = texture2D(s_texture, v_texCoord)*in_color;
 }
 )SHADER";
 
@@ -212,6 +209,7 @@ void Engine::Draw2d() {
 
   gl_program_.Bind();
   gl_program_.SetUniform("s_texture", 0);
+  gl_program_.SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
 
   gl_program_.CheckActiveUniforms(1);
 
