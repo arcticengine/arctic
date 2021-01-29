@@ -211,7 +211,7 @@ void Engine::Draw2d() {
   gl_program_.SetUniform("s_texture", 0);
   gl_program_.SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
 
-  gl_program_.CheckActiveUniforms(1);
+  gl_program_.CheckActiveUniforms(2);
 
   GlFramebuffer::BindDefault();
   ARCTIC_GL_CHECK_ERROR(glViewport(0, 0, width_, height_));
