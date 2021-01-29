@@ -89,12 +89,14 @@ PFNGLLINKPROGRAMPROC glLinkProgram = nullptr;
 PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
 PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLUNIFORM1IPROC glUniform1i = nullptr;
+PFNGLUNIFORM4FPROC glUniform4f = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
 PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = nullptr;
 PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers = nullptr;
 PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = nullptr;
 PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = nullptr;
 PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = nullptr;
+PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate = nullptr;
 
 namespace arctic {
 
@@ -567,12 +569,14 @@ void LoadGl() {
   LoadGlFunction("glShaderSource", &glShaderSource);
   LoadGlFunction("glUseProgram", &glUseProgram);
   LoadGlFunction("glUniform1i", &glUniform1i);
+  LoadGlFunction("glUniform4f", &glUniform4f);
   LoadGlFunction("glVertexAttribPointer", &glVertexAttribPointer);
   LoadGlFunction("glGenFramebuffers", &glGenFramebuffers);
   LoadGlFunction("glDeleteFramebuffers", &glDeleteFramebuffers);
   LoadGlFunction("glBindFramebuffer", &glBindFramebuffer);
   LoadGlFunction("glFramebufferTexture2D", &glFramebufferTexture2D);
   LoadGlFunction("glCheckFramebufferStatus", &glCheckFramebufferStatus);
+  LoadGlFunction("glBlendFuncSeparate", &glBlendFuncSeparate);
 }
 
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
