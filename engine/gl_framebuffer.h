@@ -32,20 +32,20 @@ namespace arctic {
 /// @addtogroup global_advanced
 /// @{
 
-class GLFramebuffer {
+class GlFramebuffer {
 private:
-    GLFramebuffer(GLFramebuffer &other) = delete;
-    GLFramebuffer(GLFramebuffer &&other) = delete;
-    GLFramebuffer &operator=(GLFramebuffer &other) = delete;
-    GLFramebuffer &operator=(GLFramebuffer &&other) = delete;
+    GlFramebuffer(GlFramebuffer &other) = delete;
+    GlFramebuffer(GlFramebuffer &&other) = delete;
+    GlFramebuffer &operator=(GlFramebuffer &other) = delete;
+    GlFramebuffer &operator=(GlFramebuffer &&other) = delete;
 
     GLuint framebuffer_id_;
 
  public:
-  GLFramebuffer();
-  ~GLFramebuffer();
+  GlFramebuffer();
+  ~GlFramebuffer();
 
-  void Create(GLTexture2D &texture);
+  void Create(GlTexture2D &texture);
   void Bind();
 
   static void BindDefault();
