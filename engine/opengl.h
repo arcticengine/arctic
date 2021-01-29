@@ -37,18 +37,8 @@
 #define ARCTIC_GL_CALL(opengl_call) do { \
     opengl_call; int call_line = __LINE__; \
     GLenum error_code = glGetError(); \
-    const char *error_str = ""; \
-    switch (error_code) { \
-        case GL_INVALID_ENUM:                  error_str = "INVALID_ENUM"; break; \
-        case GL_INVALID_VALUE:                 error_str = "INVALID_VALUE"; break; \
-        case GL_INVALID_OPERATION:             error_str = "INVALID_OPERATION"; break; \
-        case GL_STACK_OVERFLOW:                error_str = "STACK_OVERFLOW"; break; \
-        case GL_STACK_UNDERFLOW:               error_str = "STACK_UNDERFLOW"; break; \
-        case GL_OUT_OF_MEMORY:                 error_str = "OUT_OF_MEMORY"; break; \
-        case GL_INVALID_FRAMEBUFFER_OPERATION: error_str = "INVALID_FRAMEBUFFER_OPERATION"; break; \
-    } \
     if (error_code != GL_NO_ERROR) { \
-        *Log() << "OpenGL Error: " << #opengl_call << " -> " << error_str << " (" << error_code << ")" \
+        *Log() << "OpenGL Error: " << #opengl_call << " -> " << GlErrorToString(error_code) << " (" << error_code << ")" \
                << "\nFile: " << __FILE__ << "\nLine: " << call_line; \
     } \
 } while(false)
@@ -94,5 +84,18 @@ extern PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #endif  // ARCTIC_PLATFORM_PI_ES_EGL
+
+inline const char *GlErrorToString(GLenum error_code) {
+    switch (error_code) {
+        case GL_INVALID_ENUM:                  return "GL_INVALID_ENUM"; break;
+        case GL_INVALID_VALUE:                 return "GL_INVALID_VALUE"; break;
+        case GL_INVALID_OPERATION:             return "GL_INVALID_OPERATION"; break;
+        case GL_STACK_OVERFLOW:                return "GL_STACK_OVERFLOW"; break;
+        case GL_STACK_UNDERFLOW:               return "GL_STACK_UNDERFLOW"; break;
+        case GL_OUT_OF_MEMORY:                 return "GL_OUT_OF_MEMORY"; break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
+        default:                               return "UNKNOWN_ERROR_CODE"; break;
+    }
+}
 
 #endif  // ENGINE_OPENGL_H_
