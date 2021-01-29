@@ -31,18 +31,18 @@ namespace arctic {
 /// @addtogroup global_advanced
 /// @{
 
-class GLProgram {
+class GlProgram {
 private:
-  GLProgram(GLProgram &other) = delete;
-  GLProgram(GLProgram &&other) = delete;
-  GLProgram &operator=(GLProgram &other) = delete;
-  GLProgram &operator=(GLProgram &&other) = delete;
+  GlProgram(GlProgram &other) = delete;
+  GlProgram(GlProgram &&other) = delete;
+  GlProgram &operator=(GlProgram &other) = delete;
+  GlProgram &operator=(GlProgram &&other) = delete;
 
   GLuint program_id_;
 
  public:
-  GLProgram();
-  ~GLProgram();
+  GlProgram();
+  ~GlProgram();
 
   void Create(const char *vs_src, const char *fs_src);
   void Bind();
