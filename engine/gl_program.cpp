@@ -66,6 +66,13 @@ GLuint LoadShader(const char *shaderSrc, GLenum type) {
 }
 
 
+int GlProgram::GetUniformLocation_(const char *name) const {
+    GLint loc;
+    ARCTIC_GL_CHECK_ERROR(loc = glGetUniformLocation(program_id_, name));
+    Check(loc >= 0, name, " not found");
+    return loc;
+}
+
 GlProgram::GlProgram()
     : program_id_(0) {
 }
@@ -116,16 +123,17 @@ void GlProgram::Bind() {
 }
 
 void GlProgram::SetUniform(const char *name, int value) {
-    GLint loc;
-    ARCTIC_GL_CHECK_ERROR(loc = glGetUniformLocation(program_id_, name));
-    Check(loc >= 0, name, " not found");
-    ARCTIC_GL_CHECK_ERROR(glUniform1i(loc, value));
+    ARCTIC_GL_CHECK_ERROR(glUniform1i(GetUniformLocation_(name), value));
 }
 
-void GlProgram::CheckActiveUniforms() {
+void GlProgram::SetUniform(const char *name, const Vec4F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform4f(GetUniformLocation_(name), value.x, value.y, value.z, value.w));
+}
+
+void GlProgram::CheckActiveUniforms(int required_count) {
     GLint ufs;
     ARCTIC_GL_CHECK_ERROR(glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs));
-    Check(ufs == 1, "no ufs");
+    Check(ufs == required_count, "no ufs");
 }
 
 

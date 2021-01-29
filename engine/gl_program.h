@@ -24,6 +24,7 @@
 #define ENGINE_GL_PROGRAM_H_
 
 #include "engine/arctic_types.h"
+#include "engine/arctic_math.h"
 #include "engine/opengl.h"
 
 namespace arctic {
@@ -38,6 +39,8 @@ private:
   GlProgram &operator=(GlProgram &other) = delete;
   GlProgram &operator=(GlProgram &&other) = delete;
 
+  int GetUniformLocation_(const char *name) const;
+
   GLuint program_id_;
 
  public:
@@ -47,7 +50,8 @@ private:
   void Create(const char *vs_src, const char *fs_src);
   void Bind();
   void SetUniform(const char *name, int value);
-  void CheckActiveUniforms();
+  void SetUniform(const char *name, const Vec4F &value);
+  void CheckActiveUniforms(int required_count);
 };
 
 /// @}
