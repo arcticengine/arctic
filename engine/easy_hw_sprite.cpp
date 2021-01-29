@@ -98,10 +98,10 @@ void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pi
         tc * texture_pixel_coords_to_uv,
     };
 
-    ARCTIC_GL_CALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts));
-    ARCTIC_GL_CALL(glEnableVertexAttribArray(0));
-    ARCTIC_GL_CALL(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, texcoords));
-    ARCTIC_GL_CALL(glEnableVertexAttribArray(1));
+    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts));
+    ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
+    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, texcoords));
+    ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
     GetEngine()->GetGLProgram().Bind();
     GetEngine()->GetGLProgram().SetUniform("s_texture", 0);
@@ -109,9 +109,9 @@ void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pi
     GetEngine()->GetGLProgram().CheckActiveUniforms();
 
     to_sprite.sprite_instance()->framebuffer().Bind();
-    ARCTIC_GL_CALL(glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height()));
+    ARCTIC_GL_CHECK_ERROR(glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height()));
 
-    GLTexture2D &texture = from_sprite.sprite_instance()->texture();
+    GlTexture2D &texture = from_sprite.sprite_instance()->texture();
     switch (filter_mode) {
         case kFilterNearest:
             texture.SetFilterMode(GL_NEAREST, GL_NEAREST);
@@ -121,9 +121,9 @@ void DrawSprite(HwSprite &to_sprite, const float to_x_pivot, const float to_y_pi
             break;
     }
     texture.Bind(0);
-    ARCTIC_GL_CALL(glDrawArrays(GL_TRIANGLES, 0, 6));
+    ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 
-    GLFramebuffer::BindDefault();
+    GlFramebuffer::BindDefault();
 }
 
 

@@ -34,7 +34,7 @@
 #include <GL/glu.h>
 #include "engine/glext.h"
 
-#define ARCTIC_GL_CALL(opengl_call) do { \
+#define ARCTIC_GL_CHECK_ERROR(opengl_call) do { \
     opengl_call; int call_line = __LINE__; \
     GLenum error_code = glGetError(); \
     if (error_code != GL_NO_ERROR) { \

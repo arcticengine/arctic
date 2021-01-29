@@ -37,17 +37,17 @@ namespace arctic {
 
 class HwSpriteInstance {
  private:
-  GLTexture2D texture_;
-  GLFramebuffer framebuffer_;
+  GlTexture2D texture_;
+  GlFramebuffer framebuffer_;
 
  public:
   HwSpriteInstance(Si32 width, Si32 height);
 
-  GLTexture2D &texture() {
+  GlTexture2D &texture() {
     return texture_;
   }
 
-  GLFramebuffer &framebuffer() {
+  GlFramebuffer &framebuffer() {
     return framebuffer_;
   }
 

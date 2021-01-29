@@ -35,96 +35,96 @@ namespace arctic {
 GLuint LoadShader(const char *shaderSrc, GLenum type) {
     // Create the shader object
     GLuint shader;
-    ARCTIC_GL_CALL(shader = glCreateShader(type));
+    ARCTIC_GL_CHECK_ERROR(shader = glCreateShader(type));
     if (shader == 0) {
         Fatal("Can't create shader");
         return 0;
     }
     // Load the shader source
-    ARCTIC_GL_CALL(glShaderSource(shader, 1, &shaderSrc, NULL));
+    ARCTIC_GL_CHECK_ERROR(glShaderSource(shader, 1, &shaderSrc, NULL));
     // Compile the shader
-    ARCTIC_GL_CALL(glCompileShader(shader));
+    ARCTIC_GL_CHECK_ERROR(glCompileShader(shader));
     // Check the compile status
     GLint compiled;
-    ARCTIC_GL_CALL(glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled));
+    ARCTIC_GL_CHECK_ERROR(glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled));
     if (!compiled) {
         GLint infoLen = 0;
-        ARCTIC_GL_CALL(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen));
+        ARCTIC_GL_CHECK_ERROR(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen));
         if (infoLen > 1) {
             //char* infoLog = reinterpret_cast<char*>(
             //    malloc(sizeof(char) * static_cast<size_t>(infoLen)));
             std::string infoLog;
             infoLog.resize(infoLen + 1);
-            ARCTIC_GL_CALL(glGetShaderInfoLog(shader, infoLen, NULL, &infoLog.front()));
+            ARCTIC_GL_CHECK_ERROR(glGetShaderInfoLog(shader, infoLen, NULL, &infoLog.front()));
             Fatal("Error compiling shader: ", infoLog.data());
             //free(infoLog);  //-V779
         }
-        ARCTIC_GL_CALL(glDeleteShader(shader));
+        ARCTIC_GL_CHECK_ERROR(glDeleteShader(shader));
         return 0;
     }
     return shader;
 }
 
 
-GLProgram::GLProgram()
+GlProgram::GlProgram()
     : program_id_(0) {
 }
 
-GLProgram::~GLProgram() {
-    ARCTIC_GL_CALL(glDeleteProgram(program_id_));
+GlProgram::~GlProgram() {
+    ARCTIC_GL_CHECK_ERROR(glDeleteProgram(program_id_));
 }
 
-void GLProgram::Create(const char *vs_src, const char *fs_src) {
+void GlProgram::Create(const char *vs_src, const char *fs_src) {
     if (program_id_ != 0) {
-        ARCTIC_GL_CALL(glDeleteProgram(program_id_));
+        ARCTIC_GL_CHECK_ERROR(glDeleteProgram(program_id_));
     }
 
     // Load the vertex/fragment shaders
     GLuint vertexShader = LoadShader(vs_src, GL_VERTEX_SHADER);
     GLuint fragmentShader = LoadShader(fs_src, GL_FRAGMENT_SHADER);
     // Create the program object
-    ARCTIC_GL_CALL(program_id_ = glCreateProgram());
+    ARCTIC_GL_CHECK_ERROR(program_id_ = glCreateProgram());
     if (program_id_ == 0) {
         Fatal("Unknown error creating program");
     }
-    ARCTIC_GL_CALL(glAttachShader(program_id_, vertexShader));
-    ARCTIC_GL_CALL(glAttachShader(program_id_, fragmentShader));
+    ARCTIC_GL_CHECK_ERROR(glAttachShader(program_id_, vertexShader));
+    ARCTIC_GL_CHECK_ERROR(glAttachShader(program_id_, fragmentShader));
     // Bind vPosition to attribute 0
-    ARCTIC_GL_CALL(glBindAttribLocation(program_id_, 0, "vPosition"));
-    ARCTIC_GL_CALL(glBindAttribLocation(program_id_, 1, "vTex"));
+    ARCTIC_GL_CHECK_ERROR(glBindAttribLocation(program_id_, 0, "vPosition"));
+    ARCTIC_GL_CHECK_ERROR(glBindAttribLocation(program_id_, 1, "vTex"));
     // Link the program
-    ARCTIC_GL_CALL(glLinkProgram(program_id_));
+    ARCTIC_GL_CHECK_ERROR(glLinkProgram(program_id_));
     // Check the link status
     GLint linked;
-    ARCTIC_GL_CALL(glGetProgramiv(program_id_, GL_LINK_STATUS, &linked));
+    ARCTIC_GL_CHECK_ERROR(glGetProgramiv(program_id_, GL_LINK_STATUS, &linked));
     if (!linked) {
         GLint infoLen = 0;
-        ARCTIC_GL_CALL(glGetProgramiv(program_id_, GL_INFO_LOG_LENGTH, &infoLen));
+        ARCTIC_GL_CHECK_ERROR(glGetProgramiv(program_id_, GL_INFO_LOG_LENGTH, &infoLen));
         if (infoLen > 1) {
             std::string infoLog;
             infoLog.resize(infoLen + 1);
-            ARCTIC_GL_CALL(glGetProgramInfoLog(program_id_, infoLen, NULL, &infoLog.front()));
+            ARCTIC_GL_CHECK_ERROR(glGetProgramInfoLog(program_id_, infoLen, NULL, &infoLog.front()));
             Fatal("Error linking program: ", infoLog.data());
         }
-        ARCTIC_GL_CALL(glDeleteProgram(program_id_));
+        ARCTIC_GL_CHECK_ERROR(glDeleteProgram(program_id_));
         Fatal("Unknown error linking program");
     }
 }
 
-void GLProgram::Bind() {
-    ARCTIC_GL_CALL(glUseProgram(program_id_));
+void GlProgram::Bind() {
+    ARCTIC_GL_CHECK_ERROR(glUseProgram(program_id_));
 }
 
-void GLProgram::SetUniform(const char *name, int value) {
+void GlProgram::SetUniform(const char *name, int value) {
     GLint loc;
-    ARCTIC_GL_CALL(loc = glGetUniformLocation(program_id_, name));
+    ARCTIC_GL_CHECK_ERROR(loc = glGetUniformLocation(program_id_, name));
     Check(loc >= 0, name, " not found");
-    ARCTIC_GL_CALL(glUniform1i(loc, value));
+    ARCTIC_GL_CHECK_ERROR(glUniform1i(loc, value));
 }
 
-void GLProgram::CheckActiveUniforms() {
+void GlProgram::CheckActiveUniforms() {
     GLint ufs;
-    ARCTIC_GL_CALL(glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs));
+    ARCTIC_GL_CHECK_ERROR(glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs));
     Check(ufs == 1, "no ufs");
 }
 

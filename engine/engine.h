@@ -55,7 +55,7 @@ class Engine {
  private:
   Si32 width_ = 0;
   Si32 height_ = 0;
-  GLTexture2D gl_backbuffer_texture_;
+  GlTexture2D gl_backbuffer_texture_;
   Sprite backbuffer_texture_;
   HwSprite hw_backbuffer_texture_;
 
@@ -83,7 +83,7 @@ class Engine {
 
   MathTables math_tables_;
 
-  GLProgram gl_program_;
+  GlProgram gl_program_;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
@@ -120,7 +120,7 @@ class Engine {
   MathTables &GetMathTables() {
     return math_tables_;
   }
-  GLProgram &GetGLProgram() {
+  GlProgram &GetGLProgram() {
     return gl_program_;
   }
 };

@@ -34,32 +34,32 @@
 namespace arctic {
 
 
-GLFramebuffer::GLFramebuffer()
+GlFramebuffer::GlFramebuffer()
     : framebuffer_id_(0) {
 }
 
-GLFramebuffer::~GLFramebuffer() {
-    ARCTIC_GL_CALL(glDeleteFramebuffers(1, &framebuffer_id_));
+GlFramebuffer::~GlFramebuffer() {
+    ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
 }
 
-void GLFramebuffer::Create(GLTexture2D &texture) {
+void GlFramebuffer::Create(GlTexture2D &texture) {
     if (framebuffer_id_ != 0) {
-        ARCTIC_GL_CALL(glDeleteFramebuffers(1, &framebuffer_id_));
+        ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
     }
 
-    ARCTIC_GL_CALL(glGenFramebuffers(1, &framebuffer_id_));
-    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
-    ARCTIC_GL_CALL(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture_id(), 0));
-    ARCTIC_GL_CALL(glCheckFramebufferStatus(GL_FRAMEBUFFER));
-    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+    ARCTIC_GL_CHECK_ERROR(glGenFramebuffers(1, &framebuffer_id_));
+    ARCTIC_GL_CHECK_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
+    ARCTIC_GL_CHECK_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture_id(), 0));
+    ARCTIC_GL_CHECK_ERROR(glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    ARCTIC_GL_CHECK_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 }
 
-void GLFramebuffer::Bind() {
-    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
+void GlFramebuffer::Bind() {
+    ARCTIC_GL_CHECK_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
 }
 
-void GLFramebuffer::BindDefault() {
-    ARCTIC_GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+void GlFramebuffer::BindDefault() {
+    ARCTIC_GL_CHECK_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 }
 
 
