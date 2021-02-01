@@ -330,7 +330,7 @@ void HwSprite::Clear(Rgba color) {
   sprite_instance_->texture().UpdateData(data.data());
 }
 
-/*void HwSprite::Clone(HwSprite from, CloneTransform transform) {
+void HwSprite::Clone(HwSprite from, CloneTransform transform) {
   if (!from.sprite_instance_) {
     sprite_instance_ = nullptr;
     ref_pos_ = Vec2Si32(0, 0);
@@ -345,53 +345,52 @@ void HwSprite::Clear(Rgba color) {
     SetPivot(from.Pivot());
     return;
   }
+
   Vec2Si32 dst_base;
   Vec2Si32 dst_dir_x;
   Vec2Si32 dst_dir_y;
-  if (transform == kCloneRotateCw90 || transform == kCloneRotateCcw90) {
-    Create(from.Height(), from.Width());
-    if (transform == kCloneRotateCw90) {
-      dst_base = Vec2Si32(0, Height() - 1);
-      dst_dir_x = Vec2Si32(0, -1);
-      dst_dir_y = Vec2Si32(1, 0);
-    } else {
-      dst_base = Vec2Si32(Width() - 1, 0);
-      dst_dir_x = Vec2Si32(0, 1);
-      dst_dir_y = Vec2Si32(-1, 0);
-    }
+  if (transform == kCloneRotateCw90 || transform == kCloneRotateCcw90 || transform == kCloneRotate180) {
+      float angle = 0.0;
+      if (transform == kCloneRotateCw90) {
+          Create(from.Height(), from.Width());
+          dst_base = Vec2Si32(0, Height() - 1);
+          dst_dir_x = Vec2Si32(0, -1);
+          dst_dir_y = Vec2Si32(1, 0);
+          angle = -3.14f / 2.0f;
+      } else if (transform == kCloneRotateCcw90) {
+          Create(from.Height(), from.Width());
+          dst_base = Vec2Si32(Width() - 1, 0);
+          dst_dir_x = Vec2Si32(0, 1);
+          dst_dir_y = Vec2Si32(-1, 0);
+          angle = 3.14f / 2.0f;
+      } else if (transform == kCloneRotate180) {
+          dst_base = Vec2Si32(Width() - 1, Height() - 1);
+          dst_dir_x = Vec2Si32(-1, 0);
+          dst_dir_y = Vec2Si32(0, -1);
+          angle = 3.14f;
+      }
+      from.Draw(static_cast<float>(dst_base.x), static_cast<float>(dst_base.y), angle, 1.0f, *this, kDrawBlendingModeCopyRgba);
   } else {
-    Create(from.Width(), from.Height());
-    if (transform == kCloneMirrorLr) {
-      dst_base = Vec2Si32(Width() - 1, 0);
-      dst_dir_x = Vec2Si32(-1, 0);
-      dst_dir_y = Vec2Si32(0, 1);
-    } else if (transform == kCloneMirrorUd) {
-      dst_base = Vec2Si32(0, Height() - 1);
-      dst_dir_x = Vec2Si32(1, 0);
-      dst_dir_y = Vec2Si32(0, -1);
-    } else {  // kCloneRotate180
-      dst_base = Vec2Si32(Width() - 1, Height() - 1);
-      dst_dir_x = Vec2Si32(-1, 0);
-      dst_dir_y = Vec2Si32(0, -1);
-    }
+      Create(from.Width(), from.Height());
+      int x_factor = 1;
+      int y_factor = 1;
+      if (transform == kCloneMirrorLr) {
+          dst_base = Vec2Si32(Width() - 1, 0);
+          dst_dir_x = Vec2Si32(-1, 0);
+          dst_dir_y = Vec2Si32(0, 1);
+          x_factor = -1;
+      } else if (transform == kCloneMirrorUd) {
+          dst_base = Vec2Si32(0, Height() - 1);
+          dst_dir_x = Vec2Si32(1, 0);
+          dst_dir_y = Vec2Si32(0, -1);
+          y_factor = -1;
+      }
+      DrawSprite(*this, static_cast<float>(dst_base.x), static_cast<float>(dst_base.y), static_cast<float>(from.Width()), static_cast<float>(from.Height()),
+          from, 0, 0, static_cast<float>(from.Width()*x_factor), static_cast<float>(from.Height()*y_factor), Rgba(255, 255, 255, 255),
+          kDrawBlendingModeCopyRgba, kFilterNearest, 0.0f, 1.0f);
   }
-
-  Si32 wid = from.Width();
-  Si32 hei = from.Height();
-  Si32 src_stride = from.StridePixels();
-  Si32 dst_stride = StridePixels();
-  Rgba *src_data = from.RgbaData();
-  Rgba *dst_data = RgbaData();
-  for (Si32 y = 0; y < hei; ++y) {
-    for (Si32 x = 0; x < wid; ++x) {
-      Vec2Si32 dst_pos = dst_base + dst_dir_y * y + dst_dir_x * x;
-      dst_data[dst_pos.y * dst_stride + dst_pos.x] =
-        src_data[y * src_stride + x];
-    }
-  }
-
   SetPivot(dst_base + from.Pivot().x * dst_dir_x + from.Pivot().y * dst_dir_y);
-}*/
+}
 
 void HwSprite::SetPivot(Vec2Si32 pivot) {
   pivot_ = pivot;

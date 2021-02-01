@@ -77,7 +77,7 @@ class HwSprite {
   /// @brief Make current sprite a (tansformed) copy of another sprite
   /// @param from Souce sprite to clone from
   /// @param transform A transformation to perform while copying (kCloneUntransformed by default)
-  // ******** void Clone(HwSprite from, CloneTransform transform = kCloneUntransformed);
+  void Clone(HwSprite from, CloneTransform transform = kCloneUntransformed);
   /// @brief Set the coordinates of the pivot point of the sprite
   void SetPivot(Vec2Si32 pivot);
   /// @brief Get the coordinates of the pivot point of the sprite
