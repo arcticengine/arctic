@@ -468,6 +468,10 @@ void HwSprite::Draw(const Vec2F to, float angle_radians, float zoom, DrawBlendin
     Draw(to.x, to.y, angle_radians, zoom, GetEngine()->GetHwBackbuffer(), blending_mode, filter_mode, in_color);
 }
 
+void HwSprite::Draw(Rgba in_color, const float to_x, const float to_y, float angle_radians, float zoom, DrawBlendingMode blending_mode, DrawFilterMode filter_mode) {
+    Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetHwBackbuffer(), blending_mode, filter_mode, in_color);
+}
+
 void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
     Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetHwBackbuffer(), blending_mode, filter_mode, in_color);
 }
