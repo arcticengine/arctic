@@ -83,7 +83,7 @@ class Engine {
 
   MathTables math_tables_;
 
-  GlProgram gl_program_;
+  std::shared_ptr<GlProgram> gl_program_;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
@@ -120,7 +120,7 @@ class Engine {
   MathTables &GetMathTables() {
     return math_tables_;
   }
-  GlProgram &GetGLProgram() {
+  const std::shared_ptr<GlProgram> &GetGLProgram() {
     return gl_program_;
   }
 };

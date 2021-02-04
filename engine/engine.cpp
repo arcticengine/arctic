@@ -118,7 +118,8 @@ void main() {
 }
 )SHADER";
 
-  gl_program_.Create(vShaderStr, fShaderStr);
+  gl_program_ = std::make_shared<GlProgram>();
+  gl_program_->Create(vShaderStr, fShaderStr);
 }
 
 void Engine::Draw2d() {
@@ -207,11 +208,11 @@ void Engine::Draw2d() {
   ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data()));
   ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
-  gl_program_.Bind();
-  gl_program_.SetUniform("s_texture", 0);
-  gl_program_.SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
+  gl_program_->Bind();
+  gl_program_->SetUniform("s_texture", 0);
+  gl_program_->SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
 
-  gl_program_.CheckActiveUniforms(2);
+  gl_program_->CheckActiveUniforms(2);
 
   GlFramebuffer::BindDefault();
   ARCTIC_GL_CHECK_ERROR(glViewport(0, 0, width_, height_));

@@ -23,6 +23,8 @@
 #ifndef ENGINE_GL_PROGRAM_H_
 #define ENGINE_GL_PROGRAM_H_
 
+#include <unordered_map>
+
 #include "engine/arctic_types.h"
 #include "engine/arctic_math.h"
 #include "engine/opengl.h"
@@ -50,8 +52,59 @@ private:
   void Create(const char *vs_src, const char *fs_src);
   void Bind();
   void SetUniform(const char *name, int value);
+  void SetUniform(const char *name, const Vec2Si32 &value);
+  void SetUniform(const char *name, const Vec3Si32 &value);
+  void SetUniform(const char *name, const Vec4Si32 &value);
+  void SetUniform(const char *name, float value);
+  void SetUniform(const char *name, const Vec2F &value);
+  void SetUniform(const char *name, const Vec3F &value);
   void SetUniform(const char *name, const Vec4F &value);
   void CheckActiveUniforms(int required_count);
+};
+
+class UniformsTable {
+    enum class UniformDataType {
+        Int,
+        Int2,
+        Int3,
+        Int4,
+        Float,
+        Float2,
+        Float3,
+        Float4,
+    };
+
+    struct UniformData {
+        UniformData();
+
+        UniformData &operator=(const UniformData &other);
+
+        UniformDataType type;
+        union {
+            int i;
+            Vec2Si32 i2;
+            Vec3Si32 i3;
+            Vec4Si32 i4;
+            float f;
+            Vec2F f2;
+            Vec3F f3;
+            Vec4F f4;
+        } value;
+    };
+
+    std::unordered_map<std::string, UniformData> table_;
+
+public:
+    void Apply(GlProgram &program) const;
+    void Clear();
+    void SetUniform(const std::string &name, int value);
+    void SetUniform(const std::string &name, const Vec2Si32 &value);
+    void SetUniform(const std::string &name, const Vec3Si32 &value);
+    void SetUniform(const std::string &name, const Vec4Si32 &value);
+    void SetUniform(const std::string &name, float value);
+    void SetUniform(const std::string &name, const Vec2F &value);
+    void SetUniform(const std::string &name, const Vec3F &value);
+    void SetUniform(const std::string &name, const Vec4F &value);
 };
 
 /// @}

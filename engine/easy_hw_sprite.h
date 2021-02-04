@@ -33,6 +33,7 @@
 #include "engine/arctic_types.h"
 #include "engine/vec2si32.h"
 #include "engine/rgba.h"
+#include "engine/gl_program.h"
 
 namespace arctic {
 
@@ -45,6 +46,8 @@ class HwSprite {
   Vec2Si32 ref_pos_;
   Vec2Si32 ref_size_;
   Vec2Si32 pivot_;
+  std::shared_ptr<GlProgram> gl_program_;
+  UniformsTable gl_program_uniforms_;
 
  public:
   HwSprite();
@@ -82,6 +85,13 @@ class HwSprite {
   void SetPivot(Vec2Si32 pivot);
   /// @brief Get the coordinates of the pivot point of the sprite
   Vec2Si32 Pivot() const;
+
+  void SetProgram(const std::shared_ptr<GlProgram> &program);
+  const std::shared_ptr<GlProgram> &Program() const;
+
+  void SetUniforms(const UniformsTable &uniforms_table);
+  const UniformsTable &Uniforms() const;
+  UniformsTable &Uniforms();
 
   void Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,

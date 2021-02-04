@@ -126,6 +126,30 @@ void GlProgram::SetUniform(const char *name, int value) {
     ARCTIC_GL_CHECK_ERROR(glUniform1i(GetUniformLocation_(name), value));
 }
 
+void GlProgram::SetUniform(const char *name, const Vec2Si32 &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform2i(GetUniformLocation_(name), value.x, value.y));
+}
+
+void GlProgram::SetUniform(const char *name, const Vec3Si32 &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform3i(GetUniformLocation_(name), value.x, value.y, value.z));
+}
+
+void GlProgram::SetUniform(const char *name, const Vec4Si32 &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform4i(GetUniformLocation_(name), value.x, value.y, value.z, value.w));
+}
+
+void GlProgram::SetUniform(const char *name, float value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform1f(GetUniformLocation_(name), value));
+}
+
+void GlProgram::SetUniform(const char *name, const Vec2F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform2f(GetUniformLocation_(name), value.x, value.y));
+}
+
+void GlProgram::SetUniform(const char *name, const Vec3F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform3f(GetUniformLocation_(name), value.x, value.y, value.z));
+}
+
 void GlProgram::SetUniform(const char *name, const Vec4F &value) {
     ARCTIC_GL_CHECK_ERROR(glUniform4f(GetUniformLocation_(name), value.x, value.y, value.z, value.w));
 }
@@ -136,5 +160,109 @@ void GlProgram::CheckActiveUniforms(int required_count) {
     Check(ufs == required_count, "no ufs");
 }
 
+
+
+UniformsTable::UniformData::UniformData() : type(UniformDataType::Int), value({ 0 }) {
+}
+
+UniformsTable::UniformData &UniformsTable::UniformData::operator=(const UniformData &other) {
+    type = other.type;
+    memcpy(&value, &other.value, sizeof(value));
+    return *this;
+}
+
+void UniformsTable::Apply(GlProgram &program) const {
+    for (auto &uniform : table_) {
+        auto &name = uniform.first;
+        auto &data = uniform.second;
+
+        switch (data.type) {
+            case UniformDataType::Int:
+                program.SetUniform(name.data(), data.value.i);
+                break;
+            case UniformDataType::Int2:
+                program.SetUniform(name.data(), data.value.i2);
+                break;
+            case UniformDataType::Int3:
+                program.SetUniform(name.data(), data.value.i3);
+                break;
+            case UniformDataType::Int4:
+                program.SetUniform(name.data(), data.value.i4);
+                break;
+            case UniformDataType::Float:
+                program.SetUniform(name.data(), data.value.f);
+                break;
+            case UniformDataType::Float2:
+                program.SetUniform(name.data(), data.value.f2);
+                break;
+            case UniformDataType::Float3:
+                program.SetUniform(name.data(), data.value.f3);
+                break;
+            case UniformDataType::Float4:
+                program.SetUniform(name.data(), data.value.f4);
+                break;
+        }
+    }
+}
+
+void UniformsTable::Clear() {
+    table_.clear();
+}
+
+void UniformsTable::SetUniform(const std::string &name, int value) {
+    UniformData data;
+    data.type = UniformDataType::Int;
+    data.value.i = value;
+    table_.insert(std::make_pair(name, data));
+}
+
+void UniformsTable::SetUniform(const std::string &name, const Vec2Si32 &value) {
+    UniformData data;
+    data.type = UniformDataType::Int2;
+    data.value.i2 = value;
+    table_.insert(std::make_pair(name, data));
+}
+
+void UniformsTable::SetUniform(const std::string &name, const Vec3Si32 &value) {
+    UniformData data;
+    data.type = UniformDataType::Int3;
+    data.value.i3 = value;
+    table_.insert(std::make_pair(name, data));
+}
+
+void UniformsTable::SetUniform(const std::string &name, const Vec4Si32 &value) {
+    UniformData data;
+    data.type = UniformDataType::Int4;
+    data.value.i4 = value;
+    table_.insert(std::make_pair(name, data));
+}
+
+void UniformsTable::SetUniform(const std::string &name, float value) {
+    UniformData data;
+    data.type = UniformDataType::Float;
+    data.value.f = value;
+    table_.insert(std::make_pair(name, data));
+}
+
+void UniformsTable::SetUniform(const std::string &name, const Vec2F &value) {
+    UniformData data;
+    data.type = UniformDataType::Float2;
+    data.value.f2 = value;
+    table_.insert(std::make_pair(name, data));
+}
+
+void UniformsTable::SetUniform(const std::string &name, const Vec3F &value) {
+    UniformData data;
+    data.type = UniformDataType::Float3;
+    data.value.f3 = value;
+    table_.insert(std::make_pair(name, data));
+}
+
+void UniformsTable::SetUniform(const std::string &name, const Vec4F &value) {
+    UniformData data;
+    data.type = UniformDataType::Float4;
+    data.value.f4 = value;
+    table_.insert(std::make_pair(name, data));
+}
 
 }  // namespace arctic
