@@ -265,4 +265,8 @@ void UniformsTable::SetUniform(const std::string &name, const Vec4F &value) {
     table_.insert(std::make_pair(name, data));
 }
 
+size_t UniformsTable::Size() const {
+    return table_.size();
+}
+
 }  // namespace arctic

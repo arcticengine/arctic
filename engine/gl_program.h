@@ -105,6 +105,7 @@ public:
     void SetUniform(const std::string &name, const Vec2F &value);
     void SetUniform(const std::string &name, const Vec3F &value);
     void SetUniform(const std::string &name, const Vec4F &value);
+    size_t Size() const;
 };
 
 /// @}

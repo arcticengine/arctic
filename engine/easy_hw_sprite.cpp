@@ -153,7 +153,7 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
             break;
     }
 
-    gl_program->CheckActiveUniforms(2);
+    gl_program->CheckActiveUniforms(2 + static_cast<int>(gl_program_uniforms.Size()));
 
     ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 
