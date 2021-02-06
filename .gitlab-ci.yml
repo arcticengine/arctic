@@ -92,18 +92,19 @@ create_project:
 include:
   - template: Coverage-Fuzzing.gitlab-ci.yml
 
-fuzz_target:
+fuzz_wav:
     extends: .fuzz_base
     image: ubuntu:18.04
     variables:
-        CI_SEED_CORPUS: './fuzz_tests/corpus'
+        COVFUZZ_SEED_CORPUS: './fuzz_tests/wav_corpus'
     script:
+      - pwd
       - apt-get update -qq && apt-get install -y -qq git make clang cmake
       - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
       - export CC=`which clang`
       - export CXX=`which clang++`
       - export VERBOSE=1
-      - mkdir fuzz_tests/corpus && cp wizard/data/*.wav fuzz_tests/corpus
+      - mkdir fuzz_tests/wav_corpus && cp wizard/data/*.wav fuzz_tests/wav_corpus
       - mkdir -p build && cd build
       - cmake ../fuzz_tests -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0' -DCMAKE_BUILD_TYPE=AddressSanitizer && make all && cd ..
       - ./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_harness
@@ -112,7 +113,7 @@ fuzz_csv:
     extends: .fuzz_base
     image: ubuntu:18.04
     variables:
-        CI_SEED_CORPUS: './fuzz_tests/csv_corpus'
+        COVFUZZ_SEED_CORPUS: './fuzz_tests/csv_corpus'
     script:
       - apt-get update -qq && apt-get install -y -qq git make clang cmake
       - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
@@ -128,7 +129,7 @@ fuzz_tga:
     extends: .fuzz_base
     image: ubuntu:18.04
     variables:
-        CI_SEED_CORPUS: './fuzz_tests/tga_corpus'
+        COVFUZZ_SEED_CORPUS: './fuzz_tests/tga_corpus'
     script:
       - apt-get update -qq && apt-get install -y -qq git make clang cmake
       - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
