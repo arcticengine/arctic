@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 Huldra
+// Copyright (c) 2016 - 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,10 @@ inline Si32 Clamp(const Si32 v, const Si32 mi, const Si32 ma) {
 }
 
 inline float Clamp(const float v, const float mi, const float ma) {
+    return (v < mi) ? mi : ((v > ma) ? ma : v);
+}
+
+inline float Clamp(const double v, const double mi, const double ma) {
     return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
