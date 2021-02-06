@@ -40,7 +40,7 @@ inline float Clamp(const float v, const float mi, const float ma) {
     return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
-inline float Clamp(const double v, const double mi, const double ma) {
+inline double Clamp(const double v, const double mi, const double ma) {
     return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
