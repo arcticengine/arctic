@@ -6,12 +6,11 @@ include:
   - template: Security/License-Scanning.gitlab-ci.yml
 image: gcc
 stages:
-- build
 - test
 - deploy
 - fuzz
 build_wizard:
-  stage: build
+  stage: test
   before_script:
   - apt-get update --yes
   - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
@@ -24,7 +23,7 @@ build_wizard:
   - make all
   - cd ..
 build_ap:
-  stage: build
+  stage: test
   before_script:
   - apt-get update --yes
   - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
@@ -37,7 +36,7 @@ build_ap:
   - make all
   - cd ..
 build_filetest:
-  stage: build
+  stage: test
   before_script:
   - apt-get update --yes
   - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
@@ -50,7 +49,7 @@ build_filetest:
   - make all
   - cd ..
 build_tests:
-  stage: build
+  stage: test
   before_script:
   - apt-get update --yes
   - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
