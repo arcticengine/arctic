@@ -10,10 +10,8 @@
 #define NTAB 32
 #define NDIV (1+IMM1/NTAB)
 
-//=========================================================================
-
 /*
-Long period (> 2 × 1018) random number generator of L’Ecuyer with Bays-Durham shuffle
+Long period (>2^1018) random number generator of LEcuyer with Bays-Durham shuffle
 and added safeguards. Returns a uniform random deviate between 0.0 and 1.0 (exclusive of
 the endpoint values). Call with idum a negative integer to initialize; thereafter, do not alter
 idum between successive deviates in a sequence. RNMX should approximate the largest floating
@@ -52,7 +50,7 @@ long nrcp_rand2_int31( long *idum )
 
     k=(*idum)/IQ1;                   // Start here when not initializing.
     *idum=IA1*(*idum-k*IQ1)-k*IR1;   // Compute idum=(IA1*idum) % IM1 without
-                                    // overflows by Schrage’s method. if (*idum < 0) *idum += IM1;
+                                    // overflows by Schrages method. if (*idum < 0) *idum += IM1;
     k=idum2/IQ2;
     idum2=IA2*(idum2-k*IQ2)-k*IR2;    //     Compute idum2=(IA2*idum) % IM2 likewise.
     if (idum2 < 0) 
