@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2017 - 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -871,6 +871,10 @@ std::string RelativePathFromTo(const char *from, const char *to) {
 }  // namespace arctic
 
 #ifndef ARCTIC_NO_MAIN
+namespace arctic {
+  void PrepareForTheEasyMainCall();
+}
+
 int main(int argc, char **argv) {
   [[NSFileManager defaultManager] changeCurrentDirectoryPath:
     [NSString stringWithFormat:@"%@/Contents/Resources",
@@ -889,6 +893,7 @@ int main(int argc, char **argv) {
   g_mixer = new arctic::SoundPlayer;
   g_mixer->Initialize();
 
+  arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
   [g_app terminate: nil];  // It will stop the logger

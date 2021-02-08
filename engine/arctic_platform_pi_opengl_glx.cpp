@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2019 Huldra
+// Copyright (c) 2017 - 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -242,6 +242,10 @@ void SetCursorVisible(bool/* is_enable*/) {
 }  // namespace arctic
 
 #ifndef ARCTIC_NO_MAIN
+namespace arctic {
+  void PrepareForTheEasyMainCall();
+}
+
 int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
@@ -254,6 +258,7 @@ int main(int argc, char **argv) {
   arctic::GetEngine()->Init(system_info.screen_width,
       system_info.screen_height);
 
+  arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
   XCloseDisplay(arctic::g_x_display);
