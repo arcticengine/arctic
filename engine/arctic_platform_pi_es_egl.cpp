@@ -219,7 +219,7 @@ void SetCursorVisible(bool/* is_enable*/) {
 
 #ifndef ARCTIC_NO_MAIN
 namespace arctic {
-  void arctic::PrepareForTheEasyMainCall();
+  void PrepareForTheEasyMainCall();
 }
 
 int main(int argc, char **argv) {

@@ -664,7 +664,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
 }
 
 namespace arctic {
-  void arctic::PrepareForTheEasyMainCall();
+  void PrepareForTheEasyMainCall();
 }
 
 void EngineThreadFunction(SystemInfo system_info) {
