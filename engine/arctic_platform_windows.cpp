@@ -663,9 +663,7 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   return true;
 }
 
-namespace arctic {
-  void PrepareForTheEasyMainCall();
-}
+void PrepareForTheEasyMainCall();
 
 void EngineThreadFunction(SystemInfo system_info) {
   //  Init opengl start
