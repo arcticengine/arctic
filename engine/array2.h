@@ -36,7 +36,7 @@ template<class T> class Array2 {
   explicit Array2<T>()
     : size_(0, 0) {
   }
-  explicit Array2(const T width, const T height)
+  explicit Array2(const Si32 width, const Si32 height)
     : size_(width, height)
     , data_(width*height) {
   }
