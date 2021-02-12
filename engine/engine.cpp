@@ -93,20 +93,47 @@ void Engine::Init(Si32 width, Si32 height) {
 
   math_tables_.Init();
 
-
-  const char vShaderStr[] = R"SHADER(
+    const char copy_backbuffers_vShaderStr[] = R"SHADER(
 #ifdef GL_ES
 #endif
-attribute vec4 vPosition;
+attribute vec3 vPosition;
 attribute vec2 vTex;
 varying vec2 v_texCoord;
 void main() {
-  gl_Position = vPosition;
+  gl_Position = vec4(vPosition, 1.0);
   v_texCoord = vTex;
 }
 )SHADER";
 
-  const char fShaderStr[] = R"SHADER(
+  const char copy_backbuffers_fShaderStr[] = R"SHADER(
+#ifdef GL_ES
+precision mediump float;
+#endif
+varying vec2 v_texCoord;
+uniform sampler2D s_texture;
+void main() {
+  gl_FragColor = texture2D(s_texture, v_texCoord);
+}
+)SHADER";
+
+  copy_backbuffers_program_ = std::make_shared<GlProgram>();
+  copy_backbuffers_program_->Create(copy_backbuffers_vShaderStr, copy_backbuffers_fShaderStr);
+
+  const char default_sprite_vShaderStr[] = R"SHADER(
+#ifdef GL_ES
+#endif
+attribute vec2 vPosition;
+attribute vec2 vTex;
+varying vec2 v_texCoord;
+//uniform ivec2 to_sprite_size;
+//uniform ivec2 from_sprite_size;
+void main() {
+  gl_Position = vec4(vPosition, 0.0, 1.0);
+  v_texCoord = vTex;
+}
+)SHADER";
+
+  const char default_sprite_fShaderStr[] = R"SHADER(
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -118,8 +145,8 @@ void main() {
 }
 )SHADER";
 
-  gl_program_ = std::make_shared<GlProgram>();
-  gl_program_->Create(vShaderStr, fShaderStr);
+  default_sprite_program_ = std::make_shared<GlProgram>();
+  default_sprite_program_->Create(default_sprite_vShaderStr, default_sprite_fShaderStr);
 }
 
 void Engine::Draw2d() {
@@ -208,11 +235,9 @@ void Engine::Draw2d() {
   ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data()));
   ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
-  gl_program_->Bind();
-  gl_program_->SetUniform("s_texture", 0);
-  gl_program_->SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
-
-  gl_program_->CheckActiveUniforms(2);
+  copy_backbuffers_program_->Bind();
+  copy_backbuffers_program_->SetUniform("s_texture", 0);
+  copy_backbuffers_program_->CheckActiveUniforms(1);
 
   GlFramebuffer::BindDefault();
   ARCTIC_GL_CHECK_ERROR(glViewport(0, 0, width_, height_));

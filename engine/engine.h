@@ -83,7 +83,8 @@ class Engine {
 
   MathTables math_tables_;
 
-  std::shared_ptr<GlProgram> gl_program_;
+  std::shared_ptr<GlProgram> copy_backbuffers_program_;
+  std::shared_ptr<GlProgram> default_sprite_program_;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
@@ -120,8 +121,8 @@ class Engine {
   MathTables &GetMathTables() {
     return math_tables_;
   }
-  const std::shared_ptr<GlProgram> &GetGLProgram() {
-    return gl_program_;
+  const std::shared_ptr<GlProgram> &GetDefaultSpriteProgram() {
+    return default_sprite_program_;
   }
 };
 /// @}

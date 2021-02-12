@@ -70,24 +70,23 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
     Vec2F tc(static_cast<float>(from_sprite.Size().x), static_cast<float>(from_sprite.Size().y));
     Vec2F td(0.0f, static_cast<float>(from_sprite.Size().y));
 
-    Vec3F target_sprite_coords_to_ndc = Vec3F(
+    Vec2F target_sprite_coords_to_ndc = Vec2F(
         2.0f / static_cast<float>(to_sprite.Width()),
-        2.0f / static_cast<float>(to_sprite.Height()),
-        1.0f
+        2.0f / static_cast<float>(to_sprite.Height())
     );
     Vec2F texture_pixel_coords_to_uv = Vec2F(
         1.0f / from_sprite.Width(),
         1.0f / from_sprite.Height()
     );
 
-    const Vec3F verts[] = {
-        Vec3F(a, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
-        Vec3F(b, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
-        Vec3F(c, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
+    const Vec2F verts[] = {
+        a * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
+        b * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
+        c * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
 
-        Vec3F(d, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
-        Vec3F(a, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
-        Vec3F(c, 0.0f) * target_sprite_coords_to_ndc - Vec3F(1.0f, 1.0f, 0.0f),
+        d * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
+        a * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
+        c * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
     };
     const Vec2F texcoords[] = {
         ta * texture_pixel_coords_to_uv,
@@ -99,7 +98,7 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
         tc * texture_pixel_coords_to_uv,
     };
 
-    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts));
+    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, verts));
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, texcoords));
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
@@ -207,7 +206,7 @@ void HwSprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
     ref_size_ = Vec2Si32(sprite_instance_->width(),
                          sprite_instance_->height());
     pivot_ = Vec2Si32(0, 0);
-    gl_program_ = GetEngine()->GetGLProgram();
+    gl_program_ = GetEngine()->GetDefaultSpriteProgram();
     gl_program_uniforms_.Clear();
   } else {
     *Log() << "Error in HwSprite::Load, file: \""
@@ -244,7 +243,7 @@ void HwSprite::Load(const char *file_name) {
     ref_size_ = sprite_instance_ ? Vec2Si32(sprite_instance_->width(),
       sprite_instance_->height()) : Vec2Si32(0, 0);
     pivot_ = Vec2Si32(0, 0);
-    gl_program_ = GetEngine()->GetGLProgram();
+    gl_program_ = GetEngine()->GetDefaultSpriteProgram();
     gl_program_uniforms_.Clear();
   } else {
     *Log() << "Error in HwSprite::Load, file: \""
@@ -266,7 +265,7 @@ void HwSprite::LoadFromSoftwareSprite(Sprite sw_sprite) {
     ref_pos_ = sw_sprite.RefPos();
     ref_size_ = sw_sprite.Size();
     pivot_ = sw_sprite.Pivot();
-    gl_program_ = GetEngine()->GetGLProgram();
+    gl_program_ = GetEngine()->GetDefaultSpriteProgram();
     gl_program_uniforms_.Clear();
 }
 
@@ -303,7 +302,7 @@ void HwSprite::Create(const Si32 width, const Si32 height) {
   ref_pos_ = Vec2Si32(0, 0);
   ref_size_ = Vec2Si32(width, height);
   pivot_ = Vec2Si32(0, 0);
-  gl_program_ = GetEngine()->GetGLProgram();
+  gl_program_ = GetEngine()->GetDefaultSpriteProgram();
   gl_program_uniforms_.Clear();
   Clear();
 }
@@ -359,7 +358,7 @@ void HwSprite::Clone(HwSprite from, CloneTransform transform) {
     return;
   }
 
-  const std::shared_ptr<GlProgram> &default_program = GetEngine()->GetGLProgram();
+  const std::shared_ptr<GlProgram> &default_program = GetEngine()->GetDefaultSpriteProgram();
 
   if (transform == kCloneUntransformed) {
     Create(from.Width(), from.Height());
