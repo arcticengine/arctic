@@ -353,10 +353,14 @@ void HwSprite::Clone(HwSprite from, CloneTransform transform) {
     gl_program_uniforms_.Clear();
     return;
   }
+
+  const std::shared_ptr<GlProgram> &default_program = GetEngine()->GetGLProgram();
+
   if (transform == kCloneUntransformed) {
     Create(from.Width(), from.Height());
-    from.Draw(from.Pivot().x, from.Pivot().y, from.Width(), from.Height(),
-      0, 0, from.Width(), from.Height(), *this, kDrawBlendingModeCopyRgba);
+    DrawSprite(default_program, {}, *this, static_cast<float>(from.Pivot().x), static_cast<float>(from.Pivot().y), static_cast<float>(from.Width()), static_cast<float>(from.Height()),
+          from, 0, 0, static_cast<float>(from.Width()), static_cast<float>(from.Height()), Rgba(255, 255, 255, 255),
+          kDrawBlendingModeCopyRgba, kFilterNearest, 0.0f, 1.0f);
     SetPivot(from.Pivot());
     SetProgram(from.Program());
     SetUniforms(from.Uniforms());
@@ -381,12 +385,15 @@ void HwSprite::Clone(HwSprite from, CloneTransform transform) {
           dst_dir_y = Vec2Si32(-1, 0);
           angle = 3.14f / 2.0f;
       } else if (transform == kCloneRotate180) {
+          Create(from.Width(), from.Height());
           dst_base = Vec2Si32(Width() - 1, Height() - 1);
           dst_dir_x = Vec2Si32(-1, 0);
           dst_dir_y = Vec2Si32(0, -1);
           angle = 3.14f;
       }
-      from.Draw(static_cast<float>(dst_base.x), static_cast<float>(dst_base.y), angle, 1.0f, *this, kDrawBlendingModeCopyRgba);
+      DrawSprite(default_program, {}, *this, static_cast<float>(dst_base.x), static_cast<float>(dst_base.y), static_cast<float>(from.Width()), static_cast<float>(from.Height()),
+          from, 0, 0, static_cast<float>(from.Width()), static_cast<float>(from.Height()), Rgba(255, 255, 255, 255),
+          kDrawBlendingModeCopyRgba, kFilterNearest, angle, 1.0f);
   } else {
       Create(from.Width(), from.Height());
       int x_factor = 1;
@@ -402,7 +409,7 @@ void HwSprite::Clone(HwSprite from, CloneTransform transform) {
           dst_dir_y = Vec2Si32(0, -1);
           y_factor = -1;
       }
-      DrawSprite(from.Program(), from.Uniforms(), *this, static_cast<float>(dst_base.x), static_cast<float>(dst_base.y), static_cast<float>(from.Width()), static_cast<float>(from.Height()),
+      DrawSprite(default_program, {}, *this, static_cast<float>(dst_base.x), static_cast<float>(dst_base.y), static_cast<float>(from.Width()), static_cast<float>(from.Height()),
           from, 0, 0, static_cast<float>(from.Width()*x_factor), static_cast<float>(from.Height()*y_factor), Rgba(255, 255, 255, 255),
           kDrawBlendingModeCopyRgba, kFilterNearest, 0.0f, 1.0f);
   }
