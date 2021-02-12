@@ -337,10 +337,15 @@ void HwSprite::Clear(Rgba color) {
     return;
   }
 
-  std::vector<Rgba> data;
-  data.resize(Width()*Height(), color);
-
-  sprite_instance_->texture().UpdateData(data.data());
+  sprite_instance_->framebuffer().Bind();
+  glClearColor(
+    static_cast<float>(color.r) / 255.0f,
+    static_cast<float>(color.g) / 255.0f,
+    static_cast<float>(color.b) / 255.0f,
+    static_cast<float>(color.a) / 255.0f
+  );
+  glClear(GL_COLOR_BUFFER_BIT);
+  GlFramebuffer::BindDefault();
 }
 
 void HwSprite::Clone(HwSprite from, CloneTransform transform) {
