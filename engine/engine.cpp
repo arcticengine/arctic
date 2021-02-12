@@ -125,11 +125,21 @@ void main() {
 attribute vec2 vPosition;
 attribute vec2 vTex;
 varying vec2 v_texCoord;
-//uniform ivec2 to_sprite_size;
-//uniform ivec2 from_sprite_size;
+uniform vec2 pivot;
+uniform vec2 scale;
+uniform float angle;
+uniform ivec2 to_sprite_size;
+uniform ivec2 from_sprite_size;
 void main() {
-  gl_Position = vec4(vPosition, 0.0, 1.0);
-  v_texCoord = vTex;
+  vec2 position = vPosition;
+  position.x = position.x*cos(angle) - position.y*sin(angle);
+  position.y = position.y*cos(angle) + position.x*sin(angle);
+  position *= scale;
+  position += pivot;
+  position *= vec2(2.0 / to_sprite_size.x, 2.0 / to_sprite_size.y);
+  position -= vec2(1.0, 1.0);
+  gl_Position = vec4(position, 0.0, 1.0);
+  v_texCoord = vTex*from_sprite_size*vec2(1.0 / from_sprite_size.x, 1.0 / from_sprite_size.y);
 }
 )SHADER";
 

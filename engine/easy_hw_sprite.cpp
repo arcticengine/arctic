@@ -49,53 +49,44 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
     Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians, float zoom) {
 
     Vec2F pivot = Vec2F(to_x_pivot, to_y_pivot);
-    float sin_a = sinf(angle_radians) * zoom;
-    float cos_a = cosf(angle_radians) * zoom;
-    float scale_x = to_width / from_width;
-    float scale_y = to_height / from_height;
-    Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(from_sprite.Pivot().x) * scale_x;
-    Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(from_sprite.Width() - from_sprite.Pivot().x) * scale_x;
-    Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(from_sprite.Height() - from_sprite.Pivot().y) * scale_y;
-    Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(from_sprite.Pivot().y) * scale_y;
+    //float sin_a = sinf(angle_radians);
+    //float cos_a = cosf(angle_radians);
+    float scale_x = zoom * to_width / from_width;
+    float scale_y = zoom * to_height / from_height;
+    //Vec2F left = static_cast<float>(from_sprite.Pivot().x);
+    //Vec2F right = static_cast<float>(from_sprite.Width() - from_sprite.Pivot().x);
+    //Vec2F up = static_cast<float>(from_sprite.Height() - from_sprite.Pivot().y);
+    //Vec2F down = static_cast<float>(from_sprite.Pivot().y);
 
     // d c
     // a b
-    Vec2F a(pivot + left + down);
-    Vec2F b(pivot + right + down);
-    Vec2F c(pivot + right + up);
-    Vec2F d(pivot + left + up);
+    Vec2F a(static_cast<float>(from_sprite.Pivot().x),                       static_cast<float>(from_sprite.Pivot().y));
+    Vec2F b(static_cast<float>(from_sprite.Width() - from_sprite.Pivot().x), static_cast<float>(from_sprite.Pivot().y));
+    Vec2F c(static_cast<float>(from_sprite.Width() - from_sprite.Pivot().x), static_cast<float>(from_sprite.Height() - from_sprite.Pivot().y));
+    Vec2F d(static_cast<float>(from_sprite.Pivot().x),                       static_cast<float>(from_sprite.Height() - from_sprite.Pivot().y));
 
     Vec2F ta(0.0f, 0.0f);
-    Vec2F tb(static_cast<float>(from_sprite.Size().x), 0.0f);
-    Vec2F tc(static_cast<float>(from_sprite.Size().x), static_cast<float>(from_sprite.Size().y));
-    Vec2F td(0.0f, static_cast<float>(from_sprite.Size().y));
-
-    Vec2F target_sprite_coords_to_ndc = Vec2F(
-        2.0f / static_cast<float>(to_sprite.Width()),
-        2.0f / static_cast<float>(to_sprite.Height())
-    );
-    Vec2F texture_pixel_coords_to_uv = Vec2F(
-        1.0f / from_sprite.Width(),
-        1.0f / from_sprite.Height()
-    );
+    Vec2F tb(1.0f, 0.0f);
+    Vec2F tc(1.0f, 1.0f);
+    Vec2F td(0.0f, 1.0f);
 
     const Vec2F verts[] = {
-        a * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
-        b * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
-        c * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
+        a,
+        b,
+        c,
 
-        d * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
-        a * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
-        c * target_sprite_coords_to_ndc - Vec2F(1.0f, 1.0f),
+        d,
+        a,
+        c,
     };
     const Vec2F texcoords[] = {
-        ta * texture_pixel_coords_to_uv,
-        tb * texture_pixel_coords_to_uv,
-        tc * texture_pixel_coords_to_uv,
+        ta,
+        tb,
+        tc,
 
-        td * texture_pixel_coords_to_uv,
-        ta * texture_pixel_coords_to_uv,
-        tc * texture_pixel_coords_to_uv,
+        td,
+        ta,
+        tc,
     };
 
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, verts));
@@ -104,8 +95,13 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
     gl_program->Bind();
-    gl_program->SetUniform("s_texture", 0);
     gl_program_uniforms.Apply(*gl_program);
+    gl_program->SetUniform("s_texture", 0);
+    gl_program->SetUniform("pivot", pivot);
+    gl_program->SetUniform("scale", Vec2F(scale_x, scale_y));
+    gl_program->SetUniform("angle", angle_radians);
+    gl_program->SetUniform("to_sprite_size", to_sprite.Size());
+    gl_program->SetUniform("from_sprite_size", from_sprite.Size());
 
     to_sprite.sprite_instance()->framebuffer().Bind();
     ARCTIC_GL_CHECK_ERROR(glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height()));
@@ -152,7 +148,7 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
             break;
     }
 
-    gl_program->CheckActiveUniforms(2 + static_cast<int>(gl_program_uniforms.Size()));
+    gl_program->CheckActiveUniforms(7 + static_cast<int>(gl_program_uniforms.Size()));
 
     ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 
