@@ -139,6 +139,7 @@ void main() {
   position *= vec2(2.0 / to_sprite_size.x, 2.0 / to_sprite_size.y);
   position -= vec2(1.0, 1.0);
   gl_Position = vec4(position, 0.0, 1.0);
+
   v_texCoord = vTex*from_sprite_size*vec2(1.0 / from_sprite_size.x, 1.0 / from_sprite_size.y);
 }
 )SHADER";
@@ -163,6 +164,9 @@ void Engine::Draw2d() {
   gl_backbuffer_texture_.UpdateData(backbuffer_texture_.RawData());
 
   // render
+
+  GlFramebuffer::BindDefault();
+  ARCTIC_GL_CHECK_ERROR(glViewport(0, 0, width_, height_));
 
   ARCTIC_GL_CHECK_ERROR(glClearColor(0.f, 0.f, 0.f, 0.f));
   ARCTIC_GL_CHECK_ERROR(glClear(GL_COLOR_BUFFER_BIT));
@@ -248,9 +252,6 @@ void Engine::Draw2d() {
   copy_backbuffers_program_->Bind();
   copy_backbuffers_program_->SetUniform("s_texture", 0);
   copy_backbuffers_program_->CheckActiveUniforms(1);
-
-  GlFramebuffer::BindDefault();
-  ARCTIC_GL_CHECK_ERROR(glViewport(0, 0, width_, height_));
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));

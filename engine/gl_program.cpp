@@ -32,6 +32,8 @@
 
 namespace arctic {
 
+GLuint GlProgram::current_program_id_ = 0;
+
 GLuint LoadShader(const char *shaderSrc, GLenum type) {
     // Create the shader object
     GLuint shader;
@@ -65,13 +67,6 @@ GLuint LoadShader(const char *shaderSrc, GLenum type) {
     return shader;
 }
 
-
-int GlProgram::GetUniformLocation_(const char *name) const {
-    GLint loc;
-    ARCTIC_GL_CHECK_ERROR(loc = glGetUniformLocation(program_id_, name));
-    Check(loc >= 0, name, " not found");
-    return loc;
-}
 
 GlProgram::GlProgram()
     : program_id_(0) {
@@ -119,45 +114,87 @@ void GlProgram::Create(const char *vs_src, const char *fs_src) {
 }
 
 void GlProgram::Bind() {
-    ARCTIC_GL_CHECK_ERROR(glUseProgram(program_id_));
+    if (current_program_id_ != program_id_) {
+        current_program_id_ = program_id_;
+        ARCTIC_GL_CHECK_ERROR(glUseProgram(program_id_));
+    }
+}
+
+void GlProgram::SetUniform(int id, int value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform1i(id, value));
+}
+
+void GlProgram::SetUniform(int id, const Vec2Si32 &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform2i(id, value.x, value.y));
+}
+
+void GlProgram::SetUniform(int id, const Vec3Si32 &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform3i(id, value.x, value.y, value.z));
+}
+
+void GlProgram::SetUniform(int id, const Vec4Si32 &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform4i(id, value.x, value.y, value.z, value.w));
+}
+
+void GlProgram::SetUniform(int id, float value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform1f(id, value));
+}
+
+void GlProgram::SetUniform(int id, const Vec2F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform2f(id, value.x, value.y));
+}
+
+void GlProgram::SetUniform(int id, const Vec3F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform3f(id, value.x, value.y, value.z));
+}
+
+void GlProgram::SetUniform(int id, const Vec4F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniform4f(id, value.x, value.y, value.z, value.w));
 }
 
 void GlProgram::SetUniform(const char *name, int value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform1i(GetUniformLocation_(name), value));
+    ARCTIC_GL_CHECK_ERROR(glUniform1i(GetUniformLocation(name), value));
 }
 
 void GlProgram::SetUniform(const char *name, const Vec2Si32 &value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform2i(GetUniformLocation_(name), value.x, value.y));
+    ARCTIC_GL_CHECK_ERROR(glUniform2i(GetUniformLocation(name), value.x, value.y));
 }
 
 void GlProgram::SetUniform(const char *name, const Vec3Si32 &value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform3i(GetUniformLocation_(name), value.x, value.y, value.z));
+    ARCTIC_GL_CHECK_ERROR(glUniform3i(GetUniformLocation(name), value.x, value.y, value.z));
 }
 
 void GlProgram::SetUniform(const char *name, const Vec4Si32 &value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform4i(GetUniformLocation_(name), value.x, value.y, value.z, value.w));
+    ARCTIC_GL_CHECK_ERROR(glUniform4i(GetUniformLocation(name), value.x, value.y, value.z, value.w));
 }
 
 void GlProgram::SetUniform(const char *name, float value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform1f(GetUniformLocation_(name), value));
+    ARCTIC_GL_CHECK_ERROR(glUniform1f(GetUniformLocation(name), value));
 }
 
 void GlProgram::SetUniform(const char *name, const Vec2F &value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform2f(GetUniformLocation_(name), value.x, value.y));
+    ARCTIC_GL_CHECK_ERROR(glUniform2f(GetUniformLocation(name), value.x, value.y));
 }
 
 void GlProgram::SetUniform(const char *name, const Vec3F &value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform3f(GetUniformLocation_(name), value.x, value.y, value.z));
+    ARCTIC_GL_CHECK_ERROR(glUniform3f(GetUniformLocation(name), value.x, value.y, value.z));
 }
 
 void GlProgram::SetUniform(const char *name, const Vec4F &value) {
-    ARCTIC_GL_CHECK_ERROR(glUniform4f(GetUniformLocation_(name), value.x, value.y, value.z, value.w));
+    ARCTIC_GL_CHECK_ERROR(glUniform4f(GetUniformLocation(name), value.x, value.y, value.z, value.w));
 }
 
 void GlProgram::CheckActiveUniforms(int required_count) {
     GLint ufs;
     ARCTIC_GL_CHECK_ERROR(glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs));
     Check(ufs == required_count, "no ufs");
+}
+
+int GlProgram::GetUniformLocation(const char *name) const {
+    GLint loc;
+    ARCTIC_GL_CHECK_ERROR(loc = glGetUniformLocation(program_id_, name));
+    Check(loc >= 0, name, " not found");
+    return loc;
 }
 
 

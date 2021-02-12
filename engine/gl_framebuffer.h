@@ -41,6 +41,8 @@ private:
 
     GLuint framebuffer_id_;
 
+    static GLuint current_framebuffer_id_;
+
  public:
   GlFramebuffer();
   ~GlFramebuffer();

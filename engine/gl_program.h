@@ -41,9 +41,9 @@ private:
   GlProgram &operator=(GlProgram &other) = delete;
   GlProgram &operator=(GlProgram &&other) = delete;
 
-  int GetUniformLocation_(const char *name) const;
-
   GLuint program_id_;
+
+  static GLuint current_program_id_;
 
  public:
   GlProgram();
@@ -51,6 +51,14 @@ private:
 
   void Create(const char *vs_src, const char *fs_src);
   void Bind();
+  void SetUniform(int id, int value);
+  void SetUniform(int id, const Vec2Si32 &value);
+  void SetUniform(int id, const Vec3Si32 &value);
+  void SetUniform(int id, const Vec4Si32 &value);
+  void SetUniform(int id, float value);
+  void SetUniform(int id, const Vec2F &value);
+  void SetUniform(int id, const Vec3F &value);
+  void SetUniform(int id, const Vec4F &value);
   void SetUniform(const char *name, int value);
   void SetUniform(const char *name, const Vec2Si32 &value);
   void SetUniform(const char *name, const Vec3Si32 &value);
@@ -60,6 +68,7 @@ private:
   void SetUniform(const char *name, const Vec3F &value);
   void SetUniform(const char *name, const Vec4F &value);
   void CheckActiveUniforms(int required_count);
+  int GetUniformLocation(const char *name) const;
 };
 
 class UniformsTable {

@@ -25,6 +25,7 @@
 
 #include "engine/arctic_types.h"
 #include "engine/opengl.h"
+#include "engine/easy_sprite.h"
 
 namespace arctic {
 
@@ -41,6 +42,11 @@ class GlTexture2D {
   Si32 width_;
   Si32 height_;
   GLuint texture_id_;
+  DrawFilterMode current_filter_mode_;
+
+  static const GLuint max_textures_slots = 8;
+  static GLuint current_texture_slot_;
+  static GLuint current_texture_id_[max_textures_slots];
 
  public:
   GlTexture2D();
@@ -51,7 +57,7 @@ class GlTexture2D {
   void SetData(const void *data, Si32 w, Si32 h);
   void UpdateData(const void *data);
   void ReadData(void *dst) const;
-  void SetFilterMode(GLint min, GLint mag);
+  void SetFilterMode(DrawFilterMode filter_mode);
 
   Si32 width() const {
     return width_;
