@@ -36,6 +36,7 @@
 #include "engine/opengl.h"
 #include "engine/gl_texture2d.h"
 #include "engine/gl_program.h"
+#include "engine/gl_buffer.h"
 
 namespace arctic {
 
@@ -85,6 +86,7 @@ class Engine {
 
   std::shared_ptr<GlProgram> copy_backbuffers_program_;
   std::shared_ptr<GlProgram> default_sprite_program_;
+  GlBuffer sprite_texcoords_buffer_;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
@@ -101,10 +103,10 @@ class Engine {
   }
   void Init(Si32 width, Si32 height);
   void Draw2d();
-  Sprite GetBackbuffer() {
+  Sprite &GetBackbuffer() {
     return backbuffer_texture_;
   }
-  HwSprite GetHwBackbuffer() {
+  HwSprite &GetHwBackbuffer() {
       return hw_backbuffer_texture_;
   }
   void ResizeBackbuffer(const Si32 width, const Si32 height);
@@ -121,8 +123,11 @@ class Engine {
   MathTables &GetMathTables() {
     return math_tables_;
   }
-  const std::shared_ptr<GlProgram> &GetDefaultSpriteProgram() {
+  const std::shared_ptr<GlProgram> &GetDefaultSpriteProgram() const {
     return default_sprite_program_;
+  }
+  const GlBuffer &GetSpriteTexCoordsBuffer() const {
+    return sprite_texcoords_buffer_;
   }
 };
 /// @}

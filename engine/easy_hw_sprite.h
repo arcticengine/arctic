@@ -34,6 +34,7 @@
 #include "engine/vec2si32.h"
 #include "engine/rgba.h"
 #include "engine/gl_program.h"
+#include "engine/gl_buffer.h"
 
 namespace arctic {
 
@@ -48,6 +49,9 @@ class HwSprite {
   Vec2Si32 pivot_;
   std::shared_ptr<GlProgram> gl_program_;
   UniformsTable gl_program_uniforms_;
+  mutable std::unique_ptr<GlBuffer> gl_buffer_;
+  mutable Vec2Si32 last_buffer_pivot_;
+  mutable Vec2Si32 last_buffer_ref_size_;
 
  public:
   HwSprite();
@@ -80,7 +84,7 @@ class HwSprite {
   /// @brief Make current sprite a (tansformed) copy of another sprite
   /// @param from Souce sprite to clone from
   /// @param transform A transformation to perform while copying (kCloneUntransformed by default)
-  void Clone(HwSprite from, CloneTransform transform = kCloneUntransformed);
+  void Clone(const HwSprite &from, CloneTransform transform = kCloneUntransformed);
   /// @brief Set the coordinates of the pivot point of the sprite
   void SetPivot(Vec2Si32 pivot);
   /// @brief Get the coordinates of the pivot point of the sprite
@@ -93,7 +97,9 @@ class HwSprite {
   const UniformsTable &Uniforms() const;
   UniformsTable &Uniforms();
 
-  void Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y,
+  const GlBuffer &VertexBuffer() const;
+
+  void Draw(const HwSprite &to_sprite, const Si32 to_x, const Si32 to_y,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
@@ -113,16 +119,16 @@ class HwSprite {
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
-  void Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y,
+  void Draw(const HwSprite &to_sprite, const Si32 to_x, const Si32 to_y,
       const Si32 to_width, const Si32 to_height,
       const Si32 from_x, const Si32 from_y,
       const Si32 from_width, const Si32 from_height,
       DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color);
-  void Draw(HwSprite to_sprite, const Vec2Si32 to_pos,
+  void Draw(const HwSprite &to_sprite, const Vec2Si32 to_pos,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
-  void Draw(HwSprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size,
+  void Draw(const HwSprite &to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size,
       DrawBlendingMode blending_mode, DrawFilterMode filter_mode,
       Rgba in_color = Rgba(0xffffffff));
   void Draw(const Vec2Si32 to_pos,
@@ -142,7 +148,7 @@ class HwSprite {
       const Si32 to_width, const Si32 to_height,
       const Si32 from_x, const Si32 from_y,
       const Si32 from_width, const Si32 from_height,
-      HwSprite to_sprite, DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
+      const HwSprite &to_sprite, DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff)) const;
 
@@ -166,7 +172,7 @@ class HwSprite {
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
-  void Draw(const float to_x, const float to_y, float angle_radians, float zoom, HwSprite to_sprite,
+  void Draw(const float to_x, const float to_y, float angle_radians, float zoom, const HwSprite &to_sprite,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend, DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
 
@@ -179,7 +185,7 @@ class HwSprite {
   /// @brief Returns true if the sprite is actually a reference to another sprite
   bool IsRef() const;
 
-  std::shared_ptr<HwSpriteInstance> sprite_instance() const {
+  const std::shared_ptr<HwSpriteInstance> &sprite_instance() const {
     return sprite_instance_;
   }
 };

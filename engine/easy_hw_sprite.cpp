@@ -40,105 +40,54 @@
 #include "engine/easy_advanced.h"
 #include "engine/easy_files.h"
 #include "engine/rgba.h"
+#include "engine/gl_state.h"
 
 namespace arctic {
 
 void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTable &gl_program_uniforms,
-    HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
+    const HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
     const HwSprite &from_sprite, const float from_x, const float from_y, const float from_width, const float from_height,
     Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians, float zoom) {
 
-    // d c
-    // a b
-    Vec2F a(static_cast<float>(from_sprite.Pivot().x),                       static_cast<float>(from_sprite.Pivot().y));
-    Vec2F b(static_cast<float>(from_sprite.Width() - from_sprite.Pivot().x), static_cast<float>(from_sprite.Pivot().y));
-    Vec2F c(static_cast<float>(from_sprite.Width() - from_sprite.Pivot().x), static_cast<float>(from_sprite.Height() - from_sprite.Pivot().y));
-    Vec2F d(static_cast<float>(from_sprite.Pivot().x),                       static_cast<float>(from_sprite.Height() - from_sprite.Pivot().y));
-
-    const Vec2F verts[] = {
-        a,
-        b,
-        c,
-
-        d,
-        a,
-        c,
-    };
-    const Vec2F texcoords[] = {
-        Vec2F(0.0f, 0.0f),
-        Vec2F(1.0f, 0.0f),
-        Vec2F(1.0f, 1.0f),
-
-        Vec2F(0.0f, 1.0f),
-        Vec2F(0.0f, 0.0f),
-        Vec2F(1.0f, 1.0f),
-    };
-
-    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, verts));
+    from_sprite.VertexBuffer().Bind();
+    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, 0));
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
-    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, texcoords));
+    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (void*)8));
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
-
-    static DrawBlendingMode current_mode = kDrawBlendingModeCopyRgba;
-    static int s_texture_id = gl_program->GetUniformLocation("s_texture");
-    static int pivot_id = gl_program->GetUniformLocation("pivot");
-    static int scale_id = gl_program->GetUniformLocation("scale");
-    static int angle_id = gl_program->GetUniformLocation("angle");
-    static int to_sprite_size_id = gl_program->GetUniformLocation("to_sprite_size");
-    static int from_sprite_size_id = gl_program->GetUniformLocation("from_sprite_size");
-    static int in_color_id = gl_program->GetUniformLocation("in_color");
 
     gl_program->Bind();
     gl_program_uniforms.Apply(*gl_program);
-    gl_program->SetUniform(s_texture_id, 0);
-    gl_program->SetUniform(pivot_id, Vec2F(to_x_pivot, to_y_pivot));
-    gl_program->SetUniform(scale_id, zoom * Vec2F(to_width / from_width, to_height / from_height));
-    gl_program->SetUniform(angle_id, angle_radians);
-    gl_program->SetUniform(to_sprite_size_id, to_sprite.Size());
-    gl_program->SetUniform(from_sprite_size_id, from_sprite.Size());
+    gl_program->SetUniform("s_texture", 0);
+    gl_program->SetUniform("pivot_scale", Vec4F(
+        to_x_pivot, to_y_pivot,
+        zoom * to_width / from_width, zoom * to_height / from_height
+    ));
+    gl_program->SetUniform("to_sprite_size_angle", Vec3F(
+        static_cast<float>(to_sprite.Size().x), static_cast<float>(to_sprite.Size().y),
+        angle_radians
+    ));
 
     to_sprite.sprite_instance()->framebuffer().Bind();
-    ARCTIC_GL_CHECK_ERROR(glViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height()));
+    GlState::SetViewport(to_sprite.Pivot().x, to_sprite.Pivot().y, to_sprite.Width(), to_sprite.Height());
 
     GlTexture2D &texture = from_sprite.sprite_instance()->texture();
     texture.SetFilterMode(filter_mode);
     texture.Bind(0);
 
-    if (current_mode != blending_mode) {
-        current_mode = blending_mode;
-        switch (blending_mode) {
-            case kDrawBlendingModeCopyRgba:
-                ARCTIC_GL_CHECK_ERROR(glDisable(GL_BLEND));
-                gl_program->SetUniform(in_color_id, Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
-                break;
-            case kDrawBlendingModeAlphaBlend:
-                ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
-                ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-                gl_program->SetUniform(in_color_id, Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
-                break;
-            case kDrawBlendingModeColorize:
-                ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
-                ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-                gl_program->SetUniform(in_color_id, Vec4F(
-                    static_cast<float>(in_color.r) / 255.0f,
-                    static_cast<float>(in_color.g) / 255.0f,
-                    static_cast<float>(in_color.b) / 255.0f,
-                    static_cast<float>(in_color.a) / 255.0f
-                ));
-                break;
-            case kDrawBlendingModeAdd:
-                ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
-                ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_ONE, GL_ONE));
-                gl_program->SetUniform(in_color_id, Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
-                break;
-            default:
-                ARCTIC_GL_CHECK_ERROR(glDisable(GL_BLEND));
-                gl_program->SetUniform(in_color_id, Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
-                break;
-        }
+    GlState::SetBlending(blending_mode);
+    if (blending_mode == kDrawBlendingModeColorize) {
+        gl_program->SetUniform("in_color", Vec4F(
+            static_cast<float>(in_color.r) / 255.0f,
+            static_cast<float>(in_color.g) / 255.0f,
+            static_cast<float>(in_color.b) / 255.0f,
+            static_cast<float>(in_color.a) / 255.0f
+        ));
+    }
+    else {
+        gl_program->SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
     }
 
-    gl_program->CheckActiveUniforms(7 + static_cast<int>(gl_program_uniforms.Size()));
+    gl_program->CheckActiveUniforms(4 + static_cast<int>(gl_program_uniforms.Size()));
 
     ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 }
@@ -150,6 +99,9 @@ HwSprite::HwSprite() {
   ref_size_ = Vec2Si32(0, 0);
   pivot_ = Vec2Si32(0, 0);
   gl_program_ = nullptr;
+  gl_buffer_ = nullptr;
+  last_buffer_pivot_ = Vec2Si32(0, 0);
+  last_buffer_ref_size_ = Vec2Si32(0, 0);
 }
 
 void HwSprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
@@ -192,6 +144,9 @@ void HwSprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
     pivot_ = Vec2Si32(0, 0);
     gl_program_ = GetEngine()->GetDefaultSpriteProgram();
     gl_program_uniforms_.Clear();
+    gl_buffer_ = nullptr;
+    last_buffer_pivot_ = Vec2Si32(0, 0);
+    last_buffer_ref_size_ = Vec2Si32(0, 0);
   } else {
     *Log() << "Error in HwSprite::Load, file: \""
       << file_name << "\" could not be loaded,"
@@ -229,6 +184,9 @@ void HwSprite::Load(const char *file_name) {
     pivot_ = Vec2Si32(0, 0);
     gl_program_ = GetEngine()->GetDefaultSpriteProgram();
     gl_program_uniforms_.Clear();
+    gl_buffer_ = nullptr;
+    last_buffer_pivot_ = Vec2Si32(0, 0);
+    last_buffer_ref_size_ = Vec2Si32(0, 0);
   } else {
     *Log() << "Error in HwSprite::Load, file: \""
       << file_name << "\" could not be loaded,"
@@ -251,6 +209,9 @@ void HwSprite::LoadFromSoftwareSprite(Sprite sw_sprite) {
     pivot_ = sw_sprite.Pivot();
     gl_program_ = GetEngine()->GetDefaultSpriteProgram();
     gl_program_uniforms_.Clear();
+    gl_buffer_ = nullptr;
+    last_buffer_pivot_ = Vec2Si32(0, 0);
+    last_buffer_ref_size_ = Vec2Si32(0, 0);
 }
 
 void HwSprite::Save(const char *file_name) {
@@ -288,6 +249,9 @@ void HwSprite::Create(const Si32 width, const Si32 height) {
   pivot_ = Vec2Si32(0, 0);
   gl_program_ = GetEngine()->GetDefaultSpriteProgram();
   gl_program_uniforms_.Clear();
+  gl_buffer_ = nullptr;
+  last_buffer_pivot_ = Vec2Si32(0, 0);
+  last_buffer_ref_size_ = Vec2Si32(0, 0);
   Clear();
 }
 
@@ -309,6 +273,9 @@ void HwSprite::Reference(const HwSprite &from, const Si32 from_x, const Si32 fro
   sprite_instance_ = from.sprite_instance_;
   gl_program_ = from.Program();
   gl_program_uniforms_ = from.Uniforms();
+  gl_buffer_ = nullptr;
+  last_buffer_pivot_ = Vec2Si32(0, 0);
+  last_buffer_ref_size_ = Vec2Si32(0, 0);
 }
 
 void HwSprite::Clear() {
@@ -331,7 +298,7 @@ void HwSprite::Clear(Rgba color) {
   //GlFramebuffer::BindDefault();
 }
 
-void HwSprite::Clone(HwSprite from, CloneTransform transform) {
+void HwSprite::Clone(const HwSprite &from, CloneTransform transform) {
   if (!from.sprite_instance_) {
     sprite_instance_ = nullptr;
     ref_pos_ = Vec2Si32(0, 0);
@@ -339,6 +306,9 @@ void HwSprite::Clone(HwSprite from, CloneTransform transform) {
     pivot_ = Vec2Si32(0, 0);
     gl_program_ = nullptr;
     gl_program_uniforms_.Clear();
+    gl_buffer_ = nullptr;
+    last_buffer_pivot_ = Vec2Si32(0, 0);
+    last_buffer_ref_size_ = Vec2Si32(0, 0);
     return;
   }
 
@@ -434,7 +404,38 @@ UniformsTable &HwSprite::Uniforms() {
     return gl_program_uniforms_;
 }
 
-void HwSprite::Draw(HwSprite to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba color) {
+const GlBuffer &HwSprite::VertexBuffer() const {
+    if (!gl_buffer_) {
+        gl_buffer_ = std::make_unique<GlBuffer>();
+    }
+
+    if (!gl_buffer_->IsValid() || last_buffer_pivot_ != pivot_ || last_buffer_ref_size_ != ref_size_) {
+        last_buffer_pivot_ = pivot_;
+        last_buffer_ref_size_ = ref_size_;
+
+        // d c
+        // a b
+        Vec2F a(static_cast<float>(Pivot().x),           static_cast<float>(Pivot().y));
+        Vec2F b(static_cast<float>(Width() - Pivot().x), static_cast<float>(Pivot().y));
+        Vec2F c(static_cast<float>(Width() - Pivot().x), static_cast<float>(Height() - Pivot().y));
+        Vec2F d(static_cast<float>(Pivot().x),           static_cast<float>(Height() - Pivot().y));
+
+        const Vec2F verts[] = {
+            a, Vec2F(0.0f, 0.0f),
+            b, Vec2F(1.0f, 0.0f),
+            c, Vec2F(1.0f, 1.0f),
+
+            d, Vec2F(0.0f, 1.0f),
+            a, Vec2F(0.0f, 0.0f),
+            c, Vec2F(1.0f, 1.0f),
+        };
+
+        gl_buffer_->Create(verts, sizeof(verts));
+    }
+    return *gl_buffer_;
+}
+
+void HwSprite::Draw(const HwSprite &to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba color) {
     if (!sprite_instance_ || !gl_program_) {
         return;
     }
@@ -456,16 +457,16 @@ void HwSprite::Draw(const Si32 to_x, const Si32 to_y, const Si32 to_width, const
     Draw(to_x, to_y, to_width, to_height, from_x, from_y, from_width, from_height, GetEngine()->GetHwBackbuffer(), blending_mode, filter_mode, in_color);
 }
 
-void HwSprite::Draw(HwSprite to_sprite, const Si32 to_x, const Si32 to_y, const Si32 to_width, const Si32 to_height, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height,
+void HwSprite::Draw(const HwSprite &to_sprite, const Si32 to_x, const Si32 to_y, const Si32 to_width, const Si32 to_height, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
     Draw(to_x, to_y, to_width, to_height, from_x, from_y, from_width, from_height, to_sprite, blending_mode, filter_mode, in_color);
 }
 
-void HwSprite::Draw(HwSprite to_sprite, const Vec2Si32 to_pos, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+void HwSprite::Draw(const HwSprite &to_sprite, const Vec2Si32 to_pos, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
     Draw(to_sprite, to_pos.x, to_pos.y, blending_mode, filter_mode, in_color);
 }
 
-void HwSprite::Draw(HwSprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+void HwSprite::Draw(const HwSprite &to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
     Draw(to_sprite, to_pos.x, to_pos.y, to_size.x, to_size.y, 0, 0, ref_size_.x, ref_size_.y, blending_mode, filter_mode, in_color);
 }
 
@@ -482,7 +483,7 @@ void HwSprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size, const Vec2Si3
 }
 
 void HwSprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot, const Si32 to_width, const Si32 to_height, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height,
-    HwSprite to_sprite, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) const {
+    const HwSprite &to_sprite, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) const {
     if (!sprite_instance_ || gl_program_) {
         return;
     }
@@ -511,7 +512,7 @@ void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, flo
     Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetHwBackbuffer(), blending_mode, filter_mode, in_color);
 }
 
-void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom, HwSprite to_sprite, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
+void HwSprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom, const HwSprite &to_sprite, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
     if (!sprite_instance_ || !gl_program_) {
         return;
     }

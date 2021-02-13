@@ -103,6 +103,11 @@ PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = nullptr;
 PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = nullptr;
 PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = nullptr;
 PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate = nullptr;
+PFNGLGENBUFFERSPROC glGenBuffers = nullptr;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
+PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
+PFNGLBUFFERDATAPROC glBufferData = nullptr;
+PFNGLBUFFERSUBDATAPROC glBufferSubData = nullptr;
 
 namespace arctic {
 
@@ -589,6 +594,11 @@ void LoadGl() {
   LoadGlFunction("glFramebufferTexture2D", &glFramebufferTexture2D);
   LoadGlFunction("glCheckFramebufferStatus", &glCheckFramebufferStatus);
   LoadGlFunction("glBlendFuncSeparate", &glBlendFuncSeparate);
+  LoadGlFunction("glGenBuffers", &glGenBuffers);
+  LoadGlFunction("glDeleteBuffers", &glDeleteBuffers);
+  LoadGlFunction("glBindBuffer", &glBindBuffer);
+  LoadGlFunction("glBufferData", &glBufferData);
+  LoadGlFunction("glBufferSubData", &glBufferSubData);
 }
 
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,

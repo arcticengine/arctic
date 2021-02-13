@@ -32,6 +32,7 @@
 #include "engine/arctic_platform.h"
 #include "engine/arctic_math.h"
 #include "engine/unicode.h"
+#include "engine/gl_state.h"
 
 namespace arctic {
 
@@ -125,22 +126,21 @@ void main() {
 attribute vec2 vPosition;
 attribute vec2 vTex;
 varying vec2 v_texCoord;
-uniform vec2 pivot;
-uniform vec2 scale;
-uniform float angle;
-uniform ivec2 to_sprite_size;
-uniform ivec2 from_sprite_size;
+uniform vec4 pivot_scale;
+uniform vec3 to_sprite_size_angle;
 void main() {
   vec2 position = vPosition;
-  position.x = position.x*cos(angle) - position.y*sin(angle);
-  position.y = position.y*cos(angle) + position.x*sin(angle);
-  position *= scale;
-  position += pivot;
-  position *= vec2(2.0 / to_sprite_size.x, 2.0 / to_sprite_size.y);
+  float asin = sin(to_sprite_size_angle.z);
+  float acos = cos(to_sprite_size_angle.z);
+  position.x = position.x*acos - position.y*asin;
+  position.y = position.y*acos + position.x*asin;
+  position *= pivot_scale.zw;
+  position += pivot_scale.xy;
+  position *= vec2(2.0 / to_sprite_size_angle.x, 2.0 / to_sprite_size_angle.y);
   position -= vec2(1.0, 1.0);
   gl_Position = vec4(position, 0.0, 1.0);
 
-  v_texCoord = vTex*from_sprite_size*vec2(1.0 / from_sprite_size.x, 1.0 / from_sprite_size.y);
+  v_texCoord = vTex;
 }
 )SHADER";
 
@@ -158,6 +158,18 @@ void main() {
 
   default_sprite_program_ = std::make_shared<GlProgram>();
   default_sprite_program_->Create(default_sprite_vShaderStr, default_sprite_fShaderStr);
+
+  const Vec2F texcoords[] = {
+        Vec2F(0.0f, 0.0f),
+        Vec2F(1.0f, 0.0f),
+        Vec2F(1.0f, 1.0f),
+
+        Vec2F(0.0f, 1.0f),
+        Vec2F(0.0f, 0.0f),
+        Vec2F(1.0f, 1.0f),
+    };
+
+  sprite_texcoords_buffer_.Create(texcoords, sizeof(texcoords));
 }
 
 void Engine::Draw2d() {
@@ -166,7 +178,7 @@ void Engine::Draw2d() {
   // render
 
   GlFramebuffer::BindDefault();
-  ARCTIC_GL_CHECK_ERROR(glViewport(0, 0, width_, height_));
+  GlState::SetViewport(0, 0, width_, height_);
 
   ARCTIC_GL_CHECK_ERROR(glClearColor(0.f, 0.f, 0.f, 0.f));
   ARCTIC_GL_CHECK_ERROR(glClear(GL_COLOR_BUFFER_BIT));
@@ -244,6 +256,7 @@ void Engine::Draw2d() {
   index[indices_] = static_cast<Ui32>(idx);
   indices_++;
 
+  GlBuffer::BindDefault();
   ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, visible_verts_.data()));
   ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
   ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data()));
@@ -252,6 +265,8 @@ void Engine::Draw2d() {
   copy_backbuffers_program_->Bind();
   copy_backbuffers_program_->SetUniform("s_texture", 0);
   copy_backbuffers_program_->CheckActiveUniforms(1);
+
+  GlState::SetBlending(kDrawBlendingModeAlphaBlend);
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
