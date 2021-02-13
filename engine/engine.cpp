@@ -158,18 +158,6 @@ void main() {
 
   default_sprite_program_ = std::make_shared<GlProgram>();
   default_sprite_program_->Create(default_sprite_vShaderStr, default_sprite_fShaderStr);
-
-  const Vec2F texcoords[] = {
-        Vec2F(0.0f, 0.0f),
-        Vec2F(1.0f, 0.0f),
-        Vec2F(1.0f, 1.0f),
-
-        Vec2F(0.0f, 1.0f),
-        Vec2F(0.0f, 0.0f),
-        Vec2F(1.0f, 1.0f),
-    };
-
-  sprite_texcoords_buffer_.Create(texcoords, sizeof(texcoords));
 }
 
 void Engine::Draw2d() {

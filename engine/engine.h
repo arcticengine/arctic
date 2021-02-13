@@ -86,7 +86,6 @@ class Engine {
 
   std::shared_ptr<GlProgram> copy_backbuffers_program_;
   std::shared_ptr<GlProgram> default_sprite_program_;
-  GlBuffer sprite_texcoords_buffer_;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
@@ -125,9 +124,6 @@ class Engine {
   }
   const std::shared_ptr<GlProgram> &GetDefaultSpriteProgram() const {
     return default_sprite_program_;
-  }
-  const GlBuffer &GetSpriteTexCoordsBuffer() const {
-    return sprite_texcoords_buffer_;
   }
 };
 /// @}
