@@ -55,6 +55,12 @@ class HwSprite {
 
  public:
   HwSprite();
+  HwSprite(const HwSprite &other);
+  HwSprite(HwSprite &&other);
+
+  HwSprite &operator=(const HwSprite &other);
+  HwSprite &operator=(HwSprite &&other);
+
   void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);
   /// @brief Load sprite data from file
   void Load(const char *file_name);

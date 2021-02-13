@@ -104,6 +104,78 @@ HwSprite::HwSprite() {
   last_buffer_ref_size_ = Vec2Si32(0, 0);
 }
 
+HwSprite::HwSprite(const HwSprite &other) {
+  sprite_instance_ = other.sprite_instance_;
+  ref_pos_ = other.ref_pos_;
+  ref_size_ = other.ref_size_;
+  pivot_ = other.pivot_;
+  gl_program_ = other.gl_program_;
+  gl_program_uniforms_ = other.gl_program_uniforms_;
+  gl_buffer_ = nullptr;
+  last_buffer_pivot_ = Vec2Si32(0, 0);
+  last_buffer_ref_size_ = Vec2Si32(0, 0);
+}
+
+HwSprite::HwSprite(HwSprite &&other) {
+  sprite_instance_ = other.sprite_instance_;
+  ref_pos_ = other.ref_pos_;
+  ref_size_ = other.ref_size_;
+  pivot_ = other.pivot_;
+  gl_program_ = other.gl_program_;
+  gl_program_uniforms_ = other.gl_program_uniforms_;
+  gl_buffer_ = nullptr;
+  last_buffer_pivot_ = Vec2Si32(0, 0);
+  last_buffer_ref_size_ = Vec2Si32(0, 0);
+
+  other.sprite_instance_ = nullptr;
+  other.ref_pos_ = Vec2Si32(0, 0);
+  other.ref_size_ = Vec2Si32(0, 0);
+  other.pivot_ = Vec2Si32(0, 0);
+  other.gl_program_ = nullptr;
+  other.gl_program_uniforms_ = {};
+  other.gl_buffer_ = nullptr;
+  other.last_buffer_pivot_ = Vec2Si32(0, 0);
+  other.last_buffer_ref_size_ = Vec2Si32(0, 0);
+}
+
+HwSprite &HwSprite::operator=(const HwSprite &other) {
+  sprite_instance_ = other.sprite_instance_;
+  ref_pos_ = other.ref_pos_;
+  ref_size_ = other.ref_size_;
+  pivot_ = other.pivot_;
+  gl_program_ = other.gl_program_;
+  gl_program_uniforms_ = other.gl_program_uniforms_;
+  gl_buffer_ = nullptr;
+  last_buffer_pivot_ = Vec2Si32(0, 0);
+  last_buffer_ref_size_ = Vec2Si32(0, 0);
+
+  return *this;
+}
+
+HwSprite &HwSprite::operator=(HwSprite &&other) {
+  sprite_instance_ = other.sprite_instance_;
+  ref_pos_ = other.ref_pos_;
+  ref_size_ = other.ref_size_;
+  pivot_ = other.pivot_;
+  gl_program_ = other.gl_program_;
+  gl_program_uniforms_ = other.gl_program_uniforms_;
+  gl_buffer_ = nullptr;
+  last_buffer_pivot_ = Vec2Si32(0, 0);
+  last_buffer_ref_size_ = Vec2Si32(0, 0);
+
+  other.sprite_instance_ = nullptr;
+  other.ref_pos_ = Vec2Si32(0, 0);
+  other.ref_size_ = Vec2Si32(0, 0);
+  other.pivot_ = Vec2Si32(0, 0);
+  other.gl_program_ = nullptr;
+  other.gl_program_uniforms_ = {};
+  other.gl_buffer_ = nullptr;
+  other.last_buffer_pivot_ = Vec2Si32(0, 0);
+  other.last_buffer_ref_size_ = Vec2Si32(0, 0);
+
+  return *this;
+}
+
 void HwSprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
     const char *file_name) {
   if (!file_name) {
