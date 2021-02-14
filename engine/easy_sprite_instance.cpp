@@ -33,6 +33,7 @@
 #include "engine/arctic_platform.h"
 #include "engine/log.h"
 #include "engine/rgba.h"
+#include "engine/vec2si32.h"
 
 namespace arctic {
 
@@ -97,7 +98,10 @@ struct TgaHeader {
 #pragma pack()
 
 
-  std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data, const Si64 size) {
+  std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data, const Si64 size, Vec2Si32 *out_origin) {
+    if (out_origin) {
+      *out_origin = Vec2Si32(0, 0);
+    }
     std::shared_ptr<SpriteInstance> sprite;
     if (size < sizeof(TgaHeader)) {
       *Log() << "Error in LoadTga, size: " << size << " < sizeof(TgaHeader): "
@@ -115,6 +119,10 @@ struct TgaHeader {
       | (tga->color_map_origin >> 8);
     tga->color_map_length = ((tga->color_map_length & 255) << 8)
       | (tga->color_map_length >> 8);
+    tga->image_x_origin = ((tga->image_x_origin & 255) << 8)
+      | (tga->image_x_origin >> 8);
+    tga->image_y_origin = ((tga->image_y_origin & 255) << 8)
+      | (tga->image_y_origin >> 8);
 #endif  // BIGENDIAN
     if (tga->image_width < 2) {
       *Log() << "Error in LoadTga, tga.xres: " << tga->image_width
@@ -150,6 +158,12 @@ struct TgaHeader {
       *Log() << "Error in LoadTga, sprite image is too large (" << tga->image_width
         << "x" << tga->image_height << "x" << sizeof(Rgba) << ").";
       return sprite;
+    }
+
+    if (out_origin) {
+      Si16 x = static_cast<Si16>(tga->image_x_origin);
+      Si16 y = static_cast<Si16>(tga->image_y_origin);
+      *out_origin = Vec2Si32(x, y);
     }
 
     const bool is_rle = (tga->image_type == 9 || tga->image_type == 10

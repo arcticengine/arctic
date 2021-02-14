@@ -857,7 +857,8 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
           " Not loading sprite.";
       return;
     }
-    sprite_instance_ = LoadTga(data, static_cast<Si64>(size_bytes));
+    pivot_ = Vec2Si32(0, 0);
+    sprite_instance_ = LoadTga(data, static_cast<Si64>(size_bytes), &pivot_);
     if (!sprite_instance_) {
       *Log() << "Error in Sprite::Load, file: \""
         << file_name << "\" could not be loaded with LoadTga."
@@ -867,7 +868,6 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = Vec2Si32(sprite_instance_->width(),
                          sprite_instance_->height());
-    pivot_ = Vec2Si32(0, 0);
   } else {
     *Log() << "Error in Sprite::Load, file: \""
       << file_name << "\" could not be loaded,"
@@ -899,11 +899,11 @@ void Sprite::Load(const char *file_name) {
           " Not loading sprite.";
       return;
     }
-    sprite_instance_ = LoadTga(data.data(), static_cast<Si64>(data.size()));
+    pivot_ = Vec2Si32(0, 0);
+    sprite_instance_ = LoadTga(data.data(), static_cast<Si64>(data.size()), &pivot_);
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = sprite_instance_ ? Vec2Si32(sprite_instance_->width(),
       sprite_instance_->height()) : Vec2Si32(0, 0);
-    pivot_ = Vec2Si32(0, 0);
   } else {
     *Log() << "Error in Sprite::Load, file: \""
       << file_name << "\" could not be loaded,"
