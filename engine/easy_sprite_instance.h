@@ -26,6 +26,7 @@
 #include <memory>
 #include <vector>
 #include "engine/arctic_types.h"
+#include "engine/vec2si32.h"
 
 namespace arctic {
 
@@ -71,7 +72,7 @@ class SpriteInstance {
 
 /// @brief Creates a sprite instance from *.tga file data
 std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,
-    const Si64 size);
+    const Si64 size, Vec2Si32 *out_origin = nullptr);
 
 /// @brief Creates a *.tga file data from a sprite instance
 void SaveTga(std::shared_ptr<SpriteInstance> sprite,
