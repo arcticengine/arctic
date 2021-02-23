@@ -579,7 +579,7 @@ void HwSprite::Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size, const Vec2Si3
 
 void HwSprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot, const Si32 to_width, const Si32 to_height, const Si32 from_x, const Si32 from_y, const Si32 from_width, const Si32 from_height,
     const HwSprite &to_sprite, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) const {
-    if (!sprite_instance_ || gl_program_) {
+    if (!sprite_instance_ || !gl_program_) {
         return;
     }
     DrawSprite(gl_program_, gl_program_uniforms_,
