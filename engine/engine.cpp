@@ -127,16 +127,12 @@ attribute vec2 vPosition;
 attribute vec2 vTex;
 varying vec2 v_texCoord;
 uniform vec4 pivot_scale;
-uniform vec3 to_sprite_size_angle;
+uniform vec2 to_sprite_size;
 void main() {
   vec2 position = vPosition;
-  float asin = sin(to_sprite_size_angle.z);
-  float acos = cos(to_sprite_size_angle.z);
-  position.x = position.x*acos - position.y*asin;
-  position.y = position.y*acos + position.x*asin;
   position *= pivot_scale.zw;
   position += pivot_scale.xy;
-  position *= vec2(2.0 / to_sprite_size_angle.x, 2.0 / to_sprite_size_angle.y);
+  position *= vec2(2.0 / to_sprite_size.x, 2.0 / to_sprite_size.y);
   position -= vec2(1.0, 1.0);
   gl_Position = vec4(position, 0.0, 1.0);
 

@@ -52,6 +52,13 @@ class HwSprite {
   mutable std::unique_ptr<GlBuffer> gl_buffer_;
   mutable Vec2Si32 last_buffer_pivot_;
   mutable Vec2Si32 last_buffer_ref_size_;
+  mutable float last_angle_;
+
+  static void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTable &gl_program_uniforms,
+    const HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
+    const HwSprite &from_sprite, const float from_x, const float from_y, const float from_width, const float from_height,
+    Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians, float zoom);
+  void UpdateVertexBuffer(float angle) const;
 
  public:
   HwSprite();
@@ -102,8 +109,6 @@ class HwSprite {
   void SetUniforms(const UniformsTable &uniforms_table);
   const UniformsTable &Uniforms() const;
   UniformsTable &Uniforms();
-
-  const GlBuffer &VertexBuffer() const;
 
   void Draw(const HwSprite &to_sprite, const Si32 to_x, const Si32 to_y,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,

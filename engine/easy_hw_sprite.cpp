@@ -44,12 +44,13 @@
 
 namespace arctic {
 
-void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTable &gl_program_uniforms,
+void HwSprite::DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTable &gl_program_uniforms,
     const HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
     const HwSprite &from_sprite, const float from_x, const float from_y, const float from_width, const float from_height,
     Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians, float zoom) {
 
-    from_sprite.VertexBuffer().Bind();
+    from_sprite.UpdateVertexBuffer(angle_radians);
+    from_sprite.gl_buffer_->Bind();
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, 0));
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 16, (void*)8));
@@ -62,9 +63,8 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
         to_x_pivot, to_y_pivot,
         zoom * to_width / from_width, zoom * to_height / from_height
     ));
-    gl_program->SetUniform("to_sprite_size_angle", Vec3F(
-        static_cast<float>(to_sprite.Size().x), static_cast<float>(to_sprite.Size().y),
-        angle_radians
+    gl_program->SetUniform("to_sprite_size", Vec2F(
+        static_cast<float>(to_sprite.Size().x), static_cast<float>(to_sprite.Size().y)
     ));
 
     to_sprite.sprite_instance()->framebuffer().Bind();
@@ -92,6 +92,47 @@ void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTabl
     ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 }
 
+void HwSprite::UpdateVertexBuffer(float angle) const {
+    if (!gl_buffer_) {
+        gl_buffer_ = std::make_unique<GlBuffer>();
+    }
+
+    if (!gl_buffer_->IsValid()
+      || last_buffer_pivot_ != pivot_
+      || last_buffer_ref_size_ != ref_size_
+      || fabs(last_angle_ - angle) > 0.001f) {
+        last_buffer_pivot_ = pivot_;
+        last_buffer_ref_size_ = ref_size_;
+        last_angle_ = angle;
+
+        float sin_a = sinf(angle);
+        float cos_a = cosf(angle);
+        Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(Pivot().x);
+        Vec2F right = Vec2F(cos_a, sin_a) * static_cast<float>(Width() - Pivot().x);
+        Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - Pivot().y);
+        Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(Pivot().y);
+
+        // d c
+        // a b
+        Vec2F a(left + down);
+        Vec2F b(right + down);
+        Vec2F c(right + up);
+        Vec2F d(left + up);
+
+        const Vec2F kVerts[] = {
+            a, Vec2F(0.0f, 0.0f),
+            b, Vec2F(1.0f, 0.0f),
+            c, Vec2F(1.0f, 1.0f),
+
+            d, Vec2F(0.0f, 1.0f),
+            a, Vec2F(0.0f, 0.0f),
+            c, Vec2F(1.0f, 1.0f),
+        };
+
+        gl_buffer_->Create(kVerts, sizeof(kVerts));
+    }
+}
+
 
 
 HwSprite::HwSprite() {
@@ -102,6 +143,7 @@ HwSprite::HwSprite() {
   gl_buffer_ = nullptr;
   last_buffer_pivot_ = Vec2Si32(0, 0);
   last_buffer_ref_size_ = Vec2Si32(0, 0);
+  last_angle_ = 0.0f;
 }
 
 HwSprite::HwSprite(const HwSprite &other) {
@@ -114,6 +156,7 @@ HwSprite::HwSprite(const HwSprite &other) {
   gl_buffer_ = nullptr;
   last_buffer_pivot_ = Vec2Si32(0, 0);
   last_buffer_ref_size_ = Vec2Si32(0, 0);
+  last_angle_ = 0.0f;
 }
 
 HwSprite::HwSprite(HwSprite &&other) {
@@ -126,6 +169,7 @@ HwSprite::HwSprite(HwSprite &&other) {
   gl_buffer_ = nullptr;
   last_buffer_pivot_ = Vec2Si32(0, 0);
   last_buffer_ref_size_ = Vec2Si32(0, 0);
+  last_angle_ = 0.0f;
 
   other.sprite_instance_ = nullptr;
   other.ref_pos_ = Vec2Si32(0, 0);
@@ -136,6 +180,7 @@ HwSprite::HwSprite(HwSprite &&other) {
   other.gl_buffer_ = nullptr;
   other.last_buffer_pivot_ = Vec2Si32(0, 0);
   other.last_buffer_ref_size_ = Vec2Si32(0, 0);
+  other.last_angle_ = 0.0f;
 }
 
 HwSprite &HwSprite::operator=(const HwSprite &other) {
@@ -148,6 +193,7 @@ HwSprite &HwSprite::operator=(const HwSprite &other) {
   gl_buffer_ = nullptr;
   last_buffer_pivot_ = Vec2Si32(0, 0);
   last_buffer_ref_size_ = Vec2Si32(0, 0);
+  last_angle_ = 0.0f;
 
   return *this;
 }
@@ -162,6 +208,7 @@ HwSprite &HwSprite::operator=(HwSprite &&other) {
   gl_buffer_ = nullptr;
   last_buffer_pivot_ = Vec2Si32(0, 0);
   last_buffer_ref_size_ = Vec2Si32(0, 0);
+  last_angle_ = 0.0f;
 
   other.sprite_instance_ = nullptr;
   other.ref_pos_ = Vec2Si32(0, 0);
@@ -172,6 +219,7 @@ HwSprite &HwSprite::operator=(HwSprite &&other) {
   other.gl_buffer_ = nullptr;
   other.last_buffer_pivot_ = Vec2Si32(0, 0);
   other.last_buffer_ref_size_ = Vec2Si32(0, 0);
+  other.last_angle_ = 0.0f;
 
   return *this;
 }
@@ -219,6 +267,7 @@ void HwSprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
     gl_buffer_ = nullptr;
     last_buffer_pivot_ = Vec2Si32(0, 0);
     last_buffer_ref_size_ = Vec2Si32(0, 0);
+    last_angle_ = 0.0f;
   } else {
     *Log() << "Error in HwSprite::Load, file: \""
       << file_name << "\" could not be loaded,"
@@ -259,6 +308,7 @@ void HwSprite::Load(const char *file_name) {
     gl_buffer_ = nullptr;
     last_buffer_pivot_ = Vec2Si32(0, 0);
     last_buffer_ref_size_ = Vec2Si32(0, 0);
+    last_angle_ = 0.0f;
   } else {
     *Log() << "Error in HwSprite::Load, file: \""
       << file_name << "\" could not be loaded,"
@@ -284,6 +334,7 @@ void HwSprite::LoadFromSoftwareSprite(Sprite sw_sprite) {
     gl_buffer_ = nullptr;
     last_buffer_pivot_ = Vec2Si32(0, 0);
     last_buffer_ref_size_ = Vec2Si32(0, 0);
+    last_angle_ = 0.0f;
 }
 
 void HwSprite::Save(const char *file_name) {
@@ -324,6 +375,7 @@ void HwSprite::Create(const Si32 width, const Si32 height) {
   gl_buffer_ = nullptr;
   last_buffer_pivot_ = Vec2Si32(0, 0);
   last_buffer_ref_size_ = Vec2Si32(0, 0);
+  last_angle_ = 0.0f;
   Clear();
 }
 
@@ -348,6 +400,7 @@ void HwSprite::Reference(const HwSprite &from, const Si32 from_x, const Si32 fro
   gl_buffer_ = nullptr;
   last_buffer_pivot_ = Vec2Si32(0, 0);
   last_buffer_ref_size_ = Vec2Si32(0, 0);
+  last_angle_ = 0.0f;
 }
 
 void HwSprite::Clear() {
@@ -381,6 +434,7 @@ void HwSprite::Clone(const HwSprite &from, CloneTransform transform) {
     gl_buffer_ = nullptr;
     last_buffer_pivot_ = Vec2Si32(0, 0);
     last_buffer_ref_size_ = Vec2Si32(0, 0);
+    last_angle_ = 0.0f;
     return;
   }
 
@@ -474,37 +528,6 @@ const UniformsTable &HwSprite::Uniforms() const {
 
 UniformsTable &HwSprite::Uniforms() {
     return gl_program_uniforms_;
-}
-
-const GlBuffer &HwSprite::VertexBuffer() const {
-    if (!gl_buffer_) {
-        gl_buffer_ = std::make_unique<GlBuffer>();
-    }
-
-    if (!gl_buffer_->IsValid() || last_buffer_pivot_ != pivot_ || last_buffer_ref_size_ != ref_size_) {
-        last_buffer_pivot_ = pivot_;
-        last_buffer_ref_size_ = ref_size_;
-
-        // d c
-        // a b
-        Vec2F a(static_cast<float>(Pivot().x),           static_cast<float>(Pivot().y));
-        Vec2F b(static_cast<float>(Width() - Pivot().x), static_cast<float>(Pivot().y));
-        Vec2F c(static_cast<float>(Width() - Pivot().x), static_cast<float>(Height() - Pivot().y));
-        Vec2F d(static_cast<float>(Pivot().x),           static_cast<float>(Height() - Pivot().y));
-
-        const Vec2F verts[] = {
-            a, Vec2F(0.0f, 0.0f),
-            b, Vec2F(1.0f, 0.0f),
-            c, Vec2F(1.0f, 1.0f),
-
-            d, Vec2F(0.0f, 1.0f),
-            a, Vec2F(0.0f, 0.0f),
-            c, Vec2F(1.0f, 1.0f),
-        };
-
-        gl_buffer_->Create(verts, sizeof(verts));
-    }
-    return *gl_buffer_;
 }
 
 void HwSprite::Draw(const HwSprite &to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba color) {
