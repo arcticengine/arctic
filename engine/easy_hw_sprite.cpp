@@ -95,6 +95,7 @@ void HwSprite::DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const Un
 void HwSprite::UpdateVertexBuffer(float angle) const {
     if (!gl_buffer_) {
         gl_buffer_ = std::make_unique<GlBuffer>();
+        gl_buffer_->Create(nullptr, sizeof(float)*4*6);
     }
 
     if (!gl_buffer_->IsValid()
@@ -129,7 +130,7 @@ void HwSprite::UpdateVertexBuffer(float angle) const {
             c, Vec2F(1.0f, 1.0f),
         };
 
-        gl_buffer_->Create(kVerts, sizeof(kVerts));
+        gl_buffer_->UpdateData(kVerts);
     }
 }
 
