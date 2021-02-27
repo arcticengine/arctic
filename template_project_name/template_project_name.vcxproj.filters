@@ -35,6 +35,27 @@
     <ClCompile Include="..\arctic\engine\log.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\arctic\engine\easy_hw_sprite.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\arctic\engine\easy_hw_sprite_instance.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\arctic\engine\gl_buffer.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\arctic\engine\gl_framebuffer.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\arctic\engine\gl_program.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\arctic\engine\gl_state.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\arctic\engine\gl_texture2d.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -124,6 +145,27 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\arctic\engine\log.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\arctic\engine\easy_hw_sprite.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\arctic\engine\easy_hw_sprite_instance.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\arctic\engine\gl_buffer.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\arctic\engine\gl_framebuffer.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\arctic\engine\gl_program.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\arctic\engine\gl_state.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\arctic\engine\gl_texture2d.h">
       <Filter>engine</Filter>
     </ClInclude>
   </ItemGroup>
