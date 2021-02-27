@@ -507,10 +507,9 @@ void DrawTriangle(Sprite to_sprite,
           Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
           Ui32 m2 = ca;
-          Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+          Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
+          Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
           Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
-          Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-          Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000);
 
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
@@ -623,13 +622,11 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
             Ui32 m2 = ca;
-            Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+            Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
+            Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
             Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
-            Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-            Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000);
 
-            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
-              ((g + g2) & 0x0000ff00ul);
+            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul);
           }
         } else if (kBlendingMode == kDrawBlendingModeAdd) {
           Ui32 r2 = Ui32(color.r) + Ui32(to_rgba->r);
@@ -754,10 +751,9 @@ void DrawSprite(Sprite *to_sprite,
           Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
           Ui32 m2 = ca;
-          Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+          Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
+          Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
           Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
-          Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-          Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000ull);
 
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
           ((g + g2) & 0x0000ff00ul);
