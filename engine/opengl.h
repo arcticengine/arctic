@@ -26,14 +26,6 @@
 
 #include "engine/arctic_platform_def.h"
 
-#ifdef ARCTIC_PLATFORM_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include "engine/glext.h"
-
 #define ARCTIC_GL_CHECK_ERROR(opengl_call) do { \
     opengl_call; int call_line = __LINE__; \
     GLenum error_code = glGetError(); \
@@ -42,6 +34,14 @@
                << "\nFile: " << __FILE__ << "\nLine: " << call_line; \
     } \
 } while(false)
+
+#ifdef ARCTIC_PLATFORM_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include "engine/glext.h"
 
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLATTACHSHADERPROC glAttachShader;

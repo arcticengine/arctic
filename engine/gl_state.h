@@ -54,4 +54,4 @@ class GlState {
 
 }  // namespace arctic
 
-#endif  // ENGINE_GL_BUFFER_H_
+#endif  // ENGINE_GL_STATE_H_
