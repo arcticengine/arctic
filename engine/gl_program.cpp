@@ -29,6 +29,7 @@
 #include "engine/arctic_platform.h"
 #include "engine/log.h"
 #include "engine/opengl.h"
+#include <cstring>
 
 namespace arctic {
 
