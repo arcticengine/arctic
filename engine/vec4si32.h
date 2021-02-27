@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 - 2017 Huldra
+// Copyright (c) 2016 - 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -335,6 +335,13 @@ inline Vec4Si32 Clamp(const Vec4Si32 &v, Si32 mi, Si32 ma) {
         (v.y < mi) ? mi : ((v.y > ma) ? ma : v.y),
         (v.z < mi) ? mi : ((v.z > ma) ? ma : v.z),
         (v.w < mi) ? mi : ((v.w > ma) ? ma : v.w));
+}
+
+inline Vec4Si32 Clamp(const Vec4Si32 &v, Vec4Si32 mi, Vec4Si32 ma) {
+    return Vec4Si32((v.x < mi.x) ? mi.x : ((v.x > ma.x) ? ma.x : v.x),
+        (v.y < mi.y) ? mi.y : ((v.y > ma.y) ? ma.y : v.y),
+        (v.z < mi.z) ? mi.z : ((v.z > ma.z) ? ma.z : v.z),
+        (v.w < mi.w) ? mi.w : ((v.w > ma.w) ? ma.w : v.w));
 }
 /// @}
 

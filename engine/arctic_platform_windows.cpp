@@ -4,7 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2017 - 2019 Huldra
+// Copyright (c) 2017 - 2021 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -700,6 +700,8 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   return true;
 }
 
+void PrepareForTheEasyMainCall();
+
 void EngineThreadFunction(SystemInfo system_info) {
   //  Init opengl start
 
@@ -724,6 +726,7 @@ void EngineThreadFunction(SystemInfo system_info) {
     system_info.screen_height);
   //  Init opengl end
 
+  arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
   ExitProcess(0);  //-V2014

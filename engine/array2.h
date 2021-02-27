@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2018 Huldra
+// Copyright (c) 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,68 +20,60 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_SPRITE_INSTANCE_H_
-#define ENGINE_EASY_SPRITE_INSTANCE_H_
+#ifndef ENGINE_ARRAY2_H_
+#define ENGINE_ARRAY2_H_
 
-#include <memory>
 #include <vector>
 #include "engine/arctic_types.h"
-#include "engine/vec2si32.h"
+#include "engine/vec3si32.h"
 
 namespace arctic {
 
-/// @addtogroup global_advanced
-/// @{
-
-struct SpanSi32 {
-  Si32 begin;
-  Si32 end;
-};
-
-class SpriteInstance {
- private:
-  Si32 width_;
-  Si32 height_;
-  std::vector<Ui8> data_;
-  std::vector<SpanSi32> opaque_;
-
+template<class T> class Array2 {
+  Vec2Si32 size_;
+  std::vector<T> data_;
  public:
-  SpriteInstance(Si32 width, Si32 height);
-
-  Si32 width() const {
-    return width_;
+  explicit Array2<T>()
+    : size_(0, 0) {
   }
-
-  Si32 height() const {
-    return height_;
+  explicit Array2(const Si32 width, const Si32 height)
+    : size_(width, height)
+    , data_(width*height) {
   }
-
-  Ui8 *RawData() {
-    return data_.data();
+  explicit Array2(const Vec2Si32 size)
+    : size_(size)
+    , data_(size_.x*size_.y) {
   }
-
-  const std::vector<SpanSi32> &Opaque() {
-    return opaque_;
+  explicit Array2(const Array2<T> &original)
+    : size_(original.size_)
+    , data_(original.data_) {
   }
-
-  void UpdateOpaqueSpans();
-  void ClearOpaqueSpans();
+  explicit Array2(Array2 &&original)
+    : size_(original.size_)
+    , data_(std::move(original.data_)) {
+  }
+  Array2<T>& operator=(const Array2<T> &original) {
+    size_ = original.size_;
+    data_ = original.data_;
+    return *this;
+  }
+  T& At(const Vec2Si32 pos) {
+    return data_[pos.x + pos.y * size_.x];
+  }
+  const T& At(const Vec2Si32 pos) const {
+    return data_[pos.x + pos.y * size_.x];
+  }
+  T& At(const Si32 x, const Si32 y) {
+    return data_[x + y * size_.x];
+  }
+  const T& At(const Si32 x, const Si32 y) const {
+    return data_[x + y * size_.x];
+  }
+  Vec2Si32 Size() const {
+    return size_;
+  }
 };
-
-
-
-/// @brief Creates a sprite instance from *.tga file data
-std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,
-    const Si64 size, Vec2Si32 *out_origin = nullptr);
-
-/// @brief Creates a *.tga file data from a sprite instance
-void SaveTga(std::shared_ptr<SpriteInstance> sprite,
-    std::vector<Ui8> *data);
-
-/// @}
 
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::SpriteInstance>;
-
-#endif  // ENGINE_EASY_SPRITE_INSTANCE_H_
+#endif  // ENGINE_ARRAY2_H_

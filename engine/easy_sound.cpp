@@ -28,6 +28,7 @@
 #include <memory>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 
 #include "engine/arctic_platform.h"
 #include "engine/log.h"

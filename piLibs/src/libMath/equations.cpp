@@ -1,14 +1,13 @@
 #include <math.h>
 
-static __inline float cuberoot( float x )
-{
-    if( x<0.0f )
+static __inline float cuberoot( float x ) {
+    if( x<0.0f ) {
         return -powf(-x,1.0f/3.0f);
+    }
     return powf(x,1.0f/3.0f);
 }
 
-void complexSquareRoot( float a, float b, float *res )
-{
+void complexSquareRoot( float a, float b, float *res ) {
     float r = sqrtf( a*a+b*b );
     float y = sqrtf(.5f*(r-a));
     float x = .5f*b/y;
@@ -17,14 +16,12 @@ void complexSquareRoot( float a, float b, float *res )
     res[1] = y;
 }
 
-void complexMult( float *a, float *b, float *res )
-{
+void complexMult( float *a, float *b, float *res ) {
     res[0] = a[0]*b[0] - a[1]*b[1];
     res[1] = a[0]*b[1] + a[1]*b[0];
 }
 
-void complexRealDiv( float a, float *b, float *res )
-{
+void complexRealDiv( float a, float *b, float *res ) {
     float d = b[0]*b[0] + b[1]*b[1];
     d = 1.0f/d;
 
@@ -32,10 +29,7 @@ void complexRealDiv( float a, float *b, float *res )
     res[1] = (-a*b[1])*d;
 }
 
-
-
-void complexSwap( float *a, float *b  )
-{
+void complexSwap( float *a, float *b  ) {
     float tmp[2];
     
     tmp[0] = a[0];
@@ -50,18 +44,16 @@ void complexSwap( float *a, float *b  )
 
 //-----------------------------
 
-int solveCuadratic( float b, float c, float *res )
-{
+int solveCuadratic( float b, float c, float *res ) {
     float d = b*b-4.0f*c;
 
-    if( d<0.0f )
-        {
+    if( d<0.0f ) {
         res[0] = -b*.5f;
         res[1] = .5f*sqrtf( -d );
         res[2] = res[0];
         res[3] = -res[1];
         return 0;
-        }
+    }
 
     d = sqrtf(d);
 
@@ -83,9 +75,8 @@ int solveCuadratic( float b, float c, float *res )
 //    res[0] = real root 1
 //    res[2] = real root 2
 //    res[4] = real root 3
-int solveCubic( float b, float c, float d, float *res )
-{
-    // x^3 + a2·x^2 + a1·x + a0 = 0
+int solveCubic( float b, float c, float d, float *res ) {
+    // x^3 + a2x^2 + a1x + a0 = 0
     float p = (3.0f*c-b*b)/3.0f;
     float q = (9.0f*b*c - 27.0f*d - 2.0f*b*b*b)/27.0f;
     // x^3 + px + q = 0
@@ -93,8 +84,7 @@ int solveCubic( float b, float c, float d, float *res )
     // x = w-(p/3w)
     // (w^3)^2 - q*(w^3) - (p^3)/27 = 0
     float h = q*q*.25f + p*p*p/27.0f;
-    if( h>=0.0f )
-    {
+    if( h>=0.0f ) {
         // one single real solution!
         h = sqrtf(h);
 
@@ -115,9 +105,7 @@ int solveCubic( float b, float c, float d, float *res )
         res[2*2+1] = -im;
 
         return 1;
-    }
-    else
-    {
+    } else {
         // three real solutions!
 
         const float sqrt3 = sqrtf(3.0f);
@@ -144,38 +132,31 @@ int solveCubic( float b, float c, float d, float *res )
 }
 
 
-int solveQuartic( float b, float c, float d, float e, float *res )
-{
-    // x^4 + b·x^3 + c·x^2 + d·x + e = 0
+int solveQuartic(float b, float c, float d, float e, float *res) {
+    // x^4 + bx^3 + cx^2 + dx + e = 0
 
     // x = w - 1/4;
     float f = c - (3.0f*b*b/8.0f);
     float g = d + (b*b*b/8.0f) - (.5f*b*c);
     float h = e - (3.0f*b*b*b*b/256.0f) + (b*b*c/16.0f) - (b*d*.25f);
 
-    // x^4 + f·x^2 + g·x + h = 0
+    // x^4 + fx^2 + gx + h = 0
 #if 0
-    if( h==0.0f )
-        {
+    if( h==0.0f ) {
         res[0] = -0.25f;
         int nqsols = solveCubic( 1.0, f, g, res+2 );
         res[2] -= .25f;
         res[4] -= .25f;
         return 1+nqsols;
-        }
-    else if( g==0 )
-        {
+    } else if( g==0 ) {
         int ncsols = solveCuadratic( 1.0f, f, res );
-        if( ncsols==2 )
-            {
+        if( ncsols==2 ) {
             res[0] = sqrtf( res[0] );
             res[2] = sqrtf( res[2] );
             res[4] = -res[0];
             res[6] = -res[2];
             return 4;
-            }
-        else
-            {
+        } else {
             float p[2];
             float q[2];
             complexSquareRoot( res[0], res[1], p );
@@ -191,8 +172,8 @@ int solveQuartic( float b, float c, float d, float e, float *res )
             res[7] = -q[1];
 
             return 0;
-            }
         }
+    }
 #endif
     // general method
 
@@ -204,8 +185,7 @@ int solveQuartic( float b, float c, float d, float e, float *res )
 
     nqsols = solveCubic( qb, qc, qd, qres );
 
-    if( nqsols==3 )
-        {
+    if( nqsols==3 ) {
         float p, q;
         p = sqrtf( qres[2] );
         q = sqrtf( qres[4] );
@@ -219,9 +199,7 @@ int solveQuartic( float b, float c, float d, float e, float *res )
         res[6] = -p - q + r -s;
 
         return 4;
-        }
-    else
-        {
+    } else {
         float p[2];
         float q[2];
         float r[2];
@@ -247,19 +225,16 @@ int solveQuartic( float b, float c, float d, float e, float *res )
         
 
         int i, j;
-        for( i=0; i<4; i++ )
-        for( j=i; j<4; j++ )
-            {
-            if( res[2*j+1]==0.0f )
-                {
-                complexSwap( res+2*i, res+2*j  );
+        for( i=0; i<4; i++ ) {
+            for( j=i; j<4; j++ ) {
+                if( res[2*j+1]==0.0f ) {
+                    complexSwap( res+2*i, res+2*j  );
                 }
             }
-
-        return 2;
-
-        return 0;
         }
+        return 2;
+        return 0;
+    }
     
 }
 

@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 - 2020 Huldra
+// Copyright (c) 2016 - 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -189,6 +189,15 @@ inline Vec2Si32 Min(const Vec2Si32 &v, Si32 mi) {  // NOLINT
 inline Vec2Si32 Clamp(const Vec2Si32 &v, Si32 mi, Si32 ma) {
   return Vec2Si32((v.x < mi) ? mi : ((v.x > ma) ? ma : v.x),
     (v.y < mi) ? mi : ((v.y > ma) ? ma : v.y));
+}
+
+inline Vec2Si32 Clamp(const Vec2Si32 &v, Vec2Si32 mi, Vec2Si32 ma) {
+  return Vec2Si32((v.x < mi.x) ? mi.x : ((v.x > ma.x) ? ma.x : v.x),
+    (v.y < mi.y) ? mi.y : ((v.y > ma.y) ? ma.y : v.y));
+}
+
+inline bool IsInRange(const Vec2Si32 &v, const Vec2Si32 &mi, const Vec2Si32 &ma) {
+  return (v.x >= mi.x && v.y >= mi.y && v.x <= ma.x && v.y <= ma.y);
 }
 /// @}
 

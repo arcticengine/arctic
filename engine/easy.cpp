@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2017 - 2021 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -897,7 +897,13 @@ Vec2Si32 ScreenSize() {
 
 // Sets virtual screen size
 void ResizeScreen(const Si32 width, const Si32 height) {
+  Vec2Si32 prev_size = GetEngine()->GetBackbuffer().Size();
   GetEngine()->ResizeBackbuffer(width, height);
+  Vec2Si32 new_size = GetEngine()->GetBackbuffer().Size();
+  Vec2F scale(prev_size.x ? static_cast<float>(new_size.x) / static_cast<float>(prev_size.x) : 1.f,
+              prev_size.y ? static_cast<float>(new_size.y) / static_cast<float>(prev_size.y) : 1.f);
+  g_mouse_pos_prev = Vec2Si32(Vec2F(g_mouse_pos_prev) * scale);
+  g_mouse_pos = Vec2Si32(Vec2F(g_mouse_pos) * scale);
 }
 
 void ResizeScreen(const Vec2Si32 size) {
@@ -1063,6 +1069,11 @@ Engine *GetEngine() {
     g_engine = new Engine();
     return g_engine;
   }
+}
+
+void PrepareForTheEasyMainCall() {
+  g_mouse_pos = GetEngine()->MouseToBackbuffer(Vec2F(0.5f, 0.5f));
+  g_mouse_pos_prev = GetEngine()->MouseToBackbuffer(Vec2F(0.5f, 0.5f));
 }
 
 }  // namespace arctic

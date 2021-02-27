@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2017 - 2021 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -45,7 +45,8 @@ enum DrawBlendingMode {
   kDrawBlendingModeAlphaBlend = 1,
   kColorize [[deprecated("User kDrawBlendingModeColorize instead of kColorize")]] = 2,  // Deprecated
   kDrawBlendingModeColorize = 2,
-  kDrawBlendingModeAdd = 3
+  kDrawBlendingModeAdd = 3,
+  kDrawBlendingModeSolidColor = 4
 };
 
 enum DrawFilterMode {

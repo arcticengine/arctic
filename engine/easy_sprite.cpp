@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2017 - 2021 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -514,6 +514,14 @@ void DrawTriangle(Sprite to_sprite,
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
         }
+      } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
+        Ui32 ca = color.a;
+        if (ca == 255) {
+          to_rgba->rgba = in_color.rgba;
+        } else if (ca) {
+          Ui32 ca2 = (ca * (Ui32(in_color.a) + 1u)) >> 8u;
+          to_rgba->rgba = (in_color.rgba & 0xffffff) | (ca2 << 24);
+        }
       } else if (kBlendingMode == kDrawBlendingModeAdd) {
         Ui32 r2 = Ui32(color.r) + Ui32(to_rgba->r);
         Ui32 g2 = Ui32(color.g) + Ui32(to_rgba->g);
@@ -627,6 +635,14 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
 
             to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul);
+          }
+        } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
+          Ui32 ca = color.a;
+          if (ca == 255) {
+            to_rgba->rgba = in_color.rgba;
+          } else if (ca) {
+            Ui32 ca2 = (ca * (Ui32(in_color.a) + 1u)) >> 8u;
+            to_rgba->rgba = (in_color.rgba & 0xffffff) | (ca2 << 24);
           }
         } else if (kBlendingMode == kDrawBlendingModeAdd) {
           Ui32 r2 = Ui32(color.r) + Ui32(to_rgba->r);
@@ -756,7 +772,15 @@ void DrawSprite(Sprite *to_sprite,
           Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
 
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
-          ((g + g2) & 0x0000ff00ul);
+            ((g + g2) & 0x0000ff00ul);
+        }
+      } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
+        Ui32 ca = color.a;
+        if (ca == 255) {
+          to_rgba->rgba = in_color.rgba;
+        } else if (ca) {
+          Ui32 ca2 = (ca * (Ui32(in_color.a) + 1u)) >> 8u;
+          to_rgba->rgba = (in_color.rgba & 0xffffff) | (ca2 << 24);
         }
       } else if (kBlendingMode == kDrawBlendingModeAdd) {
         Ui32 r2 = Ui32(color.r) + Ui32(to_rgba->r);
@@ -801,6 +825,12 @@ template void DrawSprite<kDrawBlendingModeColorize, kFilterNearest>(
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
   const Si32 from_width, const Si32 from_height,
   Rgba color);
+template void DrawSprite<kDrawBlendingModeSolidColor, kFilterNearest>(
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  const Si32 to_width, const Si32 to_height,
+  const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
+  const Si32 from_width, const Si32 from_height,
+  Rgba color);
 template void DrawSprite<kDrawBlendingModeCopyRgba, kFilterBilinear>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
@@ -814,6 +844,12 @@ template void DrawSprite<kDrawBlendingModeAlphaBlend, kFilterBilinear>(
   const Si32 from_width, const Si32 from_height,
   Rgba color);
 template void DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(
+  Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
+  const Si32 to_width, const Si32 to_height,
+  const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
+  const Si32 from_width, const Si32 from_height,
+  Rgba color);
+template void DrawSprite<kDrawBlendingModeSolidColor, kFilterBilinear>(
   Sprite *to_sprite, const Si32 to_x_pivot, const Si32 to_y_pivot,
   const Si32 to_width, const Si32 to_height,
   const Sprite &from_sprite, const Si32 from_x, const Si32 from_y,
@@ -854,7 +890,8 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
           " Not loading sprite.";
       return;
     }
-    sprite_instance_ = LoadTga(data, static_cast<Si64>(size_bytes));
+    pivot_ = Vec2Si32(0, 0);
+    sprite_instance_ = LoadTga(data, static_cast<Si64>(size_bytes), &pivot_);
     if (!sprite_instance_) {
       *Log() << "Error in Sprite::Load, file: \""
         << file_name << "\" could not be loaded with LoadTga."
@@ -864,7 +901,6 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = Vec2Si32(sprite_instance_->width(),
                          sprite_instance_->height());
-    pivot_ = Vec2Si32(0, 0);
   } else {
     *Log() << "Error in Sprite::Load, file: \""
       << file_name << "\" could not be loaded,"
@@ -896,11 +932,11 @@ void Sprite::Load(const char *file_name) {
           " Not loading sprite.";
       return;
     }
-    sprite_instance_ = LoadTga(data.data(), static_cast<Si64>(data.size()));
+    pivot_ = Vec2Si32(0, 0);
+    sprite_instance_ = LoadTga(data.data(), static_cast<Si64>(data.size()), &pivot_);
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = sprite_instance_ ? Vec2Si32(sprite_instance_->width(),
       sprite_instance_->height()) : Vec2Si32(0, 0);
-    pivot_ = Vec2Si32(0, 0);
   } else {
     *Log() << "Error in Sprite::Load, file: \""
       << file_name << "\" could not be loaded,"
@@ -1102,6 +1138,13 @@ void Sprite::Draw(Sprite to_sprite,
             *this, 0, 0, Width(), Height(),
             color);
           break;
+        case kDrawBlendingModeSolidColor:
+          DrawSprite<kDrawBlendingModeSolidColor, kFilterNearest>(&to_sprite,
+            to_x_pivot, to_y_pivot,
+            Width(), Height(),
+            *this, 0, 0, Width(), Height(),
+            color);
+          break;
         case kDrawBlendingModeAdd:
           DrawSprite<kDrawBlendingModeAdd, kFilterNearest>(&to_sprite,
             to_x_pivot, to_y_pivot,
@@ -1127,6 +1170,12 @@ void Sprite::Draw(Sprite to_sprite,
           break;
         case kDrawBlendingModeColorize:
           DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(&to_sprite,
+            to_x_pivot, to_y_pivot,
+            Width(), Height(),
+            *this, 0, 0, Width(), Height(), color);
+          break;
+        case kDrawBlendingModeSolidColor:
+          DrawSprite<kDrawBlendingModeSolidColor, kFilterBilinear>(&to_sprite,
             to_x_pivot, to_y_pivot,
             Width(), Height(),
             *this, 0, 0, Width(), Height(), color);
@@ -1231,6 +1280,12 @@ void Sprite::Draw(const float to_x, const float to_y,
           DrawTriangle<kDrawBlendingModeColorize, kFilterNearest>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
+        case kDrawBlendingModeSolidColor:
+          DrawTriangle<kDrawBlendingModeSolidColor, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kDrawBlendingModeSolidColor, kFilterNearest>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
+          break;
         case kDrawBlendingModeAdd:
           DrawTriangle<kDrawBlendingModeAdd, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
@@ -1257,6 +1312,12 @@ void Sprite::Draw(const float to_x, const float to_y,
           DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, *this, in_color);
           DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
+            d, a, c, td, ta, tc, *this, in_color);
+          break;
+        case kDrawBlendingModeSolidColor:
+          DrawTriangle<kDrawBlendingModeSolidColor, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, *this, in_color);
+          DrawTriangle<kDrawBlendingModeSolidColor, kFilterBilinear>(to_sprite,
             d, a, c, td, ta, tc, *this, in_color);
           break;
         case kDrawBlendingModeAdd:
@@ -1291,6 +1352,10 @@ void DrawTriangle(Sprite to_sprite,
           DrawTriangle<kDrawBlendingModeColorize, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
+        case kDrawBlendingModeSolidColor:
+          DrawTriangle<kDrawBlendingModeSolidColor, kFilterNearest>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
         case kDrawBlendingModeAdd:
           DrawTriangle<kDrawBlendingModeAdd, kFilterNearest>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
@@ -1309,6 +1374,10 @@ void DrawTriangle(Sprite to_sprite,
           break;
         case kDrawBlendingModeColorize:
           DrawTriangle<kDrawBlendingModeColorize, kFilterBilinear>(to_sprite,
+            a, b, c, ta, tb, tc, texture, in_color);
+          break;
+        case kDrawBlendingModeSolidColor:
+          DrawTriangle<kDrawBlendingModeSolidColor, kFilterBilinear>(to_sprite,
             a, b, c, ta, tb, tc, texture, in_color);
           break;
         case kDrawBlendingModeAdd:
@@ -1415,6 +1484,12 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
               *this, from_x, from_y, from_width, from_height,
               in_color);
           break;
+        case kDrawBlendingModeSolidColor:
+          DrawSprite<kDrawBlendingModeSolidColor, kFilterNearest>(&to_sprite,
+              to_x_pivot, to_y_pivot, to_width, to_height,
+              *this, from_x, from_y, from_width, from_height,
+              in_color);
+          break;
       }
       break;
       case kFilterBilinear:
@@ -1434,6 +1509,12 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
           break;
         case kDrawBlendingModeColorize:
           DrawSprite<kDrawBlendingModeColorize, kFilterBilinear>(&to_sprite,
+              to_x_pivot, to_y_pivot, to_width, to_height,
+              *this, from_x, from_y, from_width, from_height,
+              in_color);
+          break;
+        case kDrawBlendingModeSolidColor:
+          DrawSprite<kDrawBlendingModeSolidColor, kFilterBilinear>(&to_sprite,
               to_x_pivot, to_y_pivot, to_width, to_height,
               *this, from_x, from_y, from_width, from_height,
               in_color);

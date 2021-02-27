@@ -1,160 +1,166 @@
+# You can override the included template(s) by including variable overrides
+# See https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
+# Note that environment variables can be set in several places
+# See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
+include:
+  - template: Security/License-Scanning.gitlab-ci.yml
 image: gcc
-
 stages:
-  - build
-  - test
-  - deploy  
-  - fuzz
-  
-
+- test
+- deploy
+- fuzz
 build_wizard:
-  stage: build
+  stage: test
   before_script:
-    - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
+  - apt-get update --yes
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev
   script:
-    - cd wizard
-    - cmake .
-    - make all
-    - cmake -DCMAKE_BUILD_TYPE=Debug .
-    - make all
-    - cd ..
-
+  - cd wizard
+  - cmake .
+  - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
+  - cd ..
 build_ap:
-  stage: build
+  stage: test
   before_script:
-    - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
+  - apt-get update --yes
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev
   script:
-    - cd antarctica_pyramids
-    - cmake .
-    - make all
-    - cmake -DCMAKE_BUILD_TYPE=Debug .
-    - make all
-    - cd ..
-
+  - cd antarctica_pyramids
+  - cmake .
+  - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
+  - cd ..
 build_filetest:
-  stage: build
+  stage: test
   before_script:
-    - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
+  - apt-get update --yes
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev
   script:
-    - cd filetest
-    - cmake .
-    - make all
-    - cmake -DCMAKE_BUILD_TYPE=Debug .
-    - make all
-    - cd ..
-
+  - cd filetest
+  - cmake .
+  - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
+  - cd ..
 build_tests:
-  stage: build
+  stage: test
   before_script:
-    - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev
+  - apt-get update --yes
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev
   script:
-    - cd tests
-    - cmake .
-    - make all
-    - cmake -DCMAKE_BUILD_TYPE=Debug .
-    - make all
-    - cd ..
-
+  - cd tests
+  - cmake .
+  - make all
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
+  - cd ..
 run_tests:
   stage: test
   before_script:
-    - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
+  - apt-get update --yes
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev xvfb
   script:
-    - cd tests
-    - cmake .
-    - make all
-    - xvfb-run ./tests
-    - cmake -DCMAKE_BUILD_TYPE=Debug .
-    - make all
-    - xvfb-run ./tests
-    - cd ..
-
+  - cd tests
+  - cmake .
+  - make all
+  - xvfb-run ./tests
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
+  - xvfb-run ./tests
+  - cd ..
 create_project:
   stage: test
   before_script:
-    - apt-get update --yes
-    - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
+  - apt-get update --yes
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev xvfb
   script:
-    - cd wizard
-    - cmake .
-    - make all
-    - xvfb-run ./wizard create test_project
-    - cd ../../test_project
-    - cmake .
-    - make all
-    - cd ..
-
+  - cd wizard
+  - cmake .
+  - make all
+  - xvfb-run ./wizard create test_project
+  - cd ../../test_project
+  - cmake .
+  - make all
+  - cd ..
 include:
-  - template: Coverage-Fuzzing.gitlab-ci.yml
-
-fuzz_target:
-    extends: .fuzz_base
-    image: ubuntu:18.04
-    variables:
-        CI_SEED_CORPUS: './fuzz_tests/corpus'
-    script:
-      - apt-get update -qq && apt-get install -y -qq git make clang cmake
-      - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
-      - export CC=`which clang`
-      - export CXX=`which clang++`
-      - export VERBOSE=1
-      - mkdir fuzz_tests/corpus && cp wizard/data/*.wav fuzz_tests/corpus
-      - mkdir -p build && cd build
-      - cmake ../fuzz_tests -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0' -DCMAKE_BUILD_TYPE=AddressSanitizer && make all && cd ..
-      - ./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_harness
-
+- template: Coverage-Fuzzing.gitlab-ci.yml
+- template: Security/SAST.gitlab-ci.yml
+fuzz_wav:
+  extends: ".fuzz_base"
+  image: ubuntu:18.04
+  variables:
+    COVFUZZ_SEED_CORPUS: "./fuzz_tests/wav_corpus"
+  script:
+  - pwd
+  - apt-get update -qq && apt-get install -y -qq git make clang cmake
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev xvfb
+  - export CC=`which clang`
+  - export CXX=`which clang++`
+  - export VERBOSE=1
+  - mkdir fuzz_tests/wav_corpus && cp wizard/data/*.wav fuzz_tests/wav_corpus
+  - mkdir -p build && cd build
+  - cmake ../fuzz_tests -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0' -DCMAKE_BUILD_TYPE=AddressSanitizer
+    && make all && cd ..
+  - "./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_harness -max_total_time=600"
 fuzz_csv:
-    extends: .fuzz_base
-    image: ubuntu:18.04
-    variables:
-        CI_SEED_CORPUS: './fuzz_tests/csv_corpus'
-    script:
-      - apt-get update -qq && apt-get install -y -qq git make clang cmake
-      - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
-      - export CC=`which clang`
-      - export CXX=`which clang++`
-      - export VERBOSE=1
-      - mkdir fuzz_tests/csv_corpus && cp wizard/data/*.csv fuzz_tests/csv_corpus
-      - mkdir -p build && cd build
-      - TEST_NAME=fuzz_csv cmake ../fuzz_tests -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0' -DCMAKE_BUILD_TYPE=AddressSanitizer && make all && cd ..
-      - ./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_csv -max_total_time=600 
-
+  extends: ".fuzz_base"
+  image: ubuntu:18.04
+  variables:
+    COVFUZZ_SEED_CORPUS: "./fuzz_tests/csv_corpus"
+  script:
+  - apt-get update -qq && apt-get install -y -qq git make clang cmake
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev xvfb
+  - export CC=`which clang`
+  - export CXX=`which clang++`
+  - export VERBOSE=1
+  - mkdir fuzz_tests/csv_corpus && cp wizard/data/*.csv fuzz_tests/csv_corpus
+  - mkdir -p build && cd build
+  - TEST_NAME=fuzz_csv cmake ../fuzz_tests -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0'
+    -DCMAKE_BUILD_TYPE=AddressSanitizer && make all && cd ..
+  - "./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_csv -max_total_time=600"
 fuzz_tga:
-    extends: .fuzz_base
-    image: ubuntu:18.04
-    variables:
-        CI_SEED_CORPUS: './fuzz_tests/tga_corpus'
-    script:
-      - apt-get update -qq && apt-get install -y -qq git make clang cmake
-      - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libglfw3-dev libgles2-mesa-dev xvfb
-      - export CC=`which clang`
-      - export CXX=`which clang++`
-      - export VERBOSE=1
-      - mkdir fuzz_tests/tga_corpus && cp wizard/data/*.tga fuzz_tests/tga_corpus
-      - mkdir -p build && cd build
-      - TEST_NAME=fuzz_tga cmake ../fuzz_tests -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0' -DCMAKE_BUILD_TYPE=AddressSanitizer && make all && cd ..
-      - ./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_tga -max_total_time=600 
-
-# Generate Doxygen API Documentation and deploy it at GitLab pages
+  extends: ".fuzz_base"
+  image: ubuntu:18.04
+  variables:
+    COVFUZZ_SEED_CORPUS: "./fuzz_tests/tga_corpus"
+  script:
+  - apt-get update -qq && apt-get install -y -qq git make clang cmake
+  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+    libglfw3-dev libgles2-mesa-dev xvfb
+  - export CC=`which clang`
+  - export CXX=`which clang++`
+  - export VERBOSE=1
+  - mkdir fuzz_tests/tga_corpus && cp wizard/data/*.tga fuzz_tests/tga_corpus
+  - mkdir -p build && cd build
+  - TEST_NAME=fuzz_tga cmake ../fuzz_tests -DCMAKE_CXX_FLAGS='-D_GLIBCXX_USE_CXX11_ABI=0'
+    -DCMAKE_BUILD_TYPE=AddressSanitizer && make all && cd ..
+  - "./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_tga -max_total_time=600"
 pages:
   stage: deploy
   cache: {}
   image: php:7-cli-alpine
   before_script:
-    - apk update
-    - apk add doxygen ttf-freefont graphviz
+  - apk update
+  - apk add doxygen ttf-freefont graphviz
   script:
-    - cd doc
-    - doxygen ./Doxyfile
-    - mv ./html/ ../public/
+  - cd doc
+  - doxygen ./Doxyfile
+  - mv ./html/ ../public/
   artifacts:
     paths:
-      - public
+    - public
   only:
-    - master
-
+  - master
+sast:
+  stage: test
