@@ -147,8 +147,15 @@ precision mediump float;
 varying vec2 v_texCoord;
 uniform sampler2D s_texture;
 uniform vec4 in_color;
+uniform int is_solid_color;
 void main() {
-  gl_FragColor = texture2D(s_texture, v_texCoord)*in_color;
+  if (is_solid_color == 1) {
+    gl_FragColor.rgb = in_color.rgb;
+    gl_FragColor.a = texture2D(s_texture, v_texCoord).a*in_color.a;
+  }
+  else {
+    gl_FragColor = texture2D(s_texture, v_texCoord)*in_color;
+  }
 }
 )SHADER";
 

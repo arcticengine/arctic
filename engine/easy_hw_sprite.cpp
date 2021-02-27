@@ -75,7 +75,7 @@ void HwSprite::DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const Un
     texture.Bind(0);
 
     GlState::SetBlending(blending_mode);
-    if (blending_mode == kDrawBlendingModeColorize) {
+    if (blending_mode == kDrawBlendingModeColorize || blending_mode == kDrawBlendingModeSolidColor) {
         gl_program->SetUniform("in_color", Vec4F(
             static_cast<float>(in_color.r) / 255.0f,
             static_cast<float>(in_color.g) / 255.0f,
@@ -87,7 +87,9 @@ void HwSprite::DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const Un
         gl_program->SetUniform("in_color", Vec4F(1.0f, 1.0f, 1.0f, 1.0f));
     }
 
-    gl_program->CheckActiveUniforms(4 + static_cast<int>(gl_program_uniforms.Size()));
+    gl_program->SetUniform("is_solid_color", static_cast<int>(blending_mode == kDrawBlendingModeSolidColor));
+
+    gl_program->CheckActiveUniforms(5 + static_cast<int>(gl_program_uniforms.Size()));
 
     ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
 }

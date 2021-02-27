@@ -62,6 +62,10 @@ void GlState::SetBlending(DrawBlendingMode mode) {
                 ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
                 ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_ONE, GL_ONE));
                 break;
+            case kDrawBlendingModeSolidColor:
+                ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
+                ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+                break;
             default:
                 ARCTIC_GL_CHECK_ERROR(glDisable(GL_BLEND));
                 break;
