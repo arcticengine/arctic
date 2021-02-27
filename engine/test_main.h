@@ -810,7 +810,7 @@ extern "C" {
     memset(test_flags__, 0, sizeof(char) * test_list_size__);
 
     // Parse options
-    for (size_t i = 1; i < argc; i++) {
+    for (int64_t i = 1; i < argc; i++) {
       if (seen_double_dash || argv[i][0] != '-') {
         if (test_lookup__(argv[i]) == 0) {
           fprintf(stderr, "%s: Unrecognized unit test '%s'\n", argv[0],
