@@ -23,6 +23,7 @@
 #ifndef ENGINE_GL_PROGRAM_H_
 #define ENGINE_GL_PROGRAM_H_
 
+#include <string>
 #include <unordered_map>
 
 #include "engine/arctic_types.h"
