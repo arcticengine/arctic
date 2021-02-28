@@ -4,6 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +32,7 @@
 #include "engine/arctic_platform.h"
 #include "engine/arctic_math.h"
 #include "engine/unicode.h"
+#include "engine/gl_state.h"
 
 namespace arctic {
 
@@ -46,39 +48,6 @@ void MathTables::Init() {
     Si32 x = Si32(xx * 65536.0 + 0.5);
     circle_16_16[static_cast<size_t>(y)] = x;
   }
-}
-
-GLuint Engine::LoadShader(const char *shaderSrc, GLenum type) {
-  // Create the shader object
-  GLuint shader = glCreateShader(type);
-  if (shader == 0) {
-    GLenum errCode = glGetError();
-    std::stringstream info;
-    info << "Can't create shader, code: " << (Ui64)errCode;
-    Fatal(info.str().c_str());
-    return 0;
-  }
-  // Load the shader source
-  glShaderSource(shader, 1, &shaderSrc, NULL);
-  // Compile the shader
-  glCompileShader(shader);
-  // Check the compile status
-  GLint compiled;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-  if (!compiled) {
-    GLint infoLen = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-    if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(
-        malloc(sizeof(char) * static_cast<size_t>(infoLen)));
-      glGetShaderInfoLog(shader, infoLen, NULL, infoLog);
-      Fatal("Error compiling shader: ", infoLog);
-      free(infoLog);  //-V779
-    }
-    glDeleteShader(shader);
-    return 0;
-  }
-  return shader;
 }
 
 void Engine::SetArgcArgv(Si64 argc, const char **argv) {
@@ -125,20 +94,19 @@ void Engine::Init(Si32 width, Si32 height) {
 
   math_tables_.Init();
 
-
-  const char vShaderStr[] = R"SHADER(
+    const char copy_backbuffers_vShaderStr[] = R"SHADER(
 #ifdef GL_ES
 #endif
-attribute vec4 vPosition;
+attribute vec3 vPosition;
 attribute vec2 vTex;
 varying vec2 v_texCoord;
 void main() {
-  gl_Position = vPosition;
+  gl_Position = vec4(vPosition, 1.0);
   v_texCoord = vTex;
 }
 )SHADER";
 
-  const char fShaderStr[] = R"SHADER(
+  const char copy_backbuffers_fShaderStr[] = R"SHADER(
 #ifdef GL_ES
 precision mediump float;
 #endif
@@ -149,49 +117,62 @@ void main() {
 }
 )SHADER";
 
-  // Load the vertex/fragment shaders
-  GLuint vertexShader = LoadShader(vShaderStr, GL_VERTEX_SHADER);
-  GLuint fragmentShader = LoadShader(fShaderStr, GL_FRAGMENT_SHADER);
-  // Create the program object
-  g_programObject = glCreateProgram();
-  if (g_programObject == 0) {
-    Fatal("Unknown error creating program");
+  copy_backbuffers_program_ = std::make_shared<GlProgram>();
+  copy_backbuffers_program_->Create(copy_backbuffers_vShaderStr, copy_backbuffers_fShaderStr);
+
+  const char default_sprite_vShaderStr[] = R"SHADER(
+#ifdef GL_ES
+#endif
+attribute vec2 vPosition;
+attribute vec2 vTex;
+varying vec2 v_texCoord;
+uniform vec4 pivot_scale;
+uniform vec2 to_sprite_size;
+void main() {
+  vec2 position = vPosition;
+  position *= pivot_scale.zw;
+  position += pivot_scale.xy;
+  position *= vec2(2.0 / to_sprite_size.x, 2.0 / to_sprite_size.y);
+  position -= vec2(1.0, 1.0);
+  gl_Position = vec4(position, 0.0, 1.0);
+
+  v_texCoord = vTex;
+}
+)SHADER";
+
+  const char default_sprite_fShaderStr[] = R"SHADER(
+#ifdef GL_ES
+precision mediump float;
+#endif
+varying vec2 v_texCoord;
+uniform sampler2D s_texture;
+uniform vec4 in_color;
+uniform int is_solid_color;
+void main() {
+  if (is_solid_color == 1) {
+    gl_FragColor.rgb = in_color.rgb;
+    gl_FragColor.a = texture2D(s_texture, v_texCoord).a*in_color.a;
   }
-  glAttachShader(g_programObject, vertexShader);
-  glAttachShader(g_programObject, fragmentShader);
-  // Bind vPosition to attribute 0
-  glBindAttribLocation(g_programObject, 0, "vPosition");
-  glBindAttribLocation(g_programObject, 1, "vTex");
-  // Link the program
-  glLinkProgram(g_programObject);
-  // Check the link status
-  GLint linked;
-  glGetProgramiv(g_programObject, GL_LINK_STATUS, &linked);
-  if (!linked) {
-    GLint infoLen = 0;
-    glGetProgramiv(g_programObject, GL_INFO_LOG_LENGTH, &infoLen);
-    if (infoLen > 1) {
-      char* infoLog = reinterpret_cast<char*>(
-        malloc(sizeof(char) * static_cast<size_t>(infoLen)));
-      glGetProgramInfoLog(g_programObject, infoLen, NULL, infoLog);
-      Fatal("Error linking program: ", infoLog);
-      free(infoLog);  //-V779
-    }
-    glDeleteProgram(g_programObject);
-    Fatal("Unknown error linking program");
+  else {
+    gl_FragColor = texture2D(s_texture, v_texCoord)*in_color;
   }
+}
+)SHADER";
+
+  default_sprite_program_ = std::make_shared<GlProgram>();
+  default_sprite_program_->Create(default_sprite_vShaderStr, default_sprite_fShaderStr);
 }
 
 void Engine::Draw2d() {
-  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
-      backbuffer_texture_.Width(), backbuffer_texture_.Height(), GL_RGBA,
-      GL_UNSIGNED_BYTE, static_cast<GLvoid*>(backbuffer_texture_.RawData()));
+  gl_backbuffer_texture_.UpdateData(backbuffer_texture_.RawData());
 
   // render
 
+  GlFramebuffer::BindDefault();
+  GlState::SetViewport(0, 0, width_, height_);
 
-  glClearColor(0.f, 0.f, 0.f, 0.f);
-  glClear(GL_COLOR_BUFFER_BIT);
+  ARCTIC_GL_CHECK_ERROR(glClearColor(0.f, 0.f, 0.f, 0.f));
+  ARCTIC_GL_CHECK_ERROR(glClear(GL_COLOR_BUFFER_BIT));
   // draw quad
 
   visible_verts_.resize(16 << 20);
@@ -266,57 +247,34 @@ void Engine::Draw2d() {
   index[indices_] = static_cast<Ui32>(idx);
   indices_++;
 
-  glViewport(0, 0, width_, height_);
+  GlBuffer::BindDefault();
+  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, visible_verts_.data()));
+  ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
+  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data()));
+  ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0,
-      visible_verts_.data());
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0,
-      tex_coords_.data());
-  glEnableVertexAttribArray(1);
+  copy_backbuffers_program_->Bind();
+  copy_backbuffers_program_->SetUniform("s_texture", 0);
+  copy_backbuffers_program_->CheckActiveUniforms(1);
 
-  GLint loc = glGetUniformLocation(g_programObject, "s_texture");
-  Check(loc >= 0, "s_texture not found");
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
+  GlState::SetBlending(kDrawBlendingModeCopyRgba);
+  
+  gl_backbuffer_texture_.Bind(0);
+  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
 
+  GlState::SetBlending(kDrawBlendingModeAlphaBlend);
 
-  glUniform1i(loc, 0);
-  glUseProgram(g_programObject);
-
-  GLint ufs;
-  glGetProgramiv(g_programObject, GL_ACTIVE_UNIFORMS, &ufs);
-  Check(ufs == 1, "no ufs");
-
-  glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT,
-      visible_indices_.data());
+  hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
+  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
 
   Swap();
 }
 
 void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
+  hw_backbuffer_texture_.Create(width, height);
   backbuffer_texture_.Create(width, height);
 
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  glGenTextures(1, &backbuffer_texture_name_);
-  // generate a texture handler really reccomanded (mandatory in openGL 3.0)
-  glBindTexture(GL_TEXTURE_2D, backbuffer_texture_name_);
-  // tell openGL that we are using the texture
-  Check(glIsTexture(backbuffer_texture_name_), "no texture");
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-      GL_UNSIGNED_BYTE, backbuffer_texture_.RawData());
-  {
-    GLenum errCode = glGetError();
-    *Log() << "code: " << (Ui64)errCode;
-  }
-  // send the texture data
+  gl_backbuffer_texture_.Create(width, height);
 }
 
 double Engine::GetTime() {

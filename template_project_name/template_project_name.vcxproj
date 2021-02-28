@@ -217,6 +217,13 @@
     <ClInclude Include="..\arctic\engine\vec3si32.h" />
     <ClInclude Include="..\arctic\engine\vec4f.h" />
     <ClInclude Include="..\arctic\engine\vec4si32.h" />
+    <ClInclude Include="..\arctic\engine\easy_hw_sprite.h" />
+    <ClInclude Include="..\arctic\engine\easy_hw_sprite_instance.h" />
+    <ClInclude Include="..\arctic\engine\gl_buffer.h" />
+    <ClInclude Include="..\arctic\engine\gl_framebuffer.h" />
+    <ClInclude Include="..\arctic\engine\gl_program.h" />
+    <ClInclude Include="..\arctic\engine\gl_state.h" />
+    <ClInclude Include="..\arctic\engine\gl_texture2d.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -232,6 +239,13 @@
     <ClCompile Include="..\arctic\engine\engine.cpp" />
     <ClCompile Include="..\arctic\engine\font.cpp" />
     <ClCompile Include="..\arctic\engine\log.cpp" />
+    <ClCompile Include="..\arctic\engine\easy_hw_sprite.cpp" />
+    <ClCompile Include="..\arctic\engine\easy_hw_sprite_instance.cpp" />
+    <ClCompile Include="..\arctic\engine\gl_buffer.cpp" />
+    <ClCompile Include="..\arctic\engine\gl_framebuffer.cpp" />
+    <ClCompile Include="..\arctic\engine\gl_program.cpp" />
+    <ClCompile Include="..\arctic\engine\gl_state.cpp" />
+    <ClCompile Include="..\arctic\engine\gl_texture2d.cpp" />
     <ClCompile Include="main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

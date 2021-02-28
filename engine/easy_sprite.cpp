@@ -4,6 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2021 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -506,10 +507,9 @@ void DrawTriangle(Sprite to_sprite,
           Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
           Ui32 m2 = ca;
-          Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+          Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
+          Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
           Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
-          Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-          Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000);
 
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
@@ -630,13 +630,11 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
             Ui32 m2 = ca;
-            Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+            Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
+            Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
             Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
-            Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-            Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000);
 
-            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
-              ((g + g2) & 0x0000ff00ul);
+            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul);
           }
         } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
           Ui32 ca = color.a;
@@ -769,10 +767,9 @@ void DrawSprite(Sprite *to_sprite,
           Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
           Ui32 m2 = ca;
-          Ui32 r2 = Ui32(color.r) * m2 * (Ui32(in_color.r) + 1);
+          Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
+          Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
           Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
-          Ui32 b2 = Ui32(color.b) * m2 * (Ui32(in_color.b) + 1);
-          Ui32 rb2 = ((r2 >> 8u) & 0xff00u) + (b2 & 0xff000000ull);
 
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
             ((g + g2) & 0x0000ff00ul);
@@ -983,7 +980,7 @@ void Sprite::Create(const Vec2Si32 size) {
 }
 
 void Sprite::Create(const Si32 width, const Si32 height) {
-  sprite_instance_ = std::make_shared<SpriteInstance>(width, height);
+  sprite_instance_ = std::make_shared<arctic::SpriteInstance>(width, height);
   ref_pos_ = Vec2Si32(0, 0);
   ref_size_ = Vec2Si32(width, height);
   pivot_ = Vec2Si32(0, 0);
@@ -1219,8 +1216,13 @@ void Sprite::Draw(const Vec2F to, float angle_radians, float zoom,
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const float to_x, const float to_y,
-    float angle_radians, float zoom,
+void Sprite::Draw(Rgba in_color, const float to_x, const float to_y, float angle_radians, float zoom,
+    DrawBlendingMode blending_mode, DrawFilterMode filter_mode) {
+    Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
+        blending_mode, filter_mode, in_color);
+}
+
+void Sprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
@@ -1523,6 +1525,10 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
   return;
 }
 
+Vec2Si32 Sprite::RefPos() const {
+    return ref_pos_;
+}
+
 Si32 Sprite::Width() const {
   return ref_size_.x;
 }
@@ -1566,6 +1572,10 @@ const Rgba* Sprite::RgbaData() const {
       sprite_instance_->RawData())) +
     ref_pos_.y * StridePixels() +
     ref_pos_.x);
+}
+
+const std::shared_ptr<SpriteInstance> &Sprite::SpriteInstance() const {
+    return sprite_instance_;
 }
 
 const std::vector<SpanSi32> &Sprite::Opaque() const {

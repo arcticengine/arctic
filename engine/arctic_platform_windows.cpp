@@ -5,6 +5,7 @@
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
 // Copyright (c) 2017 - 2021 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -88,7 +89,25 @@ PFNGLLINKPROGRAMPROC glLinkProgram = nullptr;
 PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
 PFNGLUSEPROGRAMPROC glUseProgram = nullptr;
 PFNGLUNIFORM1IPROC glUniform1i = nullptr;
+PFNGLUNIFORM2IPROC glUniform2i = nullptr;
+PFNGLUNIFORM3IPROC glUniform3i = nullptr;
+PFNGLUNIFORM4IPROC glUniform4i = nullptr;
+PFNGLUNIFORM1FPROC glUniform1f = nullptr;
+PFNGLUNIFORM2FPROC glUniform2f = nullptr;
+PFNGLUNIFORM3FPROC glUniform3f = nullptr;
+PFNGLUNIFORM4FPROC glUniform4f = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
+PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = nullptr;
+PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers = nullptr;
+PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer = nullptr;
+PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D = nullptr;
+PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus = nullptr;
+PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate = nullptr;
+PFNGLGENBUFFERSPROC glGenBuffers = nullptr;
+PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
+PFNGLBINDBUFFERPROC glBindBuffer = nullptr;
+PFNGLBUFFERDATAPROC glBufferData = nullptr;
+PFNGLBUFFERSUBDATAPROC glBufferSubData = nullptr;
 
 namespace arctic {
 
@@ -561,7 +580,25 @@ void LoadGl() {
   LoadGlFunction("glShaderSource", &glShaderSource);
   LoadGlFunction("glUseProgram", &glUseProgram);
   LoadGlFunction("glUniform1i", &glUniform1i);
+  LoadGlFunction("glUniform2i", &glUniform2i);
+  LoadGlFunction("glUniform3i", &glUniform3i);
+  LoadGlFunction("glUniform4i", &glUniform4i);
+  LoadGlFunction("glUniform1f", &glUniform1f);
+  LoadGlFunction("glUniform2f", &glUniform2f);
+  LoadGlFunction("glUniform3f", &glUniform3f);
+  LoadGlFunction("glUniform4f", &glUniform4f);
   LoadGlFunction("glVertexAttribPointer", &glVertexAttribPointer);
+  LoadGlFunction("glGenFramebuffers", &glGenFramebuffers);
+  LoadGlFunction("glDeleteFramebuffers", &glDeleteFramebuffers);
+  LoadGlFunction("glBindFramebuffer", &glBindFramebuffer);
+  LoadGlFunction("glFramebufferTexture2D", &glFramebufferTexture2D);
+  LoadGlFunction("glCheckFramebufferStatus", &glCheckFramebufferStatus);
+  LoadGlFunction("glBlendFuncSeparate", &glBlendFuncSeparate);
+  LoadGlFunction("glGenBuffers", &glGenBuffers);
+  LoadGlFunction("glDeleteBuffers", &glDeleteBuffers);
+  LoadGlFunction("glBindBuffer", &glBindBuffer);
+  LoadGlFunction("glBufferData", &glBufferData);
+  LoadGlFunction("glBufferSubData", &glBufferSubData);
 }
 
 bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,

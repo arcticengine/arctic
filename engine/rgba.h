@@ -61,12 +61,6 @@ struct Rgba {
     b = b_in;
     a = a_in;
   }
-  explicit Rgba(Ui8 s) {
-    r = s;
-    g = s;
-    b = s;
-    a = 255;
-  }
 
   /// rgba_in is 32 bits containing 0xAABBGGRR. 0xff00ff00 is opaque green.
   explicit Rgba(Ui32 rgba_in) {

@@ -1,6 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2016 - 2019 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +26,15 @@
 
 #include "engine/arctic_platform_def.h"
 
+#define ARCTIC_GL_CHECK_ERROR(opengl_call) do { \
+    opengl_call; int call_line = __LINE__; \
+    GLenum error_code = glGetError(); \
+    if (error_code != GL_NO_ERROR) { \
+        *Log() << "OpenGL Error: " << #opengl_call << " -> " << GlErrorToString(error_code) << " (" << error_code << ")" \
+               << "\nFile: " << __FILE__ << "\nLine: " << call_line; \
+    } \
+} while(false)
+
 #ifdef ARCTIC_PLATFORM_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -32,7 +42,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include "engine/glext.h"
-
 
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
 extern PFNGLATTACHSHADERPROC glAttachShader;
@@ -52,7 +61,25 @@ extern PFNGLLINKPROGRAMPROC glLinkProgram;
 extern PFNGLSHADERSOURCEPROC glShaderSource;
 extern PFNGLUSEPROGRAMPROC glUseProgram;
 extern PFNGLUNIFORM1IPROC glUniform1i;
+extern PFNGLUNIFORM2IPROC glUniform2i;
+extern PFNGLUNIFORM3IPROC glUniform3i;
+extern PFNGLUNIFORM4IPROC glUniform4i;
+extern PFNGLUNIFORM1FPROC glUniform1f;
+extern PFNGLUNIFORM2FPROC glUniform2f;
+extern PFNGLUNIFORM3FPROC glUniform3f;
+extern PFNGLUNIFORM4FPROC glUniform4f;
 extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
+extern PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
+extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
+extern PFNGLBINDFRAMEBUFFERPROC glBindFramebuffer;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC glFramebufferTexture2D;
+extern PFNGLCHECKFRAMEBUFFERSTATUSPROC glCheckFramebufferStatus;
+extern PFNGLBLENDFUNCSEPARATEPROC glBlendFuncSeparate;
+extern PFNGLGENBUFFERSPROC glGenBuffers;
+extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
+extern PFNGLBINDBUFFERPROC glBindBuffer;
+extern PFNGLBUFFERDATAPROC glBufferData;
+extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
 
 #endif  // ARCTIC_PLATFORM_WINDOWS
 
@@ -70,5 +97,18 @@ extern PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #endif  // ARCTIC_PLATFORM_PI_ES_EGL
+
+inline const char *GlErrorToString(GLenum error_code) {
+    switch (error_code) {
+        case GL_INVALID_ENUM:                  return "GL_INVALID_ENUM"; break;
+        case GL_INVALID_VALUE:                 return "GL_INVALID_VALUE"; break;
+        case GL_INVALID_OPERATION:             return "GL_INVALID_OPERATION"; break;
+        case GL_STACK_OVERFLOW:                return "GL_STACK_OVERFLOW"; break;
+        case GL_STACK_UNDERFLOW:               return "GL_STACK_UNDERFLOW"; break;
+        case GL_OUT_OF_MEMORY:                 return "GL_OUT_OF_MEMORY"; break;
+        case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
+        default:                               return "UNKNOWN_ERROR_CODE"; break;
+    }
+}
 
 #endif  // ENGINE_OPENGL_H_

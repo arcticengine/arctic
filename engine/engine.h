@@ -1,6 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +31,12 @@
 
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
+#include "engine/easy_hw_sprite.h"
 #include "engine/vec2f.h"
 #include "engine/opengl.h"
+#include "engine/gl_texture2d.h"
+#include "engine/gl_program.h"
+#include "engine/gl_buffer.h"
 
 namespace arctic {
 
@@ -51,8 +56,9 @@ class Engine {
  private:
   Si32 width_ = 0;
   Si32 height_ = 0;
-  Ui32 backbuffer_texture_name_ = 0;
+  GlTexture2D gl_backbuffer_texture_;
   Sprite backbuffer_texture_;
+  HwSprite hw_backbuffer_texture_;
 
   std::vector<Ui8> visible_verts_;
   std::vector<Ui8> visible_normals_;
@@ -78,12 +84,11 @@ class Engine {
 
   MathTables math_tables_;
 
-  GLuint g_programObject;
+  std::shared_ptr<GlProgram> copy_backbuffers_program_;
+  std::shared_ptr<GlProgram> default_sprite_program_;
 
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
-
-  GLuint LoadShader(const char *shaderSrc, GLenum type);
 
  public:
   void SetArgcArgv(Si64 argc, const char **argv);
@@ -97,8 +102,11 @@ class Engine {
   }
   void Init(Si32 width, Si32 height);
   void Draw2d();
-  Sprite GetBackbuffer() {
+  Sprite &GetBackbuffer() {
     return backbuffer_texture_;
+  }
+  HwSprite &GetHwBackbuffer() {
+      return hw_backbuffer_texture_;
   }
   void ResizeBackbuffer(const Si32 width, const Si32 height);
   double GetTime();
@@ -113,6 +121,9 @@ class Engine {
   void SetInverseY(bool is_inverse);
   MathTables &GetMathTables() {
     return math_tables_;
+  }
+  const std::shared_ptr<GlProgram> &GetDefaultSpriteProgram() const {
+    return default_sprite_program_;
   }
 };
 /// @}

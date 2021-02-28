@@ -4,6 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2021 Huldra
+// Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -915,10 +916,12 @@ void SetInverseY(bool is_inverse) {
 
 void Clear() {
   GetEngine()->GetBackbuffer().Clear();
+  GetEngine()->GetHwBackbuffer().Clear();
 }
 
 void Clear(Rgba color) {
   GetEngine()->GetBackbuffer().Clear(color);
+  GetEngine()->GetHwBackbuffer().Clear(color);
 }
 
 double Time() {
