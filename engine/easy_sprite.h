@@ -46,7 +46,8 @@ enum DrawBlendingMode {
   kColorize [[deprecated("User kDrawBlendingModeColorize instead of kColorize")]] = 2,  // Deprecated
   kDrawBlendingModeColorize = 2,
   kDrawBlendingModeAdd = 3,
-  kDrawBlendingModeSolidColor = 4
+  kDrawBlendingModeSolidColor = 4,
+  kDrawBlendingModePremultipliedAlphaBlend = 5
 };
 
 enum DrawFilterMode {

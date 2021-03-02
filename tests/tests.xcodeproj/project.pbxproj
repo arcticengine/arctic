@@ -43,6 +43,14 @@
 		BE59407C5E37A8A6C4A27D6E /* gui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0E05C7D353AE97008458A753 /* gui.cpp */; };
 		DA7A4D662A53053F2291087F /* arctic_platform_pi_byteorder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF8869E909AB7CC669AFD0C5 /* arctic_platform_pi_byteorder.cpp */; };
 		ED74518EC21E8515CB364A69 /* arctic_platform_pi_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CB495F331ECF143B61EE2B06 /* arctic_platform_pi_sound.cpp */; };
+		0459C5A62E0FCC920DC65F27 /* gl_buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BC290252A49F09F9CD1CC816 /* gl_buffer.cpp */; };
+		7B1A1779BC15CA562E83EB42 /* dual_complex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 387519132ACF948203F95C3D /* dual_complex.cpp */; };
+		651D92C804145F65B1AB08A9 /* gl_program.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9E0384D8D22A5A641D6A2FF /* gl_program.cpp */; };
+		9F5953C409B2EE0BAA9AF66B /* easy_hw_sprite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CEF8CECBADA6CBAF6D191A66 /* easy_hw_sprite.cpp */; };
+		16D8C3E1DBF38B4D8BA21A44 /* gl_framebuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D63A0F313B406493706825A /* gl_framebuffer.cpp */; };
+		AA1E2E8FA72656FCE59DD32E /* easy_hw_sprite_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF5DD81008B30D50A0E3CC7F /* easy_hw_sprite_instance.cpp */; };
+		BF8E620951849DAC58B59369 /* gl_texture2d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00B9AF79AB0E50DE725770DF /* gl_texture2d.cpp */; };
+		93FBDAF5DFD91381393C39B8 /* gl_state.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA51CB42072E7BFCB30FB239 /* gl_state.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -137,6 +145,32 @@
 		EEFF7C47EB5A12521E2CC232 /* mtq_base_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_base_common.h; path = ../engine/mtq_base_common.h; sourceTree = SOURCE_ROOT; };
 		F08E543A5EFA0F00B6137F0C /* arctic_platform_pi_opengl_glx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_opengl_glx.cpp; path = ../engine/arctic_platform_pi_opengl_glx.cpp; sourceTree = SOURCE_ROOT; };
 		F5A76C48A71260DD765B74DB /* decorated_frame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = decorated_frame.h; path = ../engine/decorated_frame.h; sourceTree = SOURCE_ROOT; };
+		A199F30559A199EA5DBA7D9B /* dual_complex.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = dual_complex.h; path = ../engine/dual_complex.h; sourceTree = SOURCE_ROOT; };
+		BC070806CD2CEE72AAB95C68 /* easy_input.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_input.h; path = ../engine/easy_input.h; sourceTree = SOURCE_ROOT; };
+		4F4AF9440FD425601C31BD3E /* easy_util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_util.h; path = ../engine/easy_util.h; sourceTree = SOURCE_ROOT; };
+		BC290252A49F09F9CD1CC816 /* gl_buffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_buffer.cpp; path = ../engine/gl_buffer.cpp; sourceTree = SOURCE_ROOT; };
+		387519132ACF948203F95C3D /* dual_complex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = dual_complex.cpp; path = ../engine/dual_complex.cpp; sourceTree = SOURCE_ROOT; };
+		81DFEDFB5FDD050B72CC6F16 /* easing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easing.h; path = ../engine/easing.h; sourceTree = SOURCE_ROOT; };
+		D9E0384D8D22A5A641D6A2FF /* gl_program.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_program.cpp; path = ../engine/gl_program.cpp; sourceTree = SOURCE_ROOT; };
+		CEF8CECBADA6CBAF6D191A66 /* easy_hw_sprite.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy_hw_sprite.cpp; path = ../engine/easy_hw_sprite.cpp; sourceTree = SOURCE_ROOT; };
+		8340D35B4D269DF26C25B3E7 /* gl_texture2d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_texture2d.h; path = ../engine/gl_texture2d.h; sourceTree = SOURCE_ROOT; };
+		1D63A0F313B406493706825A /* gl_framebuffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_framebuffer.cpp; path = ../engine/gl_framebuffer.cpp; sourceTree = SOURCE_ROOT; };
+		27774A63E24C0BF7B964166B /* vec2d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = vec2d.h; path = ../engine/vec2d.h; sourceTree = SOURCE_ROOT; };
+		6FF4E6971FF60DDF5E31D76B /* gl_framebuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_framebuffer.h; path = ../engine/gl_framebuffer.h; sourceTree = SOURCE_ROOT; };
+		770DB2D1D5696B651C3CDD26 /* gl_program.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_program.h; path = ../engine/gl_program.h; sourceTree = SOURCE_ROOT; };
+		EF5DD81008B30D50A0E3CC7F /* easy_hw_sprite_instance.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy_hw_sprite_instance.cpp; path = ../engine/easy_hw_sprite_instance.cpp; sourceTree = SOURCE_ROOT; };
+		48EF0888EB36C711B57D9C49 /* easy_drawing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_drawing.h; path = ../engine/easy_drawing.h; sourceTree = SOURCE_ROOT; };
+		4FF9A069F2D696EA342EE49B /* node2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node2f.h; path = ../engine/node2f.h; sourceTree = SOURCE_ROOT; };
+		7F9FC4EC763A40FD2C50A2F4 /* easy_advanced.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_advanced.h; path = ../engine/easy_advanced.h; sourceTree = SOURCE_ROOT; };
+		164879B69F68DDD9034A5D06 /* easy_hw_sprite_instance.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_hw_sprite_instance.h; path = ../engine/easy_hw_sprite_instance.h; sourceTree = SOURCE_ROOT; };
+		0568C1DA73E5865B98599A78 /* easy_files.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_files.h; path = ../engine/easy_files.h; sourceTree = SOURCE_ROOT; };
+		00B9AF79AB0E50DE725770DF /* gl_texture2d.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_texture2d.cpp; path = ../engine/gl_texture2d.cpp; sourceTree = SOURCE_ROOT; };
+		CF1A97218423A6075BB9DCA7 /* gl_buffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_buffer.h; path = ../engine/gl_buffer.h; sourceTree = SOURCE_ROOT; };
+		F195A65344FE086881F5DB62 /* array2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = array2.h; path = ../engine/array2.h; sourceTree = SOURCE_ROOT; };
+		3583BC76279DC415B586AABC /* mat22d.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mat22d.h; path = ../engine/mat22d.h; sourceTree = SOURCE_ROOT; };
+		18679FFBE7254B795DAC9CCF /* gl_state.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_state.h; path = ../engine/gl_state.h; sourceTree = SOURCE_ROOT; };
+		8E8EF35EC48F02848BCFC1FD /* easy_hw_sprite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_hw_sprite.h; path = ../engine/easy_hw_sprite.h; sourceTree = SOURCE_ROOT; };
+		FA51CB42072E7BFCB30FB239 /* gl_state.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_state.cpp; path = ../engine/gl_state.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -243,6 +277,32 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				A199F30559A199EA5DBA7D9B /* dual_complex.h */,
+				BC070806CD2CEE72AAB95C68 /* easy_input.h */,
+				4F4AF9440FD425601C31BD3E /* easy_util.h */,
+				BC290252A49F09F9CD1CC816 /* gl_buffer.cpp */,
+				387519132ACF948203F95C3D /* dual_complex.cpp */,
+				81DFEDFB5FDD050B72CC6F16 /* easing.h */,
+				D9E0384D8D22A5A641D6A2FF /* gl_program.cpp */,
+				CEF8CECBADA6CBAF6D191A66 /* easy_hw_sprite.cpp */,
+				8340D35B4D269DF26C25B3E7 /* gl_texture2d.h */,
+				1D63A0F313B406493706825A /* gl_framebuffer.cpp */,
+				27774A63E24C0BF7B964166B /* vec2d.h */,
+				6FF4E6971FF60DDF5E31D76B /* gl_framebuffer.h */,
+				770DB2D1D5696B651C3CDD26 /* gl_program.h */,
+				EF5DD81008B30D50A0E3CC7F /* easy_hw_sprite_instance.cpp */,
+				48EF0888EB36C711B57D9C49 /* easy_drawing.h */,
+				4FF9A069F2D696EA342EE49B /* node2f.h */,
+				7F9FC4EC763A40FD2C50A2F4 /* easy_advanced.h */,
+				164879B69F68DDD9034A5D06 /* easy_hw_sprite_instance.h */,
+				0568C1DA73E5865B98599A78 /* easy_files.h */,
+				00B9AF79AB0E50DE725770DF /* gl_texture2d.cpp */,
+				CF1A97218423A6075BB9DCA7 /* gl_buffer.h */,
+				F195A65344FE086881F5DB62 /* array2.h */,
+				3583BC76279DC415B586AABC /* mat22d.h */,
+				18679FFBE7254B795DAC9CCF /* gl_state.h */,
+				8E8EF35EC48F02848BCFC1FD /* easy_hw_sprite.h */,
+				FA51CB42072E7BFCB30FB239 /* gl_state.cpp */,
 				6CC8CA2444DF3029245BC4AA /* bitstream.cpp */,
 				020F53149FE9FB03600D0392 /* mtq_fixed_block_queue.h */,
 				F5A76C48A71260DD765B74DB /* decorated_frame.h */,
@@ -368,6 +428,14 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				0459C5A62E0FCC920DC65F27 /* gl_buffer.cpp in Sources */,
+				7B1A1779BC15CA562E83EB42 /* dual_complex.cpp in Sources */,
+				651D92C804145F65B1AB08A9 /* gl_program.cpp in Sources */,
+				9F5953C409B2EE0BAA9AF66B /* easy_hw_sprite.cpp in Sources */,
+				16D8C3E1DBF38B4D8BA21A44 /* gl_framebuffer.cpp in Sources */,
+				AA1E2E8FA72656FCE59DD32E /* easy_hw_sprite_instance.cpp in Sources */,
+				BF8E620951849DAC58B59369 /* gl_texture2d.cpp in Sources */,
+				93FBDAF5DFD91381393C39B8 /* gl_state.cpp in Sources */,
 				B1559ACC071FE92A90BCCCB7 /* bitstream.cpp in Sources */,
 				708A175EB8E47182E1F7A0DE /* mtq_spmc_array.cpp in Sources */,
 				9D1CC575BA2D876C5971AF8A /* mtq_fixed_block_queue.cpp in Sources */,
