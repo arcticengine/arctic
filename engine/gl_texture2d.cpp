@@ -92,10 +92,25 @@ void GlTexture2D::UpdateData(const void *data) {
     ARCTIC_GL_CHECK_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width_, height_, GL_RGBA, GL_UNSIGNED_BYTE, data));
 }
 
-void GlTexture2D::ReadData(void *dst) const {
+/*void GlTexture2D::ReadData(void *dst) const {
     Bind(0);
     ARCTIC_GL_CHECK_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, dst));
-}
+    Bind();
+    int data_size = mWidth * mHeight * 4;
+    GLubyte* pixels = new GLubyte[mWidth * mHeight * 4];
+
+    GLuint textureObj = ...; // the texture object - glGenTextures  
+
+    GLuint fbo;
+    glGenFramebuffers(1, &fbo); 
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureObj, 0);
+
+    glReadPixels(0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &fbo);
+}*/
 
 void GlTexture2D::SetFilterMode(DrawFilterMode filter_mode) {
     if (current_filter_mode_ != filter_mode) {

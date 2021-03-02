@@ -340,7 +340,7 @@ void HwSprite::LoadFromSoftwareSprite(Sprite sw_sprite) {
     last_angle_ = 0.0f;
 }
 
-void HwSprite::Save(const char *file_name) {
+/*void HwSprite::Save(const char *file_name) {
   std::vector<Ui8> data = SaveToData(file_name);
   if (!data.empty()) {
     WriteFile(file_name, data.data(), data.size());
@@ -362,7 +362,7 @@ std::vector<Ui8> HwSprite::SaveToData(const char *file_name) {
     Fatal("Error in HwSprite::Save, unknown file extension.");
   }
   return data;
-}
+}*/
 
 void HwSprite::Create(const Vec2Si32 size) {
   Create(size.x, size.y);

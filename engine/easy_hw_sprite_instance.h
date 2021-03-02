@@ -64,8 +64,8 @@ class HwSpriteInstance {
       const Si64 size);
 
   /// @brief Creates a *.tga file data from a sprite instance
-  static void SaveTga(std::shared_ptr<HwSpriteInstance> sprite,
-      std::vector<Ui8> *data);
+/*  static void SaveTga(std::shared_ptr<HwSpriteInstance> sprite,
+      std::vector<Ui8> *data);*/
 };
 
 /// @}

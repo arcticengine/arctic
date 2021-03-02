@@ -76,10 +76,10 @@ class HwSprite {
   /// @brief Load sprite data from software sprite
   void LoadFromSoftwareSprite(Sprite sw_sprite);
   /// @brief Load sprite data from file
-  void Save(const char *file_name);
+  //void Save(const char *file_name);
   /// @brief Load sprite data from file
-  void Save(const std::string &file_name);
-  std::vector<Ui8> SaveToData(const char *file_name);
+  //void Save(const std::string &file_name);
+  //std::vector<Ui8> SaveToData(const char *file_name);
   /// @brief Make current sprite an empty sprite of the specified size
   void Create(const Vec2Si32 size);
   /// @brief Make current sprite an empty sprite of the specified size

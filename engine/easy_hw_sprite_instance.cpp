@@ -56,11 +56,12 @@ namespace arctic {
     return sprite;
   }
 
-  void HwSpriteInstance::SaveTga(std::shared_ptr<HwSpriteInstance> sprite, std::vector<Ui8> *data) {
+/*  void HwSpriteInstance::SaveTga(std::shared_ptr<HwSpriteInstance> sprite, std::vector<Ui8> *data) {
     std::shared_ptr<SpriteInstance> sw_sprite = std::make_shared<SpriteInstance>(sprite->texture().width(), sprite->texture().height());
     sprite->texture().ReadData(sw_sprite->RawData());
     arctic::SaveTga(sw_sprite, data);
   }
+  */
 
 }  // namespace arctic
 

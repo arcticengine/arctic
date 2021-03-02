@@ -56,7 +56,7 @@ class GlTexture2D {
   void Bind(Ui32 slot) const;
   void SetData(const void *data, Si32 w, Si32 h);
   void UpdateData(const void *data);
-  void ReadData(void *dst) const;
+//  void ReadData(void *dst) const;
   void SetFilterMode(DrawFilterMode filter_mode);
 
   Si32 width() const {

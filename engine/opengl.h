@@ -96,6 +96,8 @@ extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
 #ifdef ARCTIC_PLATFORM_PI_ES_EGL
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
+#define GL_STACK_OVERFLOW 0x0503
+#define GL_STACK_UNDERFLOW 0x0504
 #endif  // ARCTIC_PLATFORM_PI_ES_EGL
 
 inline const char *GlErrorToString(GLenum error_code) {
