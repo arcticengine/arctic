@@ -54,6 +54,10 @@ void GlState::SetBlending(DrawBlendingMode mode) {
                 ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
                 ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
                 break;
+            case kDrawBlendingModePremultipliedAlphaBlend:
+                ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
+                ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+                break;
             case kDrawBlendingModeColorize:
                 ARCTIC_GL_CHECK_ERROR(glEnable(GL_BLEND));
                 ARCTIC_GL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));

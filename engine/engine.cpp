@@ -262,7 +262,7 @@ void Engine::Draw2d() {
   gl_backbuffer_texture_.Bind(0);
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
 
-  GlState::SetBlending(kDrawBlendingModeAlphaBlend);
+  GlState::SetBlending(kDrawBlendingModePremultipliedAlphaBlend);
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
