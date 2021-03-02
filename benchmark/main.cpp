@@ -37,6 +37,10 @@ Font g_font;
 
 bool g_is_hw_enabled = true;
 Si32 g_bench_idx = 1;
+double g_prev_time;
+double g_frame_acc = 1.0;
+double g_time_acc = 0.001;
+double g_fps = 0.0;
 
 struct Tile {
     int block_idx;
@@ -256,9 +260,32 @@ void Render() {
     }
   }
 
+  double time = Time();
+  double dt = time - g_prev_time;
+  g_prev_time = time;
+  g_frame_acc += 1.0;
+  g_time_acc += dt;
+
+  if (g_time_acc > 0.5) {
+    g_fps = g_frame_acc / g_time_acc;
+    g_frame_acc = 0.0;
+    g_time_acc = 0.0;
+  }
+
+  char fps_text[128];
+  snprintf(fps_text, sizeof(fps_text), u8"Mode: %s FPS: %.1F",
+      g_is_hw_enabled ? "Hardware" : "Sowfware", g_fps);
+  g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop);
+
   ShowFrame();
 }
+
+
 void EasyMain() {
+  SetVSync(false);
+  g_prev_time = Time();
+  g_frame_acc = 0.0;
+  g_time_acc = 0.0;
   Init();
   InitTiles();
 
