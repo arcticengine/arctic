@@ -188,7 +188,7 @@ void GlProgram::SetUniform(const char *name, const Vec4F &value) {
 void GlProgram::CheckActiveUniforms(int required_count) {
     GLint ufs;
     ARCTIC_GL_CHECK_ERROR(glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs));
-    Check(ufs == required_count, "no ufs");
+    Check(ufs == required_count, "Number of active uniforms does not match the required_count");
 }
 
 int GlProgram::GetUniformLocation(const char *name) const {
