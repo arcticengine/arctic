@@ -18,18 +18,9 @@
 		34436D0F1F6431CD004DD16E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34436D0E1F6431CD004DD16E /* Cocoa.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		34436D111F6431D3004DD16E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34436D101F6431D3004DD16E /* OpenGL.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		346399371F7C93AB007E37F2 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 346399361F7C93AB007E37F2 /* AudioToolbox.framework */; };
-		346FB0DC201EA50000CAD8E5 /* log.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 346FB0DB201EA50000CAD8E5 /* log.cpp */; };
 		34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FB41F68AD73005ACF7B /* arctic_platform_windows.cpp */; };
-		34A37FDD1F68AD73005ACF7B /* easy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FB61F68AD73005ACF7B /* easy.cpp */; };
 		34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FB71F68AD73005ACF7B /* arctic_platform_macosx.mm */; };
-		34A37FDF1F68AD73005ACF7B /* easy_sprite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FB81F68AD73005ACF7B /* easy_sprite.cpp */; };
-		34A37FE01F68AD73005ACF7B /* easy_sprite_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FBD1F68AD73005ACF7B /* easy_sprite_instance.cpp */; };
 		34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FBE1F68AD73005ACF7B /* engine.cpp */; };
-		34A37FE21F68AD73005ACF7B /* easy_sound_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FBF1F68AD73005ACF7B /* easy_sound_instance.cpp */; };
-		34A37FE31F68AD73005ACF7B /* easy_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FC11F68AD73005ACF7B /* easy_sound.cpp */; };
-		34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD21F68AD73005ACF7B /* arctic_input.cpp */; };
-		34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD81F68AD73005ACF7B /* arctic_math.cpp */; };
-		34C1595A200199EF0029160F /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C15959200199EF0029160F /* font.cpp */; };
 		34C1597B20019B5C0029160F /* data in Resources */ = {isa = PBXBuildFile; fileRef = 34C1597920019B5C0029160F /* data */; };
 		34C1597C20019B5C0029160F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C1597A20019B5C0029160F /* main.cpp */; };
 		40A0CA44A848F7F48CC66B3D /* easy_sprite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1F4E1047DE317985131DC506 /* easy_sprite.cpp */; };
@@ -50,16 +41,13 @@
 		B62B611FEED6B7D06DBAD5A3 /* arctic_platform_pi_opengl_glx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C8A3F3413A1F2EEBF7EC7A2 /* arctic_platform_pi_opengl_glx.cpp */; };
 		B73A8AB2F332B8AECA5B3730 /* mtq_fixed_block_queue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 70D1E431075B156E9E48C3A5 /* mtq_fixed_block_queue.cpp */; };
 		BF5BC7AF625EE6663C3B6407 /* arctic_platform_macosx_sound.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1D0C762A8AF5779492F123A1 /* arctic_platform_macosx_sound.mm */; };
-		BFD685D4987B32DF0C6F709A /* arctic_platform_macosx.mm in Sources */ = {isa = PBXBuildFile; fileRef = 709270ECED098E4786ED7203 /* arctic_platform_macosx.mm */; };
 		C6BB0ECA763FB0453331980E /* ofbx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2CAC1F95247C8326C37D5B7B /* ofbx.cpp */; };
 		CE5B74CFF6A54D0ED63FCB95 /* easy_sound_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 07C258547FC2CD712B87E15D /* easy_sound_instance.cpp */; };
-		D0D168F5DB249DA0B4A5FBDA /* engine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A67290FC93BD2F215C746CFC /* engine.cpp */; };
 		D1B937C9B07582A5DDE61737 /* gl_texture2d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D71158FCE08B6EF442E6FEF /* gl_texture2d.cpp */; };
 		D3EF32922947CEE62987A920 /* easy_sprite_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B9502604784A3C77DDE48057 /* easy_sprite_instance.cpp */; };
 		D47F738A60899E053BCA45CD /* gl_framebuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B7C729E0BE69B40B8CD53234 /* gl_framebuffer.cpp */; };
 		D8A1EA2585481B2E0AB58252 /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 94701B72A4FE409C85171E19 /* font.cpp */; };
 		E8E2D5683447608AC859FD14 /* arctic_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8285F44EA9EC5702F04C86F0 /* arctic_input.cpp */; };
-		F41D7E1BE23C6E297837548D /* arctic_platform_windows.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6E25396C0AEED6E82EDB7E48 /* arctic_platform_windows.cpp */; };
 		F5E978030D7BB51B92430E6D /* arctic_mixer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B58AB50836B1780679559A3B /* arctic_mixer.cpp */; };
 		F61227A4FD8BEA1D05057AEA /* arctic_platform_pi_fatal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 480097AB695E6FD11AF3A99F /* arctic_platform_pi_fatal.cpp */; };
 		F96DCCC6C418360B6BD9403E /* mtq_spmc_array.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7F202B875E467D7F73682BD2 /* mtq_spmc_array.cpp */; };
@@ -477,7 +465,7 @@
 		34436CE91F642A66004DD16E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1020;
+				LastUpgradeCheck = 1240;
 				ORGANIZATIONNAME = Arctic;
 				TargetAttributes = {
 					34436CF01F642A66004DD16E = {
@@ -553,25 +541,13 @@
 				40A0CA44A848F7F48CC66B3D /* easy_sprite.cpp in Sources */,
 				29AC6DCE8774DC70F490699F /* arctic_platform_windows_sound.cpp in Sources */,
 				B62B611FEED6B7D06DBAD5A3 /* arctic_platform_pi_opengl_glx.cpp in Sources */,
-				D0D168F5DB249DA0B4A5FBDA /* engine.cpp in Sources */,
 				D1B937C9B07582A5DDE61737 /* gl_texture2d.cpp in Sources */,
-				F41D7E1BE23C6E297837548D /* arctic_platform_windows.cpp in Sources */,
-				BFD685D4987B32DF0C6F709A /* arctic_platform_macosx.mm in Sources */,
 				C6BB0ECA763FB0453331980E /* ofbx.cpp in Sources */,
 				53A6DF36F991CB10EA4764C1 /* arctic_platform_pi_sound.cpp in Sources */,
 				66ADD8D540411B04C4CE9DE7 /* arctic_math.cpp in Sources */,
 				7C1FFBF64F488B2F47B0BF85 /* unicode.cpp in Sources */,
 				0C690FD68877146A5944E9F6 /* gl_state.cpp in Sources */,
-				34A37FDF1F68AD73005ACF7B /* easy_sprite.cpp in Sources */,
-				34A37FE01F68AD73005ACF7B /* easy_sprite_instance.cpp in Sources */,
-				34C1595A200199EF0029160F /* font.cpp in Sources */,
-				34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */,
-				346FB0DC201EA50000CAD8E5 /* log.cpp in Sources */,
-				34A37FE21F68AD73005ACF7B /* easy_sound_instance.cpp in Sources */,
-				34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */,
-				34A37FE31F68AD73005ACF7B /* easy_sound.cpp in Sources */,
 				34C1597C20019B5C0029160F /* main.cpp in Sources */,
-				34A37FDD1F68AD73005ACF7B /* easy.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -604,6 +580,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -663,6 +640,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -694,6 +672,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				"HEADER_SEARCH_PATHS[arch=*]" = (
 					$PROJECT_DIR/..,
@@ -711,6 +690,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
 				"HEADER_SEARCH_PATHS[arch=*]" = (
 					$PROJECT_DIR/..,

@@ -237,19 +237,6 @@ void Update() {
 void Render() {
   Clear();
 
-  static DrawBlendingMode blend_modes[] = {
-    kDrawBlendingModeCopyRgba,
-    kDrawBlendingModeAlphaBlend,
-    kDrawBlendingModeColorize,
-    kDrawBlendingModeAdd
-  };
-  static DrawFilterMode filter_modes[] = {
-      kFilterNearest,
-      kFilterBilinear,
-  };
-
-  constexpr const auto total_count = WND_WIDTH*WND_HEIGHT*4*2 / 20 / 10; 
-
   if (g_is_hw_enabled) {
     for (const auto &tile : tiles) {
         g_hw_blocks[tile.block_idx].Draw(tile.x, tile.y, static_cast<int>(tile.w*tile.zoom), static_cast<int>(tile.h*tile.zoom), tile.blending, kFilterNearest, tile.color);
