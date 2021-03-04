@@ -122,6 +122,7 @@ void main() {
 
   const char default_sprite_vShaderStr[] = R"SHADER(
 #ifdef GL_ES
+precision mediump float;
 #endif
 attribute vec2 vPosition;
 attribute vec2 vTex;
@@ -142,7 +143,7 @@ void main() {
 
   const char default_sprite_fShaderStr[] = R"SHADER(
 #ifdef GL_ES
-precision mediump float;
+precision lowp float;
 #endif
 varying vec2 v_texCoord;
 uniform sampler2D s_texture;
@@ -152,8 +153,7 @@ void main() {
   if (is_solid_color == 1) {
     gl_FragColor.rgb = in_color.rgb;
     gl_FragColor.a = texture2D(s_texture, v_texCoord).a*in_color.a;
-  }
-  else {
+  } else {
     gl_FragColor = texture2D(s_texture, v_texCoord)*in_color;
   }
 }
