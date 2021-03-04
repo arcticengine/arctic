@@ -714,7 +714,7 @@ void DrawSprite(Sprite *to_sprite,
   const Si32 to_x_de = (to_width < to_x_d_max ? to_width : to_x_d_max);
 
   const Si32 from_y_step_16 = 65536 * from_height / to_height;
-  Si32 from_y_disp_0 = ((from_height * to_y_db) / to_height);
+  Si32 from_y_disp_16 = Si32((65535ull * from_height * to_y_db) / to_height);
   Si32 from_y_acc_16 = 0;
   if (kFilterMode == kFilterBilinear) {
     from_y_acc_16 = -32767;
@@ -728,7 +728,7 @@ void DrawSprite(Sprite *to_sprite,
       from_x_acc_16 = -32767;
     }
 
-    Si32 from_y_disp = from_y_disp_0 + (from_y_acc_16 / 65536);
+    Si32 from_y_disp = ((from_y_disp_16 + from_y_acc_16) / 65536);
     from_y_acc_16 += from_y_step_16;
 
     const Rgba *from_line_0 = from + from_y_disp * from_stride_pixels;
