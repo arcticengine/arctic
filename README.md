@@ -37,7 +37,9 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 #### Arctic Engine code:
 
-* Huldra aka FrostyMorning
+* Huldra
+* Vlad2001_MFS
+* The Lasting Curator
 
 #### Third-party components:
 
