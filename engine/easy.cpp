@@ -95,6 +95,7 @@ static std::deque<InputMessage> g_input_messages;
 static Engine *g_engine = nullptr;
 static Vec2Si32 g_mouse_pos_prev = Vec2Si32(0, 0);
 static Vec2Si32 g_mouse_pos = Vec2Si32(0, 0);
+static InputMessage::Controller g_controller_state[InputMessage::kControllerCount];
 static Vec2Si32 g_mouse_move = Vec2Si32(0, 0);
 static Si32 g_mouse_wheel_delta = 0;
 
@@ -679,6 +680,17 @@ void ShowFrame() {
         g_key_state[message.keyboard.key].OnStateChange(
           message.keyboard.key_state == 1);
       }
+    } else if (message.kind == InputMessage::kController) {
+      if (message.controller.controller_idx >= 0 &&
+          message.controller.controller_idx < InputMessage::kControllerCount) {
+        for (Si32 axis_idx = 0; axis_idx < kAxisCount; ++axis_idx) {
+          g_controller_state[message.controller.controller_idx].axis[axis_idx] = message.controller.axis[axis_idx];
+        }
+        for (Si32 button_idx = 0; button_idx < 32; ++button_idx) {
+          Si32 key_code = kKeyController0Button0 + 32 * message.controller.controller_idx + button_idx;
+          g_key_state[key_code].OnStateChange(message.keyboard.state[key_code] == 1);
+        }
+      }
     }
     for (Si32 i = 0; i < kKeyCount; ++i) {
       message.keyboard.state[i] = g_key_state[i].IsDown() ? 1 : 0;
@@ -870,6 +882,15 @@ void SetKey(const char key, bool is_pressed) {
 void ClearKeyStateTransitions() {
   for (Si32 i = 0; i < kKeyCount; ++i) {
     g_key_state[i].OnShowFrame();
+  }
+}
+
+float ControllerAxis(Si32 controller_idx, Si32 axis_idx) {
+  if (controller_idx < InputMessage::kControllerCount &&
+      axis_idx < kAxisCount) {
+    return g_controller_state[controller_idx].axis[axis_idx];
+  } else {
+    return 0.f;
   }
 }
 
