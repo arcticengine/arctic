@@ -153,11 +153,8 @@ inline float InOutCirc(float t, float b, float c, float d) {
 
 inline float InElastic(float t, float b, float c, float d) {
   float s = 1.70158f;
-  float p = 0.f;
   float a = c;
-  if (!p) {
-    p = d * 0.3f;
-  }
+  float p = d * 0.3f;
   if (a < fabsf(c)) {
     a = c;
     s = p / 4.f;
@@ -171,11 +168,9 @@ inline float InElastic(float t, float b, float c, float d) {
 
 inline float OutElastic(float t, float b, float c, float d) {
   float s = 1.70158f;
-  float p = 0.f;
   float a = c;
-  if (!p) {
-    p = d * 0.3f;
-  }
+  float p = d * 0.3f;
+
   if (a < fabsf(c)) {
     a = c;
     s = p / 4.f;
@@ -188,11 +183,8 @@ inline float OutElastic(float t, float b, float c, float d) {
 
 inline float InOutElastic(float t, float b, float c, float d) {
   float s = 1.70158f;
-  float p = 0.f;
   float a = c;
-  if (!p) {
-    p = d * (0.3f * 1.5f);
-  }
+  float p = d * (0.3f * 1.5f);
   if (a < fabsf(c)) {
     a = c;
     s = p / 4.f;
