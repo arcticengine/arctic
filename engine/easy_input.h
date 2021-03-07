@@ -110,6 +110,8 @@ void SetKey(const char key, bool is_set_down);
 /// IsKeyDown() IsAnyKeyDown() calls are not affected and return the actual state.
 void ClearKeyStateTransitions();
 
+/// @brief Returns controller axis position
+float ControllerAxis(Si32 controller_idx, Si32 axis_idx);
 /// @brief Returns mouse cursor position
 Vec2Si32 MousePos();
 /// @brief Returns mouse movement vector

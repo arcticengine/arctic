@@ -166,30 +166,88 @@ enum KeyCode {
   kKeyMouseLeft = 257,
   kKeyMouseRight = 258,
   kKeyMouseWheel = 259,
-  kKeyCount = 260  // Key count, not a code
+  //
+  kKeyController0Button0 = 260,
+  kKeyController0Button1 = 261,
+  kKeyController0Button2 = 262,
+  kKeyController0Button3 = 263,
+  kKeyController0Button4 = 264,
+  kKeyController0Button5 = 265,
+  kKeyController0Button6 = 266,
+  kKeyController0Button7 = 267,
+  kKeyController0Button8 = 268,
+  kKeyController0Button9 = 269,
+  kKeyController0Button10 = 270,
+  kKeyController0Button11 = 271,
+  kKeyController0Button12 = 272,
+  kKeyController0Button13 = 273,
+  kKeyController0Button14 = 274,
+  kKeyController0Button15 = 275,
+  kKeyController0Button16 = 276,
+  kKeyController0Button17 = 277,
+  kKeyController0Button18 = 278,
+  kKeyController0Button19 = 279,
+  kKeyController0Button20 = 280,
+  kKeyController0Button21 = 281,
+  kKeyController0Button22 = 282,
+  kKeyController0Button23 = 283,
+  kKeyController0Button24 = 284,
+  kKeyController0Button25 = 285,
+  kKeyController0Button26 = 286,
+  kKeyController0Button27 = 287,
+  kKeyController0Button28 = 288,
+  kKeyController0Button29 = 289,
+  kKeyController0Button30 = 290,
+  kKeyController0Button31 = 291,
+  //
+  kKeyController1Button0 = 292,
+  //
+  kKeyController2Button0 = 324,
+  //
+  kKeyController3Button0 = 356,
+  kKeyController3Button31 = 387,
+  //
+  kKeyCount = 388  // Key count, not a code
+};
+
+enum ControllerAxis {
+  kAxis0 = 0,
+  kAxis1,
+  kAxis2,
+  kAxis3,
+  kAxis4,
+  kAxis5,
+  kAxisCount
 };
 
 struct InputMessage {
+  constexpr static Si32 kControllerCount = 4;
   enum Kind {
     kKeyboard = 0,
-    kMouse = 1
+    kMouse = 1,
+    kController = 2
   };
   struct Keyboard {
     Ui32 state[kKeyCount];
-    Ui32 key;
-    Ui32 key_state;
-    char characters[16];
-    Ui32 queue[1024];
-    Ui32 queueLen;
+    Ui32 key = 0;
+    Ui32 key_state = 0;
+    char characters[16]  = {0};
+    Ui32 queue[1024] = {0};
+    Ui32 queueLen = 0;
   };
   struct Mouse {
     Vec2F pos;
     Vec2Si32 backbuffer_pos;  // Not set by the engine
-    Si32 wheel_delta;
+    Si32 wheel_delta = 0;
   };
-  Kind kind;
+  struct Controller {
+    Si32 controller_idx = 0;
+    float axis[kAxisCount] = {0};
+  };
+  Kind kind = kKeyboard;
   Keyboard keyboard;
   Mouse mouse;
+  Controller controller;
 };
 /// @}
 

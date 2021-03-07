@@ -29,6 +29,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/OpenGL.h>
+#import <GameController/GameController.h>
 
 #include <arpa/inet.h>
 #include <dirent.h>
@@ -36,6 +37,7 @@
 #include <sys/stat.h>
 
 #include <cmath>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <thread>  // NOLINT
@@ -90,6 +92,8 @@ static bool g_is_full_screen = false;
 static bool g_is_cursor_desired_visible = true;
 static bool g_is_cursor_set_visible = true;
 static bool g_is_cursor_in_bounds = false;
+
+static GCController *g_controller = nil;
 
 @implementation ArcticAppDelegate
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:
@@ -344,6 +348,66 @@ isScroll: (bool)is_scroll {
   [self mouseEvent: event key: arctic::kKeyMouseWheel state: 2
     isScroll: false];
 }
+
+
+-(void)extendedGamepadAction: (GCExtendedGamepad *)c forElement:(GCControllerElement *)element {
+  if (c == nil) {
+    NSLog(@"controller nil.");
+    return;
+  }
+  arctic::Si32 controller_idx = (arctic::Si32)c.controller.playerIndex;
+
+  NSLog(@"%d controller idx.", (int)controller_idx);
+
+  if (controller_idx < 0 || controller_idx >= arctic::InputMessage::kControllerCount) {
+    return;
+  }
+  arctic::InputMessage msg;
+  msg.kind = arctic::InputMessage::kController;
+
+  msg.keyboard.characters[0] = '\0';
+  msg.keyboard.key = arctic::kKeyCount;
+  msg.keyboard.key_state = 0;
+
+  arctic::InputMessage::Controller &controller = msg.controller;
+  controller.controller_idx = controller_idx;
+
+  // TODO: Check playerIndex here. if(c.playerIndex==yourindex)
+  if (c.dpad==element) {
+    if (c.dpad.up.isPressed==1) {
+        //Dpad.up of extendedgamepad has been pressed
+    }
+    if (c.dpad.down.isPressed==1) {
+        //Same for down
+    }
+  }
+
+  controller.axis[0] = c.leftThumbstick.xAxis.value;
+  controller.axis[1] = c.leftThumbstick.yAxis.value;
+  controller.axis[2] = c.rightThumbstick.xAxis.value;
+  controller.axis[3] = c.rightThumbstick.yAxis.value;
+  controller.axis[4] = c.rightTrigger.value;
+  controller.axis[5] = c.leftTrigger.value;
+
+  msg.keyboard.state[arctic::kKeyController0Button0 + 32*controller_idx] = c.buttonA.pressed;
+  msg.keyboard.state[arctic::kKeyController0Button1 + 32*controller_idx] = c.buttonB.pressed;
+
+  msg.keyboard.state[arctic::kKeyController0Button3 + 32*controller_idx] = c.buttonX.pressed;
+  msg.keyboard.state[arctic::kKeyController0Button4 + 32*controller_idx] = c.buttonY.pressed;
+
+  msg.keyboard.state[arctic::kKeyController0Button6 + 32*controller_idx] = c.rightShoulder.pressed;
+  msg.keyboard.state[arctic::kKeyController0Button7 + 32*controller_idx] = c.leftShoulder.pressed;
+
+  msg.keyboard.state[arctic::kKeyController0Button24 + 32*controller_idx] = c.dpad.up.pressed;
+  msg.keyboard.state[arctic::kKeyController0Button25 + 32*controller_idx] = c.dpad.right.pressed;
+  msg.keyboard.state[arctic::kKeyController0Button26 + 32*controller_idx] = c.dpad.down.pressed;
+  msg.keyboard.state[arctic::kKeyController0Button27 + 32*controller_idx] = c.dpad.left.pressed;
+
+  PushInputMessage(msg);
+}
+
+
+
 @end
 
 namespace arctic {
@@ -658,10 +722,70 @@ void CreateMainWindow() {
     [g_main_window makeKeyAndOrderFront: nil];
     [g_main_window makeMainWindow];
     [NSApp activateIgnoringOtherApps: YES];
+
+
+    NSArray *controllers = [GCController controllers];
+    NSLog(@"%d controllers found.", (int)controllers.count);
+
+    for (GCController *element in [GCController controllers]) {
+
+      if (element.extendedGamepad) {
+          element.extendedGamepad.valueChangedHandler=^(GCExtendedGamepad *gamepad, GCControllerElement *element) {
+              [g_main_view extendedGamepadAction:gamepad forElement:element];
+         };
+      }
+    }
+
   }
 }
 
 void PumpMessages() {
+
+  NSArray *controllers = [GCController controllers];
+  if (controllers.count) {
+    //NSLog(@"%d controllers found.", (int)controllers.count);
+    for (Si32 controller_idx = 0; controller_idx < controllers.count; ++controller_idx) {
+      if ([GCController controllers][controller_idx].playerIndex == -1) {
+        std::map<Si32, Si32> player_to_idx;
+        for (Si32 controller_idx = 0; controller_idx < controllers.count; ++controller_idx) {
+          Si32 player =(Si32)[GCController controllers][controller_idx].playerIndex;
+          if (player != -1) {
+            player_to_idx[player] = controller_idx;
+          }
+        }
+        for (Si32 player_idx = 0; player_idx < InputMessage::kControllerCount; ++player_idx) {
+          if (player_to_idx.find(player_idx) == player_to_idx.end()) {
+            [GCController controllers][controller_idx].playerIndex = (GCControllerPlayerIndex)player_idx;
+            break;
+          }
+        }
+      }
+      if ([GCController controllers][controller_idx].playerIndex != -1) {
+        [g_main_view extendedGamepadAction:[GCController controllers][controller_idx].extendedGamepad forElement: nil];
+      }
+    }
+
+    g_controller = [GCController controllers][0];
+    if (@available(macOS 11.0, *)) {
+      //NSLog(@"%d axes", (int)g_controller.physicalInputProfile.allAxes.count);
+      //NSLog(@"axis[0]: %f", (float)g_controller.physicalInputProfile.allAxes.allObjects[0].value);
+    } else {
+      // Fallback on earlier versions
+    }
+   /* NSLog(@"axis[0]: %f", (float)g_controller.extendedGamepad.leftThumbstick.xAxis.value);
+    NSLog(@"axis[1]: %f", (float)g_controller.extendedGamepad.leftThumbstick.yAxis.value);
+    NSLog(@"axis[2]: %f", (float)g_controller.extendedGamepad.rightThumbstick.xAxis.value);
+    NSLog(@"axis[3]: %f", (float)g_controller.extendedGamepad.rightThumbstick.yAxis.value);
+    NSLog(@"axis[4]: %f", (float)g_controller.extendedGamepad.leftTrigger.value);
+    NSLog(@"axis[5]: %f", (float)g_controller.extendedGamepad.rightTrigger.value);
+*/
+
+  } else {
+    g_controller = nil;
+  }
+
+
+
   @autoreleasepool {
     while (true) {
       NSEvent *event = [g_app
