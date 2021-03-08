@@ -67,6 +67,14 @@ struct KeyState {
     was_released_this_frame = false;
   }
 
+  void OnControllerState(bool is_down) {
+    was_pressed_this_frame = was_pressed_this_frame
+      || (current_state_is_down == false && is_down == true);
+    was_released_this_frame = was_released_this_frame
+      || (current_state_is_down == true && is_down == false);
+    current_state_is_down = is_down;
+  }
+
   void OnStateChange(bool is_down) {
     if (is_down) {
       was_pressed_this_frame = true;
@@ -688,7 +696,7 @@ void ShowFrame() {
         }
         for (Si32 button_idx = 0; button_idx < 32; ++button_idx) {
           Si32 key_code = kKeyController0Button0 + 32 * message.controller.controller_idx + button_idx;
-          g_key_state[key_code].OnStateChange(message.keyboard.state[key_code] == 1);
+          g_key_state[key_code].OnControllerState(message.keyboard.state[key_code] == 1);
         }
       }
     }
