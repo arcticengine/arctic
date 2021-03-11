@@ -201,8 +201,40 @@ enum KeyCode {
   kKeyController0Button31 = 291,
   //
   kKeyController1Button0 = 292,
+  kKeyController1Button1 = 293,
+  kKeyController1Button2 = 294,
+  kKeyController1Button3 = 295,
+  kKeyController1Button4 = 296,
+  kKeyController1Button5 = 297,
+  kKeyController1Button6 = 298,
+  kKeyController1Button7 = 299,
+  kKeyController1Button8 = 300,
+  kKeyController1Button9 = 301,
+  kKeyController1Button10 = 302,
+  kKeyController1Button11 = 303,
+  kKeyController1Button12 = 304,
+  kKeyController1Button13 = 305,
+  kKeyController1Button14 = 306,
+  kKeyController1Button15 = 307,
+  kKeyController1Button16 = 308,
+  kKeyController1Button17 = 309,
+  kKeyController1Button18 = 310,
+  kKeyController1Button19 = 311,
+  kKeyController1Button20 = 312,
+  kKeyController1Button21 = 313,
+  kKeyController1Button22 = 314,
+  kKeyController1Button23 = 315,
+  kKeyController1Button24 = 316,
+  kKeyController1Button25 = 317,
+  kKeyController1Button26 = 318,
+  kKeyController1Button27 = 319,
+  kKeyController1Button28 = 320,
+  kKeyController1Button29 = 321,
+  kKeyController1Button30 = 322,
+  kKeyController1Button31 = 323,
   //
   kKeyController2Button0 = 324,
+  kKeyController2Button31 = 355,
   //
   kKeyController3Button0 = 356,
   kKeyController3Button31 = 387,
@@ -228,7 +260,7 @@ struct InputMessage {
     kController = 2
   };
   struct Keyboard {
-    Ui32 state[kKeyCount];
+    Ui32 state[kKeyCount] = {0};
     Ui32 key = 0;
     Ui32 key_state = 0;
     char characters[16]  = {0};
