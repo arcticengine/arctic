@@ -23,6 +23,7 @@
 		34A37FE31F68AD73005ACF7B /* easy_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FC11F68AD73005ACF7B /* easy_sound.cpp */; };
 		34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD21F68AD73005ACF7B /* arctic_input.cpp */; };
 		34A37FE61F68AD73005ACF7B /* arctic_math.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A37FD81F68AD73005ACF7B /* arctic_math.cpp */; };
+		34AA9D3A25F560F50017F271 /* GameController.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 34AA9D3925F560F50017F271 /* GameController.framework */; };
 		34C1595A200199EF0029160F /* font.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C15959200199EF0029160F /* font.cpp */; };
 		34C1597B20019B5C0029160F /* data in Resources */ = {isa = PBXBuildFile; fileRef = 34C1597920019B5C0029160F /* data */; };
 		34C1597C20019B5C0029160F /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34C1597A20019B5C0029160F /* main.cpp */; };
@@ -108,6 +109,7 @@
 		34A37FD81F68AD73005ACF7B /* arctic_math.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_math.cpp; path = ../engine/arctic_math.cpp; sourceTree = SOURCE_ROOT; };
 		34A37FD91F68AD73005ACF7B /* arctic_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_types.h; path = ../engine/arctic_types.h; sourceTree = SOURCE_ROOT; };
 		34A37FDA1F68AD73005ACF7B /* arctic_platform_def.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_def.h; path = ../engine/arctic_platform_def.h; sourceTree = SOURCE_ROOT; };
+		34AA9D3925F560F50017F271 /* GameController.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameController.framework; path = System/Library/Frameworks/GameController.framework; sourceTree = SDKROOT; };
 		34C15959200199EF0029160F /* font.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = font.cpp; path = ../engine/font.cpp; sourceTree = SOURCE_ROOT; };
 		34C1597920019B5C0029160F /* data */ = {isa = PBXFileReference; lastKnownFileType = folder; path = data; sourceTree = SOURCE_ROOT; };
 		34C1597A20019B5C0029160F /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
@@ -185,6 +187,7 @@
 			files = (
 				346399371F7C93AB007E37F2 /* AudioToolbox.framework in Frameworks */,
 				34436D111F6431D3004DD16E /* OpenGL.framework in Frameworks */,
+				34AA9D3A25F560F50017F271 /* GameController.framework in Frameworks */,
 				34436D0F1F6431CD004DD16E /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -233,6 +236,7 @@
 		34436D0D1F6431CD004DD16E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				34AA9D3925F560F50017F271 /* GameController.framework */,
 				346399361F7C93AB007E37F2 /* AudioToolbox.framework */,
 				34436D101F6431D3004DD16E /* OpenGL.framework */,
 				34436D0E1F6431CD004DD16E /* Cocoa.framework */,
