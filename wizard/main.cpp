@@ -69,7 +69,8 @@ std::vector<Rgba> g_palete;
 
 enum ProjectKind {
   kProjectKindTetramino = 0,
-  kProjectKindHello = 1
+  kProjectKindHello = 1,
+  kProjectKindSnake = 2
 };
 
 enum MainMode {
@@ -273,6 +274,7 @@ bool GetProjectKind() {
     Vec2Si32(640, 480), 0, g_border.DrawExternalSize(Vec2Si32(640, 480))));
   const Ui64 kTetraminoButton = 1;
   const Ui64 kHelloButton = 2;
+  const Ui64 kSnakeButton = 3;
 
   const char *welcome = u8"The Snow Wizard\n\n"
   "Please select the flavour of the new project.\n"
@@ -286,7 +288,7 @@ bool GetProjectKind() {
     0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
     0, g_font, kTextOriginTop, g_palete, welcome, kAlignCenter));
   box->AddChild(textbox);
-  y = 32 + 48 + 64;
+  y = 32 + 48 + 64 + 64;
   std::shared_ptr<Button> tetramino_button = MakeButton(
     kTetraminoButton, Vec2Si32(32, y), kKeyT,
     1, "\001T\002etramino game project", Vec2Si32(box->GetSize().x - 64, 48));
@@ -297,6 +299,13 @@ bool GetProjectKind() {
     2, "\001H\002ello Wrold project",
     Vec2Si32(box->GetSize().x - 64, 48));
   box->AddChild(hello_button);
+  y -= 64;
+  std::shared_ptr<Button> snake_button = MakeButton(
+      kSnakeButton, Vec2Si32(32, y), kKeyS,
+      3, "\001S\002nake project",
+      Vec2Si32(box->GetSize().x - 64, 48));
+    box->AddChild(snake_button);
+
 
   Ui64 action = ShowModalDialogue(box);
   if (action == kTetraminoButton) {
@@ -304,6 +313,10 @@ bool GetProjectKind() {
     return true;
   } else if (action == kHelloButton) {
     g_project_kind = kProjectKindHello;
+    return true;
+  }
+  else if (action == kSnakeButton) {
+    g_project_kind = kProjectKindSnake;
     return true;
   }
   return false;
@@ -737,6 +750,9 @@ bool ShowProgress() {
         switch (g_project_kind) {
           case kProjectKindTetramino:
             PatchAndCopyTemplateFile("main.cpp", "main.cpp");
+            break;
+          case kProjectKindSnake:
+            PatchAndCopyTemplateFile("main_snake.cpp", "main.cpp");
             break;
           default:
           case kProjectKindHello:
