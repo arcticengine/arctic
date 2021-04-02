@@ -52,6 +52,7 @@ void ExitProgram(Si32 exit_code = 0);
 /// @brief Swaps virtual frontbuffer and backbuffer and updates user input
 void Swap();
 
+/// @brief Returns true if VSync is supported by the software and hardware
 /// @return true if VSync is supported by the software and hardware
 bool IsVSyncSupported();
 
@@ -60,6 +61,7 @@ bool IsVSyncSupported();
 /// @return true if VSync mode is successfuly set
 bool SetVSync(bool is_enable);
 
+/// @brief Returns true if the application is running in Full Screen mode
 /// @return true if the application is running in Full Screen mode
 bool IsFullScreen();
 
@@ -68,6 +70,7 @@ bool IsFullScreen();
 /// false switches the application into the Windowed mode
 void SetFullScreen(bool is_enable);
 
+/// @brief Returns true if the OS mouse cursor (pointer) is visible
 /// @return true if the OS mouse cursor (pointer) is visible
 bool IsCursorVisible();
 
@@ -92,7 +95,7 @@ Trivalent DoesDirectoryExist(const char *path);
 /// @return true on success
 bool MakeDirectory(const char *path);
 
-/// @brief returns the current path
+/// @brief Returns the current path
 /// @param [out] out_dir Address of an std::string to fill with the path
 /// @return true if the path is successfuly detected, false otherwise
 bool GetCurrentPath(std::string *out_dir);
