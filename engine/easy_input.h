@@ -77,11 +77,11 @@ bool IsKeyUpward(const char key);
 bool IsKeyUpward(const std::string &keys);
 
 
-/// @brief true if key transitioned from up to down state last frame
+/// @brief Returns true if key transitioned from up to down state last frame
 bool IsAnyKeyDownward();
-/// @brief true is key is currently down
+/// @brief Returns true if key is currently down
 bool IsAnyKeyDown();
-/// @brief true if key transitioned from down to up since last frame
+/// @brief Returns true if key transitioned from down to up since last frame
 bool IsAnyKeyUpward();
 
 /// @brief Changes the stored key state
