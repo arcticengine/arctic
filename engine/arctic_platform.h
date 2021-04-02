@@ -95,7 +95,7 @@ Trivalent DoesDirectoryExist(const char *path);
 /// @return true on success
 bool MakeDirectory(const char *path);
 
-/// @brief Seturns the current path
+/// @brief Returns the current path
 /// @param [out] out_dir Address of an std::string to fill with the path
 /// @return true if the path is successfuly detected, false otherwise
 bool GetCurrentPath(std::string *out_dir);
