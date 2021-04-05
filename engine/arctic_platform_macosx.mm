@@ -1017,6 +1017,8 @@ int main(int argc, char **argv) {
   g_mixer = new arctic::SoundPlayer;
   g_mixer->Initialize();
 
+  arctic::PumpMessages();
+
   arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
