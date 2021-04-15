@@ -124,8 +124,8 @@ ConnectionSocket::~ConnectionSocket() {
 
 template <typename Value>
 [[nodiscard]] inline SocketResult setsockopt(SocketHandle handle, int level,
-    int pName, Value value, std::string *out_last_error) {
-  auto status = ::setsockopt(handle.win, level, pName,
+    int opt_name, Value value, std::string *out_last_error) {
+  auto status = ::setsockopt(handle.win, level, opt_name,
       reinterpret_cast<char*>(&value), sizeof(Value));
   if (status != 0) {
     *out_last_error = "WinSock failed to set socket option ";

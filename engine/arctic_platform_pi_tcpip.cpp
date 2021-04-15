@@ -327,8 +327,8 @@ ConnectionSocket ListenerSocket::Accept() const {
 }
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoReuseAddress(bool flag) {
-  int bFlag = flag;
-  return setsockopt(handle_, SOL_SOCKET, SO_LINGER, bFlag, &last_error_);
+  int int_flag = flag;
+  return setsockopt(handle_, SOL_SOCKET, SO_LINGER, int_flag, &last_error_);
 }
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoLinger(bool flag,
