@@ -9,7 +9,6 @@
 using namespace arctic;  // NOLINT
 
 Font g_font;
-char text[128] = u8"o";
 
 void Move_snake_tail( int previous_x, int previous_y, std::deque<std::pair<int, int>>& snake)
 {
@@ -31,10 +30,12 @@ void ShowFailureMessage() {
 void Draw_scene(const std::deque<std::pair<int, int>>& snake, const std::list<std::pair<int, int>>& food) {
     Clear();
     for (auto snake_part : snake){
-        g_font.Draw(text, snake_part.first, snake_part.second, kTextOriginBottom);
+        g_font.Draw(u8"o", snake_part.first, snake_part.second, kTextOriginBottom,
+            kDrawBlendingModeColorize, kFilterNearest, Rgba(128, 255, 128));
     }
     for (auto food_part : food){
-        g_font.Draw(text, food_part.first, food_part.second, kTextOriginBottom);
+        g_font.Draw(u8"o", food_part.first, food_part.second, kTextOriginBottom,
+            kDrawBlendingModeColorize, kFilterNearest, Rgba(255, 128, 128));
     }
     ShowFrame();
 }
@@ -63,8 +64,8 @@ void Generate_food(std::list<std::pair<int, int>> &food) {
     
     for (int i = 0; i <= food_quantity; ++i )
     {
-        int x = random_x(rand);
-        int y = random_y(rand);
+        int x = random_x(rand) / 10 * 10;
+        int y = random_y(rand) / 10 * 10;
         food.push_back({x , y});
     }
 }
