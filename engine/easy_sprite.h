@@ -84,7 +84,7 @@ class Sprite {
   /// @brief Store sprite data to a file
   void Save(const std::string &file_name);
   /// @brief Store sprite data to a byte vector
-  /// @param file_name A requeired parameter, may not be nullptr,
+  /// @param file_name A required parameter, may not be nullptr,
   /// the extension of the file_name is used to deremine the desired data format.
   /// At the moment only *.tga is supported.
   /// The file_name is also used in error messages.
