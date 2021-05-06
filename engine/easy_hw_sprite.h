@@ -68,6 +68,7 @@ class HwSprite {
   HwSprite &operator=(const HwSprite &other);
   HwSprite &operator=(HwSprite &&other);
 
+  /// @brief Load sprite data from a byte array in memory
   void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);
   /// @brief Load sprite data from file
   void Load(const char *file_name);
@@ -75,9 +76,9 @@ class HwSprite {
   void Load(const std::string &file_name);
   /// @brief Load sprite data from software sprite
   void LoadFromSoftwareSprite(Sprite sw_sprite);
-  /// @brief Load sprite data from file
+  // @brief Load sprite data from file
   //void Save(const char *file_name);
-  /// @brief Load sprite data from file
+  // @brief Load sprite data from file
   //void Save(const std::string &file_name);
   //std::vector<Ui8> SaveToData(const char *file_name);
   /// @brief Make current sprite an empty sprite of the specified size
