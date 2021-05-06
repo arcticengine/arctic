@@ -5,6 +5,7 @@
 //
 // Copyright (c) 2020 Asyc
 // Copyright (c) 2021 The Lasting Curator
+// Copyright (c) 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +31,6 @@
 #include "engine/arctic_platform_tcpip.h"
 #include <WinSock2.h>
 #include <WS2tcpip.h>
-#include <array>
 #include <string>
 
 namespace arctic {
@@ -72,13 +72,13 @@ ConnectionSocket::~ConnectionSocket() {
 
 [[nodiscard]] SocketResult ConnectionSocket::Connect(const std::string address,
     uint16_t port) {
-  std::array<char, 6> port_buffer{};
-  sprintf_s(port_buffer.data(), port_buffer.size(), "%d", port);
+  char port_buffer[8];
+  snprintf(port_buffer, sizeof(port_buffer), "%d", port);
   WSAPROTOCOL_INFOW proto;
   WSADuplicateSocketW(handle_.win, GetCurrentProcessId(), &proto);
   addrinfo hints{{}, proto.iAddressFamily, proto.iSocketType, proto.iProtocol};
   addrinfo* info;
-  auto result = getaddrinfo(address.data(), port_buffer.data(), &hints, &info);
+  auto result = getaddrinfo(address.data(), port_buffer, &hints, &info);
   if (result != 0) {
     last_error_ = "WinSock failed to resolve name ";
     last_error_.append(GetLastError());
@@ -256,13 +256,13 @@ ListenerSocket::~ListenerSocket() {
 
 [[nodiscard]] SocketResult ListenerSocket::Bind(const std::string address,
     uint16_t port, size_t backlog) {
-  std::array<char, 6> port_buffer{};
-  sprintf_s(port_buffer.data(), port_buffer.size(), "%d", port);
+  char port_buffer[8];
+  snprintf(port_buffer, sizeof(port_buffer), "%d", port);
   WSAPROTOCOL_INFOW proto;
   WSADuplicateSocketW(handle_.win, GetCurrentProcessId(), &proto);
   addrinfo hints{{}, proto.iAddressFamily, proto.iSocketType, proto.iProtocol};
   addrinfo* info;
-  auto result = getaddrinfo(address.data(), port_buffer.data(), &hints, &info);
+  auto result = getaddrinfo(address.data(), port_buffer, &hints, &info);
   if (result != 0) {
     last_error_ = "WinSock failed to resolve name ";
     last_error_.append(GetLastError());
