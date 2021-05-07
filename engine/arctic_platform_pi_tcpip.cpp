@@ -5,6 +5,7 @@
 //
 // Copyright (c) 2020 Asyc
 // Copyright (c) 2021 The Lasting Curator
+// Copyright (c) 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +37,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <array>
 #include <cerrno>
 #include <cstring>
 #include <string>
@@ -67,8 +67,8 @@ ConnectionSocket::~ConnectionSocket() {
 
 [[nodiscard]] SocketResult ConnectionSocket::Connect(const std::string address,
     uint16_t port) {
-  std::array<char, 6> port_buffer{};
-  snprintf(port_buffer.data(), port_buffer.size(), "%d", port);
+  char port_buffer[8];
+  snprintf(port_buffer, sizeof(port_buffer), "%d", port);
 
   sockaddr data{};
   socklen_t size = sizeof(sockaddr);
@@ -82,7 +82,7 @@ ConnectionSocket::~ConnectionSocket() {
     type == SOCK_STREAM ? IPPROTO_TCP : IPPROTO_UDP};
 
   addrinfo* res;
-  auto result = getaddrinfo(address.data(), port_buffer.data(), &hints, &res);
+  auto result = getaddrinfo(address.data(), port_buffer, &hints, &res);
   if (result != 0) {
     last_error_ = "OS failed to resolve address ";
     last_error_.append(gai_strerror(result));
@@ -198,13 +198,13 @@ template <typename Value>
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoReceiveTimeout(
     uint32_t timeout) {
-  timeval time{timeout, 0};
+  timeval time{static_cast<time_t>(timeout), 0};
   return setsockopt(handle_, SOL_SOCKET, SO_RCVTIMEO, time, &last_error_);
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoSendTimeout(
     uint32_t timeout) {
-  timeval time{timeout, 0};
+  timeval time{static_cast<time_t>(timeout), 0};
   return setsockopt(handle_, SOL_SOCKET, SO_SNDTIMEO, time, &last_error_);
 }
 
@@ -284,8 +284,8 @@ ListenerSocket::~ListenerSocket() {
 
 [[nodiscard]] SocketResult ListenerSocket::Bind(const std::string address,
     uint16_t port, size_t backlog) {
-  std::array<char, 6> port_buffer{};
-  snprintf(port_buffer.data(), port_buffer.size(), "%d", port);
+  char port_buffer[8];
+  snprintf(port_buffer, sizeof(port_buffer), "%d", port);
 
   sockaddr data{};
   socklen_t size = sizeof(sockaddr);
@@ -299,7 +299,7 @@ ListenerSocket::~ListenerSocket() {
       type == SOCK_STREAM ? IPPROTO_TCP : IPPROTO_UDP};
 
   addrinfo* res;
-  auto result = getaddrinfo(address.data(), port_buffer.data(), &hints, &res);
+  auto result = getaddrinfo(address.data(), port_buffer, &hints, &res);
   if (result != 0) {
     last_error_ = "OS failed to resolve address ";
     last_error_.append(gai_strerror(result));

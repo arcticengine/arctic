@@ -73,15 +73,21 @@ class Sprite {
 
  public:
   Sprite();
+  /// @brief Load sprite data from a byte array in memory
   void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);
   /// @brief Load sprite data from file
   void Load(const char *file_name);
   /// @brief Load sprite data from file
   void Load(const std::string &file_name);
-  /// @brief Load sprite data from file
+  /// @brief Store sprite data to a file
   void Save(const char *file_name);
-  /// @brief Load sprite data from file
+  /// @brief Store sprite data to a file
   void Save(const std::string &file_name);
+  /// @brief Store sprite data to a byte vector
+  /// @param file_name A required parameter, may not be nullptr,
+  /// the extension of the file_name is used to deremine the desired data format.
+  /// At the moment only *.tga is supported.
+  /// The file_name is also used in error messages.
   std::vector<Ui8> SaveToData(const char *file_name);
   /// @brief Make current sprite an empty sprite of the specified size
   void Create(const Vec2Si32 size);
