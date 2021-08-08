@@ -256,6 +256,27 @@ bool Panel::IsVisible() {
   return is_visible_;
 }
 
+bool Panel::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
+  if (!is_visible_) {
+    return true;
+  }
+  Vec2Si32 pos = parent_pos + pos_;
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
+      return false;
+    }
+  }
+  if (is_clickable_) {
+    Vec2Si32 relative_pos = mouse_pos - pos;
+    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+      relative_pos.x < size_.x && relative_pos.y < size_.y;
+    if (is_inside) {
+      return false;
+    }
+  }
+  return true;
+}
+
 Button::Button(Ui64 tag, Vec2Si32 pos,
   Sprite normal, Sprite down, Sprite hovered,
   Sound down_sound, Sound up_sound,
@@ -406,6 +427,26 @@ bool Button::IsVisible() {
   Check(is_visible == should_be_visible,
       "Button visibility state inconsitency detected!");
   return is_visible;
+}
+
+bool Button::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
+  if (!is_visible_) {
+    return true;
+  }
+  Vec2Si32 pos = parent_pos + pos_;
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
+      return false;
+    }
+  }
+
+  Vec2Si32 relative_pos = mouse_pos - pos;
+  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+    relative_pos.x < size_.x && relative_pos.y < size_.y;
+  if (is_inside) {
+    return false;
+  }
+  return true;
 }
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
