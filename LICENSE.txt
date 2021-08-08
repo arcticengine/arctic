@@ -12,6 +12,7 @@ Copyright (c) 2013 - 2014 RAD Game Tools and Valve Software
 Copyright (c) 2010 - 2014 Rich Geldreich and Tenacious Software LLC
 Copyright (c) 2014 Shizuo KAJI <shizuo.kaji@gmail.com>
 Copyright (c) 2009 - 2010 Barry Schwartz
+Copyright (c) 2006 - 2020 Arseny Kapoulkine
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
