@@ -58,6 +58,7 @@ class GuiMessage {
 
 class Panel : public std::enable_shared_from_this<Panel> {
  protected:
+  static std::shared_ptr<Panel> invalid_panel_;
   Ui64 tag_;
   Vec2Si32 pos_;
   Vec2Si32 size_;
@@ -71,6 +72,9 @@ class Panel : public std::enable_shared_from_this<Panel> {
  public:
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
     Sprite background = Sprite(), bool is_clickable = false);
+  static std::shared_ptr<Panel> Invalid() {
+    return invalid_panel_;
+  }
   Vec2Si32 GetSize() const;
   Ui32 GetTabOrder() const;
   void SetTabOrder(Ui32 tab_order);

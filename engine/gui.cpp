@@ -54,6 +54,8 @@ Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
     , is_visible_(true) {
 }
 
+std::shared_ptr<Panel> Panel::invalid_panel_(new Panel(0, Vec2Si32(0, 0), Vec2Si32(0, 0)));
+
 Vec2Si32 Panel::GetSize() const {
   return size_;
 }
@@ -332,8 +334,8 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
       relative_pos.x < size_.x && relative_pos.y < size_.y;
     if (is_inside && !*in_out_is_applied) {
-      *out_current_tab = shared_from_this();
-      is_current_tab_ = true;
+      *out_current_tab = Panel::Invalid();
+      is_current_tab_ = false;
       if (message.keyboard.state[kKeyMouseLeft] == 1) {
         state_ = kDown;
       } else {
