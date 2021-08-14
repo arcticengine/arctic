@@ -413,11 +413,13 @@ void Button::SetCurrentTab(bool is_current_tab) {
 }
 
 void Button::SetVisible(bool is_visible) {
-  Panel::SetVisible(is_visible);
-  if (Panel::IsVisible()) {
-    state_ = kNormal;
-  } else {
-    state_ = kHidden;
+  if (Panel::IsVisible() != is_visible) {
+    Panel::SetVisible(is_visible);
+    if (Panel::IsVisible()) {
+      state_ = kNormal;
+    } else {
+      state_ = kHidden;
+    }
   }
 }
 
