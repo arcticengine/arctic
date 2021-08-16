@@ -41,6 +41,7 @@ class Sound {
   std::string file_name_ = "CLEAR";
  public:
   void Load(const std::string &file_name, bool do_unpack);
+  void Load(const char *file_name, bool do_unpack, std::vector<Ui8> *in_data);
   void Load(const char *file_name, bool do_unpack);
   void Load(const char *file_name);
   void Load(const std::string &file_name);

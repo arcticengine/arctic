@@ -45,6 +45,55 @@ namespace arctic {
 void Sound::Load(const char *file_name) {
   Load(file_name, true);
 }
+void Sound::Load(const char *file_name, bool do_unpack, std::vector<Ui8> *in_data) {
+  Clear();
+  std::vector<Ui8> loaded_data;
+  file_name_ = file_name;
+  Check(!!file_name, "Error in Sound::Load, file_name is nullptr.");
+  const char *last_dot = strrchr(file_name, '.');
+  Check(!!last_dot, "Error in Sound::Load, file_name has no extension.");
+  if (strcmp(last_dot, ".wav") == 0) {
+    if (!in_data) {
+      loaded_data = ReadFile(file_name, true);
+      in_data = &loaded_data;
+    }
+    if (!in_data->empty()) {
+      sound_instance_ = LoadWav(in_data->data(), static_cast<Si64>(in_data->size()));
+      if (sound_instance_ == nullptr) {
+        Log("Error loading file \"", file_name, "\"");
+      }
+    }
+  } else if (strcmp(last_dot, ".ogg") == 0) {
+    if (!in_data) {
+      loaded_data = ReadFile(file_name, true);
+      in_data = &loaded_data;
+    }
+    if (!in_data->empty()) {
+      if (do_unpack) {
+        int error = 0;
+        vorbis_codec_ = stb_vorbis_open_memory(in_data->data(),
+          static_cast<int>(in_data->size()), &error, nullptr);
+        if (vorbis_codec_) {
+          Ui32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
+          sound_instance_ = std::make_shared<SoundInstance>(size);
+          // int res =
+          stb_vorbis_get_samples_short_interleaved(
+            vorbis_codec_, 2,
+            sound_instance_->GetWavData(), static_cast<Si32>(size * 2));
+          // TODO(Huldra): if (res) {
+          stb_vorbis_close(vorbis_codec_);
+          vorbis_codec_ = nullptr;
+        }
+      } else {
+        sound_instance_ = std::make_shared<SoundInstance>(*in_data);
+      }
+    } else {
+      Log("Error loading file \"", file_name, "\", size is 0");
+    }
+  } else {
+    Fatal("Error in Sound::Load, unknown file extension.");
+  }
+}
 
 void Sound::Load(const char *file_name, bool do_unpack) {
   Clear();
