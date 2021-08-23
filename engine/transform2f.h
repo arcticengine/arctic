@@ -1,9 +1,7 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
-
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 Huldra
+// Copyright (c) 2020 Huldra
+// Copyright (c) 2021 The Lasting Curator
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +21,29 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/arctic_mixer.h"
+#ifndef ENGINE_TRANSFORM2F_H_
+#define ENGINE_TRANSFORM2F_H_
+
+#include "engine/arctic_types.h"
+#include "engine/dual_complex.h"
 
 namespace arctic {
 
-template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
-template class MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>>;
-template class SpmcArray<SoundTask, true>;
+struct Transform2F {
+  DualComplexF dc;
+  float scale = 1.f;
+
+  void SetPosition(Vec2F position) {
+    dc.dual_x = position.x * 0.5f;
+    dc.dual_y = position.y * 0.5f;
+  }
+
+  void SetPosition(float x, float y) {
+    dc.dual_x = x * 0.5f;
+    dc.dual_y = y * 0.5f;
+  }
+};
 
 }  // namespace arctic
 
+#endif  // ENGINE_TRANSFORM2F_H_

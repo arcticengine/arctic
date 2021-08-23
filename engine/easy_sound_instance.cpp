@@ -35,21 +35,19 @@ namespace arctic {
 
 
 #pragma pack(1)
-struct WaveHeader {
+struct WaveSubchunkHeader {
   union {
-    Ui32 raw;  // 0x52494646
-    char ascii[4];  // "RIFF"
-  } chunk_id;
-  Ui32 chunk_size;  // WaveHeader size - 8 for chunk_id and chunk_size (36)
-  union {
-    Ui32 raw;  // 0x57415645
-    char ascii[4];  // "WAVE"
-  } format;
-  union {
-    Ui32 raw;  // 0x666d7420
-    char ascii[4];  // "fmt "
-  } subchunk_1_id;
-  Ui32 subchunk_1_size;  // rest of the subchunk (16)
+    Ui32 raw;
+    char ascii[4];
+  } subchunk_id;
+  // 0x666d7420 "fmt " - WaveSubchunkFmt
+  // 0x64617461 "data" - raw data
+
+  Ui32 subchunk_size;  // rest of the subchunk
+};
+struct WaveSubchunkFmt {
+  WaveSubchunkHeader header;  // 0x666d7420 "fmt "
+
   Ui16 audio_format;  // 1 == PCM
   Ui16 channels;
   Ui32 sample_rate;
@@ -58,13 +56,19 @@ struct WaveHeader {
   Ui16 bits_per_sample;
   // Ui16 extra_param_size;  // not for PCM
   // extra_params go here
+};
 
+struct WaveHeader {
   union {
-    Ui32 raw;  // 0x64617461
-    char ascii[4];  // "data"
-  } subchunk_2_id;
-  Ui32 subchunk_2_size;
-  // data goes here
+    Ui32 raw;  // 0x52494646
+    char ascii[4];  // "RIFF"
+  } chunk_id;
+  Ui32 chunk_size;  // WaveHeader (size - 8) for chunk_id and chunk_size
+  union {
+    Ui32 raw;  // 0x57415645
+    char ascii[4];  // "WAVE"
+  } format;
+  // WaveSubchunkHeader goes here
 };
 #pragma pack()
 
@@ -121,72 +125,100 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     *Log() << "Error in LoadWav, chunk_id is not RIFF.";
     return nullptr;
   }
-  if (wav->chunk_size != size - 8) {
-    *Log() << "Error in LoadWav, chunk_size is not 36.";
+  if (wav->chunk_size > size - 8) {
+    *Log() << "Error in LoadWav, chunk_size is too large.";
     return nullptr;
   }
   if (FromBe(wav->format.raw) != 0x57415645) {
     *Log() << "Error in LoadWav, format is not WAVE.";
     return nullptr;
   }
-  if (FromBe(wav->subchunk_1_id.raw) != 0x666d7420) {
-    *Log() << "Error in LoadWav, subchunk_1_id is not fmt.";
+
+  const WaveSubchunkFmt *fmt = nullptr;
+  const Ui8 *sound_data = nullptr;
+  Si64 sound_data_size = 0;
+
+  const Ui8 *cur_subchunk = data + sizeof(WaveHeader);
+  Si64 remaining_chunk_size = (Si64)wav->chunk_size - 4;
+  while (remaining_chunk_size > sizeof(WaveSubchunkHeader)) {
+    const WaveSubchunkHeader *hdr = static_cast<const WaveSubchunkHeader*>(
+        static_cast<const void*>(cur_subchunk));
+
+    if (hdr->subchunk_size > remaining_chunk_size - sizeof(WaveSubchunkHeader)) {
+      *Log() << "Error in LoadWav, subchunk_size is larger than the remaining part of the chunk.";
+      return nullptr;
+    }
+    switch (FromBe(hdr->subchunk_id.raw)) {
+      case 0x666d7420: // "fmt"
+        if (hdr->subchunk_size != 16) {
+          *Log() << "Error in LoadWav, fmt subchunk_size is not 16.";
+          return nullptr;
+        }
+        fmt = static_cast<const WaveSubchunkFmt*>(static_cast<const void*>(cur_subchunk));
+        break;
+      case 0x64617461: // data
+        sound_data = cur_subchunk + sizeof(WaveSubchunkHeader);
+        sound_data_size = hdr->subchunk_size;
+        break;
+
+      default:
+        break;
+    }
+    Si64 step = hdr->subchunk_size + sizeof(WaveSubchunkHeader);
+    remaining_chunk_size -= step;
+    cur_subchunk += step;
+  }
+  if (!fmt) {
+    *Log() << "Error in LoadWav, no fmt subchunk found.";
     return nullptr;
   }
-  if (wav->subchunk_1_size != 16) {
-    *Log() << "Error in LoadWav, subchunk_1_size is not 16.";
+  if (!sound_data) {
+    *Log() << "Error in LoadWav, no data subchunk found.";
     return nullptr;
   }
-  if (wav->audio_format != 1) {
-    *Log() << "Error in LoadWav, audio_format is not 1 (PCM).";
+
+  if (fmt->audio_format != 1) {
+    *Log() << "Error in LoadWav, fmt audio_format is not 1 (PCM).";
     return nullptr;
   }
-  if (wav->channels <= 0) {
-    *Log() << "Error in LoadWav, channels <= 0.";
+  if (fmt->channels <= 0) {
+    *Log() << "Error in LoadWav, fmt channels <= 0.";
     return nullptr;
   }
-  if (FromBe(wav->subchunk_2_id.raw) != 0x64617461) {
-    *Log() << "Error in LoadWav, subchunk_2_id is not data.";
-    return nullptr;
-  }
-  if (wav->subchunk_2_size > size + 44) {
-    *Log() << "Error in LoadWav, subchunk_2_size is too small.";
-    return nullptr;
-  }
-  if ((wav->bits_per_sample != 8) && (wav->bits_per_sample != 16)) {
+  if ((fmt->bits_per_sample != 8) && (fmt->bits_per_sample != 16)) {
     *Log() << "Error in LoadWav, unsupported bits_per_sample.";
     return nullptr;
   }
-  if (wav->block_align == 0) {
+  if (fmt->block_align == 0) {
     *Log() << "Error in LoadWav, block_align cannot be 0.";
     return nullptr;
   }
-  if (wav->sample_rate == 0) {
+  if (fmt->sample_rate == 0) {
     *Log() << "Error in LoadWav, sample_rate cannot be 0.";
     return nullptr;
   }
-  if (wav->sample_rate < 1000) {
-    *Log() << "Error in LoadWav, sample_rate of " << wav->sample_rate
+  if (fmt->sample_rate < 1000) {
+    *Log() << "Error in LoadWav, sample_rate of " << fmt->sample_rate
       << " is too low, use at least 1000";
     return nullptr;
   }
 
   std::shared_ptr<SoundInstance> sound;
-  Ui32 in_sample_count = wav->subchunk_2_size / wav->block_align;
+  Si64 in_sample_count = sound_data_size / fmt->block_align;
   Ui32 sample_count = (Ui32)(44100ull * (Ui64)in_sample_count
-      / (Ui64)wav->sample_rate);
+      / (Ui64)fmt->sample_rate);
   sound.reset(new SoundInstance(sample_count));
-  const Ui8 *in_data = data + 44;
+  const Ui8 *in_data = sound_data;
   Si16 *out_data = sound->GetWavData();
   if (out_data == nullptr) {
     *Log() << "Error in LoadWav, unexpected nullptr from GetWavData";
     return nullptr;
   }
-  Ui16 block_align = wav->block_align;
+  Ui16 block_align = fmt->block_align;
 
-  if (wav->sample_rate == 44100) {
-    if (wav->bits_per_sample == 8) {
-      if (wav->channels == 1) {
+  if (fmt->sample_rate == 44100) {
+    if (fmt->bits_per_sample == 8) {
+      if (fmt->channels == 1) {
         for (Ui32 idx = 0; idx < sample_count; ++idx) {
           Si16 value = static_cast<Si16>(*static_cast<const Si8*>(
                 static_cast<const void*>(in_data))) * 256;
@@ -205,8 +237,8 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
           in_data += block_align;
         }
       }
-    } else if (wav->bits_per_sample == 16) {
-      if (wav->channels == 1) {
+    } else if (fmt->bits_per_sample == 16) {
+      if (fmt->channels == 1) {
         for (Ui32 idx = 0; idx < sample_count; ++idx) {
           Si16 value = *static_cast<const Si16*>(
               static_cast<const void*>(in_data));
@@ -231,24 +263,24 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     }
   } else {
     for (Ui64 idx = 0; idx < sample_count; ++idx) {
-      Ui64 in_sample_idx = (Ui64)wav->sample_rate * (Ui64)idx / 44100ull;
+      Ui64 in_sample_idx = (Ui64)fmt->sample_rate * (Ui64)idx / 44100ull;
       const Ui8 *in_block = in_data + in_sample_idx * block_align;
       Si16 value1 = 0;
       Si16 value2 = 0;
 
-      if (wav->bits_per_sample == 8) {
+      if (fmt->bits_per_sample == 8) {
         value1 = static_cast<Si16>(*static_cast<const Si8*>(
               static_cast<const void*>(in_block))) * 256;
-        if (wav->channels == 1) {
+        if (fmt->channels == 1) {
           value2 = value1;
         } else {
           value2 = static_cast<Si16>(*static_cast<const Si8*>(
                 static_cast<const void*>(in_block + sizeof(Ui16)))) * 256;
         }
-      } else if (wav->bits_per_sample == 16) {
+      } else if (fmt->bits_per_sample == 16) {
         value1 = *static_cast<const Si16*>(static_cast<const void*>(
               in_block));
-        if (wav->channels == 1) {
+        if (fmt->channels == 1) {
           value2 = value1;
         } else {
           value2 = *static_cast<const Si16*>(static_cast<const void*>(

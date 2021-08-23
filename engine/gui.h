@@ -272,8 +272,8 @@ class HorizontalScroll : public Panel {
   Si32 max_value_;
   Si32 value_;
   ScrollState state_ = kNormal;
-  Si32 start_x_;
-  Si32 start_value_;
+  Si32 start_x_ = 0;
+  Si32 start_value_ = 0;
 
  public:
   HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,

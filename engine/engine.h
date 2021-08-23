@@ -71,8 +71,8 @@ class Engine {
   Si32 indices_ = 0;
 
   std::chrono::high_resolution_clock::time_point start_time_;
-  double time_correction_;
-  double last_time_;
+  double time_correction_ = 0.0;
+  double last_time_ = 0.0;
 
   std::independent_bits_engine<std::mt19937_64, 64, Ui64> rnd_64_;
   std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_32_;

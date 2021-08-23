@@ -96,43 +96,7 @@ void Sound::Load(const char *file_name, bool do_unpack, std::vector<Ui8> *in_dat
 }
 
 void Sound::Load(const char *file_name, bool do_unpack) {
-  Clear();
-  file_name_ = file_name;
-  Check(!!file_name, "Error in Sound::Load, file_name is nullptr.");
-  const char *last_dot = strchr(file_name, '.');
-  Check(!!last_dot, "Error in Sound::Load, file_name has no extension.");
-  if (strcmp(last_dot, ".wav") == 0) {
-    std::vector<Ui8> data = ReadFile(file_name, true);
-    if (!data.empty()) {
-      sound_instance_ = LoadWav(data.data(), static_cast<Si64>(data.size()));
-    }
-  } else if (strcmp(last_dot, ".ogg") == 0) {
-    std::vector<Ui8> data = ReadFile(file_name, true);
-    if (!data.empty()) {
-      if (do_unpack) {
-        int error = 0;
-        vorbis_codec_ = stb_vorbis_open_memory(data.data(),
-          static_cast<int>(data.size()), &error, nullptr);
-        if (vorbis_codec_) {
-          Ui32 size = stb_vorbis_stream_length_in_samples(vorbis_codec_);
-          sound_instance_ = std::make_shared<SoundInstance>(size);
-          // int res =
-          stb_vorbis_get_samples_short_interleaved(
-            vorbis_codec_, 2,
-            sound_instance_->GetWavData(), static_cast<Si32>(size * 2));
-          // TODO(Huldra): if (res) {
-          stb_vorbis_close(vorbis_codec_);
-          vorbis_codec_ = nullptr;
-        }
-      } else {
-        sound_instance_ = std::make_shared<SoundInstance>(data);
-      }
-    } else {
-      Log("Error loading file \"", file_name, "\", size is 0");
-    }
-  } else {
-    Fatal("Error in Sprite::Load, unknown file extension.");
-  }
+  Load(file_name, do_unpack, nullptr);
 }
 
 void Sound::Load(const std::string &file_name) {
@@ -171,13 +135,13 @@ void Sound::Play() {
 
 void Sound::Play(float volume) {
   if (sound_instance_) {
-    arctic::StartSoundBuffer(*this, volume);
+    arctic::StartSound(*this, volume);
   }
 }
 
 void Sound::Stop() {
   if (sound_instance_) {
-    arctic::StopSoundBuffer(*this);
+    arctic::StopSound(*this);
   }
 }
 

@@ -67,7 +67,7 @@
 
 namespace arctic {
 
-SoundMixerState g_sound_mixer_state;
+extern SoundMixerState g_sound_mixer_state;
 
 class SoundPlayerImpl {
  public:
@@ -102,40 +102,8 @@ SoundPlayer::~SoundPlayer() {
 }
 
 
-
-
-void StartSoundBuffer(Sound sound, float volume) {
-  if (sound.GetInstance()) {
-    SoundBuffer buffer;
-    buffer.sound = sound;
-    buffer.volume = volume;
-    buffer.next_position = 0;  //-V1048
-    buffer.sound.GetInstance()->IncPlaying();
-    buffer.action = SoundBuffer::kStart;  //-V1048
-    g_sound_mixer_state.AddSoundTask(buffer);
-  }
-}
-
-void StopSoundBuffer(Sound sound) {
-  if (sound.GetInstance()) {
-    SoundBuffer buffer;
-    buffer.sound = sound;
-    buffer.volume = 0.f;
-    buffer.next_position = 0;  //-V1048
-    buffer.action = SoundBuffer::kStop;
-    g_sound_mixer_state.AddSoundTask(buffer);
-  }
-}
-
-void SetMasterVolume(float volume) {
-  g_sound_mixer_state.master_volume.store(volume);
-}
-
-float GetMasterVolume() {
-  return g_sound_mixer_state.master_volume.load();
-}
-
 void SoundMixerThreadFunction() {
+  SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
   Si32 bytes_per_sample = 2;
 
   WAVEFORMATEX format;
@@ -183,23 +151,24 @@ void SoundMixerThreadFunction() {
 
   Ui32 buffer_count = 10ull;
   Ui64 buffer_duration_us = 5000ull;
-  Ui32 buffer_samples_per_channel =
-    static_cast<Ui32>(
+  Si32 buffer_samples_per_channel =
+    static_cast<Si32>(
       static_cast<Ui64>(format.nSamplesPerSec) *
       buffer_duration_us / 1000000ull);
-  Ui32 buffer_samples_total = format.nChannels * buffer_samples_per_channel;
-  Ui32 buffer_bytes = bytes_per_sample * buffer_samples_total;
+  Si32 buffer_samples_total = format.nChannels * buffer_samples_per_channel;
 
   std::vector<WAVEHDR> wave_headers(buffer_count);
   std::vector<std::vector<Si16>> wave_buffers(buffer_count);
   std::vector<Si16> tmp(buffer_samples_total);
   std::vector<float> mix(buffer_samples_total);
-  memset(&(mix[0]), 0, 2 * size_t(buffer_bytes));
+  float *mix_l = &mix[0];
+  float *mix_r = &mix[1];
+  Si32 mix_stride = 2;
   for (Ui32 i = 0; i < wave_headers.size(); ++i) {
     wave_buffers[i].resize(buffer_samples_total);
-    memset(reinterpret_cast<char*>(&(wave_buffers[i][0])), 0, buffer_bytes);
 
     memset(reinterpret_cast<char*>(&wave_headers[i]), 0, sizeof(WAVEHDR));
+    Ui32 buffer_bytes = bytes_per_sample * buffer_samples_total;
     wave_headers[i].dwBufferLength = buffer_bytes;
     wave_headers[i].lpData = reinterpret_cast<char*>(&(wave_buffers[i][0]));
     waveOutPrepareHeader(wave_out_handle,
@@ -212,7 +181,6 @@ void SoundMixerThreadFunction() {
 
   size_t cur_buffer_idx = 0;
   while (!g_sound_mixer_state.do_quit) {
-    memset(reinterpret_cast<char*>(mix.data()), 0, 2 * size_t(buffer_bytes));
     MMTIME mmt;
     waveOutGetPosition(wave_out_handle, &mmt, sizeof(mmt));
     while (!(*(volatile DWORD*)&wave_headers[cur_buffer_idx].dwFlags
@@ -220,41 +188,85 @@ void SoundMixerThreadFunction() {
       WaitForSingleObject(hEvent, INFINITE);
       waveOutGetPosition(wave_out_handle, &mmt, sizeof(mmt));
     }
-
-    g_sound_mixer_state.InputTasksToMixerThread();
-
     (*(volatile DWORD*)&wave_headers[cur_buffer_idx].dwFlags) &= ~WHDR_DONE;
 
+    g_sound_mixer_state.InputTasksToMixerThread();
     float master_volume = g_sound_mixer_state.master_volume.load();
-
-    for (Ui32 idx = 0;
-      idx < g_sound_mixer_state.buffers.size(); ++idx) {
-      SoundBuffer &sound = g_sound_mixer_state.buffers[idx];
-
-      Ui32 size = buffer_samples_per_channel;
-      size = sound.sound.StreamOut(sound.next_position, size,
-        tmp.data(), buffer_samples_total);
-      Si16 *in_data = tmp.data();
-      for (Ui32 i = 0; i < size; ++i) {
-        mix[size_t(i) * 2] +=
-          static_cast<float>(in_data[i * 2]) * sound.volume;
-        mix[size_t(i) * 2 + 1] +=
-          static_cast<float>(in_data[i * 2 + 1]) * sound.volume;
+    if (g_sound_mixer_state.buffers.empty()) {
+      Si32 mix_idx = 0;
+      for (Si32 i = 0; i < buffer_samples_per_channel; ++i) {
+        mix_l[mix_idx] = 0.f;
+        mix_r[mix_idx] = 0.f;
+        mix_idx += mix_stride;
       }
-      sound.next_position += size;
+    }
 
-      if (size < buffer_samples_per_channel) {
-        sound.sound.GetInstance()->DecPlaying();
-        g_sound_mixer_state.buffers[idx] =
-          g_sound_mixer_state.buffers[
-            g_sound_mixer_state.buffers.size() - 1];
-        g_sound_mixer_state.buffers.pop_back();
-        --idx;
+    for (Ui32 idx = 0; idx < g_sound_mixer_state.buffers.size(); ++idx) {
+      SoundTask &sound = *g_sound_mixer_state.buffers[idx];
+      if (sound.is_3d) {
+        if (idx == 0) {
+          Si32 mix_idx = 0;
+          for (Si32 i = 0; i < buffer_samples_per_channel; ++i) {
+            mix_l[mix_idx] = 0.f;
+            mix_r[mix_idx] = 0.f;
+            mix_idx += mix_stride;
+          }
+        }
+        bool is_over = true;
+        for (Si32 channel_idx = 0; channel_idx < 2; ++channel_idx) {
+          RenderSound<float>(
+              &sound, g_sound_mixer_state.head, channel_idx,
+              (channel_idx == 0 ? mix_l : mix_r), 2, buffer_samples_per_channel, 44100.0,
+              1.f);
+          if (sound.channel_playback_state[channel_idx].play_position * 44100.0 < sound.sound.DurationSamples()) {
+            is_over = false;
+          }
+        }
+        if (is_over) {
+          sound.sound.GetInstance()->DecPlaying();
+          g_sound_mixer_state.ReleaseBufferAt(idx);
+          --idx;
+        }
+      } else {
+        Si32 size = sound.sound.StreamOut(sound.next_position,
+            buffer_samples_per_channel,
+            tmp.data(),
+            buffer_samples_per_channel * 2);
+
+        Si16 *in_data = tmp.data();
+        float volume = sound.volume;
+        Si32 mix_idx = 0;
+        if (idx == 0) {
+          for (Si32 i = 0; i < size; ++i) {
+            mix_l[mix_idx] = static_cast<float>(in_data[i * 2]) * volume;
+            mix_r[mix_idx] = static_cast<float>(in_data[i * 2 + 1]) * volume;
+            mix_idx += mix_stride;
+          }
+          mix_idx = size * mix_stride;
+          for (Si32 i = size; i < buffer_samples_per_channel; ++i) {
+            mix_l[mix_idx] = 0.f;
+            mix_r[mix_idx] = 0.f;
+            mix_idx += mix_stride;
+          }
+        } else {
+          for (Si32 i = 0; i < size; ++i) {
+            mix_l[mix_idx] += static_cast<float>(in_data[i * 2]) * volume;
+            mix_r[mix_idx] += static_cast<float>(in_data[i * 2 + 1]) * volume;
+            mix_idx += mix_stride;
+          }
+        }
+        sound.next_position += size;
+
+        if (size < buffer_samples_per_channel) {
+          sound.sound.GetInstance()->DecPlaying();
+          g_sound_mixer_state.ReleaseBufferAt(idx);
+          --idx;
+        }
       }
     }
 
     Si16* out_data = &(wave_buffers[cur_buffer_idx][0]);
-    for (Ui32 i = 0; i < buffer_samples_total; ++i) {
+    for (Si32 i = 0; i < buffer_samples_total; ++i) {
       out_data[i] = static_cast<Si16>(Clamp(
         mix[i] * master_volume, -32767.f, 32767.f));
     }

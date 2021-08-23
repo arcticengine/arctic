@@ -1,9 +1,6 @@
-// This is an open source non-commercial project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
-
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 Huldra
+// Copyright (c) 2021 The Lasting Curator
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +20,31 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "engine/arctic_mixer.h"
+#ifndef ENGINE_TRANSFORM3F_H_
+#define ENGINE_TRANSFORM3F_H_
+
+#include "engine/arctic_types.h"
+#include "engine/quaternion.h"
 
 namespace arctic {
 
-template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
-template class MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>>;
-template class SpmcArray<SoundTask, true>;
+class Transform3F {
+ public:
+	Vec3F displacement;
+	QuaternionF rotation;
+  float scale = 1.f;
+
+	Transform3F();
+	Transform3F(const Vec3F& displacement_, const QuaternionF& rotation_);
+	Transform3F Transform(const Transform3F& a) const;
+	Vec3F Transform(const Vec3F& a) const;
+	QuaternionF Transform(const QuaternionF& a) const;
+	//Mat33F ToMatrix33F() const;
+  void Clear();
+};
+
+Transform3F Inverse(const Transform3F& a);
 
 }  // namespace arctic
 
+#endif  // ENGINE_TRANSFORM3F_H_

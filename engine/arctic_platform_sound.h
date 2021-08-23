@@ -27,6 +27,7 @@
 #include <string>
 
 #include "engine/easy_sound.h"
+#include "engine/arctic_mixer.h"
 
 namespace arctic {
 
@@ -71,11 +72,17 @@ class SoundPlayer {
 /// @param sound Sound to play
 /// @param volume Volume to play the sound at.
 /// 0.f is silent, 1.f is the original record level.
-void StartSoundBuffer(Sound sound, float volume);
+SoundHandle StartSound(Sound sound, float volume);
 
 /// @brief Stops playback of a sound
 /// @param sound Sound to play
-void StopSoundBuffer(Sound sound);
+void StopSound(Sound sound);
+void StopSound(const SoundHandle &handle);
+
+void SetSoundListenerLocation(Transform3F location);
+void SetSoundSourcePosition(Sound sound, Vec3F position);
+void SetSoundSourcePosition(const SoundHandle &handle, Vec3F position);
+SoundHandle StartSoundAtPosition(Sound sound, float volume, Vec3F position);
 
 /// @}
 /// @addtogroup global_sound

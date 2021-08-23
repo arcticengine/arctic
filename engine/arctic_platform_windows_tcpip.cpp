@@ -65,7 +65,7 @@ ConnectionSocket::ConnectionSocket(AddressFamily addressFamily,
 
 ConnectionSocket::~ConnectionSocket() {
   if (handle_.win != INVALID_SOCKET) {
-    closesocket(handle_.win);
+    closesocket((SOCKET)handle_.win);
     WSACleanup();
   }
 }
@@ -75,7 +75,7 @@ ConnectionSocket::~ConnectionSocket() {
   char port_buffer[8];
   snprintf(port_buffer, sizeof(port_buffer), "%d", port);
   WSAPROTOCOL_INFOW proto;
-  WSADuplicateSocketW(handle_.win, GetCurrentProcessId(), &proto);
+  WSADuplicateSocketW((SOCKET)handle_.win, GetCurrentProcessId(), &proto);
   addrinfo hints{{}, proto.iAddressFamily, proto.iSocketType, proto.iProtocol};
   addrinfo* info;
   auto result = getaddrinfo(address.data(), port_buffer, &hints, &info);
@@ -84,7 +84,7 @@ ConnectionSocket::~ConnectionSocket() {
     last_error_.append(GetLastError());
     return kSocketError;
   }
-  result = ::connect(handle_.win, info->ai_addr,
+  result = ::connect((SOCKET)handle_.win, info->ai_addr,
       static_cast<int>(info->ai_addrlen)) == 0;
   freeaddrinfo(info);
   if (result == 0) {
@@ -101,7 +101,7 @@ ConnectionSocket::~ConnectionSocket() {
     last_error_ = "Error: out_size argument of Write is nullptr.";
     return kSocketError;
   }
-  *out_size = recv(handle_.win, buffer, static_cast<int>(length), NULL);
+  *out_size = recv((SOCKET)handle_.win, buffer, static_cast<int>(length), NULL);
   return kSocketOk;
 }
 
@@ -111,7 +111,7 @@ ConnectionSocket::~ConnectionSocket() {
     last_error_ = "Error: out_size argument of Write is nullptr.";
     return kSocketError;
   }
-  auto result = send(handle_.win, buffer, static_cast<int>(length), NULL);
+  auto result = send((SOCKET)handle_.win, buffer, static_cast<int>(length), NULL);
   if (result == SOCKET_ERROR) {
     last_error_ = "WinSock failed to write to socket ";
     last_error_.append(GetLastError());
@@ -125,7 +125,7 @@ ConnectionSocket::~ConnectionSocket() {
 template <typename Value>
 [[nodiscard]] inline SocketResult setsockopt(SocketHandle handle, int level,
     int opt_name, Value value, std::string *out_last_error) {
-  auto status = ::setsockopt(handle.win, level, opt_name,
+  auto status = ::setsockopt((SOCKET)handle.win, level, opt_name,
       reinterpret_cast<char*>(&value), sizeof(Value));
   if (status != 0) {
     *out_last_error = "WinSock failed to set socket option ";
@@ -186,7 +186,7 @@ template <typename Value>
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoNonblocking(bool flag) {
   u_long ulong_flag = flag ? 1U : 0U;
-  auto result = ioctlsocket(handle_.win, FIONBIO, &ulong_flag);
+  auto result = ioctlsocket((SOCKET)handle_.win, FIONBIO, &ulong_flag);
   if (result != 0) {
     last_error_ = "Error: failed to set socket to nonblocking ";
     last_error_.append(GetLastError());
@@ -248,8 +248,8 @@ ListenerSocket& ListenerSocket::operator=(ListenerSocket&& rhs) noexcept {
 }
 
 ListenerSocket::~ListenerSocket() {
-  if (handle_.win != INVALID_SOCKET) {
-    closesocket(handle_.win);
+  if ((SOCKET)handle_.win != INVALID_SOCKET) {
+    closesocket((SOCKET)handle_.win);
     WSACleanup();
   }
 }
@@ -259,7 +259,7 @@ ListenerSocket::~ListenerSocket() {
   char port_buffer[8];
   snprintf(port_buffer, sizeof(port_buffer), "%d", port);
   WSAPROTOCOL_INFOW proto;
-  WSADuplicateSocketW(handle_.win, GetCurrentProcessId(), &proto);
+  WSADuplicateSocketW((SOCKET)handle_.win, GetCurrentProcessId(), &proto);
   addrinfo hints{{}, proto.iAddressFamily, proto.iSocketType, proto.iProtocol};
   addrinfo* info;
   auto result = getaddrinfo(address.data(), port_buffer, &hints, &info);
@@ -268,14 +268,14 @@ ListenerSocket::~ListenerSocket() {
     last_error_.append(GetLastError());
     return kSocketError;
   }
-  auto status = ::bind(handle_.win, info->ai_addr,
+  auto status = ::bind((SOCKET)handle_.win, info->ai_addr,
       static_cast<int>(info->ai_addrlen));
   if (status != 0) {
     last_error_ = "WinSock failed to bind server socket ";
     last_error_.append(GetLastError());
     return kSocketError;
   }
-  status = listen(handle_.win, static_cast<int>(backlog));
+  status = listen((SOCKET)handle_.win, static_cast<int>(backlog));
   if (status != 0) {
     last_error_ = "WinSock failed to listen server socket ";
     last_error_.append(GetLastError());
@@ -286,13 +286,13 @@ ListenerSocket::~ListenerSocket() {
 
 ConnectionSocket ListenerSocket::Accept() const {
   SocketHandle socket;
-  socket.win = ::accept(handle_.win, nullptr, nullptr);
+  socket.win = ::accept((SOCKET)handle_.win, nullptr, nullptr);
   return ConnectionSocket(socket);
 }
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoReuseAddress(bool flag) {
   BOOL bFlag = flag;
-  auto result = ::setsockopt(handle_.win, SOL_SOCKET, SO_REUSEADDR,
+  auto result = ::setsockopt((SOCKET)handle_.win, SOL_SOCKET, SO_REUSEADDR,
       reinterpret_cast<const char*>(&bFlag), sizeof(BOOL));
   if (result == -1) {
     last_error_ = "WinSock failed to set socket option ";
@@ -305,7 +305,7 @@ ConnectionSocket ListenerSocket::Accept() const {
 [[nodiscard]] SocketResult ListenerSocket::SetSoLinger(bool flag,
     uint16_t seconds) {
   linger linger{flag, seconds};
-  auto result = ::setsockopt(handle_.win, SOL_SOCKET, SO_LINGER,
+  auto result = ::setsockopt((SOCKET)handle_.win, SOL_SOCKET, SO_LINGER,
       reinterpret_cast<char*>(&linger), sizeof(linger));
   if (result == -1) {
     last_error_ = "WinSock failed to set socket option ";
@@ -317,7 +317,7 @@ ConnectionSocket ListenerSocket::Accept() const {
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoNonblocking(bool flag) {
   u_long ulong_flag = flag ? 1U : 0U;
-  auto result = ioctlsocket(handle_.win, FIONBIO, &ulong_flag);
+  auto result = ioctlsocket((SOCKET)handle_.win, FIONBIO, &ulong_flag);
   if (result != 0) {
     last_error_ = "Error: failed to set socket to nonblocking ";
     last_error_.append(GetLastError());
