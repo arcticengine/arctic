@@ -186,11 +186,15 @@ inline Vec2Si32 Min(const Vec2Si32 &v, Si32 mi) {  // NOLINT
   return Vec2Si32((v.x > mi) ? mi : v.x, (v.y > mi) ? mi : v.y);
 }
 
+inline Si64 LengthSquared(Vec2Si32 const &v) {
+  return v.x * v.x + v.y * v.y;
+}
+
 inline Vec2Si32 Clamp(const Vec2Si32 &v, Si32 mi, Si32 ma) {
   return Vec2Si32((v.x < mi) ? mi : ((v.x > ma) ? ma : v.x),
     (v.y < mi) ? mi : ((v.y > ma) ? ma : v.y));
 }
-
+ 
 inline Vec2Si32 Clamp(const Vec2Si32 &v, Vec2Si32 mi, Vec2Si32 ma) {
   return Vec2Si32((v.x < mi.x) ? mi.x : ((v.x > ma.x) ? ma.x : v.x),
     (v.y < mi.y) ? mi.y : ((v.y > ma.y) ? ma.y : v.y));

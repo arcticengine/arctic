@@ -162,7 +162,7 @@ HwSprite::HwSprite(const HwSprite &other) {
   last_angle_ = 0.0f;
 }
 
-HwSprite::HwSprite(HwSprite &&other) {
+HwSprite::HwSprite(HwSprite &&other) noexcept {
   sprite_instance_ = other.sprite_instance_;
   ref_pos_ = other.ref_pos_;
   ref_size_ = other.ref_size_;
@@ -201,7 +201,7 @@ HwSprite &HwSprite::operator=(const HwSprite &other) {
   return *this;
 }
 
-HwSprite &HwSprite::operator=(HwSprite &&other) {
+HwSprite &HwSprite::operator=(HwSprite &&other) noexcept {
   sprite_instance_ = other.sprite_instance_;
   ref_pos_ = other.ref_pos_;
   ref_size_ = other.ref_size_;

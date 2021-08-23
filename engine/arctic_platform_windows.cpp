@@ -976,7 +976,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   soundPlayer.Deinitialize();
 
   arctic::StopLogger();
-  LocalFree(args);
   ExitProcess(0);  //-V2014
   return 0;
 }

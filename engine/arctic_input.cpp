@@ -31,8 +31,10 @@
 
 namespace arctic {
 
-static MpscVirtInfArray<InputMessage*, TuneDeletePayloadFlag<true>> g_input;
-static SpmcArray<InputMessage, true> g_input_pool(16);
+static MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080> g_input_page_pool;
+static MpscVirtInfArray<InputMessage*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>> g_input(
+    &g_input_page_pool);
+static SpmcArray<InputMessage, true> g_input_pool(1000);
 
 bool PopInputMessage(InputMessage *out_message) {
   Check(out_message != nullptr, "Unexpected nullptr in out_message!");

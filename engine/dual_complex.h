@@ -41,10 +41,10 @@ namespace arctic {
 template<class T>
 class DualComplex {
  public:
-  T real_x = 1;
-  T real_y = 0;
-  T dual_x = 0;
-  T dual_y = 0;
+  T real_x = (T)1;
+  T real_y = (T)0;
+  T dual_x = (T)0;
+  T dual_y = (T)0;
 
   /// @brief constructor
   DualComplex() {
@@ -71,10 +71,10 @@ class DualComplex {
 //        DualComplex u(1,0,-x/2.0,-y/2.0);
 //        DualComplex w(1,0,x/2.0,y/2.0);
 //        DualComplex result = w*v*u;
-    real_x = std::cos(theta * 0.5f);
-    real_y = std::sin(theta * 0.5f);
-    dual_x = std::sin(theta * 0.5f) * y;
-    dual_y = -std::sin(theta * 0.5f) * x;
+    real_x = std::cos(theta * (T)0.5);
+    real_y = std::sin(theta * (T)0.5);
+    dual_x = std::sin(theta * (T)0.5) * y;
+    dual_y = -std::sin(theta * (T)0.5) * x;
   }
 
   DualComplex(Vec2F p, T theta) {
@@ -82,17 +82,17 @@ class DualComplex {
 //        DualComplex u(1,0,-x/2.0,-y/2.0);
 //        DualComplex w(1,0,x/2.0,y/2.0);
 //        DualComplex result = w*v*u;
-    real_x = std::cos(theta * 0.5f);
-    real_y = std::sin(theta * 0.5f);
-    dual_x = std::sin(theta * 0.5f) * p.y;
-    dual_y = -std::sin(theta * 0.5f) * p.x;
+    real_x = std::cos(theta * (T)0.5);
+    real_y = std::sin(theta * (T)0.5);
+    dual_x = std::sin(theta * (T)0.5) * p.y;
+    dual_y = -std::sin(theta * (T)0.5) * p.x;
   }
 
   DualComplex(T x, T y)
-      : real_x(1)
-      , real_y(0)
-      , dual_x(x * 0.5f)
-      , dual_y(y * 0.5f) {
+      : real_x((T)1)
+      , real_y((T)0)
+      , dual_x(x * (T)0.5)
+      , dual_y(y * (T)0.5) {
   }
 
   T GetAngle() const {
@@ -192,7 +192,7 @@ class DualComplex {
   /// @return blended normalised DualComplex
   static DualComplex Blend(std::vector<DualComplex> dcns, std::vector<T> weights) {
     assert(dcns.size() == weights.size());
-    DualComplex result(0, 0, 0, 0);
+    DualComplex result((T)0, (T)0, (T)0, (T)0);
     for (size_t i = 0; i < dcns.size(); i++) {
       result += dcns[i] * weights[i];
     }
@@ -214,24 +214,24 @@ class DualComplex {
     T cos_theta = a.real_x * b.real_x + a.real_y * b.real_y;
     if (cos_theta < (T) 0) {
       cos_theta = -cos_theta;
-      b *= -1;
+      b *= (T)-1;
     }
     T scale_a;
     T scale_b;
-    if ((1 - cos_theta) > 0.001) {
+    if (((T)1 - cos_theta) > (T)0.001) {
       T theta = std::acos(cos_theta);
       T sin_theta = std::sin(theta);
-      scale_a = std::sin((1 - t) * theta) / sin_theta;
+      scale_a = std::sin(((T)1 - t) * theta) / sin_theta;
       scale_b = std::sin(t * theta) / sin_theta;
     } else {
-      scale_a = 1 - t;
+      scale_a = (T)1 - t;
       scale_b = t;
     }
     return DualComplex(
       scale_a * a.real_x + scale_b * b.real_x,
       scale_a * a.real_y + scale_b * b.real_y,
-      (1-t) * a.dual_x + t*b.dual_x,
-      (1-t) * a.dual_y + t*b.dual_y).Normalised();
+      ((T)1-t) * a.dual_x + t*b.dual_x,
+      ((T)1-t) * a.dual_y + t*b.dual_y).Normalised();
   }
 };
 

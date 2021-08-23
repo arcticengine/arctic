@@ -32,27 +32,12 @@
 
 #include "engine/arctic_types.h"
 #include "engine/arctic_input.h"
-#include "engine/dual_complex.h"
 #include "engine/easy_sound.h"
 #include "engine/easy_sprite.h"
 #include "engine/font.h"
+#include "engine/transform2f.h"
 
 namespace arctic {
-
-struct Transform2F {
-  DualComplexF dc;
-  float scale = 1.f;
-
-  void SetPosition(Vec2F position) {
-    dc.dual_x = position.x * 0.5f;
-    dc.dual_y = position.y * 0.5f;
-  }
-
-  void SetPosition(float x, float y) {
-    dc.dual_x = x * 0.5f;
-    dc.dual_y = y * 0.5f;
-  }
-};
 
 class Node2F : public std::enable_shared_from_this<Node2F> {
  protected:

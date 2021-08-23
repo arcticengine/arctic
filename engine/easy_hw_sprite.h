@@ -63,10 +63,10 @@ class HwSprite {
  public:
   HwSprite();
   HwSprite(const HwSprite &other);
-  HwSprite(HwSprite &&other);
+  HwSprite(HwSprite &&other) noexcept;
 
   HwSprite &operator=(const HwSprite &other);
-  HwSprite &operator=(HwSprite &&other);
+  HwSprite &operator=(HwSprite &&other) noexcept;
 
   /// @brief Load sprite data from a byte array in memory
   void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);

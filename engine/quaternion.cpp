@@ -1,0 +1,189 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
+// The MIT License (MIT)
+//
+// Copyright (c) 2021 The Lasting Curator
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and / or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+
+#include "quaternion.h"
+
+// only for sqrt
+#include <cmath>
+
+namespace arctic {
+
+
+QuaternionF::QuaternionF() {
+  w = 1.f;
+  x = 0.f;
+  y = 0.f;
+  z = 0.f;
+}
+
+QuaternionF::QuaternionF(float w_, float x_, float y_, float z_) {
+	w = w_;
+	x = x_;
+	y = y_;
+	z = z_;
+}
+
+QuaternionF::QuaternionF(const QuaternionF& b) {
+	w = b.w; x = b.x; y = b.y; z = b.z;
+}
+
+QuaternionF::QuaternionF(const Vec3F& unit_axis, float angle) {
+	float halfAngle = 0.5f*angle;
+	float sinHalfAngle = ::sin(halfAngle);
+	w = ::cos(halfAngle);
+	x = sinHalfAngle*unit_axis.x;
+	y = sinHalfAngle*unit_axis.y;
+	z = sinHalfAngle*unit_axis.z;
+}
+
+QuaternionF::~QuaternionF() {
+}
+
+QuaternionF& QuaternionF::operator= (const QuaternionF& b) {
+	w = b.w;
+	x = b.x;
+	y = b.y;
+	z = b.z;
+	return *this;
+}
+
+QuaternionF QuaternionF::operator+ (const QuaternionF& b) const {
+	return QuaternionF(w + b.w, x + b.x, y + b.y, z + b.z);
+}
+
+QuaternionF QuaternionF::operator- (const QuaternionF& b) const {
+	return QuaternionF(w - b.w, x - b.x, y - b.y, z - b.z);
+}
+
+QuaternionF QuaternionF::operator* (const float b) const {
+	return QuaternionF(w*b, x*b, y*b, z*b);
+}
+
+QuaternionF QuaternionF::operator* (const QuaternionF& b) const {
+	return QuaternionF(
+		w*b.w - x*b.x - y*b.y - z*b.z,
+		w*b.x + x*b.w + y*b.z - z*b.y,
+		w*b.y + y*b.w + z*b.x - x*b.z,
+		w*b.z + z*b.w + x*b.y - y*b.x);
+}
+void QuaternionF::ToAxisAngle(Vec3F& out_axis, float& out_angle) const {
+	float lengthSquared = x*x + y*y + z*z;
+	if (lengthSquared > 0.0f) {
+		out_angle = 2.0f*acos(w);
+		float inv = 1.0f / sqrtf(lengthSquared);
+		out_axis.x = x*inv;
+		out_axis.y = y*inv;
+		out_axis.z = z*inv;
+	} else {
+		out_angle = 0.0f;
+		out_axis.x = 1.0f;
+		out_axis.y = 0.0f;
+		out_axis.z = 0.0f;
+	}
+}
+
+Mat33F QuaternionF::ToMat33F() const {
+	return Mat33F(
+		w*w + x*x - y*y - z*z, 2.0f*x*y - 2.0f*w*z, 2.0f*x*z + 2.0f*w*y,
+		2.0f*x*y + 2.0f*w*z, w*w - x*x + y*y - z*z, 2.0f*y*z + 2.0f*w*x,
+		2.0f*x*z - 2.0f*w*y, 2.0f*y*z - 2.0f*w*x, w*w - x*x - y*y + z*z);
+}
+
+void QuaternionF::ToPartialMatrix33F(Mat33F& out) const {
+	out.m[0] = w*w + x*x - y*y - z*z; out.m[1] = 2.0f*x*y - 2.0f*w*z; out.m[2] = 2.0f*x*z + 2.0f*w*y;
+	out.m[3] = 2.0f*x*y + 2.0f*w*z; out.m[4] = w*w - x*x + y*y - z*z; out.m[5] = 2.0f*y*z + 2.0f*w*x;
+  out.m[6] = 2.0f*x*z - 2.0f*w*y; out.m[7] = 2.0f*y*z - 2.0f*w*x; out.m[8] = w*w - x*x - y*y + z*z;
+}
+
+void QuaternionF::Normalize() {
+	float modulus = ::sqrt(w*w + x*x + y*y + z*z);
+	float inv = 1.0f / modulus;
+	w *= inv;
+	x *= inv;
+	y *= inv;
+	z *= inv;
+}
+
+float QuaternionF::Norm() const {
+	return w*w + x*x + y*y + z*z;
+}
+
+float QuaternionF::Modulus() const {
+  return ::sqrt(w*w + x*x + y*y + z*z);
+}
+
+Vec3F QuaternionF::Rotate(const Vec3F& a) const {
+	return ToMat33F()*a;
+}
+
+void QuaternionF::Clear() {
+  w = 1.f;
+  x = 0.f;
+  y = 0.f;
+  z = 0.f;
+}
+
+
+QuaternionF operator* (float a, const QuaternionF& b) {
+	return QuaternionF(a*b.w, a*b.x, a*b.y, a*b.z);
+}
+
+QuaternionF Normalize(const QuaternionF& a) {
+	float modulus = ::sqrt(a.w*a.w + a.x*a.x + a.y*a.y + a.z*a.z);
+	float inv = 1.0f / modulus;
+	return QuaternionF(a.w*inv, a.x*inv, a.y*inv, a.z*inv);
+}
+
+QuaternionF Inverse(const QuaternionF& a) {
+	float norm = (a.w*a.w + a.x*a.x + a.y*a.y + a.z*a.z);
+	float inv = 1.0f / norm;
+	return QuaternionF(a.w * inv, -a.x * inv, -a.y * inv, -a.z * inv);
+}
+
+QuaternionF Conjugate(const QuaternionF& a) {
+	return QuaternionF(a.w, -a.x, -a.y, -a.z);
+}
+
+QuaternionF slerp(QuaternionF const &a, QuaternionF const &b, float t) {
+	QuaternionF normalizedA = Normalize(a);
+	QuaternionF normalizedB = Normalize(b);
+
+	float dotProduct = a.w*b.w + a.x*b.x + a.y*b.y + a.z*b.z;
+
+	const float THRESHOLD = 0.9995f;
+	if (dotProduct > THRESHOLD) {
+		return Normalize(a + t*(b - a));
+  }
+
+	dotProduct = (dotProduct < -1.0f ? -1.0f : (dotProduct > 1.0f ? 1.0f : dotProduct));
+	float alpha = acos(dotProduct);
+	float beta = alpha*t;
+
+	QuaternionF c = Normalize(b - a*dotProduct);
+	return a*::cos(beta) + c*::sin(beta);
+}
+
+
+}  // namespace arctic

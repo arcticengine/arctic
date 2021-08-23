@@ -181,6 +181,15 @@ inline Vec2F Normalize(Vec2F const &v) {
   return Vec2F(v.x * im, v.y * im);
 }
 
+inline Vec2F NormalizeSafe(Vec2F const &v) {
+  float const m2 = v.x * v.x + v.y * v.y;
+  if (m2 <= 0.000000001f) {
+    return Vec2F(0.0f);
+  }
+  float const im = 1.0f / sqrtf(m2);
+  return Vec2F(v.x * im, v.y * im);
+}
+
 inline Vec2F Mix(Vec2F const &a, Vec2F const &b, float const f) {
   return Vec2F(a.x * (1.0f - f) + f * b.x,
     a.y * (1.0f - f) + f * b.y);
