@@ -52,6 +52,12 @@
 		AA1E2E8FA72656FCE59DD32E /* easy_hw_sprite_instance.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF5DD81008B30D50A0E3CC7F /* easy_hw_sprite_instance.cpp */; };
 		BF8E620951849DAC58B59369 /* gl_texture2d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 00B9AF79AB0E50DE725770DF /* gl_texture2d.cpp */; };
 		93FBDAF5DFD91381393C39B8 /* gl_state.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FA51CB42072E7BFCB30FB239 /* gl_state.cpp */; };
+		36EDF162610A784EA1C745FC /* arctic_platform_windows_tcpip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 494FDDA98C69D695596762F5 /* arctic_platform_windows_tcpip.cpp */; };
+		08F7C0084FADD6117FDB4302 /* arctic_platform_pi_tcpip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3B5E707785A5BE160B516976 /* arctic_platform_pi_tcpip.cpp */; };
+		9514F1B116B4D788CEB3FF3A /* transform3f.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7E2279FEAC9C65C455989315 /* transform3f.cpp */; };
+		7B34DC9863494570859055B3 /* arctic_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A431A16A5FC8FEB4B275C0 /* arctic_sound.cpp */; };
+		238DA8BF08B024E00D45F0B7 /* pugixml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5771A10B274A4E0FA3842F9 /* pugixml.cpp */; };
+		8CF1AAA7A99586400261D8BB /* quaternion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D5EEB5CC41524CC0AA23C821 /* quaternion.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -173,6 +179,19 @@
 		18679FFBE7254B795DAC9CCF /* gl_state.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_state.h; path = ../engine/gl_state.h; sourceTree = SOURCE_ROOT; };
 		8E8EF35EC48F02848BCFC1FD /* easy_hw_sprite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = easy_hw_sprite.h; path = ../engine/easy_hw_sprite.h; sourceTree = SOURCE_ROOT; };
 		FA51CB42072E7BFCB30FB239 /* gl_state.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_state.cpp; path = ../engine/gl_state.cpp; sourceTree = SOURCE_ROOT; };
+		CBFCE82921D8DDF261BEFCBF /* transform3f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = transform3f.h; path = ../engine/transform3f.h; sourceTree = SOURCE_ROOT; };
+		494FDDA98C69D695596762F5 /* arctic_platform_windows_tcpip.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_windows_tcpip.cpp; path = ../engine/arctic_platform_windows_tcpip.cpp; sourceTree = SOURCE_ROOT; };
+		3B5E707785A5BE160B516976 /* arctic_platform_pi_tcpip.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_platform_pi_tcpip.cpp; path = ../engine/arctic_platform_pi_tcpip.cpp; sourceTree = SOURCE_ROOT; };
+		28EC4DBFE942007E2E38F247 /* quaternion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = quaternion.h; path = ../engine/quaternion.h; sourceTree = SOURCE_ROOT; };
+		673AE38F822A49318C35E049 /* transform2f.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = transform2f.h; path = ../engine/transform2f.h; sourceTree = SOURCE_ROOT; };
+		7E2279FEAC9C65C455989315 /* transform3f.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = transform3f.cpp; path = ../engine/transform3f.cpp; sourceTree = SOURCE_ROOT; };
+		DD0A543AA114013F7B715620 /* pugiconfig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pugiconfig.h; path = ../engine/pugiconfig.h; sourceTree = SOURCE_ROOT; };
+		72B2E132BC440D4835FFB5A3 /* pugixml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = pugixml.h; path = ../engine/pugixml.h; sourceTree = SOURCE_ROOT; };
+		55A431A16A5FC8FEB4B275C0 /* arctic_sound.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = arctic_sound.cpp; path = ../engine/arctic_sound.cpp; sourceTree = SOURCE_ROOT; };
+		D5771A10B274A4E0FA3842F9 /* pugixml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = pugixml.cpp; path = ../engine/pugixml.cpp; sourceTree = SOURCE_ROOT; };
+		D5EEB5CC41524CC0AA23C821 /* quaternion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = quaternion.cpp; path = ../engine/quaternion.cpp; sourceTree = SOURCE_ROOT; };
+		066CEC3E7E219C293F4F5FC3 /* arctic_platform_tcpip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_tcpip.h; path = ../engine/arctic_platform_tcpip.h; sourceTree = SOURCE_ROOT; };
+		3E77E2F342BAB527DCED7D4E /* mtq_mpmc_befsbfsp_allocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mpmc_befsbfsp_allocator.h; path = ../engine/mtq_mpmc_befsbfsp_allocator.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,6 +300,19 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				CBFCE82921D8DDF261BEFCBF /* transform3f.h */,
+				494FDDA98C69D695596762F5 /* arctic_platform_windows_tcpip.cpp */,
+				3B5E707785A5BE160B516976 /* arctic_platform_pi_tcpip.cpp */,
+				28EC4DBFE942007E2E38F247 /* quaternion.h */,
+				673AE38F822A49318C35E049 /* transform2f.h */,
+				7E2279FEAC9C65C455989315 /* transform3f.cpp */,
+				DD0A543AA114013F7B715620 /* pugiconfig.h */,
+				72B2E132BC440D4835FFB5A3 /* pugixml.h */,
+				55A431A16A5FC8FEB4B275C0 /* arctic_sound.cpp */,
+				D5771A10B274A4E0FA3842F9 /* pugixml.cpp */,
+				D5EEB5CC41524CC0AA23C821 /* quaternion.cpp */,
+				066CEC3E7E219C293F4F5FC3 /* arctic_platform_tcpip.h */,
+				3E77E2F342BAB527DCED7D4E /* mtq_mpmc_befsbfsp_allocator.h */,
 				A199F30559A199EA5DBA7D9B /* dual_complex.h */,
 				BC070806CD2CEE72AAB95C68 /* easy_input.h */,
 				4F4AF9440FD425601C31BD3E /* easy_util.h */,
@@ -432,6 +464,12 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				36EDF162610A784EA1C745FC /* arctic_platform_windows_tcpip.cpp in Sources */,
+				08F7C0084FADD6117FDB4302 /* arctic_platform_pi_tcpip.cpp in Sources */,
+				9514F1B116B4D788CEB3FF3A /* transform3f.cpp in Sources */,
+				7B34DC9863494570859055B3 /* arctic_sound.cpp in Sources */,
+				238DA8BF08B024E00D45F0B7 /* pugixml.cpp in Sources */,
+				8CF1AAA7A99586400261D8BB /* quaternion.cpp in Sources */,
 				0459C5A62E0FCC920DC65F27 /* gl_buffer.cpp in Sources */,
 				7B1A1779BC15CA562E83EB42 /* dual_complex.cpp in Sources */,
 				651D92C804145F65B1AB08A9 /* gl_program.cpp in Sources */,

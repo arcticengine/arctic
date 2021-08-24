@@ -209,6 +209,13 @@
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\easy_util.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\transform3f.h" />
+    <ClInclude Include="..\engine\quaternion.h" />
+    <ClInclude Include="..\engine\transform2f.h" />
+    <ClInclude Include="..\engine\pugiconfig.h" />
+    <ClInclude Include="..\engine\pugixml.h" />
+    <ClInclude Include="..\engine\arctic_platform_tcpip.h" />
+    <ClInclude Include="..\engine\mtq_mpmc_befsbfsp_allocator.h" />
     <ClInclude Include="..\engine\glcorearb.h" />
     <ClInclude Include="..\engine\glext.h" />
     <ClInclude Include="..\engine\gl_buffer.h" />
@@ -277,6 +284,12 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_windows_tcpip.cpp" />
+    <ClCompile Include="..\engine\arctic_platform_pi_tcpip.cpp" />
+    <ClCompile Include="..\engine\transform3f.cpp" />
+    <ClCompile Include="..\engine\arctic_sound.cpp" />
+    <ClCompile Include="..\engine\pugixml.cpp" />
+    <ClCompile Include="..\engine\quaternion.cpp" />
     <ClCompile Include="..\engine\gl_buffer.cpp" />
     <ClCompile Include="..\engine\gl_framebuffer.cpp" />
     <ClCompile Include="..\engine\gl_program.cpp" />

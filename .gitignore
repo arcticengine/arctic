@@ -37,6 +37,7 @@
 # XCode
 xcuserdata
 DerivedData
+WorkspaceSettings.xcsettings
 
 # Visual studio build folder
 build
