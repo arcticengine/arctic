@@ -39,6 +39,7 @@
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform_sound.h"
 #include "engine/arctic_platform_fatal.h"
+#include "engine/scalar_math.h"
 
 
 namespace arctic {
