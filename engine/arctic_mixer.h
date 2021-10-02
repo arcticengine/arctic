@@ -1,6 +1,7 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 Huldra
+// Copyright (c) 2017 - 2021 Huldra
+// Copyright (c) 2013 - 2021 Mikle
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -167,6 +168,7 @@ class SoundHandle {
   }
 };
 
+
 template <class T>
 void RenderSound(SoundTask *sound, const SoundListenerHead &head, Si32 channel_idx,
                  T *dst_buffer, Si32 dst_stride, Si32 dst_size_samples, double dst_sample_rate,
@@ -239,8 +241,7 @@ struct SoundMixerState {
   std::atomic<float> master_volume = ATOMIC_VAR_INIT(0.7f);
   std::vector<SoundTask*> buffers;
   SoundListenerHead head;
-
-
+  float compressor_level = 1.f;
 
   SoundMixerState()
       : tasks(&page_pool)
@@ -345,6 +346,113 @@ struct SoundMixerState {
       if (task && !pool.enqueue(task)) {
         delete task;
       }
+    }
+  }
+
+  inline float SoftClipSound(float d) {
+    constexpr float a = 0.97f;
+    constexpr float b = 1.f - a;
+    if (d > a) {
+      d -= a;
+      return (b * d) / (b + d) + a;
+    } else if (d < -a) {
+      d += a;
+      return (b * d) / (b - d) - a;
+    } else {
+      return d;
+    }
+  }
+
+  template <class T>
+  void MixSound(T *mix_l, T *mix_r, Si32 mix_stride, Si32 buffer_samples_per_channel, Si16 *tmp) {
+    InputTasksToMixerThread();
+    float master_volume = static_cast<float>(
+      this->master_volume.load() / 32767.0);
+    if (buffers.empty()) {
+      Si32 mix_idx = 0;
+      for (Si32 i = 0; i < buffer_samples_per_channel; ++i) {
+        mix_l[mix_idx] = 0.f;
+        mix_r[mix_idx] = 0.f;
+        mix_idx += mix_stride;
+      }
+    }
+
+    for (Ui32 idx = 0; idx < buffers.size(); ++idx) {
+      SoundTask &sound = *buffers[idx];
+      if (sound.is_3d) {
+        if (idx == 0) {
+          Si32 mix_idx = 0;
+          for (Si32 i = 0; i < buffer_samples_per_channel; ++i) {
+            mix_l[mix_idx] = 0.f;
+            mix_r[mix_idx] = 0.f;
+            mix_idx += mix_stride;
+          }
+        }
+        bool is_over = true;
+        for (Si32 channel_idx = 0; channel_idx < 2; ++channel_idx) {
+          RenderSound<T>(
+              &sound, head, channel_idx,
+              (channel_idx == 0 ? mix_l : mix_r), 1, buffer_samples_per_channel, 44100.0,
+              master_volume);
+          if (sound.channel_playback_state[channel_idx].play_position * 44100.0 < sound.sound.DurationSamples()) {
+            is_over = false;
+          }
+        }
+        if (is_over) {
+          sound.sound.GetInstance()->DecPlaying();
+          ReleaseBufferAt(idx);
+          --idx;
+        }
+      } else {
+        Si32 size = sound.sound.StreamOut(sound.next_position,
+            buffer_samples_per_channel,
+            tmp,
+            buffer_samples_per_channel * 2);
+
+        Si16 *in_data = tmp;
+        float volume = sound.volume * master_volume;
+        Si32 mix_idx = 0;
+        if (idx == 0) {
+          for (Si32 i = 0; i < size; ++i) {
+            mix_l[mix_idx] = static_cast<float>(in_data[i * 2]) * volume;
+            mix_r[mix_idx] = static_cast<float>(in_data[i * 2 + 1]) * volume;
+            mix_idx += mix_stride;
+          }
+          mix_idx = size * mix_stride;
+          for (Si32 i = size; i < buffer_samples_per_channel; ++i) {
+            mix_l[mix_idx] = 0.f;
+            mix_r[mix_idx] = 0.f;
+            mix_idx += mix_stride;
+          }
+        } else {
+          for (Si32 i = 0; i < size; ++i) {
+            mix_l[mix_idx] += static_cast<float>(in_data[i * 2]) * volume;
+            mix_r[mix_idx] += static_cast<float>(in_data[i * 2 + 1]) * volume;
+            mix_idx += mix_stride;
+          }
+        }
+        sound.next_position += size;
+
+        if (size < buffer_samples_per_channel) {
+          sound.sound.GetInstance()->DecPlaying();
+          ReleaseBufferAt(idx);
+          --idx;
+        }
+      }
+    }
+
+    const float Attack = 1.f / (44100.f * 0.005f);
+    const float Release = 1.f / (44100.f * 0.2f);
+    for (Si32 frame = 0; frame < buffer_samples_per_channel; ++frame) {
+      float smax = std::max(abs(mix_l[frame]), abs(mix_r[frame]));
+      if (smax > compressor_level) {
+        compressor_level = compressor_level * (1.f - Attack) + smax * Attack;
+      } else {
+        compressor_level = compressor_level * (1.f - Release) + smax * Release;
+      }
+      float gain_k = (compressor_level > 1.f ? 1.f / compressor_level : 1.f);
+      mix_l[frame] = SoftClipSound(mix_l[frame] * gain_k);
+      mix_r[frame] = SoftClipSound(mix_r[frame] * gain_k);
     }
   }
 };

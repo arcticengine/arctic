@@ -176,6 +176,7 @@ void UpdateResolution() {
 Ui64 ShowModalDialogue(std::shared_ptr<Panel> gui) {
   Ui64 clicked_button = Ui64(-1);
   while (true) {
+    UpdateResolution();
     Clear();
     gui->SetPos((ScreenSize() - gui->GetSize()) / 2);
     gui->Draw(Vec2Si32(0, 0));
