@@ -196,7 +196,7 @@ void SoundMixerThreadFunction() {
     Si16* out_data = &(wave_buffers[cur_buffer_idx][0]);
     for (Si32 i = 0; i < buffer_samples_total; ++i) {
       out_data[i] = static_cast<Si16>(Clamp(
-        mix[i], -32767.f, 32767.f));
+        mix[i] * 32767.f, -32767.f, 32767.f));
     }
 
     waveOutWrite(wave_out_handle,

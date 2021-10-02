@@ -148,7 +148,7 @@ void MixSound() {
   Si32 buffer_samples_total = data->period_size * 2;
   for (Si32 i = 0; i < buffer_samples_total; ++i) {
     Si16 res = static_cast<Si16>(Clamp(
-      data->mix[i], -32767.f, 32767.f));
+      data->mix[i] * 32767.f, -32767.f, 32767.f));
     out_buffer[i * 2 + 0] = res & 0xff;
     out_buffer[i * 2 + 1] = (res >> 8) & 0xff;
   }
