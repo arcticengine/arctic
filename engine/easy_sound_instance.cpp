@@ -115,7 +115,7 @@ Si32 SoundInstance::GetDurationSamples() {
 
 std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     const Si64 size) {
-  if (size < sizeof(WaveHeader)) {
+  if (size < (Si64)sizeof(WaveHeader)) {
     *Log() << "Error in LoadWav, size is too small.";
     return nullptr;
   }
@@ -140,11 +140,11 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
 
   const Ui8 *cur_subchunk = data + sizeof(WaveHeader);
   Si64 remaining_chunk_size = (Si64)wav->chunk_size - 4;
-  while (remaining_chunk_size > sizeof(WaveSubchunkHeader)) {
+  while (remaining_chunk_size > (Si64)sizeof(WaveSubchunkHeader)) {
     const WaveSubchunkHeader *hdr = static_cast<const WaveSubchunkHeader*>(
         static_cast<const void*>(cur_subchunk));
 
-    if (hdr->subchunk_size > remaining_chunk_size - sizeof(WaveSubchunkHeader)) {
+    if (hdr->subchunk_size > remaining_chunk_size - (Si64)sizeof(WaveSubchunkHeader)) {
       *Log() << "Error in LoadWav, subchunk_size is larger than the remaining part of the chunk.";
       return nullptr;
     }
