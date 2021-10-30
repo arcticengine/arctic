@@ -297,7 +297,7 @@ bool GetProjectKind() {
   y -= 64;
   std::shared_ptr<Button> hello_button = MakeButton(
     kHelloButton, Vec2Si32(32, y), kKeyH,
-    2, "\001H\002ello Wrold project",
+    2, "\001H\002ello World project",
     Vec2Si32(box->GetSize().x - 64, 48));
   box->AddChild(hello_button);
   y -= 64;

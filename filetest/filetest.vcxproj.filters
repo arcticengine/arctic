@@ -32,6 +32,9 @@
     <ClCompile Include="..\engine\engine.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\sound_handle.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
     <ClCompile Include="..\engine\arctic_platform_windows_tcpip.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -178,6 +181,12 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\sound_handle.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\sound_task.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\transform3f.h">

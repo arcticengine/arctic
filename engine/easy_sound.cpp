@@ -129,14 +129,15 @@ void Sound::Clear() {
   sound_instance_.reset();
 }
 
-void Sound::Play() {
-  Play(1.0f);
+SoundHandle Sound::Play() {
+  return Play(1.0f);
 }
 
-void Sound::Play(float volume) {
+SoundHandle Sound::Play(float volume) {
   if (sound_instance_) {
-    arctic::StartSound(*this, volume);
+    return arctic::StartSound(*this, volume);
   }
+  return SoundHandle::Invalid();
 }
 
 void Sound::Stop() {

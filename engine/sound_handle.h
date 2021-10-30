@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 Huldra
+// Copyright (c) 2017 - 2021 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,47 +20,42 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_SOUND_H_
-#define ENGINE_EASY_SOUND_H_
+#ifndef ENGINE_SOUND_HANDLE_H_
+#define ENGINE_SOUND_HANDLE_H_
 
-#include <string>
-#include <memory>
-
-#include "engine/easy_sound_instance.h"
-#include "engine/sound_handle.h"
-
-struct stb_vorbis;
+#include "engine/arctic_types.h"
 
 namespace arctic {
 
 /// @addtogroup global_sound
 /// @{
-class Sound {
- private:
-  std::shared_ptr<SoundInstance> sound_instance_;
-  stb_vorbis *vorbis_codec_ = nullptr;
-  std::string file_name_ = "CLEAR";
+
+struct SoundTask;
+
+class SoundHandle {
+  Ui64 uid_;
+  SoundTask* sound_task_;
  public:
-  void Load(const std::string &file_name, bool do_unpack);
-  void Load(const char *file_name, bool do_unpack, std::vector<Ui8> *in_data);
-  void Load(const char *file_name, bool do_unpack);
-  void Load(const char *file_name);
-  void Load(const std::string &file_name);
-  void Create(double duration);
-  void Clear();
-  SoundHandle Play();
-  SoundHandle Play(float volume);
-  void Stop();
-  double Duration() const;
-  Si32 DurationSamples();
-  Si16 *RawData();
-  Si32 StreamOut(Si32 offset, Si32 size,
-      Si16 *out_buffer, Si32 out_buffer_samples);
-  std::shared_ptr<SoundInstance> GetInstance();
-  bool IsPlaying();
+  SoundHandle(SoundTask *sound_task);
+  SoundHandle();
+  SoundHandle(const SoundHandle &h);
+
+  bool IsPlaying() const;
+  bool IsValid() const;
+
+  Ui64 GetUid() const {
+    return uid_;
+  }
+
+  inline static SoundHandle Invalid() {
+    return SoundHandle(nullptr);
+  }
 };
+
 /// @}
 
 }  // namespace arctic
 
-#endif  // ENGINE_EASY_SOUND_H_
+#endif  // ENGINE_SOUND_HANDLE_H_
+
+

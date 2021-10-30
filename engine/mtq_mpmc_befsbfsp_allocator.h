@@ -37,6 +37,7 @@
 #define ENGINE_MPMC_BEFSBFSP_ALLOCATOR_H_
 
 #include "engine/mtq_mempool_allocator.h"
+#include <array>
 #include <atomic>
 
 namespace arctic {

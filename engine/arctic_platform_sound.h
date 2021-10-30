@@ -27,7 +27,9 @@
 #include <string>
 
 #include "engine/easy_sound.h"
-#include "engine/arctic_mixer.h"
+#include "engine/mtq_mpmc_befsbfsp_allocator.h"
+#include "engine/sound_handle.h"
+#include "engine/transform3f.h"
 
 namespace arctic {
 
@@ -95,6 +97,10 @@ void SetMasterVolume(float volume);
 /// @brief Gets the master volume level
 /// @return The master volume level
 float GetMasterVolume();
+
+void Beep(float duration_seconds, Si32 note);
+
+extern template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
 
 /// @}
 
