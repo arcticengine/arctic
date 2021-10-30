@@ -209,6 +209,8 @@
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\easy_util.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\sound_handle.h" />
+    <ClInclude Include="..\engine\sound_task.h" />
     <ClInclude Include="..\engine\transform3f.h" />
     <ClInclude Include="..\engine\quaternion.h" />
     <ClInclude Include="..\engine\transform2f.h" />
@@ -284,6 +286,7 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\sound_handle.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows_tcpip.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_tcpip.cpp" />
     <ClCompile Include="..\engine\transform3f.cpp" />

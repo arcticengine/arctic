@@ -38,7 +38,7 @@ SoundHandle StartSound(Sound sound, float volume) {
       buffer->sound = sound;
       buffer->volume = volume;
       buffer->sound.GetInstance()->IncPlaying();
-      buffer->action = SoundTask::kStart;  //-V1048
+      buffer->action = SoundTaskAction::kStart;  //-V1048
       buffer->is_playing = true;
       g_sound_mixer_state.AddSoundTask(buffer);
       return handle;
@@ -53,7 +53,7 @@ void StopSound(Sound sound) {
     if (buffer) {
       buffer->sound = sound;
       buffer->volume = 0.f;
-      buffer->action = SoundTask::kStop;
+      buffer->action = SoundTaskAction::kStop;
       g_sound_mixer_state.AddSoundTask(buffer);
     }
   }
@@ -64,7 +64,7 @@ void StopSound(const SoundHandle &handle) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
       buffer->volume = 0.f;
-      buffer->action = SoundTask::kStop;
+      buffer->action = SoundTaskAction::kStop;
       buffer->target_uid = handle.GetUid();
       g_sound_mixer_state.AddSoundTask(buffer);
     }
@@ -75,7 +75,7 @@ void SetSoundListenerLocation(Transform3F location) {
   SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
   if (buffer) {
     buffer->location = location;
-    buffer->action = SoundTask::kSetHeadLocation;
+    buffer->action = SoundTaskAction::kSetHeadLocation;
     g_sound_mixer_state.AddSoundTask(buffer);
   }
 }
@@ -86,7 +86,7 @@ void SetSoundSourcePosition(Sound sound, Vec3F position) {
     if (buffer) {
       buffer->sound = sound;
       buffer->location.displacement = position;
-      buffer->action = SoundTask::kSetLocation;
+      buffer->action = SoundTaskAction::kSetLocation;
       g_sound_mixer_state.AddSoundTask(buffer);
     }
   }
@@ -97,7 +97,7 @@ void SetSoundSourcePosition(const SoundHandle &handle, Vec3F position) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
       buffer->location.displacement = position;
-      buffer->action = SoundTask::kSetLocation;
+      buffer->action = SoundTaskAction::kSetLocation;
       buffer->target_uid = handle.GetUid();
       g_sound_mixer_state.AddSoundTask(buffer);
     }
@@ -116,7 +116,7 @@ SoundHandle StartSoundAtPosition(Sound sound, float volume, Vec3F position) {
       buffer->sound.GetInstance()->IncPlaying();
       buffer->is_3d = true;
       buffer->location.displacement = position;
-      buffer->action = SoundTask::kStart3d;
+      buffer->action = SoundTaskAction::kStart3d;
       buffer->is_playing = true;
       g_sound_mixer_state.AddSoundTask(buffer);
       return handle;
@@ -132,6 +132,34 @@ void SetMasterVolume(float volume) {
 
 float GetMasterVolume() {
   return g_sound_mixer_state.master_volume.load();
+}
+
+void Beep(float duration_seconds, Si32 note) {
+  if (duration_seconds < 0.01f) {
+    duration_seconds = 0.01f;
+  }
+  Sound s;
+  s.Create(duration_seconds);
+  Si32 end = s.DurationSamples();
+  Si16 *p = s.RawData();
+  float freq = std::pow(2.f, (note - 9.f)/12.f) * 440.f;
+  freq = std::min(std::max(freq, 100.f), 22050.f);
+  for (Si32 i = 0; i < end; ++i) {
+    float t = i * duration_seconds / end;
+    float v = std::sin(t * 2.f * float(M_PI) * freq)*32767.f;
+    p[i * 2] = (Si16)v;
+    p[i * 2 + 1] = (Si16)v;
+  }
+  float mul = 0.98f;
+  for (Si32 i = std::max(0, end - 441); i < end; ++i) {
+    p[i * 2] = (Si16)(p[i * 2] * mul);
+    p[i * 2 + 1] = (Si16)(p[i * 2 + 1] * mul);
+    mul = mul * 0.98f;
+  }
+  s.Play();
+  while (s.IsPlaying()) {
+    ;
+  }
 }
 
 }  // namespace arctic

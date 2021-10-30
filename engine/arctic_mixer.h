@@ -37,6 +37,8 @@
 #include "engine/mtq_mpsc_vinfarr.h"
 #include "engine/mtq_spmc_array.h"
 #include "engine/mtq_mpmc_befsbfsp_allocator.h"
+#include "engine/sound_handle.h"
+#include "engine/sound_task.h"
 #include "engine/vec3f.h"
 #include "engine/quaternion.h"
 #include "engine/transform3f.h"
@@ -74,17 +76,6 @@ struct SoundListenerHead {
   }
 };
 
-struct ChannelPlaybackState {
-  double play_position = 0.0;
-  double delay = 0.0;
-  float acc = 0.f;
-
-  void Clear() {
-    play_position = 0.0;
-    delay = 0.0;
-    acc = 0.f;
-  }
-};
 
 struct SoundSource {
   Transform3F loc;
@@ -94,77 +85,6 @@ struct SoundSource {
     loc.Clear();
     channel_playback_state[0].Clear();
     channel_playback_state[1].Clear();
-  }
-};
-
-struct SoundTask {
-  enum Action {
-    kStart = 0,
-    kStop = 1,
-    kSetHeadLocation = 2,
-    kSetLocation = 3,
-    kStart3d = 4
-  };
-  static constexpr Ui64 kInvalidSoundTaskUid = 0;
-  std::atomic<Ui64> uid = ATOMIC_VAR_INIT(kInvalidSoundTaskUid);
-  Ui64 target_uid = kInvalidSoundTaskUid;
-  Sound sound;
-  float volume = 1.0f;
-  Si32 next_position = 0;
-  Transform3F location;
-  ChannelPlaybackState channel_playback_state[2];
-  Action action = kStart;
-  bool is_3d = false;
-  std::atomic<bool> is_playing = ATOMIC_VAR_INIT(false);
-
-  void Clear(Ui64 in_uid) {
-    uid = in_uid;
-    target_uid = SoundTask::kInvalidSoundTaskUid;
-    sound.Clear();
-    volume = 1.0f;
-    next_position = 0;
-    action = kStart;
-    is_3d = false;
-    is_playing = false;
-  }
-};
-
-class SoundHandle {
-  Ui64 uid_;
-  SoundTask* sound_task_;
- public:
-  SoundHandle(SoundTask *sound_task)
-      : uid_(sound_task ? (Ui64)sound_task->uid : SoundTask::kInvalidSoundTaskUid)
-      , sound_task_(sound_task) {
-  }
-  SoundHandle()
-      : uid_(SoundTask::kInvalidSoundTaskUid)
-      , sound_task_(nullptr) {
-  }
-  SoundHandle(const SoundHandle &h)
-      : uid_(h.uid_)
-      , sound_task_(h.sound_task_) {
-
-  }
-  bool IsValid() const {
-    return (sound_task_ != nullptr
-            && uid_ != SoundTask::kInvalidSoundTaskUid
-            && sound_task_->uid == uid_);
-  }
-  Ui64 GetUid() const {
-    return uid_;
-  }
-  bool IsPlaying() const {
-    if (IsValid()) {
-      bool is_playing = sound_task_->is_playing;
-      if (IsValid()) {
-        return is_playing;
-      }
-    }
-    return false;
-  }
-  inline static SoundHandle Invalid() {
-    return SoundHandle(nullptr);
   }
 };
 
@@ -294,11 +214,11 @@ struct SoundMixerState {
         return;
       }
       switch (task->action) {
-      case SoundTask::kStart:
+      case SoundTaskAction::kStart:
         buffers.push_back(task);
         task = nullptr;
         break;
-      case SoundTask::kStop:
+      case SoundTaskAction::kStop:
         {
           Ui64 task_uid = task->target_uid;
           for (Si32 idx = 0; idx < (Si32)buffers.size(); ++idx) {
@@ -313,11 +233,11 @@ struct SoundMixerState {
           }
         }
         break;
-      case SoundTask::kSetHeadLocation:
+      case SoundTaskAction::kSetHeadLocation:
         head.loc = task->location;
         head.UpdateEars();
         break;
-      case SoundTask::kSetLocation:
+      case SoundTaskAction::kSetLocation:
         {
           Ui64 task_uid = task->target_uid;
           for (size_t idx = 0; idx < buffers.size(); ++idx) {
@@ -331,7 +251,7 @@ struct SoundMixerState {
           }
         }
         break;
-      case SoundTask::kStart3d:
+      case SoundTaskAction::kStart3d:
         task->is_3d = true;
         task->next_position = 0;
         for (Si32 i = 0; i < 2; ++i) {

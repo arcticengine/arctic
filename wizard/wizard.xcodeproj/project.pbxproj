@@ -58,6 +58,7 @@
 		68038E6E5AC433C13D12FCCA /* arctic_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7A8B03D4FD0D45269FE3A476 /* arctic_sound.cpp */; };
 		0563B27D011474B64834001D /* pugixml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F4A7323D12D1782513FA8D2D /* pugixml.cpp */; };
 		ECF37BB50BD4C1D23E2C9B73 /* quaternion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2F53B81607A0FD2F264672DB /* quaternion.cpp */; };
+		8E5F4F38AEFF47E05711AAAB /* sound_handle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D0EC7065CF467ED6A008B7A6 /* sound_handle.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -193,6 +194,9 @@
 		2F53B81607A0FD2F264672DB /* quaternion.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = quaternion.cpp; path = ../engine/quaternion.cpp; sourceTree = SOURCE_ROOT; };
 		D9C82753548E9107FF27A985 /* arctic_platform_tcpip.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = arctic_platform_tcpip.h; path = ../engine/arctic_platform_tcpip.h; sourceTree = SOURCE_ROOT; };
 		CDD354707C9E86E0FF4A5581 /* mtq_mpmc_befsbfsp_allocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mtq_mpmc_befsbfsp_allocator.h; path = ../engine/mtq_mpmc_befsbfsp_allocator.h; sourceTree = SOURCE_ROOT; };
+		7BD5AE2370EB3A5D12F21CEF /* sound_handle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sound_handle.h; path = ../engine/sound_handle.h; sourceTree = SOURCE_ROOT; };
+		D0EC7065CF467ED6A008B7A6 /* sound_handle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = sound_handle.cpp; path = ../engine/sound_handle.cpp; sourceTree = SOURCE_ROOT; };
+		A5CBBBBDD0A53D584BE91EF8 /* sound_task.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sound_task.h; path = ../engine/sound_task.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -296,6 +300,9 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				7BD5AE2370EB3A5D12F21CEF /* sound_handle.h */,
+				D0EC7065CF467ED6A008B7A6 /* sound_handle.cpp */,
+				A5CBBBBDD0A53D584BE91EF8 /* sound_task.h */,
 				19136E5906941AFDF555D24A /* transform3f.h */,
 				528969F43FCF27377D1495C4 /* arctic_platform_windows_tcpip.cpp */,
 				3E11945CB764C6F590F1597A /* arctic_platform_pi_tcpip.cpp */,
@@ -466,6 +473,7 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				8E5F4F38AEFF47E05711AAAB /* sound_handle.cpp in Sources */,
 				5AD94A8C12376D3FA405387B /* arctic_platform_windows_tcpip.cpp in Sources */,
 				D0BBB4D8E1BB6BBF94107CA8 /* arctic_platform_pi_tcpip.cpp in Sources */,
 				BBB7446E0F90D545F320F83C /* transform3f.cpp in Sources */,
