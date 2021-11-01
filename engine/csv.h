@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 Huldra
+// Copyright (c) 2018 - 2021 Huldra
 // Copyright (c) 2017 Romain Sylvian
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -60,7 +60,9 @@ class CsvRow {
       if (ss.fail()) {
         return default_value;
       }
-      return res;
+      if (ss.peek() == std::iostream::traits_type::eof()) {
+        return res;
+      }
     }
     return default_value;
   }
@@ -72,7 +74,10 @@ class CsvRow {
     if (ss.fail()) {
       return default_value;
     }
-    return res;
+    if (ss.peek() == std::iostream::traits_type::eof()) {
+      return res;
+    }
+    return default_value;
   }
   const std::string operator[](Ui64) const;
   const std::string operator[](const std::string &value_name) const;
