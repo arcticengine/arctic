@@ -41,8 +41,8 @@ class DecoratedFrame {
   Sprite lower_left_;
   Sprite lower_right_;
   Sprite background_tile_;
-  bool is_x_scaleable_;
-  bool is_y_scaleable_;
+  bool is_x_scaleable_ = true;
+  bool is_y_scaleable_ = true;
 
  public:
   DecoratedFrame() {

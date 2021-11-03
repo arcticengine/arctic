@@ -198,7 +198,7 @@ void DrawTriangle(Sprite to_sprite,
           }
         }
       } else if (dy == 0) {
-        if (is_b_at_the_right_side ? x1 > x2 : x2 < x1) {
+        if (x1 > x2) {
           Edge &e = edge_ac[y1_i * 2];
           e.x = x1;
           e.tex = tex1;
@@ -384,19 +384,11 @@ void DrawTriangle(Sprite to_sprite,
         }
       } else if (y1_i == y2_i) {
         if (bc.y > 0.f) {
-          if (is_b_at_the_right_side) {
-            float x1 = b.x + bc.x * (y1 - b.y) / bc.y;
-            Vec2F tex1 = tex_b + tex_bc * (y1 - b.y) / bc.y;
-            Edge &e = edge_abc[y1_i * 2];
-            e.x = x1;
-            e.tex = tex1;
-          } else {
-            float x1 = b.x + bc.x * (y1 - b.y) / bc.y;
-            Vec2F tex1 = tex_b + tex_bc * (y1 - b.y) / bc.y;
-            Edge &e = edge_abc[y1_i * 2];
-            e.x = x1;
-            e.tex = tex1;
-          }
+          float x1 = b.x + bc.x * (y1 - b.y) / bc.y;
+          Vec2F tex1 = tex_b + tex_bc * (y1 - b.y) / bc.y;
+          Edge &e = edge_abc[y1_i * 2];
+          e.x = x1;
+          e.tex = tex1;
         } else {
           Edge &e = edge_abc[y1_i * 2];
           e.x = b.x;

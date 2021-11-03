@@ -1,3 +1,6 @@
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 // The MIT License (MIT)
 //
 // Copyright (c) 2017 - 2021 Huldra
@@ -40,6 +43,12 @@ namespace arctic {
       : uid_(h.uid_)
       , sound_task_(h.sound_task_) {
 
+  }
+
+  SoundHandle& SoundHandle::operator=(const SoundHandle& other) {
+    uid_ = other.uid_;
+    sound_task_ = other.sound_task_;
+    return *this;
   }
 
   bool SoundHandle::IsPlaying() const {
