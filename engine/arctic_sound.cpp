@@ -25,6 +25,7 @@
 
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform_sound.h"
+#include "engine/easy.h"
 
 namespace arctic {
 
@@ -135,6 +136,7 @@ float GetMasterVolume() {
 }
 
 void Beep(float duration_seconds, Si32 note) {
+  ShowFrame();
   if (duration_seconds < 0.01f) {
     duration_seconds = 0.01f;
   }

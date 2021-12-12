@@ -41,6 +41,16 @@
 
 using namespace arctic;  // NOLINT
 
+enum FileToAddLocation {
+  kFileToAddEngine = 0,
+  kFileToAddProject = 1,
+};
+
+struct FileToAdd {
+  std::string title;
+  FileToAddLocation location;
+};
+
 Font g_font;
 DecoratedFrame g_border;
 DecoratedFrame g_button_normal;
@@ -70,7 +80,8 @@ std::vector<Rgba> g_palete;
 enum ProjectKind {
   kProjectKindTetramino = 0,
   kProjectKindHello = 1,
-  kProjectKindSnake = 2
+  kProjectKindSnake = 2,
+  kProjectKindCodingForKids = 3
 };
 
 enum MainMode {
@@ -276,6 +287,7 @@ bool GetProjectKind() {
   const Ui64 kTetraminoButton = 1;
   const Ui64 kHelloButton = 2;
   const Ui64 kSnakeButton = 3;
+  const Ui64 kCodingForKidsButton = 4;
 
   const char *welcome = u8"The Snow Wizard\n\n"
   "Please select the flavour of the new project.\n"
@@ -306,6 +318,12 @@ bool GetProjectKind() {
       3, "\001S\002nake project",
       Vec2Si32(box->GetSize().x - 64, 48));
     box->AddChild(snake_button);
+  y -= 64;
+  std::shared_ptr<Button> coding_for_kids_button = MakeButton(
+      kCodingForKidsButton, Vec2Si32(32, y), kKeyC,
+      3, "\001C\002oding for kids project",
+      Vec2Si32(box->GetSize().x - 64, 48));
+    box->AddChild(coding_for_kids_button);
 
 
   Ui64 action = ShowModalDialogue(box);
@@ -315,9 +333,11 @@ bool GetProjectKind() {
   } else if (action == kHelloButton) {
     g_project_kind = kProjectKindHello;
     return true;
-  }
-  else if (action == kSnakeButton) {
+  } else if (action == kSnakeButton) {
     g_project_kind = kProjectKindSnake;
+    return true;
+  } else if (action == kCodingForKidsButton) {
+    g_project_kind = kProjectKindCodingForKids;
     return true;
   }
   return false;
@@ -755,6 +775,10 @@ bool ShowProgress() {
           case kProjectKindSnake:
             PatchAndCopyTemplateFile("main_snake.cpp", "main.cpp");
             break;
+          case kProjectKindCodingForKids:
+            PatchAndCopyTemplateFile("main_coding_for_kids.cpp", "main.cpp");
+            PatchAndCopyTemplateFile("code.inc.h", "code.inc.h");
+            break;
           default:
           case kProjectKindHello:
             PatchAndCopyTemplateFile("main_hello.cpp", "main.cpp");
@@ -912,73 +936,112 @@ bool ShowUpdateProgress() {
         std::stringstream new_buildfiles;  // PBXBuildFile
         std::stringstream new_files;  // PBXFileReference
         std::stringstream new_engine_children;  // PBXGroup engine children
+        std::stringstream new_project_children;  // PBXGroup project children
         std::stringstream new_buildphase;  // PBXSourcesBuildPhase
         std::unordered_set<std::string> new_hashes;
+
+
+        std::deque<FileToAdd> files_to_add;
+        // patch-in code.inc.h if needed
+        if (g_project_kind == kProjectKindCodingForKids) {
+          //engine_entries.emplace_back(
+          if (existing_files.find("code.inc.h") == existing_files.end()) {
+            files_to_add.push_back({"code.inc.h", kFileToAddProject});
+          }
+        }
+
         for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
           if (entry.is_file == kTrivalentTrue
                 && existing_files.find(entry.title) == existing_files.end()) {
-            bool is_inserted = false;
-            while (!is_inserted) {
-              // generate 2 random uids
-              std::string uid_file = MakeUid();
-              std::string uid_buildfile = MakeUid();
+            files_to_add.push_back({entry.title, kFileToAddEngine});
+          }
+        }
 
-              // make sure the uid is not used in the xcodeproj
-              if (full_content.find(uid_file) == std::string::npos &&
-                  new_hashes.find(uid_file) == new_hashes.end() &&
-                  full_content.find(uid_buildfile) == std::string::npos &&
-                  new_hashes.find(uid_buildfile) == new_hashes.end() &&
-                  uid_file != uid_buildfile) {
-                is_inserted = true;
-                // save hashes
-                new_hashes.insert(uid_file);
-                new_hashes.insert(uid_buildfile);
 
-                // add to PBXBuildFile
-                if (EndsWith(entry.title, std::string(".cpp")) ||
-                    EndsWith(entry.title, std::string(".c")) ||
-                    EndsWith(entry.title, std::string(".mm"))) {
-                  new_buildfiles << "\t\t" << uid_buildfile
-                    << " /* " << entry.title << " in Sources */ = {"
-                    << "isa = PBXBuildFile; fileRef = " << uid_file
-                    << " /* " << entry.title << " */; };\n";
-                }
+        for (Ui32 idx = 0; idx < files_to_add.size(); ++idx) {
+          auto entry = files_to_add[idx];
 
-                // add to PBXFileReference
-                new_files << "\t\t" << uid_file
-                  << " /* " << entry.title << " */ = {"
-                  << "isa = PBXFileReference; fileEncoding = 4;";
-                if (EndsWith(entry.title, std::string(".h"))) {
-                  new_files << " lastKnownFileType = sourcecode.c.h;";
-                } else if (EndsWith(entry.title, std::string(".mm"))) {
-                  new_files << " lastKnownFileType = sourcecode.cpp.objcpp;";
-                } else {
-                  new_files << " lastKnownFileType = sourcecode.cpp.cpp;";
-                }
-                std::string rel_path = RelativePathFromTo(
-                  g_project_directory.c_str(),
-                  (g_engine + "/" + entry.title).c_str());
-                ReplaceAll("\\", "/", &rel_path);
-                new_files << " name = " << entry.title << ";"
-                  << " path = " << rel_path << ";";
-                new_files << " sourceTree = SOURCE_ROOT;";
-                new_files << " };\n";
+          bool is_inserted = false;
+          while (!is_inserted) {
+            // generate 2 random uids
+            std::string uid_file = MakeUid();
+            std::string uid_buildfile = MakeUid();
 
-                // add to PBXGroup engine children
-                new_engine_children << "\n\t\t\t\t" << uid_file <<
-                  " /* " << entry.title << " */,";
+            // make sure the uid is not used in the xcodeproj
+            if (full_content.find(uid_file) == std::string::npos &&
+                new_hashes.find(uid_file) == new_hashes.end() &&
+                full_content.find(uid_buildfile) == std::string::npos &&
+                new_hashes.find(uid_buildfile) == new_hashes.end() &&
+                uid_file != uid_buildfile) {
+              is_inserted = true;
+              // save hashes
+              new_hashes.insert(uid_file);
+              new_hashes.insert(uid_buildfile);
 
-                // add to PBXSourcesBuildPhase
-                if (EndsWith(entry.title, std::string(".cpp")) ||
-                    EndsWith(entry.title, std::string(".c")) ||
-                    EndsWith(entry.title, std::string(".mm"))) {
-                  new_buildphase << "\n\t\t\t\t" << uid_buildfile
-                    << " /* " << entry.title << " in Sources */,";
-                }
-              }  // if ... uids are unique
-            }  // while (!is_inserted)
-          }  // if .. entry is a file AND is missing from references
+              // add to PBXBuildFile
+              if (EndsWith(entry.title, std::string(".cpp")) ||
+                  EndsWith(entry.title, std::string(".c")) ||
+                  EndsWith(entry.title, std::string(".mm"))) {
+                new_buildfiles << "\t\t" << uid_buildfile
+                  << " /* " << entry.title << " in Sources */ = {"
+                  << "isa = PBXBuildFile; fileRef = " << uid_file
+                  << " /* " << entry.title << " */; };\n";
+              }
+
+              // add to PBXFileReference
+              new_files << "\t\t" << uid_file
+                << " /* " << entry.title << " */ = {"
+                << "isa = PBXFileReference; fileEncoding = 4;";
+              if (EndsWith(entry.title, std::string(".h"))) {
+                new_files << " lastKnownFileType = sourcecode.c.h;";
+              } else if (EndsWith(entry.title, std::string(".mm"))) {
+                new_files << " lastKnownFileType = sourcecode.cpp.objcpp;";
+              } else {
+                new_files << " lastKnownFileType = sourcecode.cpp.cpp;";
+              }
+              std::string rel_path;
+              switch (entry.location) {
+                case kFileToAddEngine:
+                  rel_path = RelativePathFromTo(
+                      g_project_directory.c_str(),
+                      (g_engine + "/" + entry.title).c_str());
+                  break;
+                case kFileToAddProject:
+                  rel_path = RelativePathFromTo(
+                      g_project_directory.c_str(),
+                      (g_project_directory + "/" + entry.title).c_str());
+                  break;
+              }
+
+              ReplaceAll("\\", "/", &rel_path);
+              new_files << " name = " << entry.title << ";"
+                << " path = " << rel_path << ";";
+              new_files << " sourceTree = SOURCE_ROOT;";
+              new_files << " };\n";
+
+              switch (entry.location) {
+                case kFileToAddEngine:
+                  // add to PBXGroup engine children
+                  new_engine_children << "\n\t\t\t\t" << uid_file <<
+                    " /* " << entry.title << " */,";
+                  break;
+                case kFileToAddProject:
+                  // add to PBXGroup engine children
+                  new_project_children << "\n\t\t\t\t" << uid_file <<
+                    " /* " << entry.title << " */,";
+                  break;
+              }
+
+              // add to PBXSourcesBuildPhase
+              if (EndsWith(entry.title, std::string(".cpp")) ||
+                  EndsWith(entry.title, std::string(".c")) ||
+                  EndsWith(entry.title, std::string(".mm"))) {
+                new_buildphase << "\n\t\t\t\t" << uid_buildfile
+                  << " /* " << entry.title << " in Sources */,";
+              }
+            }  // if ... uids are unique
+          }  // while (!is_inserted)
         }  // for ... entries
 
         // save the resulting file
@@ -1014,6 +1077,30 @@ bool ShowUpdateProgress() {
         }
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_files.str();
+
+
+        std::string main_group_entry("/* main.cpp */,");
+        cursor = next_item;
+        next_item = full_content.find(main_group_entry);
+        if (next_item == std::string::npos) {
+          g_progress.append(
+            u8"\003No main_group_entry in xcode project!\nERROR.\n");
+          step = 100500;
+          g_sound_error.Play();
+          break;
+        }
+        if (next_item < cursor) {
+          g_progress.append(
+            u8"\003Out of order main_group_entry in xcode project!\n"
+            u8"ERROR.\n");
+          step = 100500;
+          g_sound_error.Play();
+          break;
+        }
+        next_item += main_group_entry.size();
+        resulting_file << full_content.substr(cursor, next_item - cursor);
+        resulting_file << new_project_children.str();
+
 
         std::string engine_group_entry("/* engine.cpp */,");
         cursor = next_item;

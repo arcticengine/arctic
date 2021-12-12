@@ -139,7 +139,15 @@ struct BmFontBinKerningPair {
   Si16 amount;
   void Log() const;
 };
+
 #pragma pack(pop)
+
+struct Letter {
+  Ui64 glyph_bitmap;
+  const char *utf8_letter;
+};
+
+extern Letter g_tiny_font_letters[];
 
 struct Glyph {
   Ui32 codepoint;
@@ -173,6 +181,11 @@ struct Font {
   Si32 line_height_ = 0;
   Si32 outline_ = 0;
 
+  /// @brief Returns true for fonts with no codepoints. False for fonts with codepoints.
+  inline bool IsEmpty() const {
+    return codepoint_.empty();
+  }
+
   /// @brief Returns outline size in pixels. Outline*2 is counted towards size.
   Si32 GetOutlineSize() {
     return outline_;
@@ -180,6 +193,7 @@ struct Font {
 
   /// @brief Creates an empty font with no glyphs
   /// @param [in] base_to_top Glyph height from base to top.
+  /// @param [in] line_height Line height for the font.
   void CreateEmpty(Si32 base_to_top, Si32 line_height);
 
   /// @brief Adds a glyph to the font
@@ -211,8 +225,27 @@ struct Font {
   /// @param [in] utf8_letters A zero-terminated UTF8 string containing codepoints that
   ///   correspond to the glyphs of the sprite.
   /// @param [in] base_to_top Glyph height from base to top.
+  /// @param [in] line_height Line height for the font.
+  /// @param [in] space_width Space glyph widht.
   void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
       Si32 base_to_top, Si32 line_height, Si32 space_width);
+
+  /// @brief Loads the font from a sprite containing a table of letters
+  /// @param [in] sprite Sprite containing glyphs in a table.
+  /// @param [in] utf8_letters A zero-terminated UTF8 string containing codepoints that
+  ///   correspond to the glyphs of the sprite (in left to right bottom to top order).
+  /// @param [in] cell_width Table cell width.
+  /// @param [in] cell_height Table cell height.
+  /// @param [in] base_to_top Glyph height from base to top.
+  /// @param [in] line_height Line height for the font.
+  /// @param [in] space_width Space glyph widht.
+  /// @param [in] left_offset Glyph offset from the left edge of the cell.
+  void LoadTable(Sprite sprite, const char* utf8_letters,
+      Si32 cell_width, Si32 cell_height,
+      Si32 base_to_top, Si32 line_height, Si32 space_width,
+      Si32 left_offset);
+
+  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height);
 
   void DrawEvaluateSizeImpl(Sprite to_sprite,
       const char *text, bool do_keep_xadvance,
