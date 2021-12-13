@@ -176,7 +176,7 @@ void AppendDeprecated(std::unordered_set<std::string> *in_out_data) {
 
 void UpdateResolution() {
   Vec2Si32 size = WindowSize();
-  while (size.x > 1920 && size.y > 1400) {
+  while (size.x >= 1280*2 && size.y >= 800*2) {
     size = size / 2;
   }
   if (ScreenSize() != size) {
@@ -192,7 +192,7 @@ Ui64 ShowModalDialogue(std::shared_ptr<Panel> gui) {
     gui->SetPos((ScreenSize() - gui->GetSize()) / 2);
     gui->Draw(Vec2Si32(0, 0));
     ShowFrame();
-    if (IsKeyDownward(kKeyEscape) || clicked_button != Ui64(-1)) {
+    if (clicked_button != Ui64(-1)) {
       return clicked_button;
     }
     std::deque<GuiMessage> messages;
@@ -242,21 +242,19 @@ bool GetOperationMode() {
     Vec2Si32(640, 480), 0, g_border.DrawExternalSize(Vec2Si32(640, 480))));
   const Ui64 kCreateButton = 1;
   const Ui64 kUpdateButton = 2;
+  const Ui64 kExitButton = 100;
 
   const char *welcome = u8"The Snow Wizard\n\n"
   "This wizard can create a new Arctic Engine project\n"
-    "for you or update an existing one.\n\n"
-
-  "Press ESC to leave the Snow Wizard.";
-
+    "for you or update an existing one.";
 
   Si32 y = box->GetSize().y-32;
 
   std::shared_ptr<Text> textbox(new Text(
-    0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
-    0, g_font, kTextOriginTop, g_palete, welcome, kAlignCenter));
+    0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
+    0, g_font, kTextOriginTop, g_palete, welcome, kAlignLeft));
   box->AddChild(textbox);
-  y = 32 + 48 + 64;
+  y = 8 + 16 + 64 + 64;
   std::shared_ptr<Button> create_button = MakeButton(
     kCreateButton, Vec2Si32(32, y), kKeyC,
     1, "\001C\002reate a new project", Vec2Si32(box->GetSize().x - 64, 48));
@@ -267,6 +265,12 @@ bool GetOperationMode() {
     2, "\001U\002pdate an existing project",
     Vec2Si32(box->GetSize().x - 64, 48));
   box->AddChild(update_button);
+  y -= 64;
+  std::shared_ptr<Button> exit_button = MakeButton(
+    kExitButton, Vec2Si32(32, y), kKeyE,
+    100, "\001E\002xit",
+    Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(exit_button);
 
   Ui64 action = ShowModalDialogue(box);
   if (action == kCreateButton) {
@@ -288,20 +292,18 @@ bool GetProjectKind() {
   const Ui64 kHelloButton = 2;
   const Ui64 kSnakeButton = 3;
   const Ui64 kCodingForKidsButton = 4;
+  const Ui64 kExitButton = 100;
 
   const char *welcome = u8"The Snow Wizard\n\n"
-  "Please select the flavour of the new project.\n"
-
-  "Press ESC to leave the Snow Wizard.";
-
+  "Please select the flavour of the new project.";
 
   Si32 y = box->GetSize().y-32;
 
   std::shared_ptr<Text> textbox(new Text(
-    0, Vec2Si32(2, y), Vec2Si32(box->GetSize().x, box->GetSize().y/3),
-    0, g_font, kTextOriginTop, g_palete, welcome, kAlignCenter));
+    0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
+    0, g_font, kTextOriginTop, g_palete, welcome, kAlignLeft));
   box->AddChild(textbox);
-  y = 32 + 48 + 64 + 64;
+  y = 8 + 16 + 64 + 64 + 64 + 64;
   std::shared_ptr<Button> tetramino_button = MakeButton(
     kTetraminoButton, Vec2Si32(32, y), kKeyT,
     1, "\001T\002etramino game project", Vec2Si32(box->GetSize().x - 64, 48));
@@ -321,9 +323,15 @@ bool GetProjectKind() {
   y -= 64;
   std::shared_ptr<Button> coding_for_kids_button = MakeButton(
       kCodingForKidsButton, Vec2Si32(32, y), kKeyC,
-      3, "\001C\002oding for kids project",
+      4, "\001C\002oding For Kids project",
       Vec2Si32(box->GetSize().x - 64, 48));
     box->AddChild(coding_for_kids_button);
+  y -= 64;
+  std::shared_ptr<Button> exit_button = MakeButton(
+    kExitButton, Vec2Si32(32, y), kKeyE,
+    100, "\001E\002xit",
+    Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(exit_button);
 
 
   Ui64 action = ShowModalDialogue(box);
@@ -344,173 +352,74 @@ bool GetProjectKind() {
 }
 
 bool GetProjectName() {
-  while (!IsKeyDownward(kKeyEscape)) {
-    UpdateResolution();
-    Clear();
-    for (Si32 idx = 0; idx < InputMessageCount(); ++idx) {
-      const InputMessage &m = GetInputMessage(idx);
-      const char *ch = "";
-      bool is_backspace = false;
-      bool is_enter = false;
-      if (m.kind == InputMessage::kKeyboard && m.keyboard.key_state == 1) {
-        switch (m.keyboard.key) {
-          case kKey0:
-          case kKeyNumpad0:
-            ch = "0";
-            break;
-          case kKey1:
-          case kKeyNumpad1:
-            ch = "1";
-            break;
-          case kKey2:
-          case kKeyNumpad2:
-            ch = "2";
-            break;
-          case kKey3:
-          case kKeyNumpad3:
-            ch = "3";
-            break;
-          case kKey4:
-          case kKeyNumpad4:
-            ch = "4";
-            break;
-          case kKey5:
-          case kKeyNumpad5:
-            ch = "5";
-            break;
-          case kKey6:
-          case kKeyNumpad6:
-            ch = "6";
-            break;
-          case kKey7:
-          case kKeyNumpad7:
-            ch = "7";
-            break;
-          case kKey8:
-          case kKeyNumpad8:
-            ch = "8";
-            break;
-          case kKey9:
-          case kKeyNumpad9:
-            ch = "9";
-            break;
-          case kKeyA:
-            ch = "a";
-            break;
-          case kKeyB:
-            ch = "b";
-            break;
-          case kKeyC:
-            ch = "c";
-            break;
-          case kKeyD:
-            ch = "d";
-            break;
-          case kKeyE:
-            ch = "e";
-            break;
-          case kKeyF:
-            ch = "f";
-            break;
-          case kKeyG:
-            ch = "g";
-            break;
-          case kKeyH:
-            ch = "h";
-            break;
-          case kKeyI:
-            ch = "i";
-            break;
-          case kKeyJ:
-            ch = "j";
-            break;
-          case kKeyK:
-            ch = "k";
-            break;
-          case kKeyL:
-            ch = "l";
-            break;
-          case kKeyM:
-            ch = "m";
-            break;
-          case kKeyN:
-            ch = "n";
-            break;
-          case kKeyO:
-            ch = "o";
-            break;
-          case kKeyP:
-            ch = "p";
-            break;
-          case kKeyQ:
-            ch = "q";
-            break;
-          case kKeyR:
-            ch = "r";
-            break;
-          case kKeyS:
-            ch = "s";
-            break;
-          case kKeyT:
-            ch = "t";
-            break;
-          case kKeyU:
-            ch = "u";
-            break;
-          case kKeyV:
-            ch = "v";
-            break;
-          case kKeyW:
-            ch = "w";
-            break;
-          case kKeyX:
-            ch = "x";
-            break;
-          case kKeyY:
-            ch = "y";
-            break;
-          case kKeyZ:
-            ch = "z";
-            break;
-          case kKeyMinus:
-            ch = "_";
-            break;
-          case kKeyEnter:
-            is_enter = true;
-            break;
-          case kKeyBackspace:
-            is_backspace = true;
-            break;
-          default:
-            break;
-        }
-        if (is_backspace) {
-          size_t len = g_project_name.size();
-          if (len) {
-            g_project_name.replace(len - 1, 1, "");
-          }
-        }
-        if (is_enter) {
-          if (g_project_name.size()) {
-            return true;
-          }
-        }
-        if (ch[0] != '\0') {
-          g_project_name.append(ch);
-        }
-      }
-    }
+  UpdateResolution();
 
-    const char *welcome = u8"The Snow Wizard\n\n"
-    "This wizard will create a new Arctic Engine project for you.\n\n"
-    "Enter the project name:  \"%s\"\n\n"
-    "You may use only latin letters, numbers and underscores\n"
-    "Press ESC to leave the Snow Wizard";
-    char text[1024];
-    snprintf(text, sizeof(text), welcome, g_project_name.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
-                kDrawBlendingModeColorize, kFilterNearest, g_palete);
-    ShowFrame();
+  std::shared_ptr<Panel> box(new Panel(0, Vec2Si32(0, 0),
+    Vec2Si32(640, 480), 0, g_border.DrawExternalSize(Vec2Si32(640, 480))));
+  const Ui64 kEditBox = 1;
+  const Ui64 kDoneButton = 2;
+  const Ui64 kExitButton = 100;
+
+  const char *welcome = u8"The Snow Wizard\n\n"
+  "Name the project. You may use only latin\n"
+  "letters, numbers and underscores.\n\n"
+  "Project name:";
+
+  Si32 y = box->GetSize().y-32;
+
+  std::shared_ptr<Text> textbox(new Text(
+    0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
+    0, g_font, kTextOriginTop, g_palete, welcome, kAlignLeft));
+  box->AddChild(textbox);
+  y = 8 + 16 + 64 + 64 + 48;
+
+  Vec2Si32 item_size(box->GetSize().x - 64, 48);
+  Sprite button_normal = g_button_normal.DrawExternalSize(item_size);
+  Sprite button_hover = g_button_hover.DrawExternalSize(item_size);
+  std::unordered_set<Ui32> allow_list;
+  for (char ch = '0'; ch <= '9'; ++ch) {
+    allow_list.insert(ch);
+  }
+  for (char ch = 'a'; ch <= 'z'; ++ch) {
+    allow_list.insert(ch);
+  }
+  allow_list.insert('_');
+  std::shared_ptr<Editbox> editbox(new Editbox(
+    kEditBox,
+    Vec2Si32(32, y),
+    1,
+    button_normal, 
+    button_hover,
+    g_font,
+    kTextOriginBottom,
+    Rgba(255, 255, 255, 255),
+    "",
+    kAlignLeft,
+    false,
+    allow_list));
+  box->AddChild(editbox);
+
+  y = 8 + 16 + 64 + 64;
+  y -= 64;
+  std::shared_ptr<Button> done_button = MakeButton(
+    kDoneButton, Vec2Si32(32, y), kKeyNone,
+    2, "Done",
+    Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(done_button);
+  box->SwitchCurrentTab(true);
+
+  y -= 64;
+  std::shared_ptr<Button> exit_button = MakeButton(
+    kExitButton, Vec2Si32(32, y), kKeyNone,
+    100, "Exit",
+    Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(exit_button);
+
+
+  Ui64 action = ShowModalDialogue(box);
+  if (action == kDoneButton) {
+    g_project_name = editbox->GetText();
+    return true;
   }
   return false;
 }
