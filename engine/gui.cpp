@@ -640,7 +640,7 @@ Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     Sprite normal, Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
     TextAlignment alignment, bool is_digits,
-    std::unordered_set<Ui32> white_list)
+    std::unordered_set<Ui32> allow_list)
   : Panel(tag,
         pos,
         Max(normal.Size(), focused.Size()),
@@ -660,7 +660,7 @@ Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
   , selection_color_1_(Rgba(0, 0, 0))
   , selection_color_2_(Rgba(255, 255, 255))
   , is_digits_(is_digits)
-  , white_list_(std::move(white_list)) {
+  , allow_list_(std::move(allow_list)) {
 }
 
 void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -684,7 +684,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     // Edit the text
     if (message.kind == InputMessage::kKeyboard) {
       if (message.keyboard.key == kKeyTab &&
-          ((!white_list_.empty() && white_list_.find('\t') == white_list_.end())
+          ((!allow_list_.empty() && allow_list_.find('\t') == allow_list_.end())
             || is_digits_)) { 
         return Panel::ApplyInput(parent_pos, message,
             is_top_level, in_out_is_applied,
@@ -784,13 +784,13 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           }
           if (message.keyboard.characters[0]) {
             bool do_insert = true;
-            if (!white_list_.empty()) {
+            if (!allow_list_.empty()) {
               Utf32Reader reader;
               reader.Reset(reinterpret_cast<const Ui8*>(
                 message.keyboard.characters));
               Ui32 codepoint = reader.ReadOne();
-              auto found_it = white_list_.find(codepoint);
-              if (found_it == white_list_.end()) {
+              auto found_it = allow_list_.find(codepoint);
+              if (found_it == allow_list_.end()) {
                 do_insert = false;
               }
             }

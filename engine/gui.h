@@ -220,14 +220,14 @@ class Editbox: public Panel {
   Rgba selection_color_1_;
   Rgba selection_color_2_;
   bool is_digits_;
-  std::unordered_set<Ui32> white_list_;
+  std::unordered_set<Ui32> allow_list_;
 
  public:
   Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     Sprite normal, Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
     TextAlignment alignment = kAlignLeft, bool is_digits = false,
-    std::unordered_set<Ui32> white_list = std::unordered_set<Ui32>());
+    std::unordered_set<Ui32> allow_list = std::unordered_set<Ui32>());
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
