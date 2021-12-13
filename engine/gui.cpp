@@ -683,6 +683,13 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   if (!*in_out_is_applied && is_current_tab_) {
     // Edit the text
     if (message.kind == InputMessage::kKeyboard) {
+      if (message.keyboard.key == kKeyTab &&
+          ((!white_list_.empty() && white_list_.find('\t') == white_list_.end())
+            || is_digits_)) { 
+        return Panel::ApplyInput(parent_pos, message,
+            is_top_level, in_out_is_applied,
+            out_gui_messages, out_current_tab);
+      }
       if (message.keyboard.key_state == 1) {
         Ui32 key = message.keyboard.key;
         if (key == kKeyBackspace) {
