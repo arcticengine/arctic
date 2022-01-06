@@ -231,6 +231,9 @@ int main(int argc, char **argv) {
   arctic::GetEngine();
   arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
+  std::string initial_path;
+  arctic::GetCurrentPath(&initial_path);
+  arctic::GetEngine()->SetInitialPath(initial_path);
   arctic::GetEngine()->Init(system_info.screen_width,
       system_info.screen_height);
 

@@ -144,7 +144,7 @@ Letter g_tiny_font_letters[] = {
   {0x205040e0404040, u8"f"}, {0x000078887808f0, u8"g"},
   {0x8080e090909090, u8"h"}, {0x80008080808080, u8"i"},
   {0x2000202020a040, u8"j"}, {0x808090a0e09088, u8"k"},
-  {0x80808080808080, u8"l"}, {0x0000d0a8a8a8a8, u8"m"},
+  {0x80808080808040, u8"l"}, {0x0000d0a8a8a8a8, u8"m"},
   {0x0000f088888888, u8"n"}, {0x00007088888870, u8"o"},
   {0x0000f088f08080, u8"p"}, {0x00007888780808, u8"q"},
   {0x00005060404040, u8"r"}, {0x000070807008f0, u8"s"},
@@ -185,7 +185,10 @@ Letter g_tiny_font_letters[] = {
   {0x0000f0087808f0, u8"э"}, {0x000090a8e8a890, u8"ю"},
   {0x00007888784888, u8"я"}, {0x20404080404020, u8"{"},
   {0x80404020404080, u8"}"}, {0x50f88080e08080f8, u8"Ё"},
-  {0x50007088f08070, u8"ё"},
+  {0x50007088f08070, u8"ё"}, {0x000040a8100000, u8"~"},
+  {0x40404040404040, u8"|"}, {0x70807088700870, u8"§"},
+  {0x002020f820f800, u8"±"}, {0x96d6d0b6909090, u8"№"},
+  {0x80402000000000, u8"`"},
   {0x0, nullptr}
 };
 
@@ -386,6 +389,8 @@ void Font::LoadTable(Sprite sprite, const char* utf8_letters,
     Si32 left_offset) {
   std::string vec(utf8_letters);
   CreateEmpty(base_to_top, line_height);
+  Sprite space;
+  AddGlyph(32, space_width, space);
   Utf32Reader reader;
   reader.Reset(vec.c_str());
   Si32 width = (sprite.Width() + cell_width - 1) / cell_width;
@@ -401,8 +406,7 @@ void Font::LoadTable(Sprite sprite, const char* utf8_letters,
     cs.SetPivot(Vec2Si32(left_offset, cell_height - base_to_top - 1));
     AddGlyph(codepoint, space_width, cs);
   }
-  Sprite space;
-  AddGlyph(32, space_width, space);
+
 }
 
 void Font::LoadLetterBits(Letter *in_letters,

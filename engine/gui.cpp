@@ -282,7 +282,7 @@ bool Panel::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
 Button::Button(Ui64 tag, Vec2Si32 pos,
   Sprite normal, Sprite down, Sprite hovered,
   Sound down_sound, Sound up_sound,
-  KeyCode hotkey, Ui32 tab_order)
+  KeyCode hotkey, Ui32 tab_order, Sprite disabled)
     : Panel(tag,
         pos,
         Max(normal.Size(), Max(hovered.Size(), down.Size())),
@@ -290,6 +290,7 @@ Button::Button(Ui64 tag, Vec2Si32 pos,
     , normal_(normal)
     , down_(down)
     , hovered_(hovered)
+    , disabled_(disabled)
     , down_sound_(std::move(down_sound))
     , up_sound_(std::move(up_sound))
     , hotkey_(hotkey) {
@@ -309,8 +310,28 @@ void Button::Draw(Vec2Si32 parent_absolute_pos) {
   case kDown:
     down_.Draw(absolute_pos);
     break;
+  case kDisabled:
+    disabled_.Draw(absolute_pos);
+    break;
   }
   Panel::Draw(parent_absolute_pos);
+}
+
+void Button::SetEnabled(bool is_enabled) {
+  if (state_ == Button::kHidden) {
+    return;
+  }
+  if (is_enabled) {
+    if (state_ == Button::kDisabled) {
+      state_ = Button::kNormal;
+      return;
+    }
+  } else {
+    if (state_ != Button::kDisabled) {
+      state_ = Button::kDisabled;
+      return;
+    }
+  }
 }
 
 void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -318,7 +339,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool *in_out_is_applied,
     std::deque<GuiMessage> *out_gui_messages,
     std::shared_ptr<Panel> *out_current_tab) {
-  if (state_ == kHidden) {
+  if (state_ == kHidden || state_ == kDisabled) {
     return;
   }
   Check(in_out_is_applied,

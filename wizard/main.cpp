@@ -453,14 +453,22 @@ std::deque<std::string> GetDirectoryProjects(std::string project_directory) {
   return candidates;
 }
 
+void GatherEntries(std::deque<DirectoryEntry> *in_out_entries) {
+  arctic::GetDirectoryEntries(g_project_directory.c_str(), in_out_entries);
+  if ((*in_out_entries)[0].title == ".") {
+    in_out_entries->erase(in_out_entries->begin());
+  }
+  std::sort(in_out_entries->begin(), in_out_entries->end(),
+        [](const DirectoryEntry &a, const DirectoryEntry &b) -> bool {
+          return strcasecmp(a.title.c_str(), b.title.c_str()) < 0;
+        });
+}
+
 bool SelectProject() {
   std::deque<DirectoryEntry> entries;
   Ui32 selected_idx = 0;
   g_project_directory = g_current_directory;
-  arctic::GetDirectoryEntries(g_project_directory.c_str(), &entries);
-  if (entries[0].title == ".") {
-    entries.erase(entries.begin());
-  }
+  GatherEntries(&entries);
   bool is_done = false;
   while (!IsKeyDownward(kKeyEscape)) {
     UpdateResolution();
@@ -471,10 +479,7 @@ bool SelectProject() {
           std::stringstream new_dir;
           new_dir << g_project_directory << "/" << entries[selected_idx].title;
           g_project_directory = CanonicalizePath(new_dir.str().c_str());
-          arctic::GetDirectoryEntries(g_project_directory.c_str(), &entries);
-          if (entries[0].title == ".") {
-            entries.erase(entries.begin());
-          }
+          GatherEntries(&entries);
           selected_idx = 0;
         }
       }
@@ -1398,9 +1403,7 @@ void EasyMain() {
     }
   }
 
-  if (!GetCurrentPath(&g_current_directory)) {
-    //
-  }
+  g_current_directory = GetEngine()->GetInitialPath();
 
   if (!is_mode_of_operation_set) {
     if (!GetOperationMode()) {

@@ -74,6 +74,14 @@ void Engine::SetArgcArgvW(Si64 argc, const wchar_t **argv) {
   }
 }
 
+void Engine::SetInitialPath(const std::string &initial_path) {
+  initial_path_ = initial_path;
+}
+
+std::string Engine::GetInitialPath() const {
+  return initial_path_;
+}
+
 void Engine::Init(Si32 width, Si32 height) {
   width_ = width;
   height_ = height;
