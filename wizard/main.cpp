@@ -38,6 +38,11 @@
 #include "engine/easy.h"
 #include "engine/decorated_frame.h"
 
+#ifdef _MSC_VER 
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 
 using namespace arctic;  // NOLINT
 
