@@ -41,6 +41,7 @@
 #include "engine/vec2si32.h"
 #include "engine/mat22f.h"
 #include "engine/scalar_math.h"
+#include "engine/unicode.h"
 
 
 #endif  // ENGINE_EASY_H_

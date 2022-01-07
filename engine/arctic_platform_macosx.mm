@@ -1000,6 +1000,9 @@ namespace arctic {
 }
 
 int main(int argc, char **argv) {
+  std::string initial_path([[[NSBundle mainBundle] bundlePath] UTF8String]);
+  initial_path += "/..";
+  initial_path = arctic::CanonicalizePath(initial_path.c_str());
   [[NSFileManager defaultManager] changeCurrentDirectoryPath:
     [NSString stringWithFormat:@"%@/Contents/Resources",
     [[NSBundle mainBundle] bundlePath]]];
@@ -1009,6 +1012,7 @@ int main(int argc, char **argv) {
 
   arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
+  arctic::GetEngine()->SetInitialPath(initial_path);
 
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
   arctic::GetEngine()->Init((arctic::Si32)rect.size.width,

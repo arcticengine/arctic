@@ -28,9 +28,8 @@
 
 namespace arctic {
 
-void FixedBlockQueue_Gears::prepare_slot(
-  I_FixedSizeAllocator *pool,
-  size_t item_size) {
+void FixedBlockQueue_Gears::prepare_slot(I_FixedSizeAllocator *pool,
+    size_t item_size) {
   if (front == nullptr) {
     front = getNewBlock(pool);
     back = front;
@@ -47,21 +46,20 @@ void FixedBlockQueue_Gears::prepare_slot(
 }
 
 
-void *FixedBlockQueue_Gears::get_front(
-  I_FixedSizeAllocator *pool,
-  size_t item_size) {
-  if (front_offset < getItemCount(pool, item_size)) {
+void *FixedBlockQueue_Gears::get_front(I_FixedSizeAllocator *pool,
+    size_t item_size) {
+  const size_t item_count = getItemCount(pool, item_size);
+  if (front_offset < item_count) {
     return &front->items[item_size * front_offset];
   }
 
-  size_t front_idx = front_offset - getItemCount(pool, item_size);
+  size_t front_idx = front_offset - item_count;
   return &front->next->items[front_idx * item_size];
 }
 
 
-void FixedBlockQueue_Gears::front_cleanup(
-  I_FixedSizeAllocator *pool,
-  size_t item_size) {
+void FixedBlockQueue_Gears::front_cleanup(I_FixedSizeAllocator *pool,
+    size_t item_size) {
   if (front->next == nullptr) {
     // there is only one block in the queue
     if (front_offset == back_offset) {
@@ -71,22 +69,22 @@ void FixedBlockQueue_Gears::front_cleanup(
     }
     return;
   }
-  if (front_offset < getItemCount(pool, item_size)) {
+  const size_t item_count = getItemCount(pool, item_size);
+  if (front_offset < item_count) {
     return;
   }
 
   // let's transfer the state to the next block
-  front_offset -= getItemCount(pool, item_size);
-  back_offset += getItemCount(pool, item_size) - getItemCount(pool, item_size);
+  front_offset -= item_count;
+  back_offset -= item_count;
 
   BlockItems *next_block = front->next;
   pool->free(front);
   front = next_block;
 }
 
-size_t inline FixedBlockQueue_Gears::getItemCount(
-  I_FixedSizeAllocator *pool,
-  size_t item_size) {
+size_t inline FixedBlockQueue_Gears::getItemCount(I_FixedSizeAllocator *pool,
+    size_t item_size) {
   auto block_size = pool->getBlockSize();
   return (block_size - sizeof(BlockItems)) / item_size;
 }

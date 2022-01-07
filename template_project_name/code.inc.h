@@ -1,0 +1,11 @@
+Plot(10,10);
+Plot(20,10);
+Draw(30,20);
+Circle(50,50,10);
+Print(0,90,u8"Hello");
+Ink(1);
+Print("World");
+Beep(1,1);
+string s = Input("Note:");
+int n = Number(s);
+Beep(1,n);

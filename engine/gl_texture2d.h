@@ -42,7 +42,7 @@ class GlTexture2D {
   Si32 width_;
   Si32 height_;
   GLuint texture_id_;
-  DrawFilterMode current_filter_mode_;
+  DrawFilterMode current_filter_mode_ = kFilterNearest;
 
   static const GLuint max_textures_slots = 8;
   static GLuint current_texture_slot_;

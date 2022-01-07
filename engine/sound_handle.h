@@ -40,6 +40,8 @@ class SoundHandle {
   SoundHandle();
   SoundHandle(const SoundHandle &h);
 
+  SoundHandle& operator=(const SoundHandle& other);
+
   bool IsPlaying() const;
   bool IsValid() const;
 

@@ -898,11 +898,11 @@ struct stb_vorbis
 
 typedef struct stb_vorbis vorb;
 
-static int error(vorb *f, enum STBVorbisError e)
+static int error(vorb *f, enum STBVorbisError e)  //-V1071
 {
    f->error = e;
    if (!f->eof && e != VORBIS_need_more_data) {
-      f->error=e; // breakpoint for debugging
+      f->error = e;  //-V1048 breakpoint for debugging
    }
    return 0;
 }
@@ -1584,7 +1584,7 @@ static void flush_packet(vorb *f)
 
 // @OPTIMIZE: this is the secondary bit decoder, so it's probably not as important
 // as the huffman decoder?
-static uint32 get_bits(vorb *f, int n)
+static uint32 get_bits(vorb *f, int n) //-V1071
 {
    uint32 z;
 
@@ -3874,8 +3874,7 @@ static int start_decoder(vorb *f)
                unsigned int div=1;
                for (k=0; k < c->dimensions; ++k) {
                   int off = (z / div) % c->lookup_values;
-                  float val = mults[off];
-                  val = mults[off]*c->delta_value + c->minimum_value + last;
+                  float val = mults[off]*c->delta_value + c->minimum_value + last;
                   c->multiplicands[j*c->dimensions + k] = val;
                   if (c->sequence_p)
                      last = val;

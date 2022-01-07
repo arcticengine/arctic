@@ -952,6 +952,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   arctic::GetEngine()->SetArgcArgvW(num_args,
     const_cast<const wchar_t **>(args));
+  std::string initial_path;
+  arctic::GetCurrentPath(&initial_path);
+  arctic::GetEngine()->SetInitialPath(initial_path);
+  
 
   arctic::SoundPlayer soundPlayer;
   soundPlayer.Initialize();

@@ -50,8 +50,8 @@ namespace arctic {
 
 struct SoundListenerHead {
   struct Ear {
-    Vec3F pos;
-    Vec3F max_vec;
+    Vec3F pos = Vec3F(0.f, 0.f, 0.f);
+    Vec3F max_vec = Vec3F(0.f, 0.f, 0.f);
   };
 
   Transform3F loc;
@@ -286,7 +286,7 @@ struct SoundMixerState {
   template <class T>
   void MixSound(T *mix_l, T *mix_r, Si32 mix_stride, Si32 buffer_samples_per_channel, Si16 *tmp) {
     InputTasksToMixerThread();
-    float master_volume = static_cast<float>(
+    float master_volume_16 = static_cast<float>(
       this->master_volume.load() / 32767.0);
     if (buffers.empty()) {
       Si32 mix_idx = 0;
@@ -313,7 +313,7 @@ struct SoundMixerState {
           RenderSound<T>(
               &sound, head, channel_idx,
               (channel_idx == 0 ? mix_l : mix_r), 1, buffer_samples_per_channel, 44100.0,
-              master_volume);
+              master_volume_16);
           if (sound.channel_playback_state[channel_idx].play_position * 44100.0 < sound.sound.DurationSamples()) {
             is_over = false;
           }
@@ -330,7 +330,7 @@ struct SoundMixerState {
             buffer_samples_per_channel * 2);
 
         Si16 *in_data = tmp;
-        float volume = sound.volume * master_volume;
+        float volume = sound.volume * master_volume_16;
         Si32 mix_idx = 0;
         if (idx == 0) {
           for (Si32 i = 0; i < size; ++i) {

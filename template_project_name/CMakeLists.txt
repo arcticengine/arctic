@@ -154,7 +154,13 @@ add_executable(${PROJECT_NAME} MACOSX_BUNDLE
    ${SRC_FILES}
    ${RES_SOURCES}
 )
-SET_SOURCE_FILES_PROPERTIES(${RES_SOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/data)
+
+foreach(RES_FILE ${RES_SOURCES})
+  get_filename_component(ABSOLUTE_PATH "${DATA_DIR}/data" ABSOLUTE)
+  file(RELATIVE_PATH RES_PATH "${ABSOLUTE_PATH}" ${RES_FILE})
+  get_filename_component(RES_DIR_PATH ${RES_PATH} DIRECTORY)
+  set_property(SOURCE ${RES_FILE} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/data/${RES_DIR_PATH}")
+endforeach(RES_FILE)
 
 IF (APPLE)
 target_link_libraries(

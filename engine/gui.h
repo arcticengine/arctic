@@ -110,13 +110,15 @@ class Button : public Panel {
     kHidden = 0,
     kNormal = 1,
     kHovered = 2,
-    kDown = 3
+    kDown = 3,
+    kDisabled = 4
   };
 
  protected:
   Sprite normal_;
   Sprite down_;
   Sprite hovered_;
+  Sprite disabled_;
   Sound down_sound_;
   Sound up_sound_;
   KeyCode hotkey_;
@@ -129,7 +131,8 @@ class Button : public Panel {
     Sprite hovered = Sprite(),
     Sound down_sound = Sound(),
     Sound up_sound = Sound(),
-    KeyCode hotkey = kKeyNone, Ui32 tab_order = 0);
+    KeyCode hotkey = kKeyNone, Ui32 tab_order = 0,
+    Sprite disabled = Sprite());
   void Draw(Vec2Si32 parent_absolute_pos)
     override;
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -139,6 +142,7 @@ class Button : public Panel {
       std::shared_ptr<Panel> *out_current_tab) override;
   void SetCurrentTab(bool is_current_tab) override;
   void SetVisible(bool is_visible) override;
+  void SetEnabled(bool is_enabled);
   bool IsVisible() override;
   bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 };
@@ -220,14 +224,14 @@ class Editbox: public Panel {
   Rgba selection_color_1_;
   Rgba selection_color_2_;
   bool is_digits_;
-  std::unordered_set<Ui32> white_list_;
+  std::unordered_set<Ui32> allow_list_;
 
  public:
   Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     Sprite normal, Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
     TextAlignment alignment = kAlignLeft, bool is_digits = false,
-    std::unordered_set<Ui32> white_list = std::unordered_set<Ui32>());
+    std::unordered_set<Ui32> allow_list = std::unordered_set<Ui32>());
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,

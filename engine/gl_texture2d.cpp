@@ -38,8 +38,8 @@ GLuint GlTexture2D::current_texture_id_[max_textures_slots] = { 0, 0, 0, 0, 0, 0
 
 GlTexture2D::GlTexture2D()
     : width_(0)
-      , height_(0)
-      , texture_id_(0) {
+    , height_(0)
+    , texture_id_(0) {
 }
 
 GlTexture2D::~GlTexture2D() {

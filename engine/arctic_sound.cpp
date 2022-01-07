@@ -25,6 +25,7 @@
 
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform_sound.h"
+#include "engine/easy.h"
 
 namespace arctic {
 
@@ -134,7 +135,7 @@ float GetMasterVolume() {
   return g_sound_mixer_state.master_volume.load();
 }
 
-void Beep(float duration_seconds, Si32 note) {
+Sound BeepAsync(float duration_seconds, Si32 note) {
   if (duration_seconds < 0.01f) {
     duration_seconds = 0.01f;
   }
@@ -157,6 +158,12 @@ void Beep(float duration_seconds, Si32 note) {
     mul = mul * 0.98f;
   }
   s.Play();
+  return s;
+}
+
+void Beep(float duration_seconds, Si32 note) {
+  ShowFrame();
+  Sound s = BeepAsync(duration_seconds, note);
   while (s.IsPlaying()) {
     ;
   }

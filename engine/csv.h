@@ -114,8 +114,8 @@ class CsvTable {
 
  private:
   std::string file_;
-  CsvSourceType type_;
-  char sep_;
+  CsvSourceType type_ = kCsvSourcePure;
+  char sep_ = ',';
   std::deque<std::string> original_file_;
   std::vector<std::string> header_;
   std::vector<CsvRow *> content_;

@@ -98,6 +98,15 @@ void SetMasterVolume(float volume);
 /// @return The master volume level
 float GetMasterVolume();
 
+/// @brief Plays asynchronously the note specified for the duration specified.
+/// @param duration_seconds Sound duration in seconds.
+/// @param note Index of the note to play, index of C4 is 0, index of C#4 is 1, etc.
+/// @return The Sound being played.
+Sound BeepAsync(float duration_seconds, Si32 note);
+
+/// @brief Plays the note specified for the duration specified.
+/// @param duration_seconds Sound duration in seconds.
+/// @param note Index of the note to play, index of C4 is 0, index of C#4 is 1, etc.
 void Beep(float duration_seconds, Si32 note);
 
 extern template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
