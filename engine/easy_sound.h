@@ -23,8 +23,8 @@
 #ifndef ENGINE_EASY_SOUND_H_
 #define ENGINE_EASY_SOUND_H_
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "engine/easy_sound_instance.h"
 #include "engine/sound_handle.h"

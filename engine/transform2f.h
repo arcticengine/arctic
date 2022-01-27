@@ -42,6 +42,10 @@ struct Transform2F {
     dc.dual_x = x * 0.5f;
     dc.dual_y = y * 0.5f;
   }
+
+  Vec2F Transform(Vec2F point) {
+    return scale * dc.Transform(point);
+  }
 };
 
 }  // namespace arctic

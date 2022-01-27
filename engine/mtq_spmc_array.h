@@ -36,7 +36,6 @@
 
 #include <atomic>
 #include <memory>
-
 #include "engine/mtq_base_common.h"
 
 namespace arctic {

@@ -24,8 +24,8 @@
 #ifndef ENGINE_EASY_HW_SPRITE_H_
 #define ENGINE_EASY_HW_SPRITE_H_
 
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "engine/easy_sprite.h"
