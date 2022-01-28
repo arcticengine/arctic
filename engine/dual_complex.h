@@ -31,6 +31,7 @@
 #define ENGINE_DUAL_COMPLEX_H_
 
 #include <cassert>
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <iosfwd>
 #include <vector>

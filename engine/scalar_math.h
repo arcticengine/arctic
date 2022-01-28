@@ -24,6 +24,7 @@
 #ifndef ENGINE_SCALAR_MATH_H_
 #define ENGINE_SCALAR_MATH_H_
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include "engine/arctic_types.h"
 

@@ -24,6 +24,7 @@
 #ifndef ENGINE_VEC4SI32_H_
 #define ENGINE_VEC4SI32_H_
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include "engine/arctic_types.h"
 #include "engine/vec3si32.h"
