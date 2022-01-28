@@ -34,6 +34,7 @@ Licensed under the MIT license, see License.txt for details.
 tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 ## Credits
+See License.txt for details.
 
 #### Arctic Engine code:
 
@@ -45,10 +46,18 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 
 * piLibs C++ (14/06/2016) by Íñigo Quílez ([http://www.iquilezles.org/code/piLibs/piLibs.htm](http://www.iquilezles.org/code/piLibs/piLibs.htm))
 * stb single-file public domain (or MIT Licensed) libraries for C/C++ (30/06/2017) Copyright (c) 2017 Sean Barrett ([https://github.com/nothings/stb](https://github.com/nothings/stb))
-* Miniz 2.1.0 (01/06/2019) Copyright 2013-2014 RAD Game Tools and Valve Software, Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC ([https://github.com/richgel999/miniz](https://github.com/richgel999/miniz))
+* Miniz 2.1.0 (01/06/2019) Copyright 2013-2014 RAD Game Tools and Valve Software, Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC, Copyright (c) 2016 Martin Raiber ([https://github.com/richgel999/miniz](https://github.com/richgel999/miniz))
 * OpenFBX (01/06/2019) by Mikulas Florek ([https://github.com/nem0/OpenFBX](https://github.com/nem0/OpenFBX))
 * Collection of wait-free/lock-free queues (18/07/2020) Copyright (c) 2018 Vitaliy Manushkin ([https://gitlab.com/agrianius/mt_queue](https://gitlab.com/agrianius/mt_queue))
 * [Coverage-guided fuzz testing](https://docs.gitlab.com/ee/user/application_security/coverage_fuzzing/#coverage-guided-fuzz-testing-ultimate) added by @stkerr at GitLab
+* Sound mixing function proposed by Mikle
+* pugixml. Light-weight, simple and fast XML parser for C++ with XPath support. Copyright (c) 2006 - 2020 Arseny Kapoulkine ([https://pugixml.org/](https://pugixml.org/))
+* SocketSys. Modular C++17 Socket Wrapper that supports multiple operating systems. Copyright (c) 2020 Asyc ([https://github.com/Asyc/SocketSys](https://github.com/Asyc/SocketSys))
+* option-parser. A Lightweight, header-only CLI option parser for C++ Copyright (c) 2020 Luke de Oliveira <lukedeo@ldo.io>, Copyright (c) 2017 Romain Sylvian ([https://github.com/lukedeo/option-parser](https://github.com/lukedeo/option-parser))
+* easing function collection Copyright (c) 2019 Juan Carlos, Copyright (c) 2001 Robert Penner
+* Acutest -- Another C/C++ Unit Test facility. Copyright (c) 2013 - 2017 Martin Mitas ([http://github.com/mity/acutest](http://github.com/mity/acutest))
+* OpenGL headers Copyright (c) 2013 - 2016 The Khronos Group Inc.
+* Library for Anti-commutative Dual Complex Numbers. Copyright (c) 2014 Shizuo KAJI <shizuo.kaji@gmail.com> ([http://arxiv.org/abs/1601.01754](http://arxiv.org/abs/1601.01754))
 
 #### ArcticOne font:
 
@@ -84,6 +93,10 @@ tl;drLegal: [https://www.tldrlegal.com/l/mit](https://www.tldrlegal.com/l/mit)
 #### Bitmap Font Generator
 
 * BMFont Bitmap Font Generator 1.14 beta ([http://www.angelcode.com/products/bmfont](http://www.angelcode.com/products/bmfont))
+
+#### Linter
+
+* Copyright (c) 2009 Google Inc. All rights reserved.
 
 ## Ubuntu and Raspbian linux build instruction
 
