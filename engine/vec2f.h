@@ -24,6 +24,7 @@
 #ifndef ENGINE_VEC2F_H_
 #define ENGINE_VEC2F_H_
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <iosfwd>
 #include "engine/arctic_types.h"
