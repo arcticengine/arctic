@@ -42,6 +42,7 @@
 #include "engine/mat22f.h"
 #include "engine/scalar_math.h"
 #include "engine/unicode.h"
+#include "engine/transform2f.h"
 
 
 #endif  // ENGINE_EASY_H_

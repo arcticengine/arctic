@@ -86,6 +86,7 @@ These include:
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <sstream>
 #include <utility>
