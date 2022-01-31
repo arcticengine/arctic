@@ -44,6 +44,7 @@
 #include <GL/glu.h>
 
 #include <cmath>
+#include <cstring>
 #include <deque>
 #include <fstream>
 #include <memory>

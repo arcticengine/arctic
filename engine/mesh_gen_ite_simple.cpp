@@ -24,7 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include <math.h>
+#include <cmath>
 #include "engine/engine.h"
 #include "engine/easy_advanced.h"
 #include "engine/mesh.h"

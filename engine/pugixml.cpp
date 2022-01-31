@@ -19,9 +19,9 @@
 
 #include "engine/pugixml.h"
 
+#include <cstring>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <assert.h>
 #include <limits.h>
 
@@ -30,7 +30,7 @@
 #endif
 
 #ifndef PUGIXML_NO_XPATH
-#	include <math.h>
+#	include <cmath>
 #	include <float.h>
 #endif
 

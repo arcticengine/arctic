@@ -2,7 +2,7 @@
 #define _SIMDEMU_H_
 
 #include "types.h"
-#include <math.h>
+#include <cmath>
 
 
 typedef struct

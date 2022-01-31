@@ -1,3 +1,4 @@
+#include <cstring>
 #include "engine/data_reader.h"
 
 namespace arctic {

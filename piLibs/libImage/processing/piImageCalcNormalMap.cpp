@@ -1,5 +1,5 @@
 #include <malloc.h>
-#include <math.h>
+#include <cmath>
 
 #include "../piImage.h"
 

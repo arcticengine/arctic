@@ -25,7 +25,7 @@
 // IN THE SOFTWARE.
 
 #include <cstring>
-#include <math.h>
+#include <cmath>
 #include "engine/mesh_gen.h"
 #include "engine/mesh_gen_mod_simple.h"
 

@@ -1,5 +1,5 @@
-#include <string.h>         // memset()
-#include <math.h>           //sin(), cos()
+#include <cstring>         // memset()
+#include <cmath>           //sin(), cos()
 
 namespace piLibs {
 

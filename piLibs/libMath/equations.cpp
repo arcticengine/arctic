@@ -1,4 +1,4 @@
-#include <math.h>
+#include <cmath>
 
 static __inline float cuberoot( float x ) {
     if( x<0.0f ) {

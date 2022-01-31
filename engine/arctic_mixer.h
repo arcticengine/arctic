@@ -25,7 +25,7 @@
 #define ENGINE_ARCTIC_MIXER_H_
 
 #define _USE_MATH_DEFINES
-#include <math.h> 
+#include <cmath> 
 #include <deque>  // NOLINT
 #include <mutex>  // NOLINT
 #include <string>

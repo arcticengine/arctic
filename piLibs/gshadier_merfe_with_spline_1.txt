@@ -1,7 +1,7 @@
 #ifndef _GSHADING_H_
 #define _GSHADING_H_
 
-#include <math.h>
+#include <cmath>
 #include "vecTypes.h"
 
 //------------------------------------------------------------------------------------------------

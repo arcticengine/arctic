@@ -275,7 +275,7 @@ double piJSONReader::ParseDecimal(const wchar_t **data)
 #include <string>
 #include <sstream>
 #include <iostream>
-#include <math.h>
+#include <cmath>
 
 
 // Macros to free an array/object

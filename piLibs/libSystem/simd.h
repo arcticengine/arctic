@@ -26,7 +26,7 @@
 #include <emmintrin.h>
 #endif
 #ifdef IBM
-#include <math.h>
+#include <cmath>
 #endif
 
 //---------------

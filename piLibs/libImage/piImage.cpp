@@ -1,6 +1,6 @@
 #include <string.h>
 #include <malloc.h>
-#include <math.h>
+#include <cmath>
 
 #include "piImage.h"
 #include "../libSystem/piStr.h"

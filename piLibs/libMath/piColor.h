@@ -1,6 +1,6 @@
 #pragma once
 
-#include <math.h>
+#include <cmath>
 
 #include "../libSystem/piTypes.h"
 #include "piVecTypes.h"
