@@ -24,7 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include <string.h>
+#include <cstring>
 #include "engine/vec3f.h"
 #include "engine/mesh.h"
 #include "engine/mesh_gen.h"

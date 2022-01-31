@@ -24,7 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include <string.h>
+#include <cstring>
 
 #include "engine/data_reader.h"
 #include "engine/data_writer.h"

@@ -1,3 +1,4 @@
+#include <cstring>
 #include "engine/data_writer.h"
 
 namespace arctic {

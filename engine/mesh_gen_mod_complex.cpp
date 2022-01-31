@@ -25,7 +25,7 @@
 // IN THE SOFTWARE.
 
 #include <math.h>
-#include <string.h>
+#include <cstring>
 #include <vector>
 
 #include "engine/mesh.h"

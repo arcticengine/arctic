@@ -25,6 +25,7 @@
 // IN THE SOFTWARE.
 //#define USETRICAT
 
+#include <cstring>
 #include <fstream>
 #include <vector>
 #include "engine/mesh.h"
