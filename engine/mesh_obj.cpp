@@ -26,6 +26,7 @@
 //#define USETRICAT
 
 #include <cstring>
+#include <deque>
 #include <fstream>
 #include <vector>
 #include "engine/mesh.h"

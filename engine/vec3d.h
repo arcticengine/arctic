@@ -346,7 +346,7 @@ inline double Distance(Vec3D const &a, Vec3D const &b) {
 
 inline void BuildBase(const Vec3D &n, Vec3D *uu, Vec3D *vv) {
   Vec3D up;
-  if (abs(n.z) < 0.9f) {
+  if (std::abs(n.z) < 0.9f) {
     up.x = 0.0;
     up.y = 0.0;
     up.z = 1.0;
@@ -413,7 +413,7 @@ inline Vec3D Clamp1(const Vec3D &v) {
   return Max(Min(v, 1.0), -1.0);  // NOLINT
 }
 inline Vec3D Abs(const Vec3D &v) {
-  return Vec3D(abs(v.x), abs(v.y), abs(v.z));
+  return Vec3D(std::abs(v.x), std::abs(v.y), std::abs(v.z));
 }
 
 inline Vec3D SmoothStep(double a, double b, const Vec3D &v) {

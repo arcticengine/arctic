@@ -1925,7 +1925,7 @@ static int predict_point(int x, int x0, int x1, int y0, int y1)
    int dy = y1 - y0;
    int adx = x1 - x0;
    // @OPTIMIZE: force int division to round in the right direction... is this necessary on x86?
-   int err = abs(dy) * (x - x0);
+   int err = std::abs(dy) * (x - x0);
    int off = err / adx;
    return dy < 0 ? y0 - off : y0 + off;
 }
@@ -2023,7 +2023,7 @@ static __forceinline void draw_line(float *output, int x0, int y0, int x1, int y
 {
    int dy = y1 - y0;
    int adx = x1 - x0;
-   int ady = abs(dy);
+   int ady = std::abs(dy);
    int base;
    int x=x0,y=y0;
    int err = 0;
@@ -2052,7 +2052,7 @@ static __forceinline void draw_line(float *output, int x0, int y0, int x1, int y
    else
       sy = base+1;
 #endif
-   ady -= abs(base) * adx;
+   ady -= std::abs(base) * adx;
    if (x1 > n) x1 = n;
    if (x < x1) {
       LINE_OP(output[x], inverse_db_table[y&255]);
