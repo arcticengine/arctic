@@ -8,50 +8,6 @@
 
 namespace piLibs {
 
-char *pistrtok( char *strToken, const char *strDelimit, char **context )
-{
-    #ifdef WINDOWS
-        #if _MSC_VER<1300
-        return strtok( strToken, strDelimit );
-        #else
-        return strtok_s( strToken, strDelimit, context );
-        #endif
-    #else
-    return strtok( strToken, strDelimit );
-    #endif
-
-#if 0
-    const char *sep;
-    char *start;
-    char *string;
-
-   
-    if (_string!=0) string = _string; else string = *temp;
-
-	if( _string==0 && *temp==0 ) return 0;
-
-    start = string;
-   
-    while ((*string)!=0)
-    {
-        sep = _sep;
-        while ((*sep)!=0)
-        {
-            if ((*string)==(*sep))
-            {
-                *string=0;
-                *temp=string+1;
-                return(start);
-            }
-        sep++;
-        }
-        string++;
-    }
-    *temp=0;
-    return(start);
-#endif
-
-}
 
 int pistrlen( const char *str )
 {

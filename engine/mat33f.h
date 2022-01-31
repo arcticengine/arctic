@@ -219,7 +219,7 @@ inline Mat33F SetRotationEuler3(const Vec3F &xyz) {
   return SetRotationEuler3(xyz.x, xyz.y, xyz.z);
 }
 
-inline Mat33F SetIdentity3(void) {
+inline Mat33F SetIdentity3() {
   return Mat33F(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
 }
 

@@ -411,7 +411,7 @@ typedef struct mz_stream_s {
 typedef mz_stream *mz_streamp;
 
 //! Returns the version string of miniz.c.
-const char *mz_version(void);
+const char *mz_version();
 
 /** mz_deflateInit() initializes a compressor with default options: */
 /* Parameters: */
@@ -664,7 +664,7 @@ typedef struct mz_dummy_time_t_tag {
 
 #ifdef MINIZ_NO_MALLOC
 #define MZ_MALLOC(x) NULL
-#define MZ_FREE(x) (void)x, ((void)0)
+#define MZ_FREE(x) ()x, (()0)
 #define MZ_REALLOC(p, x) NULL
 #else
 #define MZ_MALLOC(x) malloc(x)
@@ -943,7 +943,7 @@ mz_uint tdefl_create_comp_flags_from_zip_params(int level, int window_bits,
 /** Allocate the tdefl_compressor structure in C so that */
 /* non-C language bindings to tdefl_ API don't need to worry about */
 /* structure size and allocation mechanism. */
-tdefl_compressor *tdefl_compressor_alloc(void);
+tdefl_compressor *tdefl_compressor_alloc();
 void tdefl_compressor_free(tdefl_compressor *pComp);
 #endif  // MINIZ_NO_MALLOC
 
@@ -1015,7 +1015,7 @@ typedef struct tinfl_decompressor_tag tinfl_decompressor;
 /** Allocate the tinfl_decompressor structure in C so that */
 /* non-C language bindings to tinfl_ API don't need to worry about */
 /* structure size and allocation mechanism. */
-tinfl_decompressor *tinfl_decompressor_alloc(void);
+tinfl_decompressor *tinfl_decompressor_alloc();
 void tinfl_decompressor_free(tinfl_decompressor *pDecomp);
 #endif  // MINIZ_NO_MALLOC
 

@@ -4,7 +4,7 @@
 // falta que se pueda hacer sortable IA...
 
 #include "../../libRender/piRenderer.h"
-#include "../../libMesh/piMesh.h"
+#include "engine/mesh.h"
 
 namespace piLibs {
 
@@ -52,19 +52,19 @@ public:
     piRenderMesh();
     ~piRenderMesh();
 
-    bool InitFromMesh( piRenderer *renderer, const piMesh *mesh, piPrimitiveType patchNum );
+    bool InitFromMesh( piRenderer *renderer, const Mesh *mesh, piPrimitiveType patchNum );
 
     void End( piRenderer *renderer );
 
     void Render( piRenderer *renderer, int elementArrayID, int numInstances ) const;
 
-    const bound3 & GetBBox( void ) const;
+    const Bound3F & GetBBox( void ) const;
 
     const int GetNumVertices( void ) const;
     const piBuffer GetVertexBuffer( int stream ) const;
 
 private:
-    bound3                  mBBox;
+    Bound3F                  mBBox;
     piRenderMeshVertexData  mVertexData;
     piRenderMeshIndexData   mIndexData;
 };

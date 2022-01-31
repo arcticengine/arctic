@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 Huldra
+// Copyright (c) 2020 - 2022 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -117,7 +117,7 @@ class Node2F : public std::enable_shared_from_this<Node2F> {
         child->RemoveFromParent();
       }
       child->parent_ = this;
-      child->child_idx_ = children_.size();
+      child->child_idx_ = (Ui32)children_.size();
       children_.push_back(child);
     }
   }
@@ -194,8 +194,8 @@ class SpriteNode2F : public Node2F {
 
   void DrawSelf(const Transform2F &transform) override {
     Vec2F pos = transform.dc.Transform(Vec2F(0.f, 0.f));
-    sprite_.Draw(pos.x, pos.y, transform.dc.GetAngle(), transform.scale,
-      blending_mode_, filter_mode_, color_);
+    sprite_.Draw(color_, pos.x, pos.y, transform.dc.GetAngle(), transform.scale,
+      blending_mode_, filter_mode_);
   }
 };
 

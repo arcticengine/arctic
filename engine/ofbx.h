@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 Huldra
+// Copyright (c) 2019 - 2022 Huldra
 // Copyright (c) 2017 Mikulas Florek
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,21 +28,13 @@
 #include <cstddef>
 
 #include "engine/arctic_types.h"
-
+#include "engine/vec2d.h"
+#include "engine/vec3d.h"
 
 
 namespace arctic {
 
 namespace ofbx {
-
-
-struct Vec2D {
-  double x, y;
-};
-
-struct Vec3D {
-  double x, y, z;
-};
 
 struct Vec4D {
   double x, y, z, w;
@@ -52,14 +44,9 @@ struct Matrix44D {
   double m[16];  //!< last 4 are translation
 };
 
-struct QuatD {
-  double x, y, z, w;
-};
-
 struct RgbF {
   float r, g, b;
 };
-
 
 struct DataView {
   const Ui8* begin = nullptr;

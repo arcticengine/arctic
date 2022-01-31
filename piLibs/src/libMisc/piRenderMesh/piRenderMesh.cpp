@@ -11,7 +11,7 @@
 namespace piLibs {
 
 
-static piRArrayDataType dt2al( piMeshVertexElemDataType dt )
+static piRArrayDataType dt2al( MeshVertexElemDataType dt )
 {
     if( dt==piRMVEDT_UByte  ) return piRArrayType_UByte;
     if( dt==piRMVEDT_Float  ) return piRArrayType_Float;
@@ -167,7 +167,7 @@ bool piRenderMesh_MakeSortable(piRenderMesh *me )
 
 
 
-bool piRenderMesh::InitFromMesh( piRenderer *renderer, const piMesh *mesh, piPrimitiveType patchNum)
+bool piRenderMesh::InitFromMesh( piRenderer *renderer, const Mesh *mesh, piPrimitiveType patchNum)
 {
     memset( this, 0, sizeof(piRenderMesh) );
     mVertexData.mNumStreams = 0;
@@ -188,7 +188,7 @@ bool piRenderMesh::InitFromMesh( piRenderer *renderer, const piMesh *mesh, piPri
 
     for( unsigned int k=0; k<mVertexData.mNumStreams; k++ )
     {
-        const piMeshVertexArray *mva = mesh->mVertexData.mVertexArray + k;
+        const MeshVertexArray *mva = mesh->mVertexData.mVertexArray + k;
         piRenderMeshVertexStream *stream = mVertexData.mStream + k;
 
         stream->mLength = mva->mNum;

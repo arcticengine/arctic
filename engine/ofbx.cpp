@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 Huldra
+// Copyright (c) 2019 - 2022 Huldra
 // Copyright (c) 2017 Mikulas Florek
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -118,7 +118,7 @@ static void setTranslation(const Vec3D& t, Matrix44D* mtx) {
 
 
 static Vec3D operator-(const Vec3D& v) {
-  return {-v.x, -v.y, -v.z};
+  return Vec3D(-v.x, -v.y, -v.z);
 }
 
 
@@ -144,8 +144,8 @@ static Matrix44D makeIdentity() {
 
 static Matrix44D rotationX(double angle) {
   Matrix44D m = makeIdentity();
-  double c = cos(angle);
-  double s = sin(angle);
+  double c = std::cos(angle);
+  double s = std::sin(angle);
 
   m.m[5] = m.m[10] = c;
   m.m[9] = -s;
@@ -157,8 +157,8 @@ static Matrix44D rotationX(double angle) {
 
 static Matrix44D rotationY(double angle) {
   Matrix44D m = makeIdentity();
-  double c = cos(angle);
-  double s = sin(angle);
+  double c = std::cos(angle);
+  double s = std::sin(angle);
 
   m.m[0] = m.m[10] = c;
   m.m[8] = s;
@@ -170,8 +170,8 @@ static Matrix44D rotationY(double angle) {
 
 static Matrix44D rotationZ(double angle) {
   Matrix44D m = makeIdentity();
-  double c = cos(angle);
-  double s = sin(angle);
+  double c = std::cos(angle);
+  double s = std::sin(angle);
 
   m.m[0] = m.m[5] = c;
   m.m[4] = -s;
@@ -442,9 +442,9 @@ static Vec3D resolveVec3Property(const Object& object,
   if (!x || !x->next || !x->next->next)
     return default_value;
 
-  return {x->value.toDouble(),
+  return Vec3D(x->value.toDouble(),
     x->next->value.toDouble(),
-    x->next->next->value.toDouble()};
+    x->next->next->value.toDouble());
 }
 
 
@@ -989,11 +989,11 @@ struct MeshImpl : Mesh {
 
   Matrix44D getGeometricMatrix() const override {
     Vec3D translation = resolveVec3Property(*this, "GeometricTranslation",
-        {0, 0, 0});
+        Vec3D(0, 0, 0));
     Vec3D rotation = resolveVec3Property(*this, "GeometricRotation",
-        {0, 0, 0});
+        Vec3D(0, 0, 0));
     Vec3D scale = resolveVec3Property(*this, "GeometricScaling",
-        {1, 1, 1});
+        Vec3D(1, 1, 1));
 
     Matrix44D scale_mtx = makeIdentity();
     scale_mtx.m[0] = static_cast<float>(scale.x);
@@ -1539,8 +1539,9 @@ struct AnimationCurveNodeImpl : AnimationCurveNode {
       return values[0];
     };
 
-    return {getCoord(curves[0], fbx_time), getCoord(curves[1], fbx_time),
-      getCoord(curves[2], fbx_time)};
+    return Vec3D(getCoord(curves[0], fbx_time),
+                 getCoord(curves[1], fbx_time),
+                 getCoord(curves[2], fbx_time));
   }
 
 
@@ -2679,27 +2680,27 @@ RotationOrder Object::getRotationOrder() const {
 
 
 Vec3D Object::getRotationOffset() const {
-  return resolveVec3Property(*this, "RotationOffset", {0, 0, 0});
+  return resolveVec3Property(*this, "RotationOffset", Vec3D(0, 0, 0));
 }
 
 
 Vec3D Object::getRotationPivot() const {
-  return resolveVec3Property(*this, "RotationPivot", {0, 0, 0});
+  return resolveVec3Property(*this, "RotationPivot", Vec3D(0, 0, 0));
 }
 
 
 Vec3D Object::getPostRotation() const {
-  return resolveVec3Property(*this, "PostRotation", {0, 0, 0});
+  return resolveVec3Property(*this, "PostRotation", Vec3D(0, 0, 0));
 }
 
 
 Vec3D Object::getScalingOffset() const {
-  return resolveVec3Property(*this, "ScalingOffset", {0, 0, 0});
+  return resolveVec3Property(*this, "ScalingOffset", Vec3D(0, 0, 0));
 }
 
 
 Vec3D Object::getScalingPivot() const {
-  return resolveVec3Property(*this, "ScalingPivot", {0, 0, 0});
+  return resolveVec3Property(*this, "ScalingPivot", Vec3D(0, 0, 0));
 }
 
 
@@ -2754,22 +2755,22 @@ Matrix44D Object::evalLocal(const Vec3D& translation, const Vec3D& rotation,
 
 
 Vec3D Object::getLocalTranslation() const {
-  return resolveVec3Property(*this, "Lcl Translation", {0, 0, 0});
+  return resolveVec3Property(*this, "Lcl Translation", Vec3D(0, 0, 0));
 }
 
 
 Vec3D Object::getPreRotation() const {
-  return resolveVec3Property(*this, "PreRotation", {0, 0, 0});
+  return resolveVec3Property(*this, "PreRotation", Vec3D(0, 0, 0));
 }
 
 
 Vec3D Object::getLocalRotation() const {
-  return resolveVec3Property(*this, "Lcl Rotation", {0, 0, 0});
+  return resolveVec3Property(*this, "Lcl Rotation", Vec3D(0, 0, 0));
 }
 
 
 Vec3D Object::getLocalScaling() const {
-  return resolveVec3Property(*this, "Lcl Scaling", {1, 1, 1});
+  return resolveVec3Property(*this, "Lcl Scaling", Vec3D(1, 1, 1));
 }
 
 

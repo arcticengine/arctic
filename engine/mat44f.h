@@ -387,7 +387,7 @@ inline Vec3F ExtractRotationEuler(const Mat44F &m) {
   return res;
 }
 
-inline Mat44F SetIdentity(void) {
+inline Mat44F SetIdentity() {
   return Mat44F(1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
@@ -505,7 +505,7 @@ inline Mat44F SetScale4(const Vec3F &s) {
     0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-inline Mat44F SetIdentity4(void) {  //-V524
+inline Mat44F SetIdentity4() {  //-V524
   return Mat44F(1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
@@ -517,7 +517,7 @@ inline Mat44F SetRotationEuler4(float x, float y, float z) {
 }
 
 
-inline Mat44F SetSwapYZ(void) {
+inline Mat44F SetSwapYZ() {
   return Mat44F(1.0f, 0.0f, 0.0f, 0.0f,
     0.0f, 0.0f, 1.0f, 0.0f,
     0.0f, -1.0f, 0.0f, 0.0f,

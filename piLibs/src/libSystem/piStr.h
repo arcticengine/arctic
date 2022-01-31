@@ -4,7 +4,6 @@
 
 namespace piLibs {
 
-char *pistrtok( char *strToken, const char *strDelimit, char **context );
 void  pistrncpy( char *strDest, size_t sizeInBytes, const char *strSource, size_t count );
 void  pistrcpy( char *strDestination, size_t sizeInBytes, const char *strSource );
 int   pistrcmp( const char *stra, const char *strb );

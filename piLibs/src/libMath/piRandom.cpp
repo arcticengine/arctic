@@ -74,27 +74,3 @@ unsigned int pirand_int15b( int *mirand )
     return( (mirand[0]>>16)&32767 );
 }
 
-
-float pirand_flo23b( int *mirand )
-{
-    mirand[0] = mirand[0]*0x343fd+0x269ec3;
-
-    unsigned int a = (unsigned int)mirand[0];
-    a = (a>>9) | 0x3f800000;
-    float res = *((float*)&a);
-    res -= 1.0f;
-    return( res );
-}
-
-
-
-float pirand_sflo23b( int *mirand )
-{
-    mirand[0] = mirand[0]*0x343fd+0x269ec3;
-
-    unsigned int a = (unsigned int)mirand[0];
-    a = (a>>9) | 0x40000000;
-    float res = *((float*)&a);
-    res -= 3.0f;
-    return( res );
-}
