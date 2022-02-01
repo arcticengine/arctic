@@ -58,7 +58,7 @@ int MeshObj_Read(Mesh *me, const char *name, bool calcNormals) {
   std::deque<std::string> original_file;
   std::string line;
   while (ifile.good()) {
-    getline(ifile, line);
+    std::getline(ifile, line);
     if (!line.empty()) {
       original_file.push_back(line);
     }

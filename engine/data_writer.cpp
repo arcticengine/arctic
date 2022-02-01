@@ -6,11 +6,11 @@ namespace arctic {
 Ui64 DataWriter::Write(const void *dst, Ui64 amount) {
   if (data.capacity() < data.size() + amount) {
     Ui64 needed = std::max(amount, (Ui64)(data.size())) + data.size();
-    data.reserve(needed);
+    data.reserve((size_t)needed);
   }
   Ui8 *p = &data.back();
-  data.resize(data.size() + amount);
-  memcpy(p, dst, amount);
+  data.resize(data.size() + (size_t)amount);
+  memcpy(p, dst, (size_t)amount);
   return amount;
 }
 
