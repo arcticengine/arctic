@@ -1,5 +1,6 @@
-#include <malloc.h>
+#define _USE_MATH_DEFINES
 #include <cmath>
+#include <malloc.h>
 
 #include "../piImage.h"
 

@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 #define DDC_PI 3.1415926535897932384626433832795f

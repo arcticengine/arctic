@@ -573,10 +573,11 @@ enum STBVorbisError
 #endif
 
 #ifndef STB_VORBIS_NO_CRT
+   #define _USE_MATH_DEFINES
+   #include <cmath>
    #include <stdlib.h>
    #include <cstring>
    #include <cassert>
-   #include <cmath>
 
    // find definition of alloca if it's not in stdlib.h:
    #if defined(_MSC_VER) || defined(__MINGW32__)

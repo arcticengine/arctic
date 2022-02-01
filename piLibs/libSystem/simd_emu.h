@@ -1,8 +1,9 @@
 #ifndef _SIMDEMU_H_
 #define _SIMDEMU_H_
 
-#include "types.h"
+#define _USE_MATH_DEFINES
 #include <cmath>
+#include "types.h"
 
 
 typedef struct

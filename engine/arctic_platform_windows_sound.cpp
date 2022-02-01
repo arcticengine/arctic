@@ -41,6 +41,7 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <fstream>
 #include <memory>

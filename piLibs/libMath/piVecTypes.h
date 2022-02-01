@@ -1,6 +1,7 @@
 #ifndef _VEC_TYPES_H_
 #define _VEC_TYPES_H_
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 namespace piLibs {

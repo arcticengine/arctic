@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <map>
 #include <memory>

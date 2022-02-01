@@ -24,8 +24,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include <cstring>
+#define _USE_MATH_DEFINES
 #include <cmath>
+#include <cstring>
 #include "engine/mesh_gen.h"
 #include "engine/mesh_gen_mod_simple.h"
 

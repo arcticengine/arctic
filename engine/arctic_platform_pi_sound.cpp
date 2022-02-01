@@ -30,6 +30,8 @@
 #include <alsa/asoundlib.h>
 #include <alsa/control.h>
 
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <deque>
 #include <iostream>
 #include <string>

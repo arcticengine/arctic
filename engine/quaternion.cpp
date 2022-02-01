@@ -24,10 +24,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "quaternion.h"
-
-// only for sqrt
+#define _USE_MATH_DEFINES
 #include <cmath>
+#include "quaternion.h"
 
 namespace arctic {
 

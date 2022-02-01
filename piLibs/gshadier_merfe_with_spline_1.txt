@@ -1,6 +1,7 @@
 #ifndef _GSHADING_H_
 #define _GSHADING_H_
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include "vecTypes.h"
 
