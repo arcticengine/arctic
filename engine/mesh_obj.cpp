@@ -28,6 +28,7 @@
 #include <cstring>
 #include <deque>
 #include <fstream>
+#include <string>
 #include <vector>
 #include "engine/mesh.h"
 #include "engine/vec3f.h"
