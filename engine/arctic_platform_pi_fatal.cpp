@@ -27,8 +27,7 @@
 
 #ifdef ARCTIC_PLATFORM_PI
 
-#include <string.h>
-
+#include <cstring>
 #include <iostream>
 
 #ifdef ARCTIC_NO_HARD_EXIT

@@ -25,7 +25,7 @@
 #define ENGINE_ARCTIC_MIXER_H_
 
 #define _USE_MATH_DEFINES
-#include <math.h> 
+#include <cmath> 
 #include <deque>  // NOLINT
 #include <mutex>  // NOLINT
 #include <string>
@@ -109,7 +109,7 @@ void RenderSound(SoundTask *sound, const SoundListenerHead &head, Si32 channel_i
   float ear_distance = std::max(0.0f, Length(to_src));
   float nearest_distance = std::max(0.0f, Length(head.loc.displacement - sound->location.displacement) - head.radius);
   double ear_delay = std::max(0.0f, ear_distance - nearest_distance) / sonic_speed;
-  float smooth_max_dot = copysign((abs(max_dot)), max_dot); // sqrtf?
+  float smooth_max_dot = copysign((std::abs(max_dot)), max_dot); // sqrtf?
   float vol_mul = vol_mul_at_zero + smooth_max_dot *
     (max_dot > 0.f ? (1.f - vol_mul_at_zero) : (vol_mul_at_zero - vol_mul_at_min));
   float signal_k = (smooth_max_dot > 0.f ? 1.f : (1.f + smooth_max_dot * 0.9f));
@@ -364,7 +364,7 @@ struct SoundMixerState {
     const float Attack = 1.f / (44100.f * 0.005f);
     const float Release = 1.f / (44100.f * 0.2f);
     for (Si32 frame = 0; frame < buffer_samples_per_channel; ++frame) {
-      float smax = std::max(abs(mix_l[frame]), abs(mix_r[frame]));
+      float smax = std::max(std::abs(mix_l[frame]), std::abs(mix_r[frame]));
       if (smax > compressor_level) {
         compressor_level = compressor_level * (1.f - Attack) + smax * Attack;
       } else {

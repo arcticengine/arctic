@@ -55,7 +55,7 @@
 // and has no return values, i.e. every test function has to be compatible
 // with this prototype:
 //
-//   void test_func(void);
+//   void test_func();
 
 #define TEST_LIST const struct test__ test_list__[]
 
@@ -119,7 +119,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
 #if defined(unix) || defined(__unix__) || defined(__unix) || defined(__APPLE__)
 #define ACUTEST_UNIX__      1
@@ -159,7 +159,7 @@ extern "C" {
   /// @private
   struct test__ {
     const char* name;
-    void (*func)(void);
+    void (*func)();
   };
 
   extern const struct test__ test_list__[];
@@ -377,7 +377,7 @@ extern "C" {
     }
   }
 
-  static void test_list_names__(void) {
+  static void test_list_names__() {
     const struct test__* test;
 
     printf("Unit tests:\n");
@@ -697,7 +697,7 @@ extern "C" {
 #endif  // ACUTEST_WIN__
 
 
-  static void test_help__(void) {
+  static void test_help__() {
     printf("Usage: %s [options] [test...]\n", test_argv0__);
     printf("Run the specified unit tests; or if the option '--skip' is"
         " used, run all\n");
@@ -737,7 +737,7 @@ extern "C" {
   }
 
 #ifdef ACUTEST_LINUX__
-  static int test_is_tracer_present__(void) {
+  static int test_is_tracer_present__() {
     char buf[256+32+1];
     int tracer_present = 0;
     int fd;

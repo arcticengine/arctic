@@ -3,6 +3,7 @@
 
 // The MIT License (MIT)
 //
+// Copyright (c) 2022 Huldra
 // Copyright (c) 2021 The Lasting Curator
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,26 +24,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#include "quaternion.h"
-
-// only for sqrt
+#define _USE_MATH_DEFINES
 #include <cmath>
+#include "quaternion.h"
 
 namespace arctic {
 
 
 QuaternionF::QuaternionF() {
-  w = 1.f;
   x = 0.f;
   y = 0.f;
   z = 0.f;
+  w = 1.f;
 }
 
-QuaternionF::QuaternionF(float w_, float x_, float y_, float z_) {
-	w = w_;
+QuaternionF::QuaternionF(float x_, float y_, float z_, float w_) {
 	x = x_;
 	y = y_;
 	z = z_;
+  w = w_;
 }
 
 QuaternionF::QuaternionF(const QuaternionF& b) {
@@ -70,23 +70,23 @@ QuaternionF& QuaternionF::operator= (const QuaternionF& b) {
 }
 
 QuaternionF QuaternionF::operator+ (const QuaternionF& b) const {
-	return QuaternionF(w + b.w, x + b.x, y + b.y, z + b.z);
+	return QuaternionF(x + b.x, y + b.y, z + b.z, w + b.w);
 }
 
 QuaternionF QuaternionF::operator- (const QuaternionF& b) const {
-	return QuaternionF(w - b.w, x - b.x, y - b.y, z - b.z);
+	return QuaternionF(x - b.x, y - b.y, z - b.z, w - b.w);
 }
 
 QuaternionF QuaternionF::operator* (const float b) const {
-	return QuaternionF(w*b, x*b, y*b, z*b);
+	return QuaternionF(x*b, y*b, z*b, w*b);
 }
 
 QuaternionF QuaternionF::operator* (const QuaternionF& b) const {
 	return QuaternionF(
-		w*b.w - x*b.x - y*b.y - z*b.z,
 		w*b.x + x*b.w + y*b.z - z*b.y,
 		w*b.y + y*b.w + z*b.x - x*b.z,
-		w*b.z + z*b.w + x*b.y - y*b.x);
+		w*b.z + z*b.w + x*b.y - y*b.x,
+    w*b.w - x*b.x - y*b.y - z*b.z);
 }
 void QuaternionF::ToAxisAngle(Vec3F& out_axis, float& out_angle) const {
 	float lengthSquared = x*x + y*y + z*z;
@@ -120,18 +120,18 @@ void QuaternionF::ToPartialMatrix33F(Mat33F& out) const {
 void QuaternionF::Normalize() {
 	float modulus = ::sqrt(w*w + x*x + y*y + z*z);
 	float inv = 1.0f / modulus;
-	w *= inv;
 	x *= inv;
 	y *= inv;
 	z *= inv;
+  w *= inv;
 }
 
 float QuaternionF::Norm() const {
-	return w*w + x*x + y*y + z*z;
+	return x*x + y*y + z*z + w*w;
 }
 
 float QuaternionF::Modulus() const {
-  return ::sqrt(w*w + x*x + y*y + z*z);
+  return ::sqrt(x*x + y*y + z*z + w*w);
 }
 
 Vec3F QuaternionF::Rotate(const Vec3F& a) const {
@@ -139,38 +139,38 @@ Vec3F QuaternionF::Rotate(const Vec3F& a) const {
 }
 
 void QuaternionF::Clear() {
-  w = 1.f;
   x = 0.f;
   y = 0.f;
   z = 0.f;
+  w = 1.f;
 }
 
 
 QuaternionF operator* (float a, const QuaternionF& b) {
-	return QuaternionF(a*b.w, a*b.x, a*b.y, a*b.z);
+	return QuaternionF(a*b.x, a*b.y, a*b.z, a*b.w);
 }
 
 QuaternionF Normalize(const QuaternionF& a) {
-	float modulus = ::sqrt(a.w*a.w + a.x*a.x + a.y*a.y + a.z*a.z);
+	float modulus = ::sqrt(a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w);
 	float inv = 1.0f / modulus;
-	return QuaternionF(a.w*inv, a.x*inv, a.y*inv, a.z*inv);
+	return QuaternionF(a.x*inv, a.y*inv, a.z*inv, a.w*inv);
 }
 
 QuaternionF Inverse(const QuaternionF& a) {
-	float norm = (a.w*a.w + a.x*a.x + a.y*a.y + a.z*a.z);
+	float norm = (a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w);
 	float inv = 1.0f / norm;
-	return QuaternionF(a.w * inv, -a.x * inv, -a.y * inv, -a.z * inv);
+	return QuaternionF(-a.x * inv, -a.y * inv, -a.z * inv, a.w * inv);
 }
 
 QuaternionF Conjugate(const QuaternionF& a) {
-	return QuaternionF(a.w, -a.x, -a.y, -a.z);
+	return QuaternionF(-a.x, -a.y, -a.z, a.w);
 }
 
 QuaternionF slerp(QuaternionF const &a, QuaternionF const &b, float t) {
 	QuaternionF normalizedA = Normalize(a);
 	QuaternionF normalizedB = Normalize(b);
 
-	float dotProduct = a.w*b.w + a.x*b.x + a.y*b.y + a.z*b.z;
+	float dotProduct = a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;
 
 	const float THRESHOLD = 0.9995f;
 	if (dotProduct > THRESHOLD) {

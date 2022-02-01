@@ -29,7 +29,7 @@
 #ifdef ARCTIC_PLATFORM_PI
 
 #include <dirent.h>
-#include <string.h>
+#include <cstring>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <deque>

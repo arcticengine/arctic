@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2017 - 2022 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -38,6 +38,7 @@
 #include "engine/gl_texture2d.h"
 #include "engine/gl_program.h"
 #include "engine/gl_buffer.h"
+#include "engine/mesh.h"
 
 namespace arctic {
 
@@ -61,15 +62,7 @@ class Engine {
   Sprite backbuffer_texture_;
   HwSprite hw_backbuffer_texture_;
 
-  std::vector<Ui8> visible_verts_;
-  std::vector<Ui8> visible_normals_;
-  std::vector<Ui8> tex_coords_;
-  std::vector<Ui8> visible_indices_;
-
-  Si32 verts_ = 0;
-  Si32 normals_ = 0;
-  Si32 tex_ = 0;
-  Si32 indices_ = 0;
+  Mesh mesh_;
 
   std::chrono::high_resolution_clock::time_point start_time_;
   double time_correction_ = 0.0;
@@ -120,6 +113,8 @@ class Engine {
   Ui32 GetRandom32();
   Ui16 GetRandom16();
   Ui8 GetRandom8();
+  float GetRandomFloat23();
+  float GetRandomSFloat23();
   Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
   void OnWindowResize(Si32 width, Si32 height);
   Vec2Si32 GetWindowSize() const;

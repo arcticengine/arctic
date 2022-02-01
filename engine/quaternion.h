@@ -3,6 +3,7 @@
 
 // The MIT License (MIT)
 //
+// Copyright (c) 2022 Huldra
 // Copyright (c) 2021 The Lasting Curator
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,13 +33,13 @@ namespace arctic {
 
 class QuaternionF {
  public:
-	float w;
 	float x;
 	float y;
 	float z;
+  float w;
 
 	QuaternionF();
-	QuaternionF(float w, float x_, float y_, float z_);
+	QuaternionF(float x_, float y_, float z_, float w_);
 	QuaternionF(const QuaternionF& b);
 	QuaternionF(const Vec3F& unit_axis, float angle);
 

@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2017 - 2022 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <cstring>
 #include <sstream>
 
 #include "engine/opengl.h"
@@ -171,6 +172,19 @@ void main() {
   default_sprite_program_->Create(default_sprite_vShaderStr, default_sprite_fShaderStr);
 }
 
+struct Vertex {
+  Vec3F pos;
+  Vec3F normal;
+  Vec2F tex;
+
+  Vertex() = default;
+  Vertex(Vec3F in_pos, Vec3F in_normal, Vec2F in_tex)
+      : pos(in_pos)
+      , normal(in_normal)
+      , tex(in_tex) {
+  }
+};
+
 void Engine::Draw2d() {
   gl_backbuffer_texture_.UpdateData(backbuffer_texture_.RawData());
 
@@ -183,24 +197,30 @@ void Engine::Draw2d() {
   ARCTIC_GL_CHECK_ERROR(glClear(GL_COLOR_BUFFER_BIT));
   // draw quad
 
-  visible_verts_.resize(16 << 20);
-  visible_normals_.resize(16 << 20);
-  visible_indices_.resize(16 << 20);
-  tex_coords_.resize(16 << 20);
+  if (mesh_.mVertexData.mNumVertexArrays == 0) {
+    MeshVertexFormat vf;
+    // Vertex coordinates
+    vf.mElems[0].mNormalize = false;
+    vf.mElems[0].mNumComponents = 3;
+    vf.mElems[0].mOffset = 0;
+    vf.mElems[0].mType = kRMVEDT_Float;
+    // Vertex normal
+    vf.mElems[1].mNormalize = true;
+    vf.mElems[1].mNumComponents = 3;
+    vf.mElems[1].mOffset = 3*4;
+    vf.mElems[1].mType = kRMVEDT_Float;
+    // Vertex texture coordinates
+    vf.mElems[2].mNormalize = false;
+    vf.mElems[2].mNumComponents = 2;
+    vf.mElems[2].mOffset = 3*4+3*4;
+    vf.mElems[2].mType = kRMVEDT_Float;
+    vf.mNumElems = 3;
+    vf.mStride = 3*4+3*4+2*4;
+    vf.mDivisor = 0;
 
-  verts_ = 0;
-  normals_ = 0;
-  tex_ = 0;
-  indices_ = 0;
-
-  Vec3F *vertex = static_cast<Vec3F*>(reinterpret_cast<void*>(
-        visible_verts_.data()));
-  Vec3F *normal = static_cast<Vec3F*>(reinterpret_cast<void*>(
-        visible_normals_.data()));
-  Vec2F *tex = static_cast<Vec2F*>(reinterpret_cast<void*>(
-        tex_coords_.data()));
-  Ui32 *index = static_cast<Ui32*>(reinterpret_cast<void*>(
-        visible_indices_.data()));
+    mesh_.Init(1, 16 << 20, &vf, kRMVEDT_Polys, 1, 3);
+  }
+  mesh_.ClearGeometry();
 
   float aspect = static_cast<float>(width_) / static_cast<float>(height_);
   float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
@@ -214,51 +234,31 @@ void Engine::Draw2d() {
   Vec3F ty = Vec3F(0.f, 2.f * y_aspect, 0.f);
   Vec3F n = Vec3F(0.f, 0.f, 1.f);
 
-  Si32 idx = verts_;
-  vertex[verts_] = base;
-  ++verts_;
-  vertex[verts_] = base + tx;
-  ++verts_;
-  vertex[verts_] = base + ty + tx;
-  ++verts_;
-  vertex[verts_] = base + ty;
-  ++verts_;
+  mesh_.mVertexData.mVertexArray[0].mNum = 4;
+  Vertex v;
+  v = Vertex(base, n, Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f));
+  mesh_.SetVertex(0, 0, &v);
+  v = Vertex(base + tx, n, Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f));
+  mesh_.SetVertex(0, 1, &v);
+  v = Vertex(base + ty + tx, n, Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f));
+  mesh_.SetVertex(0, 2, &v);
+  v = Vertex(base + ty, n, Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f));
+  mesh_.SetVertex(0, 3, &v);
 
-  normal[normals_] = n;
-  ++normals_;
-  normal[normals_] = n;
-  ++normals_;
-  normal[normals_] = n;
-  ++normals_;
-  normal[normals_] = n;
-  ++normals_;
-
-  tex[tex_] = Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f);
-  ++tex_;
-  tex[tex_] = Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f);
-  ++tex_;
-  tex[tex_] = Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f);
-  ++tex_;
-  tex[tex_] = Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f);
-  ++tex_;
-
-  index[indices_] = static_cast<Ui32>(idx);
-  indices_++;
-  index[indices_] = static_cast<Ui32>(idx + 1);
-  indices_++;
-  index[indices_] = static_cast<Ui32>(idx + 2);
-  indices_++;
-  index[indices_] = static_cast<Ui32>(idx + 2);
-  indices_++;
-  index[indices_] = static_cast<Ui32>(idx + 3);
-  indices_++;
-  index[indices_] = static_cast<Ui32>(idx);
-  indices_++;
+  mesh_.mFaceData.mIndexArray[0].mNum = 2;
+  mesh_.SetTriangle(0, 0, 0, 1, 2);
+  mesh_.SetTriangle(0, 1, 2, 3, 0);
 
   GlBuffer::BindDefault();
-  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, visible_verts_.data()));
+  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+    mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+    (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
+      mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
   ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
-  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tex_coords_.data()));
+  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+    mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+    (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
+      mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
   ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
   copy_backbuffers_program_->Bind();
@@ -268,12 +268,14 @@ void Engine::Draw2d() {
   GlState::SetBlending(kDrawBlendingModeCopyRgba);
   
   gl_backbuffer_texture_.Bind(0);
-  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
+  /*ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));*/
+
+  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
 
   GlState::SetBlending(kDrawBlendingModePremultipliedAlphaBlend);
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
-  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));
+  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
 
   Swap();
 }
@@ -337,6 +339,25 @@ Ui16 Engine::GetRandom16() {
 Ui8 Engine::GetRandom8() {
   return static_cast<Ui32>(rnd_8_());
 }
+
+float Engine::GetRandomFloat23() {
+  Ui32 a = static_cast<Ui32>(rnd_32_());
+  a = (a>>9) | 0x3f800000;
+  float res;
+  memcpy(&res, &a, sizeof(float));
+  res -= 1.0f;
+  return res;
+}
+
+float Engine::GetRandomSFloat23() {
+  Ui32 a = static_cast<Ui32>(rnd_32_());
+  a = (a>>9) | 0x40000000;
+  float res;
+  memcpy(&res, &a, sizeof(float));
+  res -= 3.0f;
+  return res;
+}
+
 
 Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
   Vec2F rel_pos = pos - Vec2F(0.5f, 0.5f);
