@@ -585,7 +585,7 @@ bool Mesh_Split(Mesh *outMesh, Mesh *mesh, int nx, int ny, int nz, int *resNum) 
   int remap[256];
   int num = 0;
   for (int i=0; i<numOutMeshs; i++) {
-    const int numDstFaces = faces[i].size();
+    const int numDstFaces = (int)faces[i].size();
     if (numDstFaces!=0) {
       remap[num++] = i;
     }
@@ -596,7 +596,7 @@ bool Mesh_Split(Mesh *outMesh, Mesh *mesh, int nx, int ny, int nz, int *resNum) 
   for (int i=0; i<num; i++) {
     Mesh *dst = outMesh + i;
     std::vector<MeshFace> *src = faces + remap[i];
-    const int numDstFaces = src->size();
+    const int numDstFaces = (int)src->size();
     const int numDstVerts = mesh->mVertexData.mVertexArray[0].mNum;
     if (!dst->Init(1, numDstVerts, &mesh->mVertexData.mVertexArray[0].mFormat, mesh->mFaceData.mType, 1, numDstFaces)) {
       return false;
