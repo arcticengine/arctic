@@ -469,7 +469,6 @@ return 1;
 
 bool Mesh_ExtrudeFace(Mesh *me, int faceID) {
   {
-    const MeshFace *face = me->mFaceData.mIndexArray[0].mBuffer + faceID;
     const int num = 3;
     if (!me->Expand(num, num)) {
       return false;
@@ -565,7 +564,6 @@ bool Mesh_Split(Mesh *outMesh, Mesh *mesh, int nx, int ny, int nz, int *resNum) 
     faces[i].reserve(numf); 
   }
 
-  int nnumf = 0;
   for (int i=0; i<numf; i++) {
     const MeshFace *mf = mesh->mFaceData.mIndexArray[0].mBuffer + i;
     const float *vert = (float*)mesh->GetVertexData(STREAMID, mf->mIndex[0], POSID);
@@ -622,12 +620,7 @@ bool Mesh_Separate(Mesh *mesh) {
   }
 
   const int numf = mesh->mFaceData.mIndexArray[0].mNum;
-
-  int numv = 0;
-  for (int i = 0; i<numf; i++) {
-    MeshFace *mf = mesh->mFaceData.mIndexArray[0].mBuffer + i;
-    numv += 3;
-  }
+  int numv = numf * 3;
 
   Mesh tmp;
 

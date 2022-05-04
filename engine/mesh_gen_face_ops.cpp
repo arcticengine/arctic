@@ -167,7 +167,6 @@ void MeshFace_ExtrudeTo(Mesh *mesh, int faceID, const Vec3F & xyz) {
   const int num = 3;
 
   const Vec3F cen = MeshFace_GetCenter((const Mesh*)mesh, faceID);
-  const Vec3F nor = MeshFace_GetNormal((const Mesh*)mesh, faceID, NULL);
 
   Vec3F pn = xyz - cen;
 
