@@ -49,6 +49,25 @@ void HwSprite::DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const Un
     const HwSprite &from_sprite, const float from_x, const float from_y, const float from_width, const float from_height,
     Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians, float zoom) {
 
+    HwSpriteDrawing *h = GetEngine()->AddHwSpriteDrawing();
+
+    h->to_x_pivot = to_x_pivot;
+    h->to_y_pivot = to_y_pivot;
+    h->to_width = to_width;
+    h->to_height = to_height;
+    h->from_sprite = from_sprite;
+    h->from_x = from_x;
+    h->from_y = from_y;
+    h->from_width = from_width;
+    h->from_height = from_height;
+    h->in_color = in_color;
+    h->blending_mode = blending_mode;
+    h->filter_mode = filter_mode;
+    h->angle_radians = angle_radians;
+
+    return;
+    /*
+
     from_sprite.UpdateVertexBuffer(angle_radians);
     from_sprite.gl_buffer_->Bind();
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 16, 0));
@@ -92,6 +111,7 @@ void HwSprite::DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const Un
     gl_program->CheckActiveUniforms(5 + static_cast<int>(gl_program_uniforms.Size()));
 
     ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_TRIANGLES, 0, 6));
+    */
 }
 
 void HwSprite::UpdateVertexBuffer(float angle) const {

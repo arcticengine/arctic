@@ -41,6 +41,8 @@ namespace arctic {
 /// @addtogroup global_drawing
 /// @{
 
+struct HwSpriteDrawing;
+
 class HwSprite {
  private:
   std::shared_ptr<HwSpriteInstance> sprite_instance_;
@@ -200,6 +202,22 @@ class HwSprite {
   const std::shared_ptr<HwSpriteInstance> &sprite_instance() const {
     return sprite_instance_;
   }
+};
+
+struct HwSpriteDrawing {
+    float to_x_pivot;
+    float to_y_pivot;
+    float to_width;
+    float to_height;
+    HwSprite from_sprite;
+    float from_x;
+    float from_y;
+    float from_width;
+    float from_height;
+    Rgba in_color;
+    DrawBlendingMode blending_mode;
+    DrawFilterMode filter_mode;
+    float angle_radians;
 };
 
 /// @}

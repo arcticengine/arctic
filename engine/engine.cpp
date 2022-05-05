@@ -218,7 +218,7 @@ void Engine::Draw2d() {
     vf.mStride = 3*4+3*4+2*4;
     vf.mDivisor = 0;
 
-    mesh_.Init(1, 16 << 20, &vf, kRMVEDT_Polys, 1, 3);
+    mesh_.Init(1, 16 << 20, &vf, kRMVEDT_Polys, 1, 16 << 20);
   }
   mesh_.ClearGeometry();
 
@@ -272,7 +272,98 @@ void Engine::Draw2d() {
 
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
 
-  GlState::SetBlending(kDrawBlendingModePremultipliedAlphaBlend);
+
+  size_t first_idx = 0;
+  size_t idx = 0;
+  bool do_draw = false;
+  GlTexture2D* first_texture = nullptr; 
+  mesh_.ClearGeometry();
+  while(idx < hw_sprite_drawing_.size()) {
+    HwSpriteDrawing &h = hw_sprite_drawing_[idx];
+
+    GlTexture2D *texture = &h.from_sprite.sprite_instance()->texture();
+
+    if (first_texture != texture) {
+      if (first_idx != idx) {
+        do_draw = true;
+      } else {
+        first_texture = texture;
+      }
+    }
+
+    if (!do_draw) {
+      int vertex_id = mesh_.mVertexData.mVertexArray[0].mNum;
+      Vertex v;
+      v = Vertex(
+          base 
+          + tx * h.to_x_pivot / static_cast<float>(backbuffer_texture_.Width())
+          + ty * h.to_y_pivot / static_cast<float>(backbuffer_texture_.Height()),
+          n, Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f));
+      mesh_.SetVertex(0, vertex_id, &v);
+      v = Vertex(
+          base 
+          + tx * (h.to_x_pivot + h.to_width) / static_cast<float>(backbuffer_texture_.Width())
+          + ty * h.to_y_pivot / static_cast<float>(backbuffer_texture_.Height()),
+          n, Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f));
+      mesh_.SetVertex(0, vertex_id + 1, &v);
+      v = Vertex(
+          base 
+          + tx * (h.to_x_pivot + h.to_width) / static_cast<float>(backbuffer_texture_.Width())
+          + ty * (h.to_y_pivot + h.to_height) / static_cast<float>(backbuffer_texture_.Height()),
+          n, Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f));
+      mesh_.SetVertex(0, vertex_id + 2, &v);
+      v = Vertex(
+          base 
+          + tx * h.to_x_pivot / static_cast<float>(backbuffer_texture_.Width())
+          + ty * (h.to_y_pivot + h.to_height) / static_cast<float>(backbuffer_texture_.Height()),
+          n, Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f));
+      mesh_.SetVertex(0, vertex_id + 3, &v);
+      mesh_.mVertexData.mVertexArray[0].mNum += 4;
+
+      int triangle_id = mesh_.mFaceData.mIndexArray[0].mNum;
+      mesh_.SetTriangle(0, triangle_id, vertex_id + 0, vertex_id + 1, vertex_id + 2);
+      mesh_.SetTriangle(0, triangle_id + 1, vertex_id + 2, vertex_id + 3, vertex_id + 0);
+      mesh_.mFaceData.mIndexArray[0].mNum += 2;
+
+      ++idx;
+      if (idx == hw_sprite_drawing_.size()) {
+        do_draw = true;
+      }
+    }
+    if (do_draw) {
+      do_draw = false;
+      if (mesh_.mFaceData.mIndexArray[0].mNum) {
+        GlBuffer::BindDefault();
+        ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+              mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+              (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
+              mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
+        ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
+        ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+              mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+              (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
+              mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
+        ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
+
+        copy_backbuffers_program_->Bind();
+        copy_backbuffers_program_->SetUniform("s_texture", 0);
+        copy_backbuffers_program_->CheckActiveUniforms(1);
+
+        GlState::SetBlending(kDrawBlendingModeAlphaBlend);
+        first_texture->Bind(0);
+
+        ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES,
+              mesh_.mFaceData.mIndexArray[0].mNum * 3,
+              GL_UNSIGNED_INT,
+              mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
+        first_idx = idx;
+        mesh_.ClearGeometry();
+      }
+    }
+  }
+  hw_sprite_drawing_.clear();
+
+
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));

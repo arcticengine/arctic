@@ -27,11 +27,12 @@
 #include "engine/arctic_platform_def.h"
 
 #define ARCTIC_GL_CHECK_ERROR(opengl_call) do { \
-    opengl_call; int call_line = __LINE__; \
+    opengl_call; \
     GLenum error_code = glGetError(); \
     if (error_code != GL_NO_ERROR) { \
-        *Log() << "OpenGL Error: " << #opengl_call << " -> " << GlErrorToString(error_code) << " (" << error_code << ")" \
-               << "\nFile: " << __FILE__ << "\nLine: " << call_line; \
+        *Log() << "OpenGL error at " << __FILE__ << ":" << __LINE__ << " " \
+               << #opengl_call << " -> " \
+               << GlErrorToString(error_code) << " (" << error_code << ")"; \
     } \
 } while(false)
 
@@ -102,14 +103,14 @@ extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
 
 inline const char *GlErrorToString(GLenum error_code) {
     switch (error_code) {
-        case GL_INVALID_ENUM:                  return "GL_INVALID_ENUM"; break;
-        case GL_INVALID_VALUE:                 return "GL_INVALID_VALUE"; break;
-        case GL_INVALID_OPERATION:             return "GL_INVALID_OPERATION"; break;
-        case GL_STACK_OVERFLOW:                return "GL_STACK_OVERFLOW"; break;
-        case GL_STACK_UNDERFLOW:               return "GL_STACK_UNDERFLOW"; break;
-        case GL_OUT_OF_MEMORY:                 return "GL_OUT_OF_MEMORY"; break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION"; break;
-        default:                               return "UNKNOWN_ERROR_CODE"; break;
+        case GL_INVALID_ENUM: return "GL_INVALID_ENUM";
+        case GL_INVALID_VALUE: return "GL_INVALID_VALUE";
+        case GL_INVALID_OPERATION: return "GL_INVALID_OPERATION";
+        case GL_STACK_OVERFLOW: return "GL_STACK_OVERFLOW";
+        case GL_STACK_UNDERFLOW: return "GL_STACK_UNDERFLOW";
+        case GL_OUT_OF_MEMORY: return "GL_OUT_OF_MEMORY";
+        case GL_INVALID_FRAMEBUFFER_OPERATION: return "GL_INVALID_FRAMEBUFFER_OPERATION";
+        default: return "UNKNOWN_ERROR_CODE";
     }
 }
 

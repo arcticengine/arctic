@@ -34,29 +34,29 @@ using namespace arctic;  // NOLINT
 
 Font g_font;
 
-Sprite g_blood[7];
-Sprite g_floor;
-Sprite g_floor_dark;
-Sprite g_hero[2];
-Sprite g_intro_airplane;
-Sprite g_intro_pyramids;
+HwSprite g_blood[7];
+HwSprite g_floor;
+HwSprite g_floor_dark;
+HwSprite g_hero[2];
+HwSprite g_intro_airplane;
+HwSprite g_intro_pyramids;
 
-Sprite g_monster[3];
+HwSprite g_monster[3];
 
-Sprite g_stairs_down_left;
-Sprite g_stairs_down_left_dark;
-Sprite g_stairs_down_right;
-Sprite g_stairs_down_right_dark;
-Sprite g_stairs_up_left;
-Sprite g_stairs_up_left_dark;
-Sprite g_stairs_up_right;
-Sprite g_stairs_up_right_dark;
-Sprite g_stick;
-Sprite g_stone;
-Sprite g_wall;
-Sprite g_wall_dark;
+HwSprite g_stairs_down_left;
+HwSprite g_stairs_down_left_dark;
+HwSprite g_stairs_down_right;
+HwSprite g_stairs_down_right_dark;
+HwSprite g_stairs_up_left;
+HwSprite g_stairs_up_left_dark;
+HwSprite g_stairs_up_right;
+HwSprite g_stairs_up_right_dark;
+HwSprite g_stick;
+HwSprite g_stone;
+HwSprite g_wall;
+HwSprite g_wall_dark;
 
-Sprite g_empty;
+HwSprite g_empty;
 
 enum CellKind {
   kCellWall = 0,
@@ -75,7 +75,7 @@ bool IsHigh(CellKind kind) {
   }
 }
 
-Sprite& CellSprite(CellKind kind, bool is_visible) {
+HwSprite& CellSprite(CellKind kind, bool is_visible) {
   switch (kind) {
   case kCellFloor:
     if (is_visible) {
@@ -126,7 +126,7 @@ enum ItemKind {
   kItemKindCount
 };
 
-Sprite& ItemSprite(ItemKind kind) {
+HwSprite& ItemSprite(ItemKind kind) {
   switch (kind) {
   case kItemNone:
     return g_empty;
@@ -153,7 +153,7 @@ enum CreatureKind {
   kCreatureCount = 6
 };
 
-Sprite& CreatureSprite(CreatureKind kind) {
+HwSprite& CreatureSprite(CreatureKind kind) {
   if (kind >= kCreatureMonsterBegin && kind < kCreatureMonsterEnd) {
     return g_monster[kind - kCreatureMonsterBegin];
   } else if (kind >= kCreatureHeroBegin && kind < kCreatureHeroEnd) {
@@ -175,7 +175,7 @@ enum DecalKind {
   kDecalCount
 };
 
-Sprite& DecalSprite(DecalKind kind) {
+HwSprite& DecalSprite(DecalKind kind) {
   if (kind < kDecalCount) {
     return g_blood[kind];
   } else {
@@ -653,15 +653,15 @@ void Init() {
   g_blood[6].Load("data/blood_6.tga");
 
   g_floor.Load("data/floor_1.tga");
-  g_floor.UpdateOpaqueSpans();
+  //g_floor.UpdateOpaqueSpans();
   g_floor_dark.Load("data/floor_1_dark.tga");
-  g_floor_dark.UpdateOpaqueSpans();
+  //g_floor_dark.UpdateOpaqueSpans();
   g_hero[0].Load("data/hero_1.tga");
-  g_hero[0].UpdateOpaqueSpans();
+  //g_hero[0].UpdateOpaqueSpans();
   g_hero[1].Load("data/hero_2.tga");
-  g_hero[1].UpdateOpaqueSpans();
+  //g_hero[1].UpdateOpaqueSpans();
   g_intro_airplane.Load("data/intro_airplane_1.tga");
-  g_intro_airplane.UpdateOpaqueSpans();
+  //g_intro_airplane.UpdateOpaqueSpans();
   g_intro_pyramids.Load("data/intro_pyramids_1.tga");
 
   g_monster[0].Load("data/monster_0.tga");
@@ -681,9 +681,9 @@ void Init() {
   g_stone.Load("data/stone_1.tga");
   g_stone.SetPivot(Vec2Si32(12, 12));
   g_wall.Load("data/wall_1.tga");
-  g_wall.UpdateOpaqueSpans();
+  //g_wall.UpdateOpaqueSpans();
   g_wall_dark.Load("data/wall_1_dark.tga");
-  g_wall_dark.UpdateOpaqueSpans();
+  //g_wall_dark.UpdateOpaqueSpans();
 
   PlayIntro();
 
@@ -931,7 +931,7 @@ void Render() {
         Vec2Si32 scr_pos = pos * 25;
         bool is_visible = Maze(pos).is_visible;
         CellKind kind = Maze(pos).kind;
-        Sprite &sprite = CellSprite(kind, is_visible);
+        HwSprite &sprite = CellSprite(kind, is_visible);
         sprite.Draw(scr_pos);
       }
     }
@@ -942,13 +942,13 @@ void Render() {
       if (cell.is_known) {
         Vec2Si32 scr_pos = pos * 25;
         if (IsHigh(cell.kind)) {
-          Sprite& sprite = CellSprite(cell.kind, cell.is_visible);
+          HwSprite& sprite = CellSprite(cell.kind, cell.is_visible);
           sprite.Draw(scr_pos);
         }
         for (size_t idx = 0; idx < cell.items.size(); idx++) {
           if (cell.is_visible) {
             Item &item = cell.items[idx];
-            Sprite &sprite = ItemSprite(item.kind);
+            HwSprite &sprite = ItemSprite(item.kind);
             sprite.Draw(Vec2F(scr_pos + sprite.Pivot()),
               static_cast<float>(Time()));
           }
@@ -971,7 +971,7 @@ void Render() {
 
   Si32 item_x = 25;
   for (Si32 kind = kItemNone; kind < kItemKindCount; ++kind) {
-    Sprite &sprite = ItemSprite(static_cast<ItemKind>(kind));
+    HwSprite &sprite = ItemSprite(static_cast<ItemKind>(kind));
     for (Si32 idx = 0; idx < Hero().items[kind]; ++idx) {
       sprite.Draw(
           Vec2F(static_cast<float>(item_x), 0.f) + Vec2F(sprite.Pivot()),

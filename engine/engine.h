@@ -63,6 +63,7 @@ class Engine {
   HwSprite hw_backbuffer_texture_;
 
   Mesh mesh_;
+  std::vector<HwSpriteDrawing> hw_sprite_drawing_;
 
   std::chrono::high_resolution_clock::time_point start_time_;
   double time_correction_ = 0.0;
@@ -86,6 +87,10 @@ class Engine {
   std::string initial_path_;
 
  public:
+  HwSpriteDrawing *AddHwSpriteDrawing() {
+    hw_sprite_drawing_.emplace_back();
+    return &hw_sprite_drawing_.back();
+  }
   void SetArgcArgv(Si64 argc, const char **argv);
   void SetArgcArgvW(Si64 argc, const wchar_t **argv);
 
