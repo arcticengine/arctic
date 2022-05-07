@@ -26,7 +26,7 @@ Installation
 
 Clone `%https://gitlab.com/huldra/arctic.git` or download and unzip https://gitlab.com/huldra/arctic/-/archive/master/arctic-master.zip \n
 Enter the `wizard` directory.\n
-Build it with `cmake . && make` or open and build the project with Visual Stuio, XCode or CLion. \n
+Build it with `cmake . && make` or open and build the project with Visual Studio, XCode or CLion. \n
 Run the wizard and follow the instructions.
 
 A 3-minute videoguide:\n
