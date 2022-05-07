@@ -11,7 +11,7 @@ Arctic Engine returns the power to the C++ programmer and makes game development
 
 API documentation: https://huldra.gitlab.io/arctic/index.html
 
-Main discussion forum (in Russian): http://arcticengine.com/
+Main discussion forum (in Russian): https://gamedev.ru/community/arctic/forum/
 
 Windows:
 antarctica pyramids [![Windows build status](https://ci.appveyor.com/api/projects/status/69n7xslx9f3tcoy3?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
