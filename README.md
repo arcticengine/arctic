@@ -9,7 +9,7 @@ In the 80's and 90's it was possible for a programmer to make a game alone and i
 
 Arctic Engine returns the power to the C++ programmer and makes game development fun again.
 
-API documentation: https://huldra.gitlab.io/arctic/index.html
+API documentation: https://seaice.gitlab.io/arctic/index.html
 
 Main discussion forum (in Russian): https://gamedev.ru/community/arctic/forum/
 
@@ -18,7 +18,7 @@ antarctica pyramids [![Windows build status](https://ci.appveyor.com/api/project
 wizard [![Windows build status](https://ci.appveyor.com/api/projects/status/sa5a1rng94yb4w4o?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 filetest [![Windows build status](https://ci.appveyor.com/api/projects/status/7tb6wk4xdwhp4dlq?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 
-Linux: [![Linux build status](https://gitlab.com/huldra/arctic/badges/master/pipeline.svg)](https://gitlab.com/huldra/arctic/pipelines)
+Linux: [![Linux build status](https://gitlab.com/seaice/arctic/badges/master/pipeline.svg)](https://gitlab.com/seaice/arctic/pipelines)
 
 
 Scrum board: https://trello.com/b/9AnYCH7e/arctic-engine
@@ -105,7 +105,7 @@ Just execute the following commands in terminal line by line to install all the 
 ```bash
 sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libgles2-mesa-dev
 cd ~
-git clone https://gitlab.com/huldra/arctic.git
+git clone https://gitlab.com/seaice/arctic.git
 cd ~/arctic
 cd ./wizard
 cmake .
