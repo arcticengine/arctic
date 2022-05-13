@@ -2,7 +2,7 @@
 
 We love merge requests from everyone. By participating in this project, you agree to abide by the Arctic [code of conduct].
 
-[code of conduct]: https://gitlab.com/huldra/arctic/blob/master/CODE_OF_CONDUCT.md
+[code of conduct]: https://gitlab.com/seaice/arctic/blob/master/CODE_OF_CONDUCT.md
 
 
 Fork the project into your personal space on GitLab.com
@@ -17,7 +17,7 @@ Check for codestyle violations with `lint.bat` before committing.
 
 Push to your fork and [submit a merge request][mr].
 
-[mr]: https://gitlab.com/huldra/arctic/merge_requests
+[mr]: https://gitlab.com/seaice/arctic/merge_requests
 
 At this point you're waiting on us. We like to at least comment on merge requests within two days (and, typically, a few hours). We may suggest some changes or improvements or alternatives.
 
