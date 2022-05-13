@@ -24,7 +24,7 @@ Look how easy it is to use:
 Installation
 ------------
 
-Clone `%https://gitlab.com/huldra/arctic.git` or download and unzip https://gitlab.com/huldra/arctic/-/archive/master/arctic-master.zip \n
+Clone `%https://gitlab.com/seaice/arctic.git` or download and unzip https://gitlab.com/seaice/arctic/-/archive/master/arctic-master.zip \n
 Enter the `wizard` directory.\n
 Build it with `cmake . && make` or open and build the project with Visual Studio, XCode or CLion. \n
 Run the wizard and follow the instructions.
@@ -45,8 +45,8 @@ Features
 Contribute
 ----------
 
-- Issue Tracker: https://gitlab.com/huldra/arctic/-/issues
-- Source Code: https://gitlab.com/huldra/arctic/-/tree/master
+- Issue Tracker: https://gitlab.com/seaice/arctic/-/issues
+- Source Code: https://gitlab.com/seaice/arctic/-/tree/master
 
 Support
 -------
