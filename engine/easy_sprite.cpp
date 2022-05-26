@@ -929,7 +929,7 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
       " Not loading sprite.";
     return;
   }
-  const char *last_dot = strchr(file_name, '.');
+  const char *last_dot = strrchr(file_name, '.');
   if (!last_dot) {
     *Log() << "Error in Sprite::Load, file: \""
       << file_name << "\" has no extension."
@@ -970,7 +970,7 @@ void Sprite::Load(const char *file_name) {
       " Not loading sprite.";
     return;
   }
-  const char *last_dot = strchr(file_name, '.');
+  const char *last_dot = strrchr(file_name, '.');
   if (!last_dot) {
     *Log() << "Error in Sprite::Load, file: \""
       << file_name << "\" has no extension."
@@ -1018,7 +1018,7 @@ void Sprite::Save(const std::string &file_name) {
 std::vector<Ui8> Sprite::SaveToData(const char *file_name) {
   std::vector<Ui8> data;
   Check(!!file_name, "Error in Sprite::Save, file_name is nullptr.");
-  const char *last_dot = strchr(file_name, '.');
+  const char *last_dot = strrchr(file_name, '.');
   Check(!!last_dot, "Error in Sprite::Save, file_name has no extension.");
   if (strcmp(last_dot, ".tga") == 0) {
     SaveTga(sprite_instance_, &data);
