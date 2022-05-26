@@ -57,8 +57,10 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
       return false;
     }
     // Remove the BOM (Byte Order Mark) for UTF-8
-    if (original_file_[0].length() >=3 &&
-        std::memcmp(original_file_[0].c_str(), u8"\xEF\xBB\xBF", 3) == 0) {
+    if (original_file_[0].length() >= 3 &&
+        Ui8(original_file_[0][0]) == 0xEF &&
+        Ui8(original_file_[0][1]) == 0xBB &&
+        Ui8(original_file_[0][2]) == 0xBF) {
       original_file_[0] = original_file_[0].erase(0, 3);
     }
     bool is_ok = true;
@@ -103,6 +105,9 @@ bool CsvTable::ParseHeader() {
   std::stringstream ss(original_file_[0]);
   std::string item;
   while (std::getline(ss, item, sep_)) {
+    while (!item.empty() && item[item.size()-1] == '\r') {
+      item = item.substr(0, item.size() - 1);
+    }
     header_.push_back(item);
   }
   return true;
@@ -128,7 +133,11 @@ bool CsvTable::ParseContent() {
       }
     }
     // end
-    row->Push(it->substr(token_start, it->length() - token_start));
+    std::string item = it->substr(token_start, it->length() - token_start);
+    while (!item.empty() && item[item.size()-1] == '\r') {
+      item = item.substr(0, item.size() - 1);
+    }
+    row->Push(item);
 
     // if value(s) missing
     if (row->Size() != header_.size()) {
