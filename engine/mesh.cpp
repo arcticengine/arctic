@@ -211,7 +211,7 @@ int Mesh::Save(const char *name) {
 
 bool Mesh::Load(const char *name) {
   DataReader fp;
-  fp.Reset(std::move(ReadFile(name)));
+  fp.Reset(ReadFile(name));
 
   fp.ReadFloatarray2((float*)&mBBox, 6);
 

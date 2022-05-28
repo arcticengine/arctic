@@ -292,30 +292,49 @@ void Engine::Draw2d() {
     }
 
     if (!do_draw) {
+      Vec2F pivot = Vec2F(h.to_x_pivot, h.to_y_pivot);
+      float sin_a = sinf(h.angle_radians) * h.to_width / h.from_width;
+      float cos_a = cosf(h.angle_radians) * h.to_height / h.from_height;
+      Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(h.from_sprite.Pivot().x);
+      Vec2F right = Vec2F(cos_a, sin_a) *
+        static_cast<float>(h.from_sprite.Width() - h.from_sprite.Pivot().x);
+      Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(h.from_sprite.Height() - h.from_sprite.Pivot().y);
+      Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(h.from_sprite.Pivot().y);
+
+      // d c
+      // a b
+      Vec2F a(pivot + left + down);
+      Vec2F b(pivot + right + down);
+      Vec2F c(pivot + right + up);
+      Vec2F d(pivot + left + up);
+
+      Vec3F xm = tx / static_cast<float>(backbuffer_texture_.Width());
+      Vec3F ym = ty / static_cast<float>(backbuffer_texture_.Height());
+
       int vertex_id = mesh_.mVertexData.mVertexArray[0].mNum;
       Vertex v;
       v = Vertex(
           base 
-          + tx * h.to_x_pivot / static_cast<float>(backbuffer_texture_.Width())
-          + ty * h.to_y_pivot / static_cast<float>(backbuffer_texture_.Height()),
+          + a.x * xm
+          + a.y * ym,
           n, Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f));
       mesh_.SetVertex(0, vertex_id, &v);
       v = Vertex(
           base 
-          + tx * (h.to_x_pivot + h.to_width) / static_cast<float>(backbuffer_texture_.Width())
-          + ty * h.to_y_pivot / static_cast<float>(backbuffer_texture_.Height()),
+          + b.x * xm
+          + b.y * ym,
           n, Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f));
       mesh_.SetVertex(0, vertex_id + 1, &v);
       v = Vertex(
           base 
-          + tx * (h.to_x_pivot + h.to_width) / static_cast<float>(backbuffer_texture_.Width())
-          + ty * (h.to_y_pivot + h.to_height) / static_cast<float>(backbuffer_texture_.Height()),
+          + c.x * xm
+          + c.y * ym,
           n, Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f));
       mesh_.SetVertex(0, vertex_id + 2, &v);
       v = Vertex(
           base 
-          + tx * h.to_x_pivot / static_cast<float>(backbuffer_texture_.Width())
-          + ty * (h.to_y_pivot + h.to_height) / static_cast<float>(backbuffer_texture_.Height()),
+          + d.x * xm
+          + d.y * ym,
           n, Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f));
       mesh_.SetVertex(0, vertex_id + 3, &v);
       mesh_.mVertexData.mVertexArray[0].mNum += 4;
