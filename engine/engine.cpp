@@ -250,12 +250,13 @@ void Engine::Draw2d() {
   mesh_.SetTriangle(0, 0, 0, 1, 2);
   mesh_.SetTriangle(0, 1, 2, 3, 0);
 
-  glEnable(GL_SCISSOR_TEST);
+
   glScissor(
-    (1.f + base.x)*0.5f*window_width_-0.5f,
-    (1.f + base.y)*0.5f*window_height_-0.5f,
-    (tx.x)*0.5f*window_width_+0.5f,
-    (ty.y)*0.5f*window_height_+0.5f);
+    (1.f + base.x)*0.5f*window_width_,
+    (1.f + base.y)*0.5f*window_height_,
+    ceilf((tx.x)*0.5f*window_width_),
+    ceilf((ty.y)*0.5f*window_height_));
+  glEnable(GL_SCISSOR_TEST);
 
   GlBuffer::BindDefault();
   ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
@@ -389,7 +390,6 @@ void Engine::Draw2d() {
     }
   }
   hw_sprite_drawing_.clear();
-
 
 
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
