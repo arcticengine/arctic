@@ -166,11 +166,11 @@ class HwSprite {
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff)) const;
 
-  void Draw(const Vec2F to, float angle_radians,
+  void Draw(const Vec2F to, float angle_radians = 0.f,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
-  void Draw(const float to_x, const float to_y, float angle_radians,
+  void Draw(const float to_x, const float to_y, float angle_radians = 0.f,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));

@@ -83,13 +83,13 @@ std::string Engine::GetInitialPath() const {
   return initial_path_;
 }
 
-void Engine::Init(Si32 width, Si32 height) {
-  width_ = width;
-  height_ = height;
+void Engine::Init(Si32 window_width, Si32 window_height) {
+  window_width_ = window_width;
+  window_height_ = window_height;
 
   SetVSync(true);
 
-  ResizeBackbuffer(width, height);
+  ResizeBackbuffer(window_width_, window_height_);
 
   start_time_ = std::chrono::high_resolution_clock::now();
   time_correction_ = 0.0;
@@ -191,8 +191,9 @@ void Engine::Draw2d() {
   // render
 
   GlFramebuffer::BindDefault();
-  GlState::SetViewport(0, 0, width_, height_);
+  GlState::SetViewport(0, 0, window_width_, window_height_);
 
+  glDisable(GL_SCISSOR_TEST);
   ARCTIC_GL_CHECK_ERROR(glClearColor(0.f, 0.f, 0.f, 0.f));
   ARCTIC_GL_CHECK_ERROR(glClear(GL_COLOR_BUFFER_BIT));
   // draw quad
@@ -222,7 +223,7 @@ void Engine::Draw2d() {
   }
   mesh_.ClearGeometry();
 
-  float aspect = static_cast<float>(width_) / static_cast<float>(height_);
+  float aspect = static_cast<float>(window_width_) / static_cast<float>(window_height_);
   float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
     static_cast<float>(backbuffer_texture_.Height());
   float ratio = back_aspect / aspect;
@@ -248,6 +249,13 @@ void Engine::Draw2d() {
   mesh_.mFaceData.mIndexArray[0].mNum = 2;
   mesh_.SetTriangle(0, 0, 0, 1, 2);
   mesh_.SetTriangle(0, 1, 2, 3, 0);
+
+  glEnable(GL_SCISSOR_TEST);
+  glScissor(
+    (1.f + base.x)*0.5f*window_width_-0.5f,
+    (1.f + base.y)*0.5f*window_height_-0.5f,
+    (tx.x)*0.5f*window_width_+0.5f,
+    (ty.y)*0.5f*window_height_+0.5f);
 
   GlBuffer::BindDefault();
   ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
@@ -471,7 +479,7 @@ float Engine::GetRandomSFloat23() {
 
 Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
   Vec2F rel_pos = pos - Vec2F(0.5f, 0.5f);
-  float aspect = static_cast<float>(width_) / static_cast<float>(height_);
+  float aspect = static_cast<float>(window_width_) / static_cast<float>(window_height_);
   float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
     static_cast<float>(backbuffer_texture_.Height());
   float ratio = back_aspect / aspect;
@@ -489,12 +497,12 @@ Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
 }
 
 void Engine::OnWindowResize(Si32 width, Si32 height) {
-  width_ = width;
-  height_ = height;
+  window_width_ = width;
+  window_height_ = height;
 }
 
 Vec2Si32 Engine::GetWindowSize() const {
-  return Vec2Si32(width_, height_);
+  return Vec2Si32(window_width_, window_height_);
 }
 
 void Engine::SetInverseY(bool is_inverse) {

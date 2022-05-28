@@ -56,8 +56,8 @@ struct MathTables {
 
 class Engine {
  private:
-  Si32 width_ = 0;
-  Si32 height_ = 0;
+  Si32 window_width_ = 0;
+  Si32 window_height_ = 0;
   GlTexture2D gl_backbuffer_texture_;
   Sprite backbuffer_texture_;
   HwSprite hw_backbuffer_texture_;
