@@ -86,7 +86,8 @@ enum ProjectKind {
   kProjectKindTetramino = 0,
   kProjectKindHello = 1,
   kProjectKindSnake = 2,
-  kProjectKindCodingForKids = 3
+  kProjectKindCodingForKids = 3,
+  kProjectKindConquest = 4
 };
 
 enum MainMode {
@@ -297,6 +298,7 @@ bool GetProjectKind() {
   const Ui64 kHelloButton = 2;
   const Ui64 kSnakeButton = 3;
   const Ui64 kCodingForKidsButton = 4;
+  const Ui64 kConquestButton = 5;
   const Ui64 kExitButton = 100;
 
   const char *welcome = u8"The Snow Wizard\n\n"
@@ -308,7 +310,7 @@ bool GetProjectKind() {
     0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
     0, g_font, kTextOriginTop, g_palete, welcome, kAlignLeft));
   box->AddChild(textbox);
-  y = 8 + 16 + 64 + 64 + 64 + 64;
+  y = 8 + 16 + 64 + 64 + 64 + 64 + 64;
   std::shared_ptr<Button> tetramino_button = MakeButton(
     kTetraminoButton, Vec2Si32(32, y), kKeyT,
     1, "\001T\002etramino game project", Vec2Si32(box->GetSize().x - 64, 48));
@@ -332,6 +334,12 @@ bool GetProjectKind() {
       Vec2Si32(box->GetSize().x - 64, 48));
     box->AddChild(coding_for_kids_button);
   y -= 64;
+  std::shared_ptr<Button> conquest_button = MakeButton(
+      kConquestButton, Vec2Si32(32, y), kKeyT,
+      4, "\001T\002urn-based strategy project",
+      Vec2Si32(box->GetSize().x - 64, 48));
+    box->AddChild(conquest_button);
+  y -= 64;
   std::shared_ptr<Button> exit_button = MakeButton(
     kExitButton, Vec2Si32(32, y), kKeyE,
     100, "\001E\002xit",
@@ -351,6 +359,9 @@ bool GetProjectKind() {
     return true;
   } else if (action == kCodingForKidsButton) {
     g_project_kind = kProjectKindCodingForKids;
+    return true;
+  } else if (action == kConquestButton) {
+    g_project_kind = kProjectKindConquest;
     return true;
   }
   return false;
@@ -649,9 +660,23 @@ bool ShowProgress() {
           "app_icon.ico"
           , "data/arctic_one_bmf_0.tga"
           , "data/arctic_one_bmf.fnt"
-          , "data/block_1.tga"
-          , "data/block_2.tga"
         };
+        if (g_project_kind == kProjectKindConquest) {
+          files.push_back("data/blue_bow.tga");
+          files.push_back("data/blue_city.tga");
+          files.push_back("data/blue_sword.tga");
+          files.push_back("data/frame.tga");
+          files.push_back("data/grass.tga");
+          files.push_back("data/grey_city.tga");
+          files.push_back("data/hills.tga");
+          files.push_back("data/red_bow.tga");
+          files.push_back("data/red_city.tga");
+          files.push_back("data/red_sword.tga");
+          files.push_back("data/water.tga");
+        } else {
+          files.push_back("data/block_1.tga");
+          files.push_back("data/block_2.tga");
+        }
         for (size_t idx = 0; idx < files.size(); ++idx) {
           auto data = ReadFile((g_template + "/" + files[idx]).c_str());
           std::string name = files[idx];
@@ -697,6 +722,9 @@ bool ShowProgress() {
           case kProjectKindCodingForKids:
             PatchAndCopyTemplateFile("main_coding_for_kids.cpp", "main.cpp");
             PatchAndCopyTemplateFile("code.inc.h", "code.inc.h");
+            break;
+          case kProjectKindConquest:
+            PatchAndCopyTemplateFile("main_conquest.cpp", "main.cpp");
             break;
           default:
           case kProjectKindHello:
