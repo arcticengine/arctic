@@ -27,6 +27,7 @@
 
 #ifdef ARCTIC_PLATFORM_MACOSX
 
+#define GL_SILENCE_DEPRECATION
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/OpenGL.h>
 #import <GameController/GameController.h>

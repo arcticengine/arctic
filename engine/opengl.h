@@ -26,6 +26,8 @@
 
 #include "engine/arctic_platform_def.h"
 
+#define GL_SILENCE_DEPRECATION
+
 #define ARCTIC_GL_CHECK_ERROR(opengl_call) do { \
     opengl_call; \
     GLenum error_code = glGetError(); \
