@@ -4,7 +4,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2017 - 2021 Huldra
+// Copyright (c) 2017 - 2022 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -816,7 +816,7 @@ bool GetCurrentPath(std::string *out_dir) {
 }
 
 bool GetDirectoryEntries(const char *path,
-     std::deque<DirectoryEntry> *out_entries) {
+     std::vector<DirectoryEntry> *out_entries) {
   Check(out_entries,
         "GetDirectoryEntries Error. Unexpected nullptr in out_entries!");
   out_entries->clear();

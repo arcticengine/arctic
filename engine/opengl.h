@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 - 2019 Huldra
+// Copyright (c) 2016 - 2022 Huldra
 // Copyright (c) 2021 Vlad2001_MFS
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -26,7 +26,9 @@
 
 #include "engine/arctic_platform_def.h"
 
+#ifndef GL_SILENCE_DEPRECATION
 #define GL_SILENCE_DEPRECATION
+#endif
 
 #define ARCTIC_GL_CHECK_ERROR(opengl_call) do { \
     opengl_call; \

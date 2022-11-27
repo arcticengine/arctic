@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 - 2019 Huldra
+// Copyright (c) 2016 - 2022 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -443,7 +443,7 @@ bool GetProjectName() {
 std::deque<std::string> GetDirectoryProjects(std::string project_directory) {
   std::deque<std::string> candidates;
   // List selected folder content
-  std::deque<DirectoryEntry> entries;
+  std::vector<DirectoryEntry> entries;
   GetDirectoryEntries(project_directory.c_str(), &entries);
 
   // find *.xcodeproj folder and *.vcxproj files
@@ -469,7 +469,7 @@ std::deque<std::string> GetDirectoryProjects(std::string project_directory) {
   return candidates;
 }
 
-void GatherEntries(std::deque<DirectoryEntry> *in_out_entries) {
+void GatherEntries(std::vector<DirectoryEntry> *in_out_entries) {
   arctic::GetDirectoryEntries(g_project_directory.c_str(), in_out_entries);
   if ((*in_out_entries)[0].title == ".") {
     in_out_entries->erase(in_out_entries->begin());
@@ -481,7 +481,7 @@ void GatherEntries(std::deque<DirectoryEntry> *in_out_entries) {
 }
 
 bool SelectProject() {
-  std::deque<DirectoryEntry> entries;
+  std::vector<DirectoryEntry> entries;
   Ui32 selected_idx = 0;
   g_project_directory = g_current_directory;
   GatherEntries(&entries);
@@ -766,7 +766,7 @@ bool ShowProgress() {
 }
 
 bool ShowUpdateProgress() {
-  std::deque<DirectoryEntry> engine_entries;
+  std::vector<DirectoryEntry> engine_entries;
   Si32 step = 0;
   char text[1 << 20];
   while (!IsKeyDownward(kKeyEscape)) {

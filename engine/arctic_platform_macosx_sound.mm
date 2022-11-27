@@ -3,7 +3,7 @@
 
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2021 Huldra
+// Copyright (c) 2017 - 2022 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 
 #ifdef ARCTIC_PLATFORM_MACOSX
 
-#import <Cocoa/Cocoa.h>
+#import <AppKit/AppKit.h>
 
 #include <AudioToolbox/AudioToolbox.h>
 

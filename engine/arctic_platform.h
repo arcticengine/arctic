@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 - 2018 Huldra
+// Copyright (c) 2016 - 2022 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
 #ifndef ENGINE_ARCTIC_PLATFORM_H_
 #define ENGINE_ARCTIC_PLATFORM_H_
 
-#include <deque>
+#include <vector>
 #include <string>
 #include "engine/arctic_types.h"
 
@@ -102,11 +102,11 @@ bool GetCurrentPath(std::string *out_dir);
 
 /// @brief List directory entries
 /// @param [in] path Path to a direcotry
-/// @param [out] out_entries Address of a deque to fill
+/// @param [out] out_entries Address of a vector to fill
 /// @return true if the path is a directory and its entries are
 /// successfuly listed, false otherwise
 bool GetDirectoryEntries(const char *path,
-    std::deque<DirectoryEntry> *out_entries);
+    std::vector<DirectoryEntry> *out_entries);
 
 /// @brief Transforms the path into it's canonical form
 /// @param [in] path Path to transform
