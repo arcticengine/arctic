@@ -101,8 +101,21 @@ ConnectionSocket::~ConnectionSocket() {
     last_error_ = "Error: out_size argument of Write is nullptr.";
     return kSocketError;
   }
-  *out_size = recv((SOCKET)handle_.win, buffer, static_cast<int>(length), NULL);
-  return kSocketOk;
+  int res = recv((SOCKET)handle_.win, buffer, static_cast<int>(length), NULL);
+  if (res > 0) {
+    *out_size = res;
+    return kSocketOk;
+  }
+  if (res == 0) {
+    return kSocketConnectionReset;
+  }
+  if (res == SOCKET_ERROR) {
+    if (WSAGetLastError() == WSAEWOULDBLOCK) {
+      return kSocketOk;
+    }
+    return kSocketError;
+  }
+  return kSocketError;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::Write(const char* buffer,
