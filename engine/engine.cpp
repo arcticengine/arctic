@@ -51,7 +51,7 @@ void MathTables::Init() {
   }
 }
 
-void Engine::SetArgcArgv(Si64 argc, const char **argv) {
+void Engine::SetArgcArgv(Si32 argc, const char **argv) {
   cmd_line_arguments_.resize(static_cast<size_t>(argc));
   cmd_line_argv_.resize(static_cast<size_t>(argc));
   for (size_t i = 0; i < static_cast<size_t>(argc); ++i) {
@@ -60,7 +60,7 @@ void Engine::SetArgcArgv(Si64 argc, const char **argv) {
   }
 }
 
-void Engine::SetArgcArgvW(Si64 argc, const wchar_t **argv) {
+void Engine::SetArgcArgvW(Si32 argc, const wchar_t **argv) {
   cmd_line_arguments_.resize(static_cast<size_t>(argc));
   cmd_line_argv_.resize(static_cast<size_t>(argc));
   for (size_t i = 0; i < static_cast<size_t>(argc); ++i) {

@@ -94,14 +94,14 @@ class Engine {
     hw_sprite_drawing_.emplace_back();
     return &hw_sprite_drawing_.back();
   }
-  void SetArgcArgv(Si64 argc, const char **argv);
-  void SetArgcArgvW(Si64 argc, const wchar_t **argv);
+  void SetArgcArgv(Si32 argc, const char **argv);
+  void SetArgcArgvW(Si32 argc, const wchar_t **argv);
 
   void SetInitialPath(const std::string &initial_path);
   std::string GetInitialPath() const;
 
-  Si64 GetArgc() const {
-    return static_cast<Si64>(cmd_line_arguments_.size());
+  Si32 GetArgc() const {
+    return static_cast<Si32>(cmd_line_arguments_.size());
   }
   const char *const * GetArgv() const {
     return cmd_line_argv_.data();
