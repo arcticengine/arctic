@@ -316,8 +316,9 @@ std::string Option::HelpDoc() {
   auto arg_buf = std::max(h.length() + 1, static_cast<unsigned long>(25));
   auto help_str = utils::StitchStr(utils::SplitStr(help_), (Ui32)arg_buf + 50,
                                     std::string(arg_buf, ' '));
-  char char_buf[h.length() + help_str.length() + 100];
-  sprintf(char_buf, ("%-" + std::to_string(arg_buf) + "s%s\n").c_str(),
+  size_t char_buf_size = h.length() + help_str.length() + 100;
+  char char_buf[char_buf_size];
+  snprintf(char_buf, char_buf_size, ("%-" + std::to_string(arg_buf) + "s%s\n").c_str(),
           h.c_str(), help_str.substr(arg_buf).c_str());
   return std::string(char_buf);
 }
