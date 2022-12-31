@@ -136,7 +136,10 @@ ConnectionSocket::~ConnectionSocket() {
     last_error_ = "Error: out_size argument of Write is nullptr.";
     return kSocketError;
   }
-  auto result = send(handle_.nix, buffer, length, 0);
+  if (handle_.nix == -1) {
+    return kSocketError;
+  }
+  auto result = send(handle_.nix, buffer, length, MSG_NOSIGNAL);
   if (result == -1) {
     if (errno == EAGAIN) {
       *out_size = 0;
@@ -152,6 +155,11 @@ ConnectionSocket::~ConnectionSocket() {
       tmp.nix = handle_.nix;
       handle_.nix = -1;
       return kSocketConnectionReset;
+    }
+    {
+      SocketHandle tmp;
+      tmp.nix = handle_.nix;
+      handle_.nix = -1;
     }
     return kSocketError;
   }
