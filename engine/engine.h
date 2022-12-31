@@ -76,10 +76,13 @@ class Engine {
 
 
   bool is_inverse_y_ = false;
+  bool is_sw_renderer_enabled_ = true;
 
   MathTables math_tables_;
 
   std::shared_ptr<GlProgram> copy_backbuffers_program_;
+  std::shared_ptr<GlProgram> colorize_program_;
+  std::shared_ptr<GlProgram> solid_color_program_;
   std::shared_ptr<GlProgram> default_sprite_program_;
 
   std::vector<const char*> cmd_line_argv_;

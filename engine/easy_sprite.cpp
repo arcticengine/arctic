@@ -484,7 +484,7 @@ void DrawTriangle(Sprite to_sprite,
           Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
           Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
-          ((g + g2) & 0x0000ff00ul);
+          ((g + g2) & 0x0000ff00ul) | (m2 << 24);
         }
       } else if (kBlendingMode == kDrawBlendingModePremultipliedAlphaBlend) {
         if (color.a == 255) {
@@ -503,7 +503,7 @@ void DrawTriangle(Sprite to_sprite,
           Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
           Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8u;
           Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8u;
-          to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2).rgba;
+          to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2, 255).rgba;
         } else if (ca) {
           Ui32 m = 255 - ca;
           Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
@@ -623,7 +623,7 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
             Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
             to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
-            ((g + g2) & 0x0000ff00ul);
+            ((g + g2) & 0x0000ff00ul) | (m2 << 24);
           }
         } else if (kBlendingMode == kDrawBlendingModePremultipliedAlphaBlend) {
           if (color.a == 255) {
@@ -642,7 +642,7 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 r2 = (Ui32(color.r) * (Ui32(in_color.r) + 1)) >> 8u;
             Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) >> 8u;
             Ui32 b2 = (Ui32(color.b) * (Ui32(in_color.b) + 1)) >> 8u;
-            to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2).rgba;
+            to_rgba->rgba = Rgba((Ui8)r2, (Ui8)g2, (Ui8)b2, 255).rgba;
           } else if (ca) {
             Ui32 m = 255 - ca;
             Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
@@ -653,7 +653,7 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
             Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
 
-            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul);
+            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul)| (ca <<24);;
           }
         } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
           Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
@@ -776,7 +776,7 @@ void DrawSprite(Sprite *to_sprite,
           Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
           Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
           to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) |
-            ((g + g2) & 0x0000ff00ul);
+            ((g + g2) & 0x0000ff00ul) | (m2 << 24);
         }
       } else if (kBlendingMode == kDrawBlendingModePremultipliedAlphaBlend) {
         if (color.a == 255) {
@@ -796,7 +796,7 @@ void DrawSprite(Sprite *to_sprite,
           Ui32 g2 = (Ui32(color.g) * (Ui32(in_color.g) + 1)) & 0xff00u;
           Ui32 b2 = ((Ui32(color.b) * (Ui32(in_color.b) + 1)) << 8u)
             & 0xff0000ull;
-          to_rgba->rgba = r2 | g2 | b2;
+          to_rgba->rgba = r2 | g2 | b2 | 0xff000000ul;
         } else if (ca) {
           Ui32 m = 255 - ca;
           Ui32 rb = (to_rgba->rgba & 0x00ff00fful) * m;
@@ -807,7 +807,7 @@ void DrawSprite(Sprite *to_sprite,
           Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
           Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
 
-          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul);
+          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul) | (ca <<24);
         }
       } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
         Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;

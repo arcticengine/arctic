@@ -129,6 +129,64 @@ void main() {
   copy_backbuffers_program_ = std::make_shared<GlProgram>();
   copy_backbuffers_program_->Create(copy_backbuffers_vShaderStr, copy_backbuffers_fShaderStr);
 
+  const char colorize_vShaderStr[] = R"SHADER(
+#ifdef GL_ES
+#endif
+attribute vec3 vPosition;
+attribute vec2 vTex;
+varying vec2 v_texCoord;
+void main() {
+  gl_Position = vec4(vPosition, 1.0);
+  v_texCoord = vTex;
+}
+)SHADER";
+
+const char colorize_fShaderStr[] = R"SHADER(
+#ifdef GL_ES
+precision mediump float;
+#endif
+varying vec2 v_texCoord;
+uniform sampler2D s_texture;
+uniform vec4 in_color;
+void main() {
+  vec4 c = texture2D(s_texture, v_texCoord);
+  float ca = c.a * in_color.a;
+  vec4 res;
+  res.rgb = c.rgb * in_color.rgb;
+  res.a = ca;
+  gl_FragColor = res;
+}
+)SHADER";
+
+  colorize_program_ = std::make_shared<GlProgram>();
+  colorize_program_->Create(colorize_vShaderStr, colorize_fShaderStr);
+
+  const char solid_color_vShaderStr[] = R"SHADER(
+#ifdef GL_ES
+#endif
+attribute vec3 vPosition;
+attribute vec2 vTex;
+varying vec2 v_texCoord;
+void main() {
+  gl_Position = vec4(vPosition, 1.0);
+  v_texCoord = vTex;
+}
+)SHADER";
+
+const char solid_color_fShaderStr[] = R"SHADER(
+#ifdef GL_ES
+precision mediump float;
+#endif
+varying vec2 v_texCoord;
+uniform vec4 in_color;
+void main() {
+  gl_FragColor = in_color;
+}
+)SHADER";
+
+  solid_color_program_ = std::make_shared<GlProgram>();
+  solid_color_program_->Create(solid_color_vShaderStr, solid_color_fShaderStr);
+
   const char default_sprite_vShaderStr[] = R"SHADER(
 #ifdef GL_ES
 precision mediump float;
@@ -235,20 +293,7 @@ void Engine::Draw2d() {
   Vec3F ty = Vec3F(0.f, 2.f * y_aspect, 0.f);
   Vec3F n = Vec3F(0.f, 0.f, 1.f);
 
-  mesh_.mVertexData.mVertexArray[0].mNum = 4;
-  Vertex v;
-  v = Vertex(base, n, Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f));
-  mesh_.SetVertex(0, 0, &v);
-  v = Vertex(base + tx, n, Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f));
-  mesh_.SetVertex(0, 1, &v);
-  v = Vertex(base + ty + tx, n, Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f));
-  mesh_.SetVertex(0, 2, &v);
-  v = Vertex(base + ty, n, Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f));
-  mesh_.SetVertex(0, 3, &v);
 
-  mesh_.mFaceData.mIndexArray[0].mNum = 2;
-  mesh_.SetTriangle(0, 0, 0, 1, 2);
-  mesh_.SetTriangle(0, 1, 2, 3, 0);
 
 
   glScissor(
@@ -258,7 +303,8 @@ void Engine::Draw2d() {
     ceilf((ty.y)*0.5f*window_height_));
   glEnable(GL_SCISSOR_TEST);
 
-  GlBuffer::BindDefault();
+
+  /*GlBuffer::BindDefault();
   ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
     mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
     (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
@@ -275,28 +321,29 @@ void Engine::Draw2d() {
   copy_backbuffers_program_->CheckActiveUniforms(1);
 
   GlState::SetBlending(kDrawBlendingModeCopyRgba);
-  
+
   gl_backbuffer_texture_.Bind(0);
-  /*ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, indices_, GL_UNSIGNED_INT, visible_indices_.data()));*/
-
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
-
+*/
 
   size_t first_idx = 0;
   size_t idx = 0;
   bool do_draw = false;
-  GlTexture2D* first_texture = nullptr; 
+  GlTexture2D* first_texture = nullptr;
+  DrawBlendingMode first_blending_mode = kDrawBlendingModeCopyRgba;
+  Rgba first_in_color = Rgba(0, 0, 0, 0);
   mesh_.ClearGeometry();
+
   while(idx < hw_sprite_drawing_.size()) {
     HwSpriteDrawing &h = hw_sprite_drawing_[idx];
-
     GlTexture2D *texture = &h.from_sprite.sprite_instance()->texture();
-
-    if (first_texture != texture) {
+    if (first_texture != texture || first_blending_mode != h.blending_mode || first_in_color != h.in_color) {
       if (first_idx != idx) {
         do_draw = true;
       } else {
         first_texture = texture;
+        first_blending_mode = h.blending_mode;
+        first_in_color = h.in_color;
       }
     }
 
@@ -373,11 +420,34 @@ void Engine::Draw2d() {
               mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
         ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
-        copy_backbuffers_program_->Bind();
-        copy_backbuffers_program_->SetUniform("s_texture", 0);
-        copy_backbuffers_program_->CheckActiveUniforms(1);
+        GlProgram *program = copy_backbuffers_program_.get();
+        if (first_blending_mode == kDrawBlendingModeColorize) {
+          program = colorize_program_.get();
+        } else if (first_blending_mode == kDrawBlendingModeSolidColor) {
+          program = solid_color_program_.get();
+        }
+        program->Bind();
 
-        GlState::SetBlending(kDrawBlendingModeAlphaBlend);
+        if (first_blending_mode == kDrawBlendingModeSolidColor) {
+          program->SetUniform("in_color", Vec4F(first_in_color.r*(1.f/255.f),
+                                                first_in_color.g*(1.f/255.f),
+                                                first_in_color.b*(1.f/255.f),
+                                                first_in_color.a*(1.f/255.f)));
+          program->CheckActiveUniforms(1);
+        } else {
+          program->SetUniform("s_texture", 0);
+          if (first_blending_mode == kDrawBlendingModeColorize) {
+            program->SetUniform("in_color", Vec4F(first_in_color.r*(1.f/255.f),
+                                                  first_in_color.g*(1.f/255.f),
+                                                  first_in_color.b*(1.f/255.f),
+                                                  first_in_color.a*(1.f/255.f)));
+            program->CheckActiveUniforms(2);
+          } else {
+            program->CheckActiveUniforms(1);
+          }
+        }
+
+        GlState::SetBlending(first_blending_mode);
         first_texture->Bind(0);
 
         ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES,
@@ -391,10 +461,52 @@ void Engine::Draw2d() {
   }
   hw_sprite_drawing_.clear();
 
+  if (is_sw_renderer_enabled_) {
+    mesh_.mVertexData.mVertexArray[0].mNum = 4;
+    Vertex v;
+    v = Vertex(base, n, Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f));
+    mesh_.SetVertex(0, 0, &v);
+    v = Vertex(base + tx, n, Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f));
+    mesh_.SetVertex(0, 1, &v);
+    v = Vertex(base + ty + tx, n, Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f));
+    mesh_.SetVertex(0, 2, &v);
+    v = Vertex(base + ty, n, Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f));
+    mesh_.SetVertex(0, 3, &v);
 
+    mesh_.mFaceData.mIndexArray[0].mNum = 2;
+    mesh_.SetTriangle(0, 0, 0, 1, 2);
+    mesh_.SetTriangle(0, 1, 2, 3, 0);
+
+    GlBuffer::BindDefault();
+    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+                                                mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+                                                (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
+                                                mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
+    ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
+    ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+                                                mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+                                                (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
+                                                mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
+    ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
+
+    copy_backbuffers_program_->Bind();
+    copy_backbuffers_program_->SetUniform("s_texture", 0);
+    copy_backbuffers_program_->CheckActiveUniforms(1);
+
+
+    GlState::SetBlending(kDrawBlendingModePremultipliedAlphaBlend);
+
+    gl_backbuffer_texture_.Bind(0);
+    ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
+  }
+
+  /*copy_backbuffers_program_->Bind();
+  copy_backbuffers_program_->SetUniform("s_texture", 0);
+  copy_backbuffers_program_->CheckActiveUniforms(1);
+  GlState::SetBlending(kDrawBlendingModeAlphaBlend);
   hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
   ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
-
+*/
   Swap();
 }
 

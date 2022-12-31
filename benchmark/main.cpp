@@ -56,17 +56,17 @@ std::vector<Tile> tiles;
 void Init() {
   ResizeScreen(WND_WIDTH, WND_HEIGHT);
 
-  g_hw_blocks[1].Load("data/block_1.tga");
-  g_hw_blocks[2].Load("data/block_2.tga");
-  g_hw_blocks[0].Create(g_hw_blocks[1].Size());
-  g_hw_blocks[1].Draw(g_hw_blocks[0], 0, 0, kDrawBlendingModeColorize, kFilterNearest, Rgba(255, 255, 255, 160));
-  g_hw_blocks[1].SetPivot(g_hw_blocks[1].Size() / 2 + Vec2Si32(1, 1));
-
   g_sw_blocks[1].Load("data/block_1.tga");
   g_sw_blocks[2].Load("data/block_2.tga");
   g_sw_blocks[0].Create(g_sw_blocks[1].Size());
   g_sw_blocks[1].Draw(g_sw_blocks[0], 0, 0, kDrawBlendingModeColorize, kFilterNearest, Rgba(255, 255, 255, 160));
   g_sw_blocks[1].SetPivot(g_sw_blocks[1].Size() / 2 + Vec2Si32(1, 1));
+
+  g_hw_blocks[1].Load("data/block_1.tga");
+  g_hw_blocks[2].Load("data/block_2.tga");
+  g_hw_blocks[0].LoadFromSoftwareSprite(g_sw_blocks[0]);
+  g_hw_blocks[1].SetPivot(g_hw_blocks[1].Size() / 2 + Vec2Si32(1, 1));
+
   
   g_font.Load("data/arctic_one_bmf.fnt");
 
@@ -263,6 +263,8 @@ void Render() {
   snprintf(fps_text, sizeof(fps_text), u8"Mode: %s FPS: %.1F",
       g_is_hw_enabled ? "Hardware" : "Sowfware", g_fps);
   g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop);
+
+
 
   ShowFrame();
 }
