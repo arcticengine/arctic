@@ -498,7 +498,7 @@ void PlayIntro() {
     g_intro_pyramids.Draw(pyramids_pos);
     if (frame < duration1) {
       Vec2F airplane_pos = Vec2F(airplane_pos_begin) +
-        Vec2F(airplane_pos_end - airplane_pos_begin) * float(frame) / duration1;
+        Vec2F(airplane_pos_end - airplane_pos_begin) * float(frame) / float(duration1);
       g_intro_airplane.Draw(airplane_pos);
     }
 
