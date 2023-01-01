@@ -7,7 +7,7 @@ using namespace arctic;  // NOLINT
 
 void EasyMain() {
   std::stringstream str;
-  std::deque<DirectoryEntry> list;
+  std::vector<DirectoryEntry> list;
   std::string canonic = CanonicalizePath("./..");
   if (canonic.empty()) {
     str << "empty canonic\n";

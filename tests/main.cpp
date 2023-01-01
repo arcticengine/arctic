@@ -296,7 +296,7 @@ void test_rgb() {
 }
 
 void test_file_operations() {
-  std::deque<DirectoryEntry> list;
+  std::vector<DirectoryEntry> list;
   std::string canonic = arctic::CanonicalizePath("./..");
   
   std::string arctic_engine_dir = "../engine";

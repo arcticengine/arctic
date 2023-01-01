@@ -297,10 +297,10 @@ void Engine::Draw2d() {
 
 
   glScissor(
-    (1.f + base.x)*0.5f*window_width_,
-    (1.f + base.y)*0.5f*window_height_,
-    ceilf((tx.x)*0.5f*window_width_),
-    ceilf((ty.y)*0.5f*window_height_));
+    GLint((1.f + base.x)*0.5f*window_width_),
+    GLint((1.f + base.y)*0.5f*window_height_),
+    GLsizei(ceilf((tx.x)*0.5f*window_width_)),
+    GLsizei(ceilf((ty.y)*0.5f*window_height_)));
   glEnable(GL_SCISSOR_TEST);
 
 
