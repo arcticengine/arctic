@@ -604,6 +604,9 @@ void LoadGl() {
   LoadGlFunction("glBufferSubData", &glBufferSubData);
 }
 
+void HeadlessPlatformInit() {
+}
+
 void CreateMainWindow(SystemInfo *system_info) {
   char title_bar_text[] = {"Arctic Engine"};
   char window_class_name[] = {"ArcticEngineWindowClass"};
@@ -946,7 +949,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   arctic::StartLogger();
   arctic::SoundPlayer soundPlayer;
   soundPlayer.Initialize();
-  arctic::CreateMainWindow(instance_handle, &arctic::g_system_info);
+  arctic::CreateMainWindow(&arctic::g_system_info);
   arctic::GetEngine()->SetArgcArgvW(num_args,
     const_cast<const wchar_t **>(args));
 

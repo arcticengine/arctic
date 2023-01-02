@@ -106,6 +106,7 @@ class Engine {
   const char *const * GetArgv() const {
     return cmd_line_argv_.data();
   }
+  void HeadlessInit();
   void Init(Si32 width, Si32 height);
   void Draw2d();
   Sprite &GetBackbuffer() {

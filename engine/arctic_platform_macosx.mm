@@ -672,6 +672,19 @@ void CreateMainMenu() {
   }
 }
 
+void HeadlessPlatformInit() {
+  @autoreleasepool {
+    [NSApplication sharedApplication];
+    g_app = NSApp;
+
+    g_app_delegate = [ArcticAppDelegate new];
+    [NSApp setDelegate:
+      ((id<NSApplicationDelegate> _Nullable)g_app_delegate)];
+
+    [NSApp finishLaunching];
+  }
+}
+
 void CreateMainWindow(SystemInfo *system_info) {
   @autoreleasepool {
     [NSApplication sharedApplication];

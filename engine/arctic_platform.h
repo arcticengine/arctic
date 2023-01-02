@@ -49,6 +49,11 @@ struct DirectoryEntry {
 /// @param exit_code Exit code returned to the OS
 void ExitProgram(Si32 exit_code = 0);
 
+#ifdef ARCTIC_NO_MAIN
+/// @brief Initializes the platform code for headless-mode use
+void HeadlessPlatformInit();
+#endif
+
 /// @brief Swaps virtual frontbuffer and backbuffer and updates user input
 void Swap();
 

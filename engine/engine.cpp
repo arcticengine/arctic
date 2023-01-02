@@ -83,14 +83,7 @@ std::string Engine::GetInitialPath() const {
   return initial_path_;
 }
 
-void Engine::Init(Si32 window_width, Si32 window_height) {
-  window_width_ = window_width;
-  window_height_ = window_height;
-
-  SetVSync(true);
-
-  ResizeBackbuffer(window_width_, window_height_);
-
+void Engine::HeadlessInit() {
   start_time_ = std::chrono::high_resolution_clock::now();
   time_correction_ = 0.0;
   last_time_ = 0.0;
@@ -102,6 +95,17 @@ void Engine::Init(Si32 window_width, Si32 window_height) {
   rnd_64_.seed(static_cast<Ui64>(ms + 3));
 
   math_tables_.Init();
+}
+
+void Engine::Init(Si32 window_width, Si32 window_height) {
+  window_width_ = window_width;
+  window_height_ = window_height;
+
+  SetVSync(true);
+
+  ResizeBackbuffer(window_width_, window_height_);
+
+  HeadlessInit();
 
     const char copy_backbuffers_vShaderStr[] = R"SHADER(
 #ifdef GL_ES

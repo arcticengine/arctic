@@ -87,6 +87,8 @@ const EGLint context_attributes[] = {
 EGLDisplay g_egl_display;
 EGLSurface g_egl_surface;
 
+void HeadlessPlatformInit() {
+}
 
 void CreateMainWindow(SystemInfo *system_info) {
   const char *title = "Arctic Engine";

@@ -82,6 +82,9 @@ void PumpMessages();
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*,
     GLXFBConfig, GLXContext, Bool, const int*);
 
+void HeadlessPlatformInit() {
+}
+
 void CreateMainWindow(SystemInfo *system_info) {
   const char *title = "Arctic Engine";
 
