@@ -239,6 +239,12 @@ void SetCursorVisible(bool/* is_enable*/) {
   return;
 }
 
+std::string PrepareInitialPath() {
+  std::string initial_path;
+  arctic::GetCurrentPath(&initial_path);
+  return initial_path;
+}
+
 }  // namespace arctic
 
 #ifndef ARCTIC_NO_MAIN
@@ -247,16 +253,14 @@ namespace arctic {
 }
 
 int main(int argc, char **argv) {
+  std::string initial_path = arctic::PrepareInitialPath();
   arctic::SystemInfo system_info;
 
   arctic::StartLogger();
   arctic::g_sound_player.Initialize();
   CreateMainWindow(&system_info);
-  arctic::GetEngine();
   arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
-  std::string initial_path;
-  arctic::GetCurrentPath(&initial_path);
   arctic::GetEngine()->SetInitialPath(initial_path);
   arctic::GetEngine()->Init(system_info.screen_width,
       system_info.screen_height);

@@ -65,6 +65,10 @@ extern jmp_buf arctic_jmp_env;
 #endif  // ARCTIC_NO_HARD_EXIT
 
 namespace arctic {
+  struct SystemInfo {
+    Si32 screen_width;
+    Si32 screen_height;
+  };
   KeyCode TranslateKeyCode(Ui32 key_unicode);
   void PushInputKey(KeyCode key, bool is_down, std::string characters);
 }  // namespace arctic
@@ -668,7 +672,7 @@ void CreateMainMenu() {
   }
 }
 
-void CreateMainWindow() {
+void CreateMainWindow(SystemInfo *system_info) {
   @autoreleasepool {
     [NSApplication sharedApplication];
     g_app = NSApp;
@@ -741,6 +745,9 @@ void CreateMainWindow() {
       }
     }
 
+    NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+    system_info->screen_width = (arctic::Si32)rect.size.width;
+    system_info->screen_height = (arctic::Si32)rect.size.height;
   }
 }
 
@@ -997,6 +1004,16 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   return res.str();
 }
 
+std::string PrepareInitialPath() {
+  std::string initial_path([[[NSBundle mainBundle] bundlePath] UTF8String]);
+  initial_path += "/..";
+  initial_path = arctic::CanonicalizePath(initial_path.c_str());
+  [[NSFileManager defaultManager] changeCurrentDirectoryPath:
+    [NSString stringWithFormat:@"%@/Contents/Resources",
+    [[NSBundle mainBundle] bundlePath]]];
+  return initial_path;
+}
+
 }  // namespace arctic
 
 #ifndef ARCTIC_NO_MAIN
@@ -1005,26 +1022,19 @@ namespace arctic {
 }
 
 int main(int argc, char **argv) {
-  std::string initial_path([[[NSBundle mainBundle] bundlePath] UTF8String]);
-  initial_path += "/..";
-  initial_path = arctic::CanonicalizePath(initial_path.c_str());
-  [[NSFileManager defaultManager] changeCurrentDirectoryPath:
-    [NSString stringWithFormat:@"%@/Contents/Resources",
-    [[NSBundle mainBundle] bundlePath]]];
+  arctic::SystemInfo system_info;
 
+  std::string initial_path = arctic::PrepareInitialPath();
   arctic::StartLogger();
-  arctic::CreateMainWindow();
-
-  arctic::GetEngine()->SetArgcArgv(argc,
-    const_cast<const char **>(argv));
-  arctic::GetEngine()->SetInitialPath(initial_path);
-
-  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-  arctic::GetEngine()->Init((arctic::Si32)rect.size.width,
-                                  (arctic::Si32)rect.size.height);
-
   g_mixer = new arctic::SoundPlayer;
   g_mixer->Initialize();
+  arctic::CreateMainWindow(&system_info);
+  arctic::GetEngine()->SetArgcArgv(argc,
+    const_cast<const char **>(argv));
+
+  arctic::GetEngine()->SetInitialPath(initial_path);
+  arctic::GetEngine()->Init(system_info.screen_width,
+    system_info.screen_height);
 
   arctic::PumpMessages();
 

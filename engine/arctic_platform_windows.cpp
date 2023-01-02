@@ -220,6 +220,7 @@ static const PIXELFORMATDESCRIPTOR pfd = {
 };
 
 struct SystemInfo {
+  HINSTANCE instance_handle;
   HWND window_handle;
   HWND inner_window_handle;
   Si32 screen_width;
@@ -603,8 +604,7 @@ void LoadGl() {
   LoadGlFunction("glBufferSubData", &glBufferSubData);
 }
 
-bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
-  SystemInfo *system_info) {
+void CreateMainWindow(SystemInfo *system_info) {
   char title_bar_text[] = {"Arctic Engine"};
   char window_class_name[] = {"ArcticEngineWindowClass"};
   char inner_window_class_name[] = {"ArcticEngineInnterWindowClass"};
@@ -646,8 +646,8 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   wcex.lpfnWndProc = arctic::WndProc;
   wcex.cbClsExtra = 0;
   wcex.cbWndExtra = 0;
-  wcex.hInstance = instance_handle;
-  wcex.hIcon = LoadIcon(instance_handle, MAKEINTRESOURCE(IDI_ICON1));
+  wcex.hInstance = system_info->instance_handle;
+  wcex.hIcon = LoadIcon(system_info->instance_handle, MAKEINTRESOURCE(IDI_ICON1));
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
   wcex.hbrBackground = g_black_brush;
   wcex.lpszClassName = window_class_name;
@@ -663,16 +663,15 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
     window_class_name, title_bar_text,
     WS_OVERLAPPEDWINDOW,
     0, 0, screen_width, screen_height, nullptr, nullptr,
-    instance_handle, nullptr);
-  if (!window_handle) {
-    return false;
-  }
+    system_info->instance_handle, nullptr);
+
+  arctic::Check(window_handle, "Can't create the Main Window! Code: WIN07.");
 
   memset(&wcex, 0, sizeof(wcex));
   wcex.cbSize = sizeof(wcex);
   wcex.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
   wcex.lpfnWndProc = arctic::InnerWndProc;
-  wcex.hInstance = instance_handle;
+  wcex.hInstance = system_info->instance_handle;
   wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
   wcex.hbrBackground = g_black_brush;
   wcex.lpszClassName = inner_window_class_name;
@@ -685,10 +684,10 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
     inner_window_class_name, "", WS_CHILD | WS_VISIBLE, 0, 0,
     client_rect.right - client_rect.left,
     client_rect.bottom - client_rect.top,
-    window_handle, 0, instance_handle, 0);
-  if (!inner_window_handle) {
-    return false;
-  }
+    window_handle, 0, system_info->instance_handle, 0);
+
+  arctic::Check(inner_window_handle, "Can't create the Main Window! Code: WIN08.");
+
   //  ShowWindow(window_handle, cmd_show);
   ShowWindow(window_handle, SW_MINIMIZE);
   ShowWindow(window_handle, SW_MAXIMIZE);
@@ -699,7 +698,6 @@ bool CreateMainWindow(HINSTANCE instance_handle, int cmd_show,
   system_info->inner_window_handle = inner_window_handle;
   system_info->screen_width = screen_width;
   system_info->screen_height = screen_height;
-  return true;
 }
 
 void PrepareForTheEasyMainCall();
@@ -903,6 +901,12 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   return result;
 }
 
+std::string PrepareInitialPath() {
+  std::string initial_path;
+  arctic::GetCurrentPath(&initial_path);
+  return initial_path;
+}
+
 }  // namespace arctic
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
@@ -910,13 +914,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   _In_ LPWSTR command_line,
   _In_ int cmd_show) {
   UNREFERENCED_PARAMETER(prev_instance_handle);
+  UNREFERENCED_PARAMETER(cmd_show);
 
-  arctic::StartLogger();
+  // save the instance handle
+  arctic::g_system_info.instance_handle = instance_handle;
 
+  // use the real resolution on high-resolution displays
   BOOL is_ok_w = SetProcessDPIAware();
   arctic::Check(is_ok_w != FALSE,
     "Error from SetProessDPIAware! Code: WIN06.");
 
+  // afaik disabling ghosting makes the app faster
   DisableProcessWindowsGhosting();
 
   // remove quotes from command line
@@ -932,35 +940,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   int num_args = 0;
   wchar_t **args = CommandLineToArgvW(GetCommandLineW(), &num_args);
 
-  // switch current directory to the executable
-  /*
-  wchar_t buffer[1024];
-  GetCurrentDirectory(1024, buffer);
-  GetModuleFileName( instance, buffer, 1024 );
-  int ls = 0;
-  for (int i = 0; buffer[i]; i++ ) {
-    if ( buffer[i] == L'/' || buffer[i] == L'\\' ) {
-      ls = i;
-    }
-  }
-  buffer[ls] = 0;
-  SetCurrentDirectory(buffer);
-  */
 
-  // create the main window
-  bool is_ok = arctic::CreateMainWindow(instance_handle, cmd_show,
-    &arctic::g_system_info);
-  arctic::Check(is_ok, "Can't create the Main Window! Code: WIN07.");
-
-  arctic::GetEngine()->SetArgcArgvW(num_args,
-    const_cast<const wchar_t **>(args));
-  std::string initial_path;
-  arctic::GetCurrentPath(&initial_path);
-  arctic::GetEngine()->SetInitialPath(initial_path);
-  
-
+  // not-so OS-specific stuff
+  std::string initial_path = arctic::PrepareInitialPath();
+  arctic::StartLogger();
   arctic::SoundPlayer soundPlayer;
   soundPlayer.Initialize();
+  arctic::CreateMainWindow(instance_handle, &arctic::g_system_info);
+  arctic::GetEngine()->SetArgcArgvW(num_args,
+    const_cast<const wchar_t **>(args));
+
+  arctic::GetEngine()->SetInitialPath(initial_path);
 
   std::thread engine_thread(arctic::EngineThreadFunction,
     arctic::g_system_info);
@@ -980,7 +970,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   }
 
   soundPlayer.Deinitialize();
-
   arctic::StopLogger();
   ExitProcess(0);  //-V2014
   return 0;
