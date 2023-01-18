@@ -114,6 +114,10 @@ void ClearKeyStateTransitions();
 float ControllerAxis(Si32 controller_idx, Si32 axis_idx);
 /// @brief Returns mouse cursor position
 Vec2Si32 MousePos();
+/// @brief Returns mouse cursor position x coordinate
+Si32 MouseX();
+/// @brief Returns mouse cursor position y coordinate
+Si32 MouseY();
 /// @brief Returns mouse movement vector
 Vec2Si32 MouseMove();
 /// @brief Returns mouse wheel rotation delta
@@ -128,22 +132,9 @@ const InputMessage& GetInputMessage(Si32 idx);
 
 /// @}
 
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const KeyCode key_code);
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const char *keys);
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const char key);
-[[deprecated("Replaced by IsKeyDownward, which has a better name")]]
-bool WasKeyPressed(const std::string &keys);
-
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const KeyCode key_code);
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const char *keys);
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const char key);
-[[deprecated("Replaced by IsKeyDown, which has a better name")]]
 bool IsKey(const std::string &keys);
 
 }  // namespace arctic

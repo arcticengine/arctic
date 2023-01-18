@@ -293,7 +293,7 @@ bool GetProjectKind() {
   UpdateResolution();
 
   std::shared_ptr<Panel> box(new Panel(0, Vec2Si32(0, 0),
-    Vec2Si32(640, 480), 0, g_border.DrawExternalSize(Vec2Si32(640, 480))));
+    Vec2Si32(640, 480+64), 0, g_border.DrawExternalSize(Vec2Si32(640, 480+64))));
   const Ui64 kTetraminoButton = 1;
   const Ui64 kHelloButton = 2;
   const Ui64 kSnakeButton = 3;
@@ -673,7 +673,10 @@ bool ShowProgress() {
           files.push_back("data/red_city.tga");
           files.push_back("data/red_sword.tga");
           files.push_back("data/water.tga");
-        } else {
+        } else if (g_project_kind == kProjectKindCodingForKids) {
+          files.push_back("data/font_8x8.tga");
+          files.push_back("data/font_8x8.txt");
+        } else if (g_project_kind == kProjectKindTetramino) {
           files.push_back("data/block_1.tga");
           files.push_back("data/block_2.tga");
         }

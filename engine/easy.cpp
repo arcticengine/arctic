@@ -525,12 +525,28 @@ void DrawRectangle(Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
     Si32 w = x2 - x1;
     Rgba *p = p_begin;
     Si32 stride_rem = stride - w;
-    for (Si32 y = y1; y < y2; ++y) {
-      Rgba *p_end = p + w;
-      for (; p < p_end; ++p) {
-        p->rgba = color.rgba;
+    if (color.a == 255) {
+      for (Si32 y = y1; y < y2; ++y) {
+        Rgba *p_end = p + w;
+        for (; p < p_end; ++p) {
+          p->rgba = color.rgba;
+        }
+        p += stride_rem;
       }
-      p += stride_rem;
+    } else if (color.a != 0) {
+      Ui32 m = 255 - color.a;
+      Ui32 m2 = color.a;
+      Ui32 rb2 = (color.rgba & 0x00ff00fful) * m2;
+      Ui32 g2 = ((color.rgba & 0x0000ff00ul) >> 8u) * m2;
+      for (Si32 y = y1; y < y2; ++y) {
+        Rgba *p_end = p + w;
+        for (; p < p_end; ++p) {
+          Ui32 rb = (p->rgba & 0x00ff00fful) * m;
+          Ui32 g = ((p->rgba & 0x0000ff00ul) >> 8u) * m;
+          p->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul) | (m2 << 24);
+        }
+        p += stride_rem;
+      }
     }
   }
 }
@@ -583,7 +599,9 @@ Rgba GetPixel(Si32 x, Si32 y) {
   Rgba *data = from_sprite.RgbaData();
   Si32 stride = from_sprite.StridePixels();
   if (x >= 0 && x < from_sprite.Width() && y >= 0 && y < from_sprite.Height()) {
-    return data[x + y * stride];
+    Rgba color = data[x + y * stride];
+    color.a = 255;
+    return color;
   } else {
     return Rgba(0, 0, 0);
   }
@@ -722,23 +740,6 @@ bool IsKeyUpwardImpl(Ui32 key_code) {
   return g_key_state[key_code].WasReleased();
 }
 
-
-bool WasKeyPressed(const KeyCode key_code) {
-  return IsKeyDownward(key_code);
-}
-
-bool WasKeyPressed(const char *keys) {
-  return IsKeyDownward(keys);
-}
-
-bool WasKeyPressed(const char key) {
-  return IsKeyDownward(key);
-}
-
-bool WasKeyPressed(const std::string &keys) {
-  return IsKeyDownward(keys);
-}
-
 bool IsKeyDownward(const KeyCode key_code) {
   return IsKeyDownwardImpl(static_cast<Ui32>(key_code));
 }
@@ -800,19 +801,19 @@ bool IsKeyDownImpl(Ui32 key_code) {
 }
 
 bool IsKey(const KeyCode key_code) {
-  return IsKeyDown(key_code);
+  return IsKeyDownward(key_code);
 }
 
 bool IsKey(const char *keys) {
-  return IsKeyDown(keys);
+  return IsKeyDownward(keys);
 }
 
 bool IsKey(const char key) {
-  return IsKeyDown(key);
+  return IsKeyDownward(key);
 }
 
 bool IsKey(const std::string &keys) {
-  return IsKeyDown(keys);
+  return IsKeyDownward(keys);
 }
 
 bool IsKeyDown(const KeyCode key_code) {
@@ -904,6 +905,14 @@ float ControllerAxis(Si32 controller_idx, Si32 axis_idx) {
 
 Vec2Si32 MousePos() {
   return g_mouse_pos;
+}
+
+Si32 MouseX() {
+  return g_mouse_pos.x;
+}
+
+Si32 MouseY() {
+  return g_mouse_pos.y;
 }
 
 Vec2Si32 MouseMove() {
