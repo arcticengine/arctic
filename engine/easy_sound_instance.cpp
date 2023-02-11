@@ -203,7 +203,7 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     return nullptr;
   }
 
-  std::shared_ptr<SoundInstance> sound;
+  std::shared_ptr<SoundInstance> sound = nullptr;
   Si64 in_sample_count = sound_data_size / fmt->block_align;
   Ui32 sample_count = (Ui32)(44100ull * (Ui64)in_sample_count
       / (Ui64)fmt->sample_rate);
@@ -317,4 +317,3 @@ void SoundInstance::DecPlaying() {
 
 }  // namespace arctic
 
-template class std::shared_ptr<arctic::SoundInstance>;

@@ -65,4 +65,3 @@ namespace arctic {
 
 }  // namespace arctic
 
-template class std::shared_ptr<arctic::HwSpriteInstance>;

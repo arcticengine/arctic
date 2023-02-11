@@ -72,6 +72,5 @@ class HwSpriteInstance {
 
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::HwSpriteInstance>;
 
 #endif  // ENGINE_EASY_HW_SPRITE_INSTANCE_H_

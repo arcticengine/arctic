@@ -250,7 +250,7 @@ bool GetOperationMode() {
   const Ui64 kUpdateButton = 2;
   const Ui64 kExitButton = 100;
 
-  const char *welcome = u8"The Snow Wizard\n\n"
+  const char *welcome = (const char*)u8"The Snow Wizard\n\n"
   "This wizard can create a new Arctic Engine project\n"
     "for you or update an existing one.";
 
@@ -301,7 +301,7 @@ bool GetProjectKind() {
   const Ui64 kConquestButton = 5;
   const Ui64 kExitButton = 100;
 
-  const char *welcome = u8"The Snow Wizard\n\n"
+  const char *welcome = (const char *)u8"The Snow Wizard\n\n"
   "Please select the flavour of the new project.";
 
   Si32 y = box->GetSize().y-32;
@@ -376,7 +376,7 @@ bool GetProjectName() {
   const Ui64 kDoneButton = 2;
   const Ui64 kExitButton = 100;
 
-  const char *welcome = u8"The Snow Wizard\n\n"
+  const char *welcome = (const char *)u8"The Snow Wizard\n\n"
   "Name the project. You may use only latin\n"
   "letters, numbers and underscores.\n\n"
   "Project name:";
@@ -592,9 +592,9 @@ bool ShowProgress() {
           g_path.append("/..");
           g_path.append("/");
           g_path.append(g_project_name);
-          g_progress.append(u8"Arctic Engine is detected.\n");
+          g_progress.append((const char *)u8"Arctic Engine is detected.\n");
         } else {
-          g_progress.append(u8"\003Can't detect Arctic Engine. ERROR.\n");
+          g_progress.append((const char *)u8"\003Can't detect Arctic Engine. ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         }
@@ -602,23 +602,23 @@ bool ShowProgress() {
         break;
       case 2:
         if (DoesDirectoryExist(g_path.c_str()) == 0) {
-          g_progress.append(u8"Directory name is OK\n");
+          g_progress.append((const char *)u8"Directory name is OK\n");
         } else {
-          g_progress.append(u8"\003A directory named \"");
+          g_progress.append((const char *)u8"\003A directory named \"");
           g_progress.append(g_path);
-          g_progress.append(u8"\" already exists. ERROR. Use another name.\n");
+          g_progress.append((const char *)u8"\" already exists. ERROR. Use another name.\n");
           step = 100500;
           g_sound_error.Play();
         }
         break;
       case 3:
         if (MakeDirectory(g_path.c_str())) {
-          g_progress.append(u8"Directory is created OK\n");
+          g_progress.append((const char *)u8"Directory is created OK\n");
           g_project_directory = g_path;
         } else {
-          g_progress.append(u8"\003Can't create directory \"");
+          g_progress.append((const char *)u8"\003Can't create directory \"");
           g_progress.append(g_path);
-          g_progress.append(u8"\". ERROR.\n");
+          g_progress.append((const char *)u8"\". ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         }
@@ -626,11 +626,11 @@ bool ShowProgress() {
       case 4:
         g_template = g_current_directory + "/template_project_name";
         if (DoesDirectoryExist(g_template.c_str()) == 1) {
-          g_progress.append(u8"Template found OK\n");
+          g_progress.append((const char *)u8"Template found OK\n");
         } else {
-          g_progress.append(u8"\003Can't find template directory \"");
+          g_progress.append((const char *)u8"\003Can't find template directory \"");
           g_progress.append(g_template);
-          g_progress.append(u8"\". ERROR.\n");
+          g_progress.append((const char *)u8"\". ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         }
@@ -651,7 +651,7 @@ bool ShowProgress() {
           ReplaceAll("template_project_name", g_project_name, &name);
           MakeDirectory((g_project_directory + "/" + name).c_str());
         }
-        g_progress.append(u8"Project structure created OK\n");
+        g_progress.append((const char *)u8"Project structure created OK\n");
       }
         break;
       case 6:
@@ -687,7 +687,7 @@ bool ShowProgress() {
           WriteFile((g_project_directory + "/" + name).c_str(),
               data.data(), data.size());
         }
-        g_progress.append(u8"Data files copied OK\n");
+        g_progress.append((const char *)u8"Data files copied OK\n");
       }
         break;
       case 7:
@@ -734,7 +734,7 @@ bool ShowProgress() {
             PatchAndCopyTemplateFile("main_hello.cpp", "main.cpp");
             break;
         }
-        g_progress.append(u8"Project created OK\n");
+        g_progress.append((const char *)u8"Project created OK\n");
 
         g_sound_jingle.Play();
 
@@ -752,7 +752,7 @@ bool ShowProgress() {
 
     UpdateResolution();
     Clear();
-    const char *welcome = u8"The Snow Wizard\n\n"
+    const char *welcome = (const char *)u8"The Snow Wizard\n\n"
     "Creating project \"%s\"\n\n"
     "Current directory: %s\n"
     "%s\n\n"
@@ -795,9 +795,9 @@ bool ShowUpdateProgress() {
           g_current_directory = CanonicalizePath(g_current_directory.c_str());
         }
         if (is_ok) {
-          g_progress.append(u8"Arctic Engine is detected.\n");
+          g_progress.append((const char *)u8"Arctic Engine is detected.\n");
         } else {
-          g_progress.append(u8"\003Can't detect Arctic Engine. ERROR.\n");
+          g_progress.append((const char *)u8"\003Can't detect Arctic Engine. ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         }
@@ -809,13 +809,13 @@ bool ShowUpdateProgress() {
         if (DoesDirectoryExist(g_engine.c_str()) == 1) {
           // List /engine files
           GetDirectoryEntries(g_engine.c_str(), &engine_entries);
-          g_progress.append(u8"Enigne found OK: \"");
+          g_progress.append((const char *)u8"Enigne found OK: \"");
           g_progress.append(g_engine);
-          g_progress.append(u8"\"\n");
+          g_progress.append((const char *)u8"\"\n");
         } else {
-          g_progress.append(u8"\003Can't find engine directory \"");
+          g_progress.append((const char *)u8"\003Can't find engine directory \"");
           g_progress.append(g_engine);
-          g_progress.append(u8"\". ERROR.\n");
+          g_progress.append((const char *)u8"\". ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         }
@@ -828,22 +828,22 @@ bool ShowUpdateProgress() {
           GetDirectoryProjects(g_project_directory);
         Si32 candidate_count = (Si32)candidates.size();
         for (Si32 i = 0; i < candidate_count; ++i) {
-          g_progress.append(u8"Project name candidate \"");
+          g_progress.append((const char *)u8"Project name candidate \"");
           g_progress.append(candidates[static_cast<size_t>(i)]);
-          g_progress.append(u8"\"\n");
+          g_progress.append((const char *)u8"\"\n");
         }
 
         // make sure that there are no other xcodeproj and vcxproj pairs
         if (candidate_count == 0) {
-          g_progress.append(u8"\003Can't find project files in\"");
+          g_progress.append((const char *)u8"\003Can't find project files in\"");
           g_progress.append(g_project_directory);
-          g_progress.append(u8"\". ERROR.\n");
+          g_progress.append((const char *)u8"\". ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         } else if (candidate_count > 1) {
-          g_progress.append(u8"\003Multiple project files in\"");
+          g_progress.append((const char *)u8"\003Multiple project files in\"");
           g_progress.append(g_project_directory);
-          g_progress.append(u8"\". ERROR.\n");
+          g_progress.append((const char *)u8"\". ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         } else {
@@ -1000,7 +1000,7 @@ bool ShowUpdateProgress() {
         std::size_t next_item =
           full_content.find("/* End PBXBuildFile section */");
         if (next_item == std::string::npos) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003No PBXBuildFile section in xcode project!\nERROR.\n");
           step = 100500;
           g_sound_error.Play();
@@ -1012,14 +1012,14 @@ bool ShowUpdateProgress() {
         cursor = next_item;
         next_item = full_content.find("/* End PBXFileReference section */");
         if (next_item == std::string::npos) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003No PBXFileReference section in xcode project!\nERROR.\n");
           step = 100500;
           g_sound_error.Play();
           break;
         }
         if (next_item < cursor) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003Out of order PBXFileReference in xcode project!\nERROR.\n");
           step = 100500;
           g_sound_error.Play();
@@ -1033,14 +1033,14 @@ bool ShowUpdateProgress() {
         cursor = next_item;
         next_item = full_content.find(main_group_entry);
         if (next_item == std::string::npos) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003No main_group_entry in xcode project!\nERROR.\n");
           step = 100500;
           g_sound_error.Play();
           break;
         }
         if (next_item < cursor) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003Out of order main_group_entry in xcode project!\n"
             u8"ERROR.\n");
           step = 100500;
@@ -1056,14 +1056,14 @@ bool ShowUpdateProgress() {
         cursor = next_item;
         next_item = full_content.find(engine_group_entry);
         if (next_item == std::string::npos) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003No engine_group_entry in xcode project!\nERROR.\n");
           step = 100500;
           g_sound_error.Play();
           break;
         }
         if (next_item < cursor) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003Out of order engine_group_entry in xcode project!\n"
             u8"ERROR.\n");
           step = 100500;
@@ -1079,14 +1079,14 @@ bool ShowUpdateProgress() {
         cursor = next_item;
         next_item = full_content.find(buildphase_entry);
         if (next_item == std::string::npos) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003No buildphase_entry in xcode project!\nERROR.\n");
           step = 100500;
           g_sound_error.Play();
           break;
         }
         if (next_item < cursor) {
-          g_progress.append(
+          g_progress.append((const char *)
             u8"\003Out of order buildphase_entry in xcode project!\nERROR.\n");
           step = 100500;
           g_sound_error.Play();
@@ -1102,7 +1102,7 @@ bool ShowUpdateProgress() {
         WriteFile(xcode_project_full_name.c_str(),
           reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
           resulting_file.str().size());
-        g_progress.append(u8"XCode project updated OK\n");
+        g_progress.append((const char *)u8"XCode project updated OK\n");
       }
         break;
       case 5: {
@@ -1222,7 +1222,7 @@ bool ShowUpdateProgress() {
           }
 
           if (next_item == std::string::npos) {
-            g_progress.append(u8"\003No engine.h in VS project!\nERROR.\n");
+            g_progress.append((const char *)u8"\003No engine.h in VS project!\nERROR.\n");
             step = 100500;
             g_sound_error.Play();
             break;
@@ -1241,13 +1241,13 @@ bool ShowUpdateProgress() {
           }
 
           if (next_item == std::string::npos) {
-            g_progress.append(u8"\003No engine.cpp in VS project!\nERROR.\n");
+            g_progress.append((const char *)u8"\003No engine.cpp in VS project!\nERROR.\n");
             step = 100500;
             g_sound_error.Play();
             break;
           }
           if (next_item < cursor) {
-            g_progress.append(
+            g_progress.append((const char *)
               u8"\003Out of order engine.cpp in VS project!\nERROR.\n");
             step = 100500;
             g_sound_error.Play();
@@ -1277,7 +1277,7 @@ bool ShowUpdateProgress() {
           std::size_t next_item =
             full_filter_content.find(engine_cpp_pattern);
           if (next_item == std::string::npos) {
-            g_progress.append(u8"\003No engine.cpp in VS project filters!"
+            g_progress.append((const char *)u8"\003No engine.cpp in VS project filters!"
                 u8"\nERROR.\n");
             step = 100500;
             g_sound_error.Play();
@@ -1296,14 +1296,14 @@ bool ShowUpdateProgress() {
           }
 
           if (next_item == std::string::npos) {
-            g_progress.append(u8"\003No engine.h in VS project filters!\n"
+            g_progress.append((const char *)u8"\003No engine.h in VS project filters!\n"
                 u8"ERROR.\n");
             step = 100500;
             g_sound_error.Play();
             break;
           }
           if (next_item < cursor) {
-            g_progress.append(
+            g_progress.append((const char *)
               u8"\003Out of order engine.h in VS project filters!\nERROR.\n");
             step = 100500;
             g_sound_error.Play();
@@ -1322,25 +1322,25 @@ bool ShowUpdateProgress() {
             reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
             resulting_file.str().size());
         }
-        g_progress.append(u8"Visual Studio project updated OK\n");
+        g_progress.append((const char *)u8"Visual Studio project updated OK\n");
       }
         break;
       case 6:
         g_template = g_current_directory + "/template_project_name";
         if (DoesDirectoryExist(g_template.c_str()) == 1) {
-          g_progress.append(u8"Template found OK\n");
+          g_progress.append((const char *)u8"Template found OK\n");
         } else {
-          g_progress.append(u8"\003Can't find template directory \"");
+          g_progress.append((const char *)u8"\003Can't find template directory \"");
           g_progress.append(g_template);
-          g_progress.append(u8"\". ERROR.\n");
+          g_progress.append((const char *)u8"\". ERROR.\n");
           step = 100500;
           g_sound_error.Play();
         }
         break;
       case 7: {
           PatchAndCopyTemplateFile("CMakeLists.txt");
-          g_progress.append(u8"Latest CMakeLists.txt applied OK\n");
-          g_progress.append(u8"All Done\n");
+          g_progress.append((const char *)u8"Latest CMakeLists.txt applied OK\n");
+          g_progress.append((const char *)u8"All Done\n");
           if (!g_pause_when_done) {
             return false;
           }
@@ -1354,7 +1354,7 @@ bool ShowUpdateProgress() {
 
     UpdateResolution();
     Clear();
-    const char *welcome = u8"The Snow Wizard\n\n"
+    const char *welcome = (const char *)u8"The Snow Wizard\n\n"
     "Creating project \"%s\"\n\n"
     "Current directory: %s\n"
     "%s\n\n"

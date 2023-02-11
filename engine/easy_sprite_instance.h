@@ -82,6 +82,5 @@ void SaveTga(std::shared_ptr<SpriteInstance> sprite,
 
 }  // namespace arctic
 
-extern template class std::shared_ptr<arctic::SpriteInstance>;
 
 #endif  // ENGINE_EASY_SPRITE_INSTANCE_H_

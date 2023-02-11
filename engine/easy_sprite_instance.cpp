@@ -353,4 +353,3 @@ struct TgaHeader {
 
 }  // namespace arctic
 
-template class std::shared_ptr<arctic::SpriteInstance>;
