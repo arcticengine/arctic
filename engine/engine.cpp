@@ -353,13 +353,16 @@ void Engine::Draw2d() {
 
     if (!do_draw) {
       Vec2F pivot = Vec2F(h.to_x_pivot, h.to_y_pivot);
-      float sin_a = sinf(h.angle_radians) * h.to_width / h.from_width;
-      float cos_a = cosf(h.angle_radians) * h.to_height / h.from_height;
-      Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(h.from_sprite.Pivot().x);
+      float sin_a = sinf(h.angle_radians);
+      float cos_a = cosf(h.angle_radians);
+      Vec2F left = Vec2F(-cos_a, -sin_a) *
+        static_cast<float>(h.from_sprite.Pivot().x) * h.to_width / h.from_width;
       Vec2F right = Vec2F(cos_a, sin_a) *
-        static_cast<float>(h.from_sprite.Width() - h.from_sprite.Pivot().x);
-      Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(h.from_sprite.Height() - h.from_sprite.Pivot().y);
-      Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(h.from_sprite.Pivot().y);
+        static_cast<float>(h.from_sprite.Width() - h.from_sprite.Pivot().x) * h.to_width / h.from_width;
+      Vec2F up = Vec2F(-sin_a, cos_a) *
+        static_cast<float>(h.from_sprite.Height() - h.from_sprite.Pivot().y)* h.to_height / h.from_height;
+      Vec2F down = Vec2F(sin_a, -cos_a) *
+        static_cast<float>(h.from_sprite.Pivot().y) * h.to_height / h.from_height;
 
       // d c
       // a b

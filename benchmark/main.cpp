@@ -116,6 +116,8 @@ imperdiet nisl. Phasellus id laoreet sapien. Etiam dignissim diam eu tellus scel
   g_hw_blocks[3].LoadFromSoftwareSprite(tmp);
   g_sw_blocks[3] = tmp;
 
+  srand(100500);
+
   srand((Ui32)time(nullptr));
 }
 
@@ -169,6 +171,7 @@ void InitTiles() {
     tile.color = Rgba(0, 0, 255, 127);
     tiles.push_back(tile);
 
+    srand(100500);
     for (int i = 0; i < 2000; i++) {
       tile.block_idx = 1;
       tile.x = rand() % WND_WIDTH;
@@ -217,6 +220,33 @@ void InitTiles() {
     tile.blending = kDrawBlendingModeColorize;
     tiles.push_back(tile);
   }
+  if (g_bench_idx == 3) {
+    Tile tile;
+    tile.block_idx = 0;
+    tile.x = 0;
+    tile.y = 0;
+    tile.w = WND_WIDTH;
+    tile.h = WND_HEIGHT;
+    tile.zoom = 1.0f;
+    tile.color = Rgba(255, 255, 255, 255);
+    tile.blending = kDrawBlendingModeCopyRgba;
+    tiles.push_back(tile);
+/*
+    tile.block_idx = 1;
+    tile.x = 0;
+    tile.y = 0;
+    tile.w = WND_WIDTH;
+    tile.h = WND_HEIGHT;
+    tile.zoom = 1.0f;
+    tile.blending = kDrawBlendingModeColorize;
+
+    tile.color = Rgba(255, 0, 0, 127);
+    tiles.push_back(tile);
+    tile.color = Rgba(0, 255, 0, 127);
+    tiles.push_back(tile);
+    tile.color = Rgba(0, 0, 255, 127);
+    tiles.push_back(tile);*/
+  }
 }
 
 void Update() {
@@ -239,11 +269,17 @@ void Render() {
 
   if (g_is_hw_enabled) {
     for (const auto &tile : tiles) {
-        g_hw_blocks[tile.block_idx].Draw(tile.x, tile.y, static_cast<int>(tile.w*tile.zoom), static_cast<int>(tile.h*tile.zoom), tile.blending, kFilterNearest, tile.color);
+        g_hw_blocks[tile.block_idx].Draw(tile.x, tile.y,
+                                         static_cast<int>(tile.w*tile.zoom),
+                                         static_cast<int>(tile.h*tile.zoom),
+                                         tile.blending, kFilterNearest, tile.color);
     }
   } else {
     for (const auto &tile : tiles) {
-        g_sw_blocks[tile.block_idx].Draw(tile.x, tile.y, static_cast<int>(tile.w*tile.zoom), static_cast<int>(tile.h*tile.zoom), tile.blending, kFilterNearest, tile.color);
+        g_sw_blocks[tile.block_idx].Draw(tile.x, tile.y,
+                                         static_cast<int>(tile.w*tile.zoom),
+                                         static_cast<int>(tile.h*tile.zoom),
+                                         tile.blending, kFilterNearest, tile.color);
     }
   }
 
@@ -289,6 +325,10 @@ void EasyMain() {
     }
     if (IsKeyDownward(kKey3)) {
       g_bench_idx = 2;
+      InitTiles();
+    }
+    if (IsKeyDownward(kKey4)) {
+      g_bench_idx = 3;
       InitTiles();
     }
     if (IsKeyDownward(kKeyH)) {
