@@ -1266,48 +1266,50 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
 
 void Sprite::Draw(const Vec2F to, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
-  Draw(to.x, to.y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
+  Draw(to.x, to.y, Width(), Height(), angle_radians, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
 void Sprite::Draw(const float to_x, const float to_y, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
-  Draw(to_x, to_y, angle_radians, 1.f, GetEngine()->GetBackbuffer(),
+  Draw(to_x, to_y, Width(), Height(), angle_radians, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const Vec2F to, float angle_radians, float zoom,
+void Sprite::Draw(const Vec2F to, float to_width, float to_height, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
-  Draw(to.x, to.y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
+  Draw(to.x, to.y, to_width, to_height, angle_radians, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(Rgba in_color, const float to_x, const float to_y, float angle_radians, float zoom,
+void Sprite::Draw(Rgba in_color, const float to_x, const float to_y, float to_width, float to_height, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode) {
-    Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
+    Draw(to_x, to_y, to_width, to_height, angle_radians, GetEngine()->GetBackbuffer(),
         blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const float to_x, const float to_y, float angle_radians, float zoom,
+void Sprite::Draw(const float to_x, const float to_y, float to_width, float to_height, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
-  Draw(to_x, to_y, angle_radians, zoom, GetEngine()->GetBackbuffer(),
+  Draw(to_x, to_y, to_width, to_height, angle_radians, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
-void Sprite::Draw(const float to_x, const float to_y,
-    float angle_radians, float zoom, Sprite to_sprite,
+void Sprite::Draw(const float to_x, const float to_y, float to_width, float to_height,
+    float angle_radians, Sprite to_sprite,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
   if (!sprite_instance_) {
     return;
   }
   Vec2F pivot = Vec2F(to_x, to_y);
-  float sin_a = sinf(angle_radians) * zoom;
-  float cos_a = cosf(angle_radians) * zoom;
-  Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x);
+  float sin_a = sinf(angle_radians);
+  float cos_a = cosf(angle_radians);
+  float w_mul = to_width / Width();
+  float h_mul = to_height / Height();
+  Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x) * w_mul;
   Vec2F right = Vec2F(cos_a, sin_a) *
-    static_cast<float>(Width() - 1 - pivot_.x);
-  Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - 1 - pivot_.y);
-  Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y);
+    static_cast<float>(Width() - 1 - pivot_.x) * w_mul;
+  Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - 1 - pivot_.y) * h_mul;
+  Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y) * h_mul;
 
   // d c
   // a b

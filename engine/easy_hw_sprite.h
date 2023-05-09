@@ -49,17 +49,15 @@ class HwSprite {
   Vec2Si32 ref_pos_;
   Vec2Si32 ref_size_;
   Vec2Si32 pivot_;
-  std::shared_ptr<GlProgram> gl_program_;
-  UniformsTable gl_program_uniforms_;
   mutable std::unique_ptr<GlBuffer> gl_buffer_;
   mutable Vec2Si32 last_buffer_pivot_;
   mutable Vec2Si32 last_buffer_ref_size_;
   mutable float last_angle_;
 
-  static void DrawSprite(const std::shared_ptr<GlProgram> &gl_program, const UniformsTable &gl_program_uniforms,
+  static void DrawSprite(
     const HwSprite &to_sprite, const float to_x_pivot, const float to_y_pivot, const float to_width, const float to_height,
     const HwSprite &from_sprite, const float from_x, const float from_y, const float from_width, const float from_height,
-    Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians, float zoom);
+    Rgba in_color, DrawBlendingMode blending_mode, DrawFilterMode filter_mode, float angle_radians);
   void UpdateVertexBuffer(float angle) const;
 
  public:
@@ -105,13 +103,6 @@ class HwSprite {
   void SetPivot(Vec2Si32 pivot);
   /// @brief Get the coordinates of the pivot point of the sprite
   Vec2Si32 Pivot() const;
-
-  void SetProgram(const std::shared_ptr<GlProgram> &program);
-  const std::shared_ptr<GlProgram> &Program() const;
-
-  void SetUniforms(const UniformsTable &uniforms_table);
-  const UniformsTable &Uniforms() const;
-  UniformsTable &Uniforms();
 
   void Draw(const HwSprite &to_sprite, const Si32 to_x, const Si32 to_y,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
@@ -174,19 +165,19 @@ class HwSprite {
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
-  void Draw(const Vec2F to, float angle_radians, float zoom,
+  void Draw(const Vec2F to, float to_wdith, float to_hegiht, float angle_radians,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
-  void Draw(Rgba in_color, const float to_x, const float to_y, float angle_radians, float zoom,
+  void Draw(Rgba in_color, const float to_x, const float to_y, float to_wdith, float to_hegiht, float angle_radians,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest);
   [[deprecated("Use Draw(Rgba in_color, const float to_x, const float to_y, float angle_radians, float zoom, DrawBlendingMode blending_mode, DrawFilterMode filter_mode)")]]
-  void Draw(const float to_x, const float to_y, float angle_radians, float zoom,
+  void Draw(const float to_x, const float to_y, float to_width, float  to_height, float angle_radians,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
-  void Draw(const float to_x, const float to_y, float angle_radians, float zoom, const HwSprite &to_sprite,
+  void Draw(const float to_x, const float to_y, float to_width, float to_height, float angle_radians, const HwSprite &to_sprite,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend, DrawFilterMode filter_mode = kFilterNearest,
       Rgba in_color = Rgba(0xffffffff));
 

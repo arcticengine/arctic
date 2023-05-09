@@ -47,6 +47,7 @@ struct Tile {
     int x, y;
     int w, h;
     float zoom;
+    float angle = 0;
     Rgba color;
     DrawBlendingMode blending;
 };
@@ -231,21 +232,16 @@ void InitTiles() {
     tile.color = Rgba(255, 255, 255, 255);
     tile.blending = kDrawBlendingModeCopyRgba;
     tiles.push_back(tile);
-/*
+
     tile.block_idx = 1;
-    tile.x = 0;
-    tile.y = 0;
-    tile.w = WND_WIDTH;
-    tile.h = WND_HEIGHT;
+    tile.x = WND_WIDTH/2;
+    tile.y = WND_HEIGHT/2;
+    tile.w = WND_HEIGHT/2;
+    tile.h = WND_HEIGHT/2;
     tile.zoom = 1.0f;
     tile.blending = kDrawBlendingModeColorize;
-
     tile.color = Rgba(255, 0, 0, 127);
     tiles.push_back(tile);
-    tile.color = Rgba(0, 255, 0, 127);
-    tiles.push_back(tile);
-    tile.color = Rgba(0, 0, 255, 127);
-    tiles.push_back(tile);*/
   }
 }
 
@@ -261,6 +257,9 @@ void Update() {
     tiles[3].y = WND_HEIGHT / 2 + static_cast<int>(sin(Time())*WND_HEIGHT / 4);
     tiles[3].zoom = sinf(static_cast<float>(Time())) / 2.0f + 0.5f + 0.5f;
   }
+  if (g_bench_idx == 3) {
+    tiles[1].angle = Time();
+  }
 
 }
 
@@ -269,17 +268,24 @@ void Render() {
 
   if (g_is_hw_enabled) {
     for (const auto &tile : tiles) {
-        g_hw_blocks[tile.block_idx].Draw(tile.x, tile.y,
-                                         static_cast<int>(tile.w*tile.zoom),
-                                         static_cast<int>(tile.h*tile.zoom),
+
+        g_hw_blocks[tile.block_idx].Draw((float)tile.x, (float)tile.y, tile.w*tile.zoom, tile.h*tile.zoom, tile.angle,
                                          tile.blending, kFilterNearest, tile.color);
     }
   } else {
     for (const auto &tile : tiles) {
+      if (tile.angle) {
+        g_sw_blocks[tile.block_idx].Draw(tile.x, tile.y,
+                                         static_cast<int>(tile.w*tile.zoom),
+                                         static_cast<int>(tile.h*tile.zoom),
+                                         tile.angle,
+                                         tile.blending, kFilterNearest, tile.color);
+      } else {
         g_sw_blocks[tile.block_idx].Draw(tile.x, tile.y,
                                          static_cast<int>(tile.w*tile.zoom),
                                          static_cast<int>(tile.h*tile.zoom),
                                          tile.blending, kFilterNearest, tile.color);
+      }
     }
   }
 
