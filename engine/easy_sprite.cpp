@@ -1307,8 +1307,8 @@ void Sprite::Draw(const float to_x, const float to_y, float to_width, float to_h
   float h_mul = to_height / Height();
   Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x) * w_mul;
   Vec2F right = Vec2F(cos_a, sin_a) *
-    static_cast<float>(Width() - 1 - pivot_.x) * w_mul;
-  Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - 1 - pivot_.y) * h_mul;
+    static_cast<float>(Width() - pivot_.x) * w_mul;
+  Vec2F up = Vec2F(-sin_a, cos_a) * static_cast<float>(Height() - pivot_.y) * h_mul;
   Vec2F down = Vec2F(sin_a, -cos_a) * static_cast<float>(pivot_.y) * h_mul;
 
   // d c
@@ -1318,14 +1318,14 @@ void Sprite::Draw(const float to_x, const float to_y, float to_width, float to_h
   Vec2F c(pivot + right + up);
   Vec2F d(pivot + left + up);
 
-  Vec2F ta(0.01f,
-    0.01f);
-  Vec2F tb(static_cast<float>(ref_size_.x) - 1.01f,
-    0.01f);
-  Vec2F tc(static_cast<float>(ref_size_.x) - 1.01f,
-    static_cast<float>(ref_size_.y) - 1.01f);
-  Vec2F td(0.01f,
-    static_cast<float>(ref_size_.y) - 1.01f);
+  Vec2F ta(-0.49f,
+    -0.49f);
+  Vec2F tb(static_cast<float>(ref_size_.x) - 0.51f,
+    -0.49f);
+  Vec2F tc(static_cast<float>(ref_size_.x) - 0.51f,
+    static_cast<float>(ref_size_.y) - 0.51f);
+  Vec2F td(-0.51f,
+    static_cast<float>(ref_size_.y) - 0.51f);
 
   switch (filter_mode) {
     case kFilterNearest:
