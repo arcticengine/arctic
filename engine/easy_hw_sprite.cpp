@@ -388,8 +388,6 @@ void HwSprite::Clone(const HwSprite &from, CloneTransform transform) {
     return;
   }
 
-  const std::shared_ptr<GlProgram> &default_program = GetEngine()->GetDefaultSpriteProgram();
-
   if (transform == kCloneUntransformed) {
     Create(from.Width(), from.Height());
     DrawSprite(*this, static_cast<float>(from.Pivot().x), static_cast<float>(from.Pivot().y), static_cast<float>(from.Width()), static_cast<float>(from.Height()),

@@ -515,11 +515,11 @@ bool SelectProject() {
     bool is_project_dir =
       (GetDirectoryProjects(g_project_directory).size() == 1);
     std::stringstream str;
-    str << u8"The Snow Wizard\n\n"
+    str << "The Snow Wizard\n\n"
     "Select an existing Arctic Engine project to update.\n\n"
     "Press arrow keys and ENTER to navigate.\n"
-    "Press " << (is_project_dir ? u8"\001S\002" : u8"S")
-      << u8" while in a project directory to select it.\n"
+    "Press " << (is_project_dir ? "\001S\002" : "S")
+      << " while in a project directory to select it.\n"
     "Press ESC to leave the Snow Wizard.\n\n";
     str << "Path: " << g_project_directory << "\n\n";
 
