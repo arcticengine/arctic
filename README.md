@@ -13,17 +13,63 @@ API documentation: https://seaice.gitlab.io/arctic/index.html
 
 Main discussion forum (in Russian): https://gamedev.ru/community/arctic/forum/
 
+## Table of Contents
+- [Installation](#installation)
+  - [Windows](#windows)
+  - [Linux](#linux)
+- [Configuration](#configuration)
+- [API Documentation](#api-documentation)
+- [Discussion Forum](#discussion-forum)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
+- [Credits](#credits)
+- [Third-party Components](#third-party-components)
+- [Tools Used](#tools-used)
+- [Ubuntu and Raspbian Build Instructions](#ubuntu-and-raspbian-build-instructions)
+- [Raspberry Pi Notes](#raspberry-pi-notes)
+
 Windows:
+To install Arctic Engine on Windows, follow these steps:
+1. Clone the repository.
+2. Execute the `antarctica`, `pyramids`, `wizard`, and `filetest` executables as needed.
 antarctica pyramids [![Windows build status](https://ci.appveyor.com/api/projects/status/69n7xslx9f3tcoy3?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 wizard [![Windows build status](https://ci.appveyor.com/api/projects/status/sa5a1rng94yb4w4o?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 filetest [![Windows build status](https://ci.appveyor.com/api/projects/status/7tb6wk4xdwhp4dlq?svg=true)](https://ci.appveyor.com/project/FrostyMorning/arctic)
 
-Linux: [![Linux build status](https://gitlab.com/seaice/arctic/badges/master/pipeline.svg)](https://gitlab.com/seaice/arctic/pipelines)
+Linux: 
+To install Arctic Engine on Linux, execute the following commands in your terminal: ```bash
+sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libgles2-mesa-dev
+cd ~
+git clone https://gitlab.com/seaice/arctic.git
+cd ~/arctic
+cd ./wizard
+cmake .
+make -j 4
+./wizard
 
+[![Linux build status](https://gitlab.com/seaice/arctic/badges/master/pipeline.svg)](https://gitlab.com/seaice/arctic/pipelines)
 
-Scrum board: https://trello.com/b/9AnYCH7e/arctic-engine
+## Configuration
 
-Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+Arctic Engine offers a variety of configuration options to customize your game development experience. Refer to the API documentation for detailed configuration instructions and examples.
+
+Scrum board: 
+
+https://trello.com/b/9AnYCH7e/arctic-engine
+
+## Code of Conduct
+
+We are a friendly and inclusive community. Please review our Code of Conduct (CODE_OF_CONDUCT.md) below to understand the expected behavior and environment within the Arctic Engine project. 
+
+Everyones contributions are welcome. We'll decline a contribution if it’s useless, but if it's good and advances the goals of this project, we'll accept it.
+This code of conduct establishes acceptable professional behaviour.
+
+No ad-hominem attacks
+No prolonged disturbance of shared collaborative space
+
+Violations will be handled in a direct and reasonable way. For example, we may give a public or private warning, suspend or permanently ban from the project.
+
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 Arctic Engine follows a bit modified Google C++ Style Guide: [https://google.github.io/styleguide/cppguide.html](https://google.github.io/styleguide/cppguide.html)
 See [STYLE.md](STYLE.md) for the details.
@@ -58,6 +104,19 @@ See License.txt for details.
 * Acutest -- Another C/C++ Unit Test facility. Copyright (c) 2013 - 2017 Martin Mitas ([http://github.com/mity/acutest](http://github.com/mity/acutest))
 * OpenGL headers Copyright (c) 2013 - 2016 The Khronos Group Inc.
 * Library for Anti-commutative Dual Complex Numbers. Copyright (c) 2014 Shizuo KAJI <shizuo.kaji@gmail.com> ([http://arxiv.org/abs/1601.01754](http://arxiv.org/abs/1601.01754))
+
+## Performance Optimization
+
+Arctic Engine provides several strategies to optimize the performance of your games. Consider the following tips to ensure your games run smoothly:
+
+# 1. Asset Loading
+   - Optimize asset loading by employing asynchronous loading techniques.
+   - Use texture compression formats to reduce memory usage.
+
+# 2. Rendering
+   - Utilize batch rendering to reduce the number of draw calls.
+   - Implement efficient shader programs and minimize the use of expensive graphical effects.
+
 
 #### ArcticOne font:
 
@@ -102,16 +161,17 @@ See License.txt for details.
 
 Just execute the following commands in terminal line by line to install all the required libraries and tools, clone the repository to ~/arctic, build and run the demo project: 
 
-```bash
+//Install dependencies
 sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libgles2-mesa-dev
+//Clone the repository
 cd ~
 git clone https://gitlab.com/seaice/arctic.git
 cd ~/arctic
+//Build and run the demo project
 cd ./wizard
 cmake .
 make -j 4
 ./wizard
-```
 
 ### Raspberry Pi notes
 
@@ -122,3 +182,5 @@ If you experience low sound quality on built-in audio output, in /boot/config.tx
 audio_pwm_mode=2
 ```
 You might need to update your firmware in order for this to work.
+
+Thank you for choosing Arctic Engine for your game development journey! We're excited to have you as part of our community. If you have any questions or need assistance, feel free to reach out on our discussion forum or through our support channels.
