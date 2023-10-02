@@ -100,8 +100,10 @@ class Panel : public std::enable_shared_from_this<Panel> {
   virtual void SetCurrentTab(bool is_current_tab);
   virtual void AddChild(std::shared_ptr<Panel> child);
   virtual void SetVisible(bool is_visible);
+  virtual void SetEnabled(bool is_enabled);
   virtual bool IsVisible();
   virtual bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos);
+  virtual void SetEnabledByTag(Ui64 tag, bool is_enabled);
 };
 
 class Button : public Panel {
@@ -142,7 +144,7 @@ class Button : public Panel {
       std::shared_ptr<Panel> *out_current_tab) override;
   void SetCurrentTab(bool is_current_tab) override;
   void SetVisible(bool is_visible) override;
-  void SetEnabled(bool is_enabled);
+  void SetEnabled(bool is_enabled) override;
   bool IsVisible() override;
   bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 };

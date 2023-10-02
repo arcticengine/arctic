@@ -279,6 +279,18 @@ bool Panel::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
   return true;
 }
 
+void Panel::SetEnabled(bool) {
+}
+
+void Panel::SetEnabledByTag(Ui64 tag, bool is_enabled) {
+  for (auto it = children_.begin(); it != children_.end(); ++it) {
+    (*it)->SetEnabledByTag(tag, is_enabled);
+  }
+  if (tag == tag_) {
+    SetEnabled(is_enabled);
+  }
+}
+
 Button::Button(Ui64 tag, Vec2Si32 pos,
   Sprite normal, Sprite down, Sprite hovered,
   Sound down_sound, Sound up_sound,
