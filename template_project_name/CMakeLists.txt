@@ -99,6 +99,10 @@ include_directories(${CMAKE_SOURCE_DIR}/../arctic)
 ################# Flags ################
 # Defines Flags for Windows and Linux. #
 ########################################
+IF (APPLE)
+ELSE (APPLE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+ENDIF (APPLE)
 
 message(STATUS "CompilerId: ${CMAKE_CXX_COMPILER_ID}.")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3")
