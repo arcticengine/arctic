@@ -107,7 +107,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" 
     set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
     IF (APPLE)
     ELSE (APPLE)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -no-pie")
     ENDIF (APPLE)
 endif()
 
