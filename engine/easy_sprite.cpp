@@ -1266,13 +1266,15 @@ void Sprite::Draw(const Si32 to_x_pivot, const Si32 to_y_pivot,
 
 void Sprite::Draw(const Vec2F to, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
-  Draw(to.x, to.y, Width(), Height(), angle_radians, GetEngine()->GetBackbuffer(),
+  Draw(to.x, to.y, static_cast<float>(Width()), static_cast<float>(Height()),
+      angle_radians, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 
 void Sprite::Draw(const float to_x, const float to_y, float angle_radians,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color) {
-  Draw(to_x, to_y, Width(), Height(), angle_radians, GetEngine()->GetBackbuffer(),
+  Draw(to_x, to_y, static_cast<float>(Width()), static_cast<float>(Height()),
+      angle_radians, GetEngine()->GetBackbuffer(),
       blending_mode, filter_mode, in_color);
 }
 

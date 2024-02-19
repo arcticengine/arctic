@@ -194,7 +194,8 @@ class Sprite {
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) {
-    Draw(in_color, static_cast<float>(to.x), static_cast<float>(to.y), Width(), Height(),
+    Draw(in_color, static_cast<float>(to.x), static_cast<float>(to.y),
+        static_cast<float>(Width()), static_cast<float>(Height()),
         angle_radians, blending_mode, filter_mode);
   }
   [[deprecated("Use the Draw(const Vec2F to, ...) overload")]]
