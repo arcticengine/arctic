@@ -39,7 +39,7 @@ class Sound {
  private:
   std::shared_ptr<SoundInstance> sound_instance_;
   stb_vorbis *vorbis_codec_ = nullptr;
-  std::string file_name_ = "CLEAR";
+  std::shared_ptr<std::string> file_name_ = std::make_shared<std::string>("CLEAR");
  public:
   void Load(const std::string &file_name, bool do_unpack);
   void Load(const char *file_name, bool do_unpack, std::vector<Ui8> *in_data);

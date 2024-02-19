@@ -48,7 +48,7 @@ void Sound::Load(const char *file_name) {
 void Sound::Load(const char *file_name, bool do_unpack, std::vector<Ui8> *in_data) {
   Clear();
   std::vector<Ui8> loaded_data;
-  file_name_ = file_name;
+  file_name_ = std::make_shared<std::string>(file_name);
   Check(!!file_name, "Error in Sound::Load, file_name is nullptr.");
   const char *last_dot = strrchr(file_name, '.');
   Check(!!last_dot, "Error in Sound::Load, file_name has no extension.");
@@ -109,7 +109,7 @@ void Sound::Load(const std::string &file_name, bool do_unpack) {
 
 void Sound::Create(double duration) {
   Clear();
-  file_name_ = "CREATE";
+  file_name_ = std::make_shared<std::string>("CREATE");
   double samples = duration * 44100.f + 0.5f;
   // TODO(Huldra): Handle overflows
   sound_instance_ = std::make_shared<SoundInstance>(static_cast<Si32>(samples));
@@ -121,7 +121,7 @@ void Sound::Create(double duration) {
 }
 
 void Sound::Clear() {
-  file_name_ = "CLEAR";
+  file_name_ = std::make_shared<std::string>("CLEAR");
   if (vorbis_codec_) {
     stb_vorbis_close(vorbis_codec_);
     vorbis_codec_ = nullptr;
@@ -180,7 +180,7 @@ Si16 *Sound::RawData() {
 }
 
 Si32 Sound::DurationSamples() {
-  return sound_instance_->GetDurationSamples();
+  return sound_instance_ ? sound_instance_->GetDurationSamples() : 0;
 }
 
 Si32 Sound::StreamOut(Si32 offset, Si32 size,
