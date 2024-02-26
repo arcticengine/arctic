@@ -569,90 +569,104 @@ bool ShowProgress() {
   char text[1 << 20];
   while (!IsKeyDownward(kKeyEscape)) {
     switch (step) {
-      case 1:
-      {
-        bool is_ok = false;
-        for (Si32 i = 0; i < 10; ++i) {
-          std::string file;
-          file.clear();
-          file.append(g_current_directory);
-          file.append("/arctic.engine");
-          std::vector<Ui8> data = ReadFile(file.c_str(), true);
-          const char *expected = "arctic.engine";
-          if (data.size() >= std::strlen(expected)) {
-            if (memcmp(data.data(), expected, std::strlen(expected)) == 0) {
-              is_ok = true;
-              break;
-            }
+    case 1:
+    {
+      bool is_ok = false;
+      for (Si32 i = 0; i < 10; ++i) {
+        std::string file;
+        file.clear();
+        file.append(g_current_directory);
+        file.append("/arctic.engine");
+        std::vector<Ui8> data = ReadFile(file.c_str(), true);
+        const char* expected = "arctic.engine";
+        if (data.size() >= std::strlen(expected)) {
+          if (memcmp(data.data(), expected, std::strlen(expected)) == 0) {
+            is_ok = true;
+            break;
           }
-          g_current_directory.append("/..");
         }
+        g_current_directory.append("/..");
+      }
+      if (is_ok) {
+        g_path = g_current_directory;
+        g_path.append("/..");
+        g_path.append("/");
+        g_path.append(g_project_name);
+        //g_progress.append((const char *)u8"Arctic Engine is detected.\n");
+      }
+      else {
+        g_progress.append((const char*)u8"\003Can't detect Arctic Engine. ERROR.\n");
+        step = 100500;
+        g_sound_error.Play();
+      }
+    }
+    break;
+    case 2:
+      if (DoesDirectoryExist(g_path.c_str()) == 0) {
+        //g_progress.append((const char *)u8"Directory name is OK\n");
+      }
+      else {
+        g_progress.append((const char*)u8"\003A directory named \"");
+        g_progress.append(g_path);
+        g_progress.append((const char*)u8"\" already exists. ERROR. Use another name.\n");
+        step = 100500;
+        g_sound_error.Play();
+      }
+      break;
+    case 3:
+      if (MakeDirectory(g_path.c_str())) {
+        // g_progress.append((const char *)u8"Directory is created OK\n");
+        g_project_directory = g_path;
+      }
+      else {
+        g_progress.append((const char*)u8"\003Can't create directory \"");
+        g_progress.append(g_path);
+        g_progress.append((const char*)u8"\". ERROR.\n");
+        step = 100500;
+        g_sound_error.Play();
+      }
+      break;
+    case 4:
+      g_template = g_current_directory + "/template_project_name";
+      if (DoesDirectoryExist(g_template.c_str()) == 1) {
+        // g_progress.append((const char *)u8"Template found OK\n");
+      }
+      else {
+        g_progress.append((const char*)u8"\003Can't find template directory \"");
+        g_progress.append(g_template);
+        g_progress.append((const char*)u8"\". ERROR.\n");
+        step = 100500;
+        g_sound_error.Play();
+      }
+      break;
+    case 5:
+    {
+      std::vector<std::string> files = {
+        "Assets.xcassets"
+        , "Assets.xcassets/AppIcon.appiconset"
+        , "data"
+        , "template_project_name.xcodeproj"
+        , "template_project_name.xcodeproj/project.xcworkspace"
+        , "template_project_name.xcodeproj/xcshareddata"
+        , "template_project_name.xcodeproj/xcshareddata/xcschemes/"
+      };
+      for (size_t idx = 0; idx < files.size(); ++idx) {
+        std::string name = files[idx];
+        ReplaceAll("template_project_name", g_project_name, &name);
+        bool is_ok = MakeDirectory((g_project_directory + "/" + name).c_str());
+
         if (is_ok) {
-          g_path = g_current_directory;
-          g_path.append("/..");
-          g_path.append("/");
-          g_path.append(g_project_name);
-          g_progress.append((const char *)u8"Arctic Engine is detected.\n");
+          //g_progress.append((const char*)u8"Project structure created OK\n");
         } else {
-          g_progress.append((const char *)u8"\003Can't detect Arctic Engine. ERROR.\n");
+          g_progress.append((const char*)u8"\003Can't create directory \"");
+          g_progress.append((g_project_directory + "/" + name).c_str());
+          g_progress.append((const char*)u8"\". ERROR.\n");
           step = 100500;
           g_sound_error.Play();
+          break;
         }
       }
-        break;
-      case 2:
-        if (DoesDirectoryExist(g_path.c_str()) == 0) {
-          g_progress.append((const char *)u8"Directory name is OK\n");
-        } else {
-          g_progress.append((const char *)u8"\003A directory named \"");
-          g_progress.append(g_path);
-          g_progress.append((const char *)u8"\" already exists. ERROR. Use another name.\n");
-          step = 100500;
-          g_sound_error.Play();
-        }
-        break;
-      case 3:
-        if (MakeDirectory(g_path.c_str())) {
-          g_progress.append((const char *)u8"Directory is created OK\n");
-          g_project_directory = g_path;
-        } else {
-          g_progress.append((const char *)u8"\003Can't create directory \"");
-          g_progress.append(g_path);
-          g_progress.append((const char *)u8"\". ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
-        }
-        break;
-      case 4:
-        g_template = g_current_directory + "/template_project_name";
-        if (DoesDirectoryExist(g_template.c_str()) == 1) {
-          g_progress.append((const char *)u8"Template found OK\n");
-        } else {
-          g_progress.append((const char *)u8"\003Can't find template directory \"");
-          g_progress.append(g_template);
-          g_progress.append((const char *)u8"\". ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
-        }
-        break;
-      case 5:
-      {
-        std::vector<std::string> files = {
-          "Assets.xcassets"
-          , "Assets.xcassets/AppIcon.appiconset"
-          , "data"
-          , "template_project_name.xcodeproj"
-          , "template_project_name.xcodeproj/project.xcworkspace"
-          , "template_project_name.xcodeproj/xcshareddata"
-          , "template_project_name.xcodeproj/xcshareddata/xcschemes/"
-        };
-        for (size_t idx = 0; idx < files.size(); ++idx) {
-          std::string name = files[idx];
-          ReplaceAll("template_project_name", g_project_name, &name);
-          MakeDirectory((g_project_directory + "/" + name).c_str());
-        }
-        g_progress.append((const char *)u8"Project structure created OK\n");
-      }
+    }
         break;
       case 6:
       {
@@ -687,7 +701,7 @@ bool ShowProgress() {
           WriteFile((g_project_directory + "/" + name).c_str(),
               data.data(), data.size());
         }
-        g_progress.append((const char *)u8"Data files copied OK\n");
+        //g_progress.append((const char *)u8"Data files copied OK\n");
       }
         break;
       case 7:
@@ -734,9 +748,7 @@ bool ShowProgress() {
             PatchAndCopyTemplateFile("main_hello.cpp", "main.cpp");
             break;
         }
-        g_progress.append((const char *)u8"Project created OK\n");
-
-        g_sound_jingle.Play();
+        // g_progress.append((const char *)u8"Project created OK\n");
 
         if (!g_pause_when_done) {
           return false;
@@ -795,7 +807,7 @@ bool ShowUpdateProgress() {
           g_current_directory = CanonicalizePath(g_current_directory.c_str());
         }
         if (is_ok) {
-          g_progress.append((const char *)u8"Arctic Engine is detected.\n");
+          // g_progress.append((const char *)u8"Arctic Engine is detected.\n");
         } else {
           g_progress.append((const char *)u8"\003Can't detect Arctic Engine. ERROR.\n");
           step = 100500;
@@ -1102,7 +1114,7 @@ bool ShowUpdateProgress() {
         WriteFile(xcode_project_full_name.c_str(),
           reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
           resulting_file.str().size());
-        g_progress.append((const char *)u8"XCode project updated OK\n");
+        // g_progress.append((const char *)u8"XCode project updated OK\n");
       }
         break;
       case 5: {
@@ -1328,13 +1340,13 @@ bool ShowUpdateProgress() {
             reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
             resulting_file.str().size());
         }
-        g_progress.append((const char *)u8"Visual Studio project updated OK\n");
+        // g_progress.append((const char *)u8"Visual Studio project updated OK\n");
       }
         break;
       case 6:
         g_template = g_current_directory + "/template_project_name";
         if (DoesDirectoryExist(g_template.c_str()) == 1) {
-          g_progress.append((const char *)u8"Template found OK\n");
+          // g_progress.append((const char *)u8"Template found OK\n");
         } else {
           g_progress.append((const char *)u8"\003Can't find template directory \"");
           g_progress.append(g_template);
@@ -1345,8 +1357,9 @@ bool ShowUpdateProgress() {
         break;
       case 7: {
           PatchAndCopyTemplateFile("CMakeLists.txt");
-          g_progress.append((const char *)u8"Latest CMakeLists.txt applied OK\n");
-          g_progress.append((const char *)u8"All Done\n");
+          // g_progress.append((const char *)u8"Latest CMakeLists.txt applied OK\n");
+          g_progress.append((const char *)u8"\nAll Done\n");
+          g_sound_jingle.Play();
           if (!g_pause_when_done) {
             return false;
           }
@@ -1361,9 +1374,9 @@ bool ShowUpdateProgress() {
     UpdateResolution();
     Clear();
     const char *welcome = (const char *)u8"The Snow Wizard\n\n"
-    "Creating project \"%s\"\n\n"
+    "Creating project \"%s\"\n"
     "Current directory: %s\n"
-    "%s\n\n"
+    "%s\n"
     "Press ESC to leave the Snow Wizard";
 
     snprintf(text, sizeof(text), welcome,
