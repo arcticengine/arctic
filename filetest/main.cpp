@@ -21,13 +21,14 @@ void EasyMain() {
   str << "from " << CanonicalizePath("../../../../../") << "\n";
   str << "to " << CanonicalizePath("../../../../../../piLibs") << "\n";
   
-  bool isok = GetDirectoryEntries("../../../../../../piLibs", &list);
+  bool isok = GetDirectoryEntries("../piLibs", &list);
+  bool isnear = isok;
+  isok = isok || GetDirectoryEntries("../../../../../../piLibs", &list);
   Check(isok, "Can't list directory");
   for (const auto &entry: list) {
     str << entry.title << "\n";
   }
   std::string res = str.str();
-  std::cout << res << std::endl;
-  
-  WriteFile("../../../result.txt", (const Ui8*)(const void*)res.data(), res.size());
+  std::cout << res << std::endl; 
+  WriteFile(isnear ? "result.txt" : "../../../result.txt", (const Ui8*)(const void*)res.data(), res.size());
 }

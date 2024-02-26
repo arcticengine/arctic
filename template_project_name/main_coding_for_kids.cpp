@@ -1,5 +1,6 @@
 #include "engine/easy.h"
 #include "engine/unicode.h"
+#pragma warning( disable : 4244 ) 
 using namespace arctic;
 using std::string;
 
@@ -115,10 +116,10 @@ void Draw(Si32 x, Si32 y) {
 
 void Circle(Si32 x, Si32 y, float r) {
   for (Si32 i = 0; i < 1024; ++i) {
-    float alpha = (float)i * (1.f / 1024.f * M_PI * 2.f);
+    float alpha = (float)i * (1.f / 1024.f * (float)M_PI * 2.f);
     float s = std::sin(alpha) * r;
     float c = std::cos(alpha) * r;
-    SetPixel(x + c + 0.5f, y + s + 0.5f, InkRgba());
+    SetPixel(x + Si32(c + 0.5f), y + Si32(s + 0.5f), InkRgba());
   }
 }
 

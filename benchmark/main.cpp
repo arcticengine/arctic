@@ -258,7 +258,7 @@ void Update() {
     tiles[3].zoom = sinf(static_cast<float>(Time())) / 2.0f + 0.5f + 0.5f;
   }
   if (g_bench_idx == 3) {
-    tiles[1].angle = Time();
+    tiles[1].angle = static_cast<float>(Time());
   }
 
 }
@@ -267,24 +267,30 @@ void Render() {
   Clear();
 
   if (g_is_hw_enabled) {
-    for (const auto &tile : tiles) {
-
-        g_hw_blocks[tile.block_idx].Draw((float)tile.x, (float)tile.y, tile.w*tile.zoom, tile.h*tile.zoom, tile.angle,
-                                         tile.blending, kFilterNearest, tile.color);
+    for (const auto& tile : tiles) {
+      g_hw_blocks[tile.block_idx].Draw(tile.color,
+        (float)tile.x, (float)tile.y,
+        static_cast<float>(tile.w) * tile.zoom,
+        static_cast<float>(tile.h) * tile.zoom,
+        tile.angle,
+        tile.blending, kFilterNearest);
     }
   } else {
-    for (const auto &tile : tiles) {
+    for (const auto& tile : tiles) {
       if (tile.angle) {
+        g_sw_blocks[tile.block_idx].Draw(tile.color,
+          static_cast<float>(tile.x),
+          static_cast<float>(tile.y),
+          static_cast<float>(tile.w) * tile.zoom,
+          static_cast<float>(tile.h) * tile.zoom,
+          tile.angle,
+          tile.blending, kFilterNearest);
+      }
+      else {
         g_sw_blocks[tile.block_idx].Draw(tile.x, tile.y,
-                                         static_cast<int>(tile.w*tile.zoom),
-                                         static_cast<int>(tile.h*tile.zoom),
-                                         tile.angle,
-                                         tile.blending, kFilterNearest, tile.color);
-      } else {
-        g_sw_blocks[tile.block_idx].Draw(tile.x, tile.y,
-                                         static_cast<int>(tile.w*tile.zoom),
-                                         static_cast<int>(tile.h*tile.zoom),
-                                         tile.blending, kFilterNearest, tile.color);
+          static_cast<int>(static_cast<float>(tile.w) * tile.zoom),
+          static_cast<int>(static_cast<float>(tile.h) * tile.zoom),
+          tile.blending, kFilterNearest, tile.color);
       }
     }
   }

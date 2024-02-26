@@ -58,7 +58,7 @@ void Generate_food(std::list<std::pair<int, int>> &food) {
     int food_quantity = 100;
     static std::mt19937 rand;
     auto start = std::chrono::high_resolution_clock::now();
-    rand.seed((uint64_t)(std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count()));
+    rand.seed((uint32_t)(std::chrono::duration_cast<std::chrono::seconds>(start.time_since_epoch()).count()));
     static std::uniform_int_distribution<unsigned> random_x (1, ScreenSize().x - 1);
     static std::uniform_int_distribution<unsigned> random_y (1, ScreenSize().y - 1);
     

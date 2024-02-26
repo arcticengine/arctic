@@ -167,7 +167,7 @@ void DrawGame() {
   // Рисуем панельку сверху
   Rgba color = color_owner[turn];
   if (moves_left == 0 || winner != NEUTRAL)
-    color = Scale(color, 200 + 55 * sin(5 * Time())); // Мигаем кнопкой завершения хода
+    color = Scale(color, 200 + (Ui32)(55.0 * sin(5.0 * Time()))); // Мигаем кнопкой завершения хода
   DrawRectangle(Vec2Si32(0, tile_y * map_y), Vec2Si32(tile_x * map_x - 1, tile_y * map_y + menu_y - 1), color);
 
   ShowFrame();

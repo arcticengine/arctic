@@ -1193,6 +1193,12 @@ bool ShowUpdateProgress() {
             }
           }  // if .. entry is a file AND is missing from references
         }  // for ... entries
+        if (g_project_kind == kProjectKindCodingForKids) {
+          //engine_entries.emplace_back(
+          if (existing_files.find("code.inc.h") == existing_files.end()) {
+            new_h << "\n    <ClInclude Include=\"code.inc.h\" />";
+          }
+        }
 
         std::string rel_engine_h_path = RelativePathFromTo(
           (g_project_directory).c_str(),
