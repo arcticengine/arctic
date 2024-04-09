@@ -753,6 +753,10 @@ bool IsKeyDownward(const char *keys) {
   return false;
 }
 
+bool IsKeyDownward(const Si32 key_code) {
+  return IsKeyDownwardImpl(key_code);
+}
+
 bool IsKeyDownward(const char key) {
   if (key >= 'a' && key <= 'z') {
     return IsKeyDownwardImpl(static_cast<Ui32>(key)
@@ -788,6 +792,10 @@ bool IsKeyUpward(const char key) {
   return IsKeyUpwardImpl(static_cast<Ui32>(key));
 }
 
+bool IsKeyUpward(const Si32 key_code) {
+  return IsKeyUpwardImpl(key_code);
+}
+
 bool IsKeyUpward(const std::string &keys) {
   return IsKeyUpward(keys.c_str());
 }
@@ -812,6 +820,10 @@ bool IsKey(const char key) {
   return IsKeyDownward(key);
 }
 
+bool IsKey(const Si32 key_code) {
+  return IsKeyDownward(key_code);
+}
+
 bool IsKey(const std::string &keys) {
   return IsKeyDownward(keys);
 }
@@ -827,6 +839,10 @@ bool IsKeyDown(const char *keys) {
     }
   }
   return false;
+}
+
+bool IsKeyDown(const Si32 key_code) {
+  return IsKeyDownImpl(key_code);
 }
 
 bool IsKeyDown(const char key) {
