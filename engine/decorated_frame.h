@@ -99,6 +99,12 @@ class DecoratedFrame {
     is_y_scaleable_ = is_y_scaleable;
   }
 
+  void Split(const char *file_name, Si32 border_size, bool is_x_scaleable, bool is_y_scaleable) {
+    Sprite s;
+    s.Load(file_name);
+    Split(s, border_size, is_x_scaleable, is_y_scaleable);
+  }
+
   Vec2Si32 EstimateSizeForClienArea(Vec2Si32 client_area_size) {
     Vec2Si32 size_bound = client_area_size;
     if (!is_x_scaleable_) {
