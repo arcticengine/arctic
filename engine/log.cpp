@@ -35,6 +35,11 @@
 
 #include "engine/mtq_mpsc_vinfarr.h"
 #include "engine/arctic_platform.h"
+#include "engine/arctic_platform_def.h"
+
+#ifdef ARCTIC_PLATFORM_MACOSX
+#include <os/log.h>
+#endif
 
 namespace arctic {
 
@@ -118,6 +123,9 @@ void LoggerThreadFunction() {
         return;
       }
       is_flush_needed = true;
+#ifdef ARCTIC_PLATFORM_MACOSX
+      os_log_info(OS_LOG_DEFAULT, "%{public}s", message->c_str());
+#endif
       out.write(message->data(), static_cast<std::streamsize>(message->size()));
       Check(!(out.rdstate() & std::ios_base::badbit),
         "Error in LoggerThreadFunction. Can't write the file, file_name: ",
