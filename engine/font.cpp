@@ -1,4 +1,4 @@
-﻿// This is an open source non-commercial project. Dear PVS-Studio, please check it.
+// This is an open source non-commercial project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
 
 // The MIT License (MIT)
@@ -192,7 +192,7 @@ Letter g_tiny_font_letters[] = {
   {0x0, nullptr}
 };
 
-void Font::CreateEmpty(Si32 base_to_top, Si32 line_height) {
+void FontInstance::CreateEmpty(Si32 base_to_top, Si32 line_height) {
   codepoint_.clear();
   glyph_.clear();
   base_to_top_ = base_to_top;
@@ -200,11 +200,11 @@ void Font::CreateEmpty(Si32 base_to_top, Si32 line_height) {
   line_height_ = line_height;
 }
 
-void Font::AddGlyph(const Glyph &glyph) {
+void FontInstance::AddGlyph(const Glyph &glyph) {
   AddGlyph(glyph.codepoint, glyph.xadvance, glyph.sprite);
 }
 
-void Font::AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite) {
+void FontInstance::AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite) {
   glyph_.emplace_back(codepoint, xadvance, sprite);
   if (codepoint >= codepoint_.size()) {
     codepoint_.resize(codepoint + 1, nullptr);
@@ -212,7 +212,20 @@ void Font::AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite) {
   codepoint_[codepoint] = &glyph_.back();
 }
 
-void Font::Load(const char *file_name) {
+void FontInstance::GenerateCodepointVector() {
+  Ui32 end_codepoint = 0;
+  for (auto it = glyph_.begin(); it != glyph_.end(); ++it) {
+    if (it->codepoint >= end_codepoint) {
+      end_codepoint = it->codepoint + 1;
+    }
+  }
+  codepoint_.resize(end_codepoint, nullptr);
+  for (auto it = glyph_.begin(); it != glyph_.end(); ++it) {
+    codepoint_[it->codepoint] = &(*it);
+  }
+}
+
+void FontInstance::Load(const char *file_name) {
   codepoint_.clear();
   glyph_.clear();
 
@@ -342,19 +355,10 @@ void Font::Load(const char *file_name) {
     pos += block_size;
   }
 
-  Ui32 end_codepoint = 0;
-  for (auto it = glyph_.begin(); it != glyph_.end(); ++it) {
-    if (it->codepoint >= end_codepoint) {
-      end_codepoint = it->codepoint + 1;
-    }
-  }
-  codepoint_.resize(end_codepoint, nullptr);
-  for (auto it = glyph_.begin(); it != glyph_.end(); ++it) {
-    codepoint_[it->codepoint] = &(*it);
-  }
+  GenerateCodepointVector();
 }
 
-void Font::LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
+void FontInstance::LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
     Si32 base_to_top, Si32 line_height, Si32 space_width) {
   CreateEmpty(base_to_top, line_height);
   Si32 begin_x = 0;
@@ -383,7 +387,7 @@ void Font::LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
   AddGlyph(32, space_width, space);
 }
 
-void Font::LoadTable(Sprite sprite, const char* utf8_letters,
+void FontInstance::LoadTable(Sprite sprite, const char* utf8_letters,
     Si32 cell_width, Si32 cell_height,
     Si32 base_to_top, Si32 line_height, Si32 space_width,
     Si32 left_offset) {
@@ -409,7 +413,7 @@ void Font::LoadTable(Sprite sprite, const char* utf8_letters,
 
 }
 
-void Font::LoadLetterBits(Letter *in_letters,
+void FontInstance::LoadLetterBits(Letter *in_letters,
     Si32 base_to_top, Si32 line_height) {
   CreateEmpty(base_to_top, line_height);
   if (!in_letters) {
@@ -441,7 +445,7 @@ void Font::LoadLetterBits(Letter *in_letters,
   AddGlyph(32, 4, space);
 }
 
-void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
+void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
     const char *text, bool do_keep_xadvance,
     Si32 x, Si32 y, TextOrigin origin,
     DrawBlendingMode blending_mode,
@@ -541,44 +545,12 @@ void Font::DrawEvaluateSizeImpl(Sprite to_sprite,
   }
 }
 
-Vec2Si32 Font::EvaluateSize(const char *text, bool do_keep_xadvance) {
-  Vec2Si32 size;
-  Sprite empty;
-  DrawEvaluateSizeImpl(empty, text, do_keep_xadvance,
-    0, 0, kTextOriginFirstBase, kDrawBlendingModeCopyRgba, kFilterNearest,
-    Rgba(255, 255, 255), std::vector<Rgba>(), false,
-    &size);
-  return size;
-}
-
-void Font::Draw(Sprite to_sprite, const char *text,
-    const Si32 x, const Si32 y,
-    const TextOrigin origin,
-    const DrawBlendingMode blending_mode,
-    const DrawFilterMode filter_mode,
-    const Rgba color) {  //-V801
-  DrawEvaluateSizeImpl(to_sprite,
-    text, false, x, y, origin, blending_mode, filter_mode, color,
-    std::vector<Rgba>(), true, nullptr);
-}
-
-void Font::Draw(Sprite to_sprite, const char *text,
-    const Si32 x, const Si32 y,
-    const TextOrigin origin,
-    const DrawBlendingMode blending_mode,
-    const DrawFilterMode filter_mode,
-    const std::vector<Rgba> &palete) {
-  DrawEvaluateSizeImpl(to_sprite,
-    text, false, x, y, origin, blending_mode, filter_mode, palete[0],
-    palete, true, nullptr);
-}
-
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
-      const TextOrigin origin,
-      const DrawBlendingMode blending_mode,
-      const DrawFilterMode filter_mode,
-      const Rgba color) {  //-V801
-  DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
+    const TextOrigin origin,
+    const DrawBlendingMode blending_mode,
+    const DrawFilterMode filter_mode,
+    const Rgba color) {
+  font_instance_->DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
       text, false, x, y, origin,
       blending_mode, filter_mode, color,
       std::vector<Rgba>(), true, nullptr);
@@ -589,10 +561,12 @@ void Font::Draw(const char *text, const Si32 x, const Si32 y,
     const DrawBlendingMode blending_mode,
     const DrawFilterMode filter_mode,
     const std::vector<Rgba> &palete) {
-  DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
+  font_instance_->DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
       text, false, x, y, origin,
       blending_mode, filter_mode, palete[0],
       palete, true, nullptr);
 }
+
+
 
 }  // namespace arctic

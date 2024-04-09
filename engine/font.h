@@ -23,8 +23,9 @@
 #ifndef ENGINE_FONT_H_
 #define ENGINE_FONT_H_
 
-#include <vector>
 #include <list>
+#include <memory>
+#include <vector>
 
 #include "engine/arctic_types.h"
 #include "engine/easy_sprite.h"
@@ -173,7 +174,8 @@ enum TextOrigin {
   kTextOriginTop = 3  ///< The top of the first text line
 };
 
-struct Font {
+class FontInstance {
+public:
   std::vector<Glyph*> codepoint_;
   std::list<Glyph> glyph_;
   Si32 base_to_top_ = 0;
@@ -181,24 +183,97 @@ struct Font {
   Si32 line_height_ = 0;
   Si32 outline_ = 0;
 
+  FontInstance() {
+  }
+
+  FontInstance(const FontInstance &font) {
+    glyph_ = font.glyph_;
+    base_to_top_ = font.base_to_top_;
+    base_to_bottom_ = font.base_to_bottom_;
+    line_height_ = font.line_height_;
+    outline_ = font.outline_;
+    GenerateCodepointVector();
+  }
+
+  void CreateEmpty(Si32 base_to_top, Si32 line_height);
+  void AddGlyph(const Glyph &glyph);
+  void AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite);
+  void Load(const char *file_name);
+  void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
+                            Si32 base_to_top, Si32 line_height, Si32 space_width);
+  void LoadTable(Sprite sprite, const char* utf8_letters,
+                 Si32 cell_width, Si32 cell_height,
+                 Si32 base_to_top, Si32 line_height, Si32 space_width,
+                 Si32 left_offset);
+  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height);
+  void DrawEvaluateSizeImpl(Sprite to_sprite,
+                            const char *text, bool do_keep_xadvance,
+                            Si32 x, Si32 y, TextOrigin origin,
+                            DrawBlendingMode blending_mode,
+                            DrawFilterMode filter_mode,
+                            Rgba color, const std::vector<Rgba> &palete, bool do_draw,
+                            Vec2Si32 *out_size);
+  Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
+  void Draw(Sprite to_sprite, const char *text,
+            const Si32 x, const Si32 y,
+            const TextOrigin origin,
+            const DrawBlendingMode blending_mode,
+            const DrawFilterMode filter_mode,
+            const Rgba color);
+  void Draw(Sprite to_sprite, const char *text,
+            const Si32 x, const Si32 y,
+            const TextOrigin origin,
+            const DrawBlendingMode blending_mode,
+            const DrawFilterMode filter_mode,
+            const std::vector<Rgba> &palete);
+  void Draw(const char *text, const Si32 x, const Si32 y,
+            const TextOrigin origin,
+            const DrawBlendingMode blending_mode,
+            const DrawFilterMode filter_mode,
+            const Rgba color);
+  void Draw(const char *text, const Si32 x, const Si32 y,
+            const TextOrigin origin,
+            const DrawBlendingMode blending_mode,
+            const DrawFilterMode filter_mode,
+            const std::vector<Rgba> &palete);
+  void GenerateCodepointVector();
+};
+
+class Font {
+ private:
+  std::shared_ptr<arctic::FontInstance> font_instance_;
+ public:
+
+  Font() {
+    font_instance_ = std::make_shared<arctic::FontInstance>();
+  }
+
+  Font(const Font &font) {
+    font_instance_ = font.font_instance_;
+  }
+
   /// @brief Returns true for fonts with no codepoints. False for fonts with codepoints.
   inline bool IsEmpty() const {
-    return codepoint_.empty();
+    return font_instance_->codepoint_.empty();
   }
 
   /// @brief Returns outline size in pixels. Outline*2 is counted towards size.
   Si32 GetOutlineSize() {
-    return outline_;
+    return font_instance_->outline_;
   }
 
   /// @brief Creates an empty font with no glyphs
   /// @param [in] base_to_top Glyph height from base to top.
   /// @param [in] line_height Line height for the font.
-  void CreateEmpty(Si32 base_to_top, Si32 line_height);
+  void CreateEmpty(Si32 base_to_top, Si32 line_height) {
+    font_instance_->CreateEmpty(base_to_top, line_height);
+  }
 
   /// @brief Adds a glyph to the font
   /// @param [in] glyph Glyph to add.
-  void AddGlyph(const Glyph &glyph);
+  void AddGlyph(const Glyph &glyph) {
+    font_instance_->AddGlyph(glyph);
+  }
   /// @brief Adds a glyph to the font
   /// @param [in] codepoint UTF32 codepoint the glyph represents.
   /// @param [in] xadvance The increment of the 'cursor' x position used
@@ -214,11 +289,15 @@ struct Font {
   ///   \endcode
   /// @param [in] sprite The Sprite containing the graphical representation of
   ///   the glyph.
-  void AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite);
+  void AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite) {
+    font_instance_->AddGlyph(codepoint, xadvance, sprite);
+  }
 
   /// @brief Loads the font from file
   /// @param [in] file_name Path to the font file to load.
-  void Load(const char *file_name);
+  void Load(const char *file_name) {
+    font_instance_->Load(file_name);
+  }
 
   /// @brief Loads the font from a sprite containing a stripe of letters
   /// @param [in] sprite Sprite containing 1 pixel divided glyphs in a horizontal stripe.
@@ -228,7 +307,9 @@ struct Font {
   /// @param [in] line_height Line height for the font.
   /// @param [in] space_width Space glyph widht.
   void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
-      Si32 base_to_top, Si32 line_height, Si32 space_width);
+      Si32 base_to_top, Si32 line_height, Si32 space_width) {
+    font_instance_->LoadHorizontalStripe(sprite, utf8_letters, base_to_top, line_height, space_width);
+  }
 
   /// @brief Loads the font from a sprite containing a table of letters
   /// @param [in] sprite Sprite containing glyphs in a table.
@@ -243,18 +324,24 @@ struct Font {
   void LoadTable(Sprite sprite, const char* utf8_letters,
       Si32 cell_width, Si32 cell_height,
       Si32 base_to_top, Si32 line_height, Si32 space_width,
-      Si32 left_offset);
+      Si32 left_offset) {
+    font_instance_->LoadTable(sprite, utf8_letters, cell_width, cell_height,
+                              base_to_top, line_height, space_width, left_offset);
+  }
 
-  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height);
+  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height) {
+    font_instance_->LoadLetterBits(in_letters, base_to_top, line_height);
+  }
 
-  void DrawEvaluateSizeImpl(Sprite to_sprite,
-      const char *text, bool do_keep_xadvance,
-      Si32 x, Si32 y, TextOrigin origin,
-      DrawBlendingMode blending_mode,
-      DrawFilterMode filter_mode,
-      Rgba color, const std::vector<Rgba> &palete, bool do_draw,
-      Vec2Si32 *out_size);
-  Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
+  Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance) {
+    Vec2Si32 size;
+    Sprite empty;
+    font_instance_->DrawEvaluateSizeImpl(empty, text, do_keep_xadvance,
+                                         0, 0, kTextOriginFirstBase, kDrawBlendingModeCopyRgba, kFilterNearest,
+                                         Rgba(255, 255, 255), std::vector<Rgba>(), false,
+                                         &size);
+    return size;
+  }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
   ///   destination sprite
@@ -274,7 +361,11 @@ struct Font {
       const TextOrigin origin = kTextOriginBottom,
       const DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       const DrawFilterMode filter_mode = kFilterNearest,
-      const Rgba color = Rgba(0xffffffff));
+      const Rgba color = Rgba(0xffffffff)) {
+    font_instance_->DrawEvaluateSizeImpl(to_sprite,
+                                         text, false, x, y, origin, blending_mode, filter_mode, color,
+                                         std::vector<Rgba>(), true, nullptr);
+  }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
   ///   destination sprite
@@ -293,11 +384,15 @@ struct Font {
   ///   color-control characters and select the color from the palatte for the
   ///   following text.
   void Draw(Sprite to_sprite, const char *text,
-    const Si32 x, const Si32 y,
-    const TextOrigin origin,
-    const DrawBlendingMode blending_mode,
-    const DrawFilterMode filter_mode,
-    const std::vector<Rgba> &palete);
+      const Si32 x, const Si32 y,
+      const TextOrigin origin,
+      const DrawBlendingMode blending_mode,
+      const DrawFilterMode filter_mode,
+      const std::vector<Rgba> &palete) {
+    font_instance_->DrawEvaluateSizeImpl(to_sprite,
+                                         text, false, x, y, origin, blending_mode, filter_mode, palete[0],
+                                         palete, true, nullptr);
+  }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
   ///   backbuffer
@@ -337,6 +432,10 @@ struct Font {
       const DrawBlendingMode blending_mode,
       const DrawFilterMode filter_mode,
       const std::vector<Rgba> &palete);
+
+  const std::shared_ptr<FontInstance> &FontInstance() const {
+    return font_instance_;
+  }
 };
 /// @}
 
