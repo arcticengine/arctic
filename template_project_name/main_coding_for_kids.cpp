@@ -1,6 +1,6 @@
 #include "engine/easy.h"
 #include "engine/unicode.h"
-#pragma warning( disable : 4244 ) 
+#pragma warning( disable : 4244 )
 using namespace arctic;
 using std::string;
 
@@ -14,8 +14,8 @@ Vec2Si32 g_text_overlay_size(1, 1);
 
 struct TextCell {
   Ui32 codepoint = ' ';
-  Si32 ink = 8;
-  Si32 paper = 0;
+  Ui32 ink = 8;
+  Ui32 paper = 0;
 };
 
 std::vector<TextCell> g_text_overlay = {{}};
@@ -123,6 +123,7 @@ void Circle(Si32 x, Si32 y, float r) {
   }
 }
 
+
 void Fill(Si32 x, Si32 y) {
   Rgba c = GetPixel(x, y);
   Rgba target = InkRgba();
@@ -133,18 +134,22 @@ void Fill(Si32 x, Si32 y) {
   std::vector<Vec2Si32> next;
   next.reserve(screen_size.x * screen_size.y);
   next.emplace_back(x, y);
+  Vec2Si32 add[4] = {Vec2Si32(0,1), Vec2Si32(-1,0), Vec2Si32(1,0), Vec2Si32(0,-1)};
+  Sprite from_sprite = GetEngine()->GetBackbuffer();
+  Rgba *data = from_sprite.RgbaData();
+  Si32 stride = from_sprite.StridePixels();
+
   while (!next.empty()) {
     Vec2Si32 p = next.back();
     next.pop_back();
-    for (Si32 dx = -1; dx < 2; ++dx) {
-      for (Si32 dy = -1; dy < 2; ++dy) {
-        Vec2Si32 np(p.x + dx, p.y + dy);
-        if (np.x >= 0 && np.x < screen_size.x &&
-            np.y >= 0 && np.y < screen_size.y) {
-          if (GetPixel(np.x, np.y) == c) {
-            SetPixel(np.x, np.y, target);
-            next.push_back(np);
-          }
+    for (Si32 n = 0; n < 4; ++n) {
+      Vec2Si32 np(p.x + add[n].x, p.y + add[n].y);
+      if (np.x >= 0 && np.x < from_sprite.Width() && np.y >= 0 && np.y < from_sprite.Height()) {
+        Rgba color = data[np.x + np.y * stride];
+        color.a = 255;
+        if (color == c) {
+          data[np.x + np.y * stride] = target;
+          next.push_back(np);
         }
       }
     }
@@ -240,10 +245,16 @@ double Number(string text) {
   bool is_fract = false;
   double fract_mul = 0.1;
   size_t size = text.size();
-  if (size == 0) {
-    return result;
-  }
   size_t i = 0;
+  while (true) {
+    if (i == size) {
+      return 0.0;
+    }
+    if (text[i] != ' ' && text[i] != '\t') {
+      break;
+    }
+    ++i;
+  }
   if (text[i] == '-') {
     sign = -1.0;
     ++i;
@@ -264,8 +275,6 @@ double Number(string text) {
   }
   return result * sign;
 }
-
-
 
 Si32 DistanceSq(Rgba a, Rgba b) {
   Si32 deltaR = Si32(a.r) - Si32(b.r);
@@ -298,6 +307,20 @@ string Screen(Si32 x, Si32 y) {
   return Utf32ToUtf8(data);
 };
 
+Si32 ScreenInk(Si32 x, Si32 y) {
+  if (x < 0 || x >= g_text_overlay_size.x || y < 0 || y >= g_text_overlay_size.y) {
+    return 0;
+  }
+  return g_text_overlay[y*g_text_overlay_size.x+x].ink;
+}
+
+Si32 ScreenPaper(Si32 x, Si32 y) {
+  if (x < 0 || x >= g_text_overlay_size.x || y < 0 || y >= g_text_overlay_size.y) {
+    return 0;
+  }
+  return g_text_overlay[y*g_text_overlay_size.x+x].paper;
+}
+
 void At(Si32 x, Si32 y) {
   Si32 sx = x % g_text_overlay_size.x;
   Si32 ya = x / g_text_overlay_size.x;
@@ -325,12 +348,12 @@ void Print(string text) {
     tc.ink = g_ink;
     tc.paper = g_paper;
     tc.codepoint = codepoint;
-    if (codepoint < g_font_8x8.codepoint_.size()) {
+    if (codepoint < g_font_8x8.FontInstance()->codepoint_.size()) {
       if (codepoint == 10) {
         g_cursor.x = g_text_overlay_size.x - 1;
-      } else if (g_font_8x8.codepoint_[codepoint]) {
+      } else if (g_font_8x8.FontInstance()->codepoint_[codepoint]) {
         DrawRectangle(g_cursor * 8, g_cursor * 8 + Vec2Si32(7, 7), PaperRgba());
-        g_font_8x8.codepoint_[codepoint]->sprite.Draw(g_cursor.x * 8, g_cursor.y * 8,
+        g_font_8x8.FontInstance()->codepoint_[codepoint]->sprite.Draw(g_cursor.x * 8, g_cursor.y * 8,
           kDrawBlendingModeColorize, kFilterNearest, InkRgba());
       }
     }
@@ -420,6 +443,25 @@ void Show() {
   }
 
   ShowFrame();
+}
+
+void SetCharacter(string codepoint, Ui64 data_bits) {
+  Sprite sprite;
+  sprite.Create(Vec2Si32(8, 8));
+  for (Si32 y = 0; y < 8; ++y) {
+    Ui64 row = (data_bits >> (8*y));
+    for (Si32 x = 0; x < 8; ++x) {
+      if ((row << x) & 0x80) {
+        SetPixel(sprite, x, y, Rgba(255, 255, 255));
+      } else {
+        SetPixel(sprite, x, y, Rgba(0, 0, 0, 0));
+      }
+    }
+  }
+  sprite.UpdateOpaqueSpans();
+  Utf32Reader reader;
+  reader.Reset(codepoint.c_str());
+  g_font_8x8.AddGlyph(reader.ReadOne(), 0, sprite);
 }
 
 void EasyMain() {
