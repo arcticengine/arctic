@@ -44,6 +44,9 @@ bool IsKeyDownward(const char *keys);
 /// @brief Returns true if the key specified travelled downwards during the last frame
 /// @param key The key character code
 bool IsKeyDownward(const char key);
+/// @brief Returns true if the key with the specified key_code travelled downwards during the last frame
+/// @param key_code The key code
+bool IsKeyDownward(const Si32 key_code);
 /// @brief Returns true if any of the specified keys travelled downwards during the last frame
 /// @param keys A std::string specifying one or more key character codes to check
 bool IsKeyDownward(const std::string &keys);
@@ -58,6 +61,9 @@ bool IsKeyDown(const char *keys);
 /// @brief Returns true if the key specified was pressed during the last frame
 /// @param key The key character code
 bool IsKeyDown(const char key);
+/// @brief Returns true if the key with the specified key_code was pressed during the last frame
+/// @param key_code The key code
+bool IsKeyDown(const Si32 key_code);
 /// @brief Returns true if any of the specified keys was pressed during the last frame
 /// @param keys A std::string specifying one or more key character codes to check
 bool IsKeyDown(const std::string &keys);
@@ -72,6 +78,9 @@ bool IsKeyUpward(const char *keys);
 /// @brief Returns true if the key specified was released during the last frame
 /// @param key The key character code
 bool IsKeyUpward(const char key);
+/// @brief Returns true if the key with the specified key_code was released during the last frame
+/// @param key_code The key code
+bool IsKeyUpward(const Si32 key);
 /// @brief Returns true if any of the specified keys was released during the last frame
 /// @param keys A std::string specifying one or more key character codes to check
 bool IsKeyUpward(const std::string &keys);
@@ -135,6 +144,7 @@ const InputMessage& GetInputMessage(Si32 idx);
 bool IsKey(const KeyCode key_code);
 bool IsKey(const char *keys);
 bool IsKey(const char key);
+bool IsKey(const Si32 key_code);
 bool IsKey(const std::string &keys);
 
 }  // namespace arctic
