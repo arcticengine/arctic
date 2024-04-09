@@ -51,16 +51,18 @@ void Sound::Load(const char *file_name, bool do_unpack, std::vector<Ui8> *in_dat
   file_name_ = std::make_shared<std::string>(file_name);
   Check(!!file_name, "Error in Sound::Load, file_name is nullptr.");
   const char *last_dot = strrchr(file_name, '.');
-  Check(!!last_dot, "Error in Sound::Load, file_name has no extension.");
+  Check(!!last_dot, "Error in Sound::Load, file_name has no extension.", file_name);
   if (strcmp(last_dot, ".wav") == 0) {
     if (!in_data) {
       loaded_data = ReadFile(file_name, true);
       in_data = &loaded_data;
     }
-    if (!in_data->empty()) {
+    if (in_data->empty()) {
+      Log("Error in Sound::Load, loading empty or missing file \"", file_name, "\"");
+    } else {
       sound_instance_ = LoadWav(in_data->data(), static_cast<Si64>(in_data->size()));
       if (sound_instance_ == nullptr) {
-        Log("Error loading file \"", file_name, "\"");
+        Log("Error in Sound::Load, parsing file \"", file_name, "\"");
       }
     }
   } else if (strcmp(last_dot, ".ogg") == 0) {
