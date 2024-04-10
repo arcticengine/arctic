@@ -838,7 +838,7 @@ void Update() {
 
   if (!Hero().is_moving && !Hero().is_acting) {
     for (Ui32 idx = 0; idx < Hero().innate_actions.size(); ++idx) {
-      if (IsKeyDown(kKey0 + idx)) {
+      if (IsKeyDown(Si32(kKey0 + idx))) {
         Action &action = Hero().innate_actions[idx];
         if (IsActionPossible(Hero(), action)) {
           if (!Hero().is_acting) {
