@@ -6393,27 +6393,6 @@ namespace std
 }
 #endif
 
-#if defined(__SUNPRO_CC)
-namespace std
-{
-	// Workarounds for (non-standard) iterator category detection
-	std::bidirectional_iterator_tag __iterator_category(const pugi::xml_node_iterator&)
-	{
-		return std::bidirectional_iterator_tag();
-	}
-
-	std::bidirectional_iterator_tag __iterator_category(const pugi::xml_attribute_iterator&)
-	{
-		return std::bidirectional_iterator_tag();
-	}
-
-	std::bidirectional_iterator_tag __iterator_category(const pugi::xml_named_node_iterator&)
-	{
-		return std::bidirectional_iterator_tag();
-	}
-}
-#endif
-
 // Intel C++ does not properly keep warning state for function templates,
 // so popping warning state at the end of translation unit leads to warnings in the middle.
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER)

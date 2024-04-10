@@ -951,26 +951,6 @@ namespace pugi
 	deallocation_function  get_memory_deallocation_function();
 }
 
-#if (defined(_MSC_VER) || defined(__ICC))
-namespace std
-{
-	// Workarounds for (non-standard) iterator category detection for older versions (MSVC7/IC8 and earlier)
-	std::bidirectional_iterator_tag  _Iter_cat(const pugi::xml_node_iterator&);
-	std::bidirectional_iterator_tag  _Iter_cat(const pugi::xml_attribute_iterator&);
-	std::bidirectional_iterator_tag  _Iter_cat(const pugi::xml_named_node_iterator&);
-}
-#endif
-
-#if defined(__SUNPRO_CC)
-namespace std
-{
-	// Workarounds for (non-standard) iterator category detection
-	std::bidirectional_iterator_tag  __iterator_category(const pugi::xml_node_iterator&);
-	std::bidirectional_iterator_tag  __iterator_category(const pugi::xml_attribute_iterator&);
-	std::bidirectional_iterator_tag  __iterator_category(const pugi::xml_named_node_iterator&);
-}
-#endif
-
 #endif
 
 /**
