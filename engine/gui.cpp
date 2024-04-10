@@ -24,6 +24,9 @@
 // IN THE SOFTWARE.
 
 #include "engine/gui.h"
+#include "engine/pugixml.h"
+
+#include <sstream>
 
 #include <cstring>
 #include <memory>
@@ -588,7 +591,7 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
         text_.substr(0, static_cast<size_t>(selection_end_)).c_str(),
           true).x;
     Si32 y1 = absolute_pos.y;
-    Si32 y2 = absolute_pos.y + font_.line_height_;
+    Si32 y2 = absolute_pos.y + font_.FontInstance()->line_height_;
     Sprite backbuffer = GetEngine()->GetBackbuffer();
 
     x1 = std::max(absolute_pos.x, x1);
@@ -860,7 +863,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   } else {
     normal_.Draw(pos);
   }
-  Si32 border = (normal_.Height() - font_.line_height_) / 2;
+  Si32 border = (normal_.Height() - font_.FontInstance()->line_height_) / 2;
   Si32 space_width = font_.EvaluateSize(" ", false).x;
 
   Si32 available_width = size_.x - border * 2 - space_width;
@@ -935,7 +938,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     Si32 x2 = pos.x + border + font_.EvaluateSize(
       text_.substr(0, static_cast<size_t>(selection_end_)).c_str(), true).x;
     Si32 y1 = pos.y + border;
-    Si32 y2 = pos.y + border + font_.line_height_;
+    Si32 y2 = pos.y + border + font_.FontInstance()->line_height_;
     Sprite backbuffer = GetEngine()->GetBackbuffer();
 
     x1 = std::min(std::max(pos.x + border, x1 - skip_x),
@@ -967,35 +970,37 @@ void Editbox::SetSelectionMode(TextSelectionMode selection_mode,
 }
 
 
-HorizontalScroll::HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+Scrollbar::Scrollbar(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
   Sprite normal_background,
-  Sprite focused_background, Sprite normal_button_left,
-  Sprite focused_button_left, Sprite down_button_left,
-  Sprite normal_button_right, Sprite focused_button_right,
-  Sprite down_button_right, Sprite normal_button_cur,
+  Sprite focused_background, Sprite normal_button_dec,
+  Sprite focused_button_dec, Sprite down_button_dec,
+  Sprite normal_button_inc, Sprite focused_button_inc,
+  Sprite down_button_inc, Sprite normal_button_cur,
   Sprite focused_button_cur, Sprite down_button_cur,
-  Si32 min_value, Si32 max_value, Si32 value)
+  Si32 min_value, Si32 max_value, Si32 value,
+  ScrollKind kind)
   : Panel(tag, pos,
       Max(normal_background.Size(),
         focused_background.Size()),
       tab_order)
   , normal_background_(normal_background)
   , focused_background_(focused_background)
-  , normal_button_left_(std::move(normal_button_left))
-  , focused_button_left_(std::move(focused_button_left))
-  , down_button_left_(std::move(down_button_left))
-  , normal_button_right_(std::move(normal_button_right))
-  , focused_button_right_(std::move(focused_button_right))
-  , down_button_right_(std::move(down_button_right))
+  , normal_button_dec_(std::move(normal_button_dec))
+  , focused_button_dec_(std::move(focused_button_dec))
+  , down_button_dec_(std::move(down_button_dec))
+  , normal_button_inc_(std::move(normal_button_inc))
+  , focused_button_inc_(std::move(focused_button_inc))
+  , down_button_inc_(std::move(down_button_inc))
   , normal_button_cur_(std::move(normal_button_cur))
   , focused_button_cur_(std::move(focused_button_cur))
   , down_button_cur_(std::move(down_button_cur))
   , min_value_(min_value)
   , max_value_(max_value)
-  , value_(value) {
+  , value_(value)
+  , dir_(kind) {
 }
 
-void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
+void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
     const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
@@ -1010,15 +1015,15 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
     "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
-  //    x1    x2  x3    x4
+  //    s1    s2  s3    s4
   // |--|-----|---|-----|--|
   // |<<|     | @ |     |>>|
   // |--|-----|---|-----|--|
-  Si32 x1 = 1 + normal_button_left_.Size().x;
-  Si32 x4 = size_.x - 1 - normal_button_right_.Size().x;
-  Si32 w = x4 - x1 - normal_button_cur_.Size().x;
-  Si32 x2 = x1 + w * (value_ - min_value_) / (max_value_ - min_value_);
-  Si32 x3 = x2 + normal_button_cur_.Size().x;
+  Si32 s1 = 1 + normal_button_dec_.Size()[dir_];
+  Si32 s4 = size_[dir_] - 1 - normal_button_inc_.Size()[dir_];
+  Si32 w = s4 - s1 - normal_button_cur_.Size()[dir_];
+  Si32 s2 = s1 + w * (value_ - min_value_) / (max_value_ - min_value_);
+  Si32 s3 = s2 + normal_button_cur_.Size()[dir_];
 
   ScrollState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
@@ -1033,8 +1038,8 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
         is_current_tab_) {
       *out_current_tab = shared_from_this();
       *in_out_is_applied = true;
-      Si32 drag_x = relative_pos.x - start_x_;
-      Si32 value_diff = drag_x * (max_value_ - min_value_) / w;
+      Si32 drag_s = relative_pos[dir_] - start_relative_s_;
+      Si32 value_diff = drag_s * (max_value_ - min_value_) / w;
       value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
       out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
     } else if (message.keyboard.state[kKeyMouseLeft] != 1) {
@@ -1053,40 +1058,40 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
         is_current_tab_ = true;
         *in_out_is_applied = true;
         if (state_ == kMiddleDragged) {
-          Si32 drag_x = relative_pos.x - start_x_;
-          Si32 value_diff = drag_x * (max_value_ - min_value_) / w;
+          Si32 drag_s = relative_pos[dir_] - start_relative_s_;
+          Si32 value_diff = drag_s * (max_value_ - min_value_) / w;
           value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
           out_gui_messages->emplace_back(
               shared_from_this(), kGuiScrollChange);
-        } else if (relative_pos.x < x1) {
-          state_ = kLeftDown;
+        } else if (relative_pos[dir_] < s1) {
+          state_ = kDecDown;
           if (prev_state != state_) {
             value_ = std::max(min_value_, value_ - 1);
             out_gui_messages->emplace_back(
                 shared_from_this(), kGuiScrollChange);
           }
-        } else if (relative_pos.x < x2) {
-          state_ = kLeftFast;
+        } else if (relative_pos[dir_] < s2) {
+          state_ = kDecFast;
           if (prev_state != state_) {
             value_ = std::max(min_value_, value_ - 5);
             out_gui_messages->emplace_back(
                 shared_from_this(), kGuiScrollChange);
           }
-        } else if (relative_pos.x < x3) {
+        } else if (relative_pos[dir_] < s3) {
           state_ = kMiddleDragged;
           if (prev_state != state_) {
-            start_x_ = relative_pos.x;
+            start_relative_s_ = relative_pos[dir_];
             start_value_ = value_;
           }
-        } else if (relative_pos.x < x4) {
-          state_ = kRightFast;
+        } else if (relative_pos[dir_] < s4) {
+          state_ = kIncFast;
           if (prev_state != state_) {
             value_ = std::min(max_value_, value_ + 5);
             out_gui_messages->emplace_back(
                 shared_from_this(), kGuiScrollChange);
           }
         } else {
-          state_ = kRightDown;
+          state_ = kIncDown;
           if (prev_state != state_) {
             value_ = std::min(max_value_, value_ + 1);
             out_gui_messages->emplace_back(
@@ -1123,7 +1128,7 @@ void HorizontalScroll::ApplyInput(Vec2Si32 parent_pos,
   }
 }
 
-void HorizontalScroll::Draw(Vec2Si32 parent_absolute_pos) {
+void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
   if (state_ == kHidden) {
     return;
   }
@@ -1134,26 +1139,30 @@ void HorizontalScroll::Draw(Vec2Si32 parent_absolute_pos) {
   } else {
     focused_background_.Draw(absolute_pos);
   }
-  if (state_ == kLeftDown) {
-    down_button_left_.Draw(absolute_pos + button_offset);
+  if (state_ == kDecDown) {
+    down_button_dec_.Draw(absolute_pos + button_offset);
   } else {
-    normal_button_left_.Draw(absolute_pos + button_offset);
+    normal_button_dec_.Draw(absolute_pos + button_offset);
   }
-  Vec2Si32 right_pos = absolute_pos + size_.xo()
-    - normal_button_right_.Size().xo() + Vec2Si32(-1, 0);
-  if (state_ == kRightDown) {
-    down_button_right_.Draw(right_pos + button_offset);
+  Vec2Si32 inc_pos = absolute_pos +
+    (dir_
+     ? size_.oy() - normal_button_inc_.Size().oy() + Vec2Si32(0, -1)
+     : size_.xo() - normal_button_inc_.Size().xo() + Vec2Si32(-1, 0));
+  if (state_ == kIncDown) {
+    down_button_inc_.Draw(inc_pos + button_offset);
   } else {
-    normal_button_right_.Draw(right_pos + button_offset);
+    normal_button_inc_.Draw(inc_pos + button_offset);
   }
-  Vec2Si32 after_left = absolute_pos + button_offset.xo()
-    + normal_button_left_.Size().xo();
-  Si32 width = right_pos.x - after_left.x - normal_button_cur_.Size().x + 1;
+  Vec2Si32 after_dec = absolute_pos +
+    (dir_
+     ? button_offset.oy() + normal_button_dec_.Size().oy()
+     : button_offset.xo() + normal_button_dec_.Size().xo());
+  Si32 length = inc_pos[dir_] - after_dec[dir_] - normal_button_cur_.Size()[dir_] + 1;
   Si32 offset = 0;
-  if (width > 0 && max_value_ != min_value_) {
-    offset = width * (value_ - min_value_) / (max_value_ - min_value_);
+  if (length > 0 && max_value_ != min_value_) {
+    offset = length * (value_ - min_value_) / (max_value_ - min_value_);
   }
-  Vec2Si32 cur_pos = after_left + Vec2Si32(offset, 1);
+  Vec2Si32 cur_pos = after_dec + (dir_ ? Vec2Si32(1, offset) : Vec2Si32(offset, 1));
   if (state_ == kMiddleDragged) {
     down_button_cur_.Draw(cur_pos);
   } else {
@@ -1162,15 +1171,425 @@ void HorizontalScroll::Draw(Vec2Si32 parent_absolute_pos) {
   Panel::Draw(parent_absolute_pos);
 }
 
-void HorizontalScroll::SetValue(Si32 value) {
+void Scrollbar::SetValue(Si32 value) {
   value_ = std::min(max_value_, std::max(min_value_, value));
 }
 
-Si32 HorizontalScroll::GetValue() const {
+Si32 Scrollbar::GetValue() const {
   return value_;
 }
 
 
+
+Checkbox::Checkbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+                   Sprite clear_normal,
+                   Sprite checked_normal,
+                   Sprite clear_down,
+                   Sprite checked_down,
+                   Sprite clear_hovered,
+                   Sprite checked_hovered,
+                   Sprite clear_disabled,
+                   Sprite checked_disabled,
+                   Sound down_sound,
+                   Sound up_sound,
+                   KeyCode hotkey,
+                   CheckboxValue value)
+    : Panel(tag,
+        pos,
+        Max(clear_normal.Size(), Max(clear_hovered.Size(), clear_down.Size())),
+        tab_order)
+    , down_sound_(std::move(down_sound))
+    , up_sound_(std::move(up_sound))
+    , hotkey_(hotkey)
+    , value_(value) {
+  normal_[0] = clear_normal;
+  normal_[1] = checked_normal;
+  down_[0] = clear_down;
+  down_[1] = checked_down;
+  hovered_[0] = clear_hovered;
+  hovered_[1] = checked_hovered;
+  disabled_[0] = clear_disabled;
+  disabled_[1] = checked_disabled;
+}
+
+void Checkbox::Draw(Vec2Si32 parent_absolute_pos) {
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  switch (state_) {
+  case kHidden:
+    break;
+  case kNormal:
+    normal_[value_].Draw(absolute_pos);
+    break;
+  case kHovered:
+    hovered_[value_].Draw(absolute_pos);
+    break;
+  case kDown:
+    down_[value_].Draw(absolute_pos);
+    break;
+  case kDisabled:
+    disabled_[value_].Draw(absolute_pos);
+    break;
+  }
+  Panel::Draw(parent_absolute_pos);
+}
+
+void Checkbox::SetEnabled(bool is_enabled) {
+  if (state_ == Checkbox::kHidden) {
+    return;
+  }
+  if (is_enabled) {
+    if (state_ == Checkbox::kDisabled) {
+      state_ = Checkbox::kNormal;
+      return;
+    }
+  } else {
+    if (state_ != Checkbox::kDisabled) {
+      state_ = Checkbox::kDisabled;
+      return;
+    }
+  }
+}
+
+void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+    bool is_top_level,
+    bool *in_out_is_applied,
+    std::deque<GuiMessage> *out_gui_messages,
+    std::shared_ptr<Panel> *out_current_tab) {
+  if (state_ == kHidden || state_ == kDisabled) {
+    return;
+  }
+  Check(in_out_is_applied,
+    "ApplyInput must not be called with in_out_is_applied == nullptr");
+  Check(out_gui_messages,
+    "ApplyInput must not be called with out_gui_messages == nullptr");
+  Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
+    out_gui_messages, out_current_tab);
+  CheckboxState prev_state = state_;
+  if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 pos = parent_pos + pos_;
+    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
+    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+      relative_pos.x < size_.x && relative_pos.y < size_.y;
+    if (is_inside && !*in_out_is_applied) {
+      *out_current_tab = Panel::Invalid();
+      is_current_tab_ = false;
+      if (message.keyboard.state[kKeyMouseLeft] == 1) {
+        state_ = kDown;
+      } else {
+        state_ = kHovered;
+        *in_out_is_applied = true;
+      }
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 2 &&
+          prev_state == kDown) {
+        *in_out_is_applied = true;
+        up_sound_.Play();
+        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+        value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
+      }
+    } else {
+      if (is_current_tab_) {
+        state_ = kHovered;
+      } else {
+        state_ = kNormal;
+      }
+    }
+    if (state_ != prev_state) {
+      if (state_ == kDown) {
+        down_sound_.Play();
+        *in_out_is_applied = true;
+        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+      }
+      if (prev_state == kDown) {
+        up_sound_.Play();
+      }
+    }
+  } else if (message.kind == InputMessage::kKeyboard) {
+    if (!*in_out_is_applied) {
+      bool is_hotkey = (message.keyboard.key == hotkey_);
+      bool is_tab_order_enter = (is_current_tab_ &&
+        (message.keyboard.key == kKeyEnter ||
+          message.keyboard.key == kKeySpace));
+      if (is_hotkey || is_tab_order_enter) {
+        if (message.keyboard.key_state & 1u) {
+          if ((prev_state != kDown && is_hotkey) ||
+              (prev_state == kHovered && is_tab_order_enter)) {
+            *in_out_is_applied = true;
+            down_sound_.Play();
+            state_ = kDown;
+            if (is_hotkey && GetTabOrder() != 0) {
+              *out_current_tab = shared_from_this();
+            }
+            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+          }
+        } else {
+          if (prev_state == kDown) {
+            *in_out_is_applied = true;
+            up_sound_.Play();
+            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+            if (GetTabOrder() == 0 || !is_current_tab_) {
+              state_ = kNormal;
+            } else {
+              state_ = kHovered;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void Checkbox::SetCurrentTab(bool is_current_tab) {
+  if (!is_current_tab) {
+    if (state_ == kHovered) {
+      state_ = kNormal;
+    }
+  } else {
+    if (state_ == kNormal) {
+      state_ = kHovered;
+    }
+  }
+  is_current_tab_ = is_current_tab;
+}
+
+void Checkbox::SetVisible(bool is_visible) {
+  if (Panel::IsVisible() != is_visible) {
+    Panel::SetVisible(is_visible);
+    if (Panel::IsVisible()) {
+      state_ = kNormal;
+    } else {
+      state_ = kHidden;
+    }
+  }
+}
+
+bool Checkbox::IsVisible() {
+  bool is_visible = Panel::IsVisible();
+  bool should_be_visible = state_ != kHidden;
+  Check(is_visible == should_be_visible,
+      "Button visibility state inconsitency detected!");
+  return is_visible;
+}
+
+bool Checkbox::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
+  if (!is_visible_) {
+    return true;
+  }
+  Vec2Si32 pos = parent_pos + pos_;
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
+      return false;
+    }
+  }
+
+  Vec2Si32 relative_pos = mouse_pos - pos;
+  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+    relative_pos.x < size_.x && relative_pos.y < size_.y;
+  if (is_inside) {
+    return false;
+  }
+  return true;
+}
+
+void Checkbox::SetChecked(bool is_checked) {
+  value_ = (is_checked ? kValueChecked : kValueClear);
+}
+
+bool Checkbox::IsChecked() {
+  return value_ == kValueChecked;
+}
+
+
+void LoadDecoratedFrame(pugi::XmlDocument &doc, const char* child_name, DecoratedFrame *out_decorated_frame) {
+  pugi::XmlNode child = doc.child(child_name);
+  if (!child.empty()) {
+    out_decorated_frame->Split(child.attribute("path").as_string(""),
+                               child.attribute("border").as_int(0),
+                               child.attribute("is_x_scaleable").as_bool(false),
+                               child.attribute("is_y_scaleable").as_bool(false));
+  }
+}
+
+void GuiTheme::Load(const char *xml_file_path) {
+  pugi::XmlDocument doc;
+  pugi::XmlParseResult parse_result = doc.load_file(xml_file_path);
+  if (parse_result.status != pugi::status_ok) {
+    std::stringstream str;
+    str << "Error loading " << xml_file_path << " gui theme, at offset " << parse_result.offset << " (line " << parse_result.line;
+    str << " column " << parse_result.column << ": " << parse_result.description();
+    Fatal(str.str().c_str());
+  }
+
+  LoadDecoratedFrame(doc, "panel_background", &panel_background_);
+  LoadDecoratedFrame(doc, "button_normal", &button_normal_);
+  LoadDecoratedFrame(doc, "button_down", &button_down_);
+  LoadDecoratedFrame(doc, "button_hovered", &button_hovered_);
+  LoadDecoratedFrame(doc, "button_disabled", &button_disabled_);
+
+  button_down_sound_.Load(doc.child("button_down_sound").attribute("path").as_string("button_down_sound"), true);
+  button_up_sound_.Load(doc.child("button_up_sound").attribute("path").as_string("button_up_sound"), true);
+
+  text_font_.Load("data/arctic_one_bmf.fnt");
+  text_origin_ = kTextOriginBottom;
+  text_palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
+  text_alignment_ = kAlignLeft;
+  text_selection_mode_ = kTextSelectionModeInvert;
+  text_selection_color_1_ = Rgba(0, 0, 0);
+  text_selection_color_2_ = Rgba(255, 255, 255);
+
+  LoadDecoratedFrame(doc, "progressbar_incomplete", &progressbar_incomplete_);
+  LoadDecoratedFrame(doc, "progressbar_complete", &progressbar_complete_);
+
+  editbox_font_.Load(doc.child("editbox_font").attribute("path").as_string(""));
+  editbox_origin_ = kTextOriginBottom;
+  editbox_color_ = Rgba(255, 255, 255);
+  editbox_alignment_ = kAlignLeft;
+  LoadDecoratedFrame(doc, "editbox_normal", &editbox_normal_);
+  LoadDecoratedFrame(doc, "editbox_focused", &editbox_focused_);
+  editbox_selection_mode_ = kTextSelectionModeInvert;
+  editbox_selection_color_1_ = Rgba(0, 0, 0);
+  editbox_selection_color_2_ = Rgba(255, 255, 255);
+
+  LoadDecoratedFrame(doc, "h_scrollbar_normal_background", &h_scrollbar_normal_background_);
+  LoadDecoratedFrame(doc, "h_scrollbar_focused_background", &h_scrollbar_focused_background_);
+  LoadDecoratedFrame(doc, "h_scrollbar_disabled_background", &h_scrollbar_disabled_background_);
+  h_scrollbar_normal_button_dec_.Load(doc.child("h_scrollbar_normal_button_dec").attribute("path").as_string("h_scrollbar_normal_button_dec"));
+  h_scrollbar_focused_button_dec_.Load(doc.child("h_scrollbar_focused_button_dec").attribute("path").as_string("h_scrollbar_focused_button_dec"));
+  h_scrollbar_down_button_dec_.Load(doc.child("h_scrollbar_down_button_dec").attribute("path").as_string("h_scrollbar_down_button_dec"));
+  h_scrollbar_disabled_button_dec_.Load(doc.child("h_scrollbar_disabled_button_dec").attribute("path").as_string("h_scrollbar_disabled_button_dec"));
+  h_scrollbar_normal_button_inc_.Load(doc.child("h_scrollbar_normal_button_inc").attribute("path").as_string("h_scrollbar_normal_button_inc"));
+  h_scrollbar_focused_button_inc_.Load(doc.child("h_scrollbar_focused_button_inc").attribute("path").as_string("h_scrollbar_focused_button_inc"));
+  h_scrollbar_down_button_inc_.Load(doc.child("h_scrollbar_down_button_inc").attribute("path").as_string("h_scrollbar_down_button_inc"));
+  h_scrollbar_disabled_button_inc_.Load(doc.child("h_scrollbar_disabled_button_inc").attribute("path").as_string("h_scrollbar_disabled_button_inc"));
+  h_scrollbar_normal_button_cur_.Load(doc.child("h_scrollbar_normal_button_cur").attribute("path").as_string("h_scrollbar_normal_button_cur"));
+  h_scrollbar_focused_button_cur_.Load(doc.child("h_scrollbar_focused_button_cur").attribute("path").as_string("h_scrollbar_focused_button_cur"));
+  h_scrollbar_down_button_cur_.Load(doc.child("h_scrollbar_down_button_cur").attribute("path").as_string("h_scrollbar_down_button_cur"));
+  h_scrollbar_disabled_button_cur_.Load(doc.child("h_scrollbar_disabled_button_cur").attribute("path").as_string("h_scrollbar_disabled_button_cur"));
+
+  LoadDecoratedFrame(doc, "v_scrollbar_normal_background", &v_scrollbar_normal_background_);
+  LoadDecoratedFrame(doc, "v_scrollbar_focused_background", &v_scrollbar_focused_background_);
+  LoadDecoratedFrame(doc, "v_scrollbar_disabled_background", &v_scrollbar_disabled_background_);
+  v_scrollbar_normal_button_dec_.Load(doc.child("v_scrollbar_normal_button_dec").attribute("path").as_string("v_scrollbar_normal_button_dec"));
+  v_scrollbar_focused_button_dec_.Load(doc.child("v_scrollbar_focused_button_dec").attribute("path").as_string("v_scrollbar_focused_button_dec"));
+  v_scrollbar_down_button_dec_.Load(doc.child("v_scrollbar_down_button_dec").attribute("path").as_string("v_scrollbar_down_button_dec"));
+  v_scrollbar_disabled_button_dec_.Load(doc.child("v_scrollbar_disabled_button_dec").attribute("path").as_string("v_scrollbar_disabled_button_dec"));
+  v_scrollbar_normal_button_inc_.Load(doc.child("v_scrollbar_normal_button_inc").attribute("path").as_string("v_scrollbar_normal_button_inc"));
+  v_scrollbar_focused_button_inc_.Load(doc.child("v_scrollbar_focused_button_inc").attribute("path").as_string("v_scrollbar_focused_button_inc"));
+  v_scrollbar_down_button_inc_.Load(doc.child("v_scrollbar_down_button_inc").attribute("path").as_string("v_scrollbar_down_button_inc"));
+  v_scrollbar_disabled_button_inc_.Load(doc.child("v_scrollbar_disabled_button_inc").attribute("path").as_string("v_scrollbar_disabled_button_inc"));
+  v_scrollbar_normal_button_cur_.Load(doc.child("v_scrollbar_normal_button_cur").attribute("path").as_string("v_scrollbar_normal_button_cur"));
+  v_scrollbar_focused_button_cur_.Load(doc.child("v_scrollbar_focused_button_cur").attribute("path").as_string("v_scrollbar_focused_button_cur"));
+  v_scrollbar_down_button_cur_.Load(doc.child("v_scrollbar_down_button_cur").attribute("path").as_string("v_scrollbar_down_button_cur"));
+  v_scrollbar_disabled_button_cur_.Load(doc.child("v_scrollbar_disabled_button_cur").attribute("path").as_string("v_scrollbar_disabled_button_cur"));
+
+  checkbox_clear_normal_.Load(doc.child("checkbox_clear_normal").attribute("path").as_string("checkbox_clear_normal"));
+  checkbox_checked_normal_.Load(doc.child("checkbox_checked_normal").attribute("path").as_string("checkbox_checked_normal"));
+  checkbox_clear_down_.Load(doc.child("checkbox_clear_down").attribute("path").as_string("checkbox_clear_down"));
+  checkbox_checked_down_.Load(doc.child("checkbox_checked_down").attribute("path").as_string("checkbox_checked_down"));
+  checkbox_clear_hovered_.Load(doc.child("checkbox_clear_hovered").attribute("path").as_string("checkbox_clear_hovered"));
+  checkbox_checked_hovered_.Load(doc.child("checkbox_checked_hovered").attribute("path").as_string("checkbox_checked_hovered"));
+  checkbox_clear_disabled_.Load(doc.child("checkbox_clear_disabled").attribute("path").as_string("checkbox_clear_disabled"));
+  checkbox_checked_disabled_.Load(doc.child("checkbox_checked_disabled").attribute("path").as_string("checkbox_checked_disabled"));
+  checkbox_down_sound_.Load(doc.child("checkbox_down_sound").attribute("path").as_string("checkbox_down_sound"), true);
+  checkbox_up_sound_.Load(doc.child("checkbox_up_sound").attribute("path").as_string("checkbox_up_sound"), true);
+}
+
+std::shared_ptr<Panel> GuiFactory::MakePanel() {
+  ++last_tag_;
+  Vec2Si32 size = ScreenSize() * 2 / 3;
+  Sprite background = theme_->panel_background_.DrawExternalSize(size);
+  return std::make_shared<Panel>(last_tag_, Vec2Si32(0, 0), size, last_tag_, background, false);
+}
+
+std::shared_ptr<Button> GuiFactory::MakeButton() {
+  ++last_tag_;
+  Vec2Si32 size(48, 16);
+  return std::make_shared<Button>(last_tag_, Vec2Si32(0, 0), 
+                                  theme_->button_normal_.DrawExternalSize(size),
+                                  theme_->button_down_.DrawExternalSize(size),
+                                  theme_->button_hovered_.DrawExternalSize(size),
+                                  theme_->button_down_sound_,
+                                  theme_->button_up_sound_,
+                                  kKeyNone, last_tag_,
+                                  theme_->button_disabled_.DrawExternalSize(size));
+}
+
+std::shared_ptr<Text> GuiFactory::MakeText() {
+  ++last_tag_;
+  return std::make_shared<Text>(last_tag_, Vec2Si32(0, 0), Vec2Si32(0, 0), last_tag_, theme_->text_font_,
+                                theme_->text_origin_, theme_->text_palete_, "Text", theme_->text_alignment_);
+}
+
+std::shared_ptr<Progressbar> GuiFactory::MakeProgressbar() {
+  ++last_tag_;
+  Vec2Si32 size(48, 16);
+  Sprite background = theme_->panel_background_.DrawExternalSize(size);
+  return std::make_shared<Progressbar>(last_tag_, Vec2Si32(0, 0),
+                                       theme_->progressbar_incomplete_.DrawExternalSize(size),
+                                       theme_->progressbar_complete_.DrawExternalSize(size),
+                                       theme_->text_palete_,
+                                       theme_->text_font_,
+                                       1.0f, 0.0f);
+}
+
+std::shared_ptr<Scrollbar> GuiFactory::MakeHScrollbar() {
+  ++last_tag_;
+  Vec2Si32 size(48, 16);
+  Sprite background = theme_->panel_background_.DrawExternalSize(size);
+  return std::make_shared<Scrollbar>(last_tag_, Vec2Si32(0, 0), last_tag_,
+                                     theme_->h_scrollbar_normal_background_.DrawExternalSize(size),
+                                     theme_->h_scrollbar_focused_background_.DrawExternalSize(size),
+                                     theme_->h_scrollbar_normal_button_dec_,
+                                     theme_->h_scrollbar_focused_button_dec_,
+                                     theme_->h_scrollbar_down_button_dec_,
+                                     theme_->h_scrollbar_normal_button_inc_,
+                                     theme_->h_scrollbar_focused_button_inc_,
+                                     theme_->h_scrollbar_down_button_inc_,
+                                     theme_->h_scrollbar_normal_button_cur_,
+                                     theme_->h_scrollbar_focused_button_cur_,
+                                     theme_->h_scrollbar_down_button_cur_,
+                                     0, 100, 0,
+                                     Scrollbar::kScrollHorizontal);
+}
+
+std::shared_ptr<Scrollbar> GuiFactory::MakeVScrollbar() {
+  ++last_tag_;
+  Vec2Si32 size(16, 48);
+  Sprite background = theme_->panel_background_.DrawExternalSize(size);
+  return std::make_shared<Scrollbar>(last_tag_, Vec2Si32(0, 0), last_tag_,
+                                     theme_->v_scrollbar_normal_background_.DrawExternalSize(size),
+                                     theme_->v_scrollbar_focused_background_.DrawExternalSize(size),
+                                     theme_->v_scrollbar_normal_button_dec_,
+                                     theme_->v_scrollbar_focused_button_dec_,
+                                     theme_->v_scrollbar_down_button_dec_,
+                                     theme_->v_scrollbar_normal_button_inc_,
+                                     theme_->v_scrollbar_focused_button_inc_,
+                                     theme_->v_scrollbar_down_button_inc_,
+                                     theme_->v_scrollbar_normal_button_cur_,
+                                     theme_->v_scrollbar_focused_button_cur_,
+                                     theme_->v_scrollbar_down_button_cur_,
+                                     0, 100, 0,
+                                     Scrollbar::kScrollVertical);
+}
+
+std::shared_ptr<Checkbox> GuiFactory::MakeCheckbox() {
+  ++last_tag_;
+  Vec2Si32 size = ScreenSize() * 2 / 3;
+  Sprite background = theme_->panel_background_.DrawExternalSize(size);
+  return std::make_shared<Checkbox>(last_tag_, Vec2Si32(0, 0), last_tag_,
+                                    theme_->checkbox_clear_normal_,
+                                    theme_->checkbox_checked_normal_,
+                                    theme_->checkbox_clear_down_,
+                                    theme_->checkbox_checked_down_,
+                                    theme_->checkbox_clear_hovered_,
+                                    theme_->checkbox_checked_hovered_,
+                                    theme_->checkbox_clear_disabled_,
+                                    theme_->checkbox_checked_disabled_,
+                                    theme_->checkbox_down_sound_,
+                                    theme_->checkbox_up_sound_,
+                                    kKeyNone,
+                                    Checkbox::kValueClear);
+}
 
 }  // namespace arctic
 

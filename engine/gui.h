@@ -34,6 +34,7 @@
 #include "engine/easy_sound.h"
 #include "engine/easy_sprite.h"
 #include "engine/font.h"
+#include "engine/decorated_frame.h"
 
 namespace arctic {
 
@@ -46,7 +47,98 @@ enum GuiMessageKind {
   kGuiPanelLeftDown,
 };
 
+enum TextAlignment {
+  kAlignLeft,
+  kAlignCenter,
+  kAlignRight
+};
+
+enum TextSelectionMode {
+  kTextSelectionModeInvert,
+  kTextSelectionModeSwapColors
+};
+
 class Panel;
+
+class GuiTheme {
+ public:
+  DecoratedFrame panel_background_;
+
+  DecoratedFrame button_normal_;
+  DecoratedFrame button_down_;
+  DecoratedFrame button_hovered_;
+  DecoratedFrame button_disabled_;
+  Sound button_down_sound_;
+  Sound button_up_sound_;
+
+  Font text_font_;
+  TextOrigin text_origin_;
+  std::vector<Rgba> text_palete_;
+  TextAlignment text_alignment_;
+  TextSelectionMode text_selection_mode_;
+  Rgba text_selection_color_1_;
+  Rgba text_selection_color_2_;
+
+  DecoratedFrame progressbar_incomplete_;
+  DecoratedFrame progressbar_complete_;
+
+  Font editbox_font_;
+  TextOrigin editbox_origin_;
+  Rgba editbox_color_;
+  TextAlignment editbox_alignment_;
+  DecoratedFrame editbox_normal_;
+  DecoratedFrame editbox_focused_;
+  TextSelectionMode editbox_selection_mode_;
+  Rgba editbox_selection_color_1_;
+  Rgba editbox_selection_color_2_;
+
+  DecoratedFrame h_scrollbar_normal_background_;
+  DecoratedFrame h_scrollbar_focused_background_;
+  DecoratedFrame h_scrollbar_disabled_background_;
+  Sprite h_scrollbar_normal_button_dec_;
+  Sprite h_scrollbar_focused_button_dec_;
+  Sprite h_scrollbar_down_button_dec_;
+  Sprite h_scrollbar_disabled_button_dec_;
+  Sprite h_scrollbar_normal_button_inc_;
+  Sprite h_scrollbar_focused_button_inc_;
+  Sprite h_scrollbar_down_button_inc_;
+  Sprite h_scrollbar_disabled_button_inc_;
+  Sprite h_scrollbar_normal_button_cur_;
+  Sprite h_scrollbar_focused_button_cur_;
+  Sprite h_scrollbar_down_button_cur_;
+  Sprite h_scrollbar_disabled_button_cur_;
+
+  DecoratedFrame v_scrollbar_normal_background_;
+  DecoratedFrame v_scrollbar_focused_background_;
+  DecoratedFrame v_scrollbar_disabled_background_;
+  Sprite v_scrollbar_normal_button_dec_;
+  Sprite v_scrollbar_focused_button_dec_;
+  Sprite v_scrollbar_down_button_dec_;
+  Sprite v_scrollbar_disabled_button_dec_;
+  Sprite v_scrollbar_normal_button_inc_;
+  Sprite v_scrollbar_focused_button_inc_;
+  Sprite v_scrollbar_down_button_inc_;
+  Sprite v_scrollbar_disabled_button_inc_;
+  Sprite v_scrollbar_normal_button_cur_;
+  Sprite v_scrollbar_focused_button_cur_;
+  Sprite v_scrollbar_down_button_cur_;
+  Sprite v_scrollbar_disabled_button_cur_;
+
+  Sprite checkbox_clear_normal_;
+  Sprite checkbox_checked_normal_;
+  Sprite checkbox_clear_down_;
+  Sprite checkbox_checked_down_;
+  Sprite checkbox_clear_hovered_;
+  Sprite checkbox_checked_hovered_;
+  Sprite checkbox_clear_disabled_;
+  Sprite checkbox_checked_disabled_;
+  Sound checkbox_down_sound_;
+  Sound checkbox_up_sound_;
+
+  void Load(const char *xml_file_path);
+};
+
+
 
 class GuiMessage {
  public:
@@ -149,17 +241,6 @@ class Button : public Panel {
   bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 };
 
-enum TextAlignment {
-  kAlignLeft,
-  kAlignCenter,
-  kAlignRight
-};
-
-enum TextSelectionMode {
-  kTextSelectionModeInvert,
-  kTextSelectionModeSwapColors
-};
-
 class Text : public Panel {
  protected:
   Font font_;
@@ -249,47 +330,53 @@ class Editbox: public Panel {
       Rgba selection_color_2 = Rgba(255, 255, 255));
 };
 
-class HorizontalScroll : public Panel {
- public:
-  enum ScrollState {
-    kHidden = 0,
-    kNormal = 1,
-    kHovered = 2,
-    kLeftDown = 3,
-    kRightDown = 4,
-    kMiddleDragged = 5,
-    kLeftFast = 6,
-    kRightFast = 7
-  };
-
+class Scrollbar : public Panel {
+public:
+ enum ScrollState {
+   kHidden = 0,
+   kNormal = 1,
+   kHovered = 2,
+   kDecDown = 3,
+   kIncDown = 4,
+   kMiddleDragged = 5,
+   kDecFast = 6,
+   kIncFast = 7
+ };
+ enum ScrollKind {
+   kScrollHorizontal = 0,
+   kScrollVertical = 1
+ };
  protected:
   Sprite normal_background_;
   Sprite focused_background_;
-  Sprite normal_button_left_;
-  Sprite focused_button_left_;
-  Sprite down_button_left_;
-  Sprite normal_button_right_;
-  Sprite focused_button_right_;
-  Sprite down_button_right_;
+  Sprite normal_button_dec_;
+  Sprite focused_button_dec_;
+  Sprite down_button_dec_;
+  Sprite normal_button_inc_;
+  Sprite focused_button_inc_;
+  Sprite down_button_inc_;
   Sprite normal_button_cur_;
   Sprite focused_button_cur_;
   Sprite down_button_cur_;
+
   Si32 min_value_;
   Si32 max_value_;
   Si32 value_;
   ScrollState state_ = kNormal;
-  Si32 start_x_ = 0;
+  Si32 start_relative_s_ = 0;
   Si32 start_value_ = 0;
+  Si32 dir_ = 0; // 0 for horizontal, 1 for vertical
 
  public:
-  HorizontalScroll(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+  Scrollbar(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     Sprite normal_background,
     Sprite focused_background, Sprite normal_button_left,
     Sprite focused_button_left, Sprite down_button_left,
     Sprite normal_button_right, Sprite focused_button_right,
     Sprite down_button_right, Sprite normal_button_cur,
     Sprite focused_button_cur, Sprite down_button_cur,
-    Si32 min_value, Si32 max_value, Si32 value);
+    Si32 min_value, Si32 max_value, Si32 value,
+    ScrollKind kind);
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
@@ -299,6 +386,78 @@ class HorizontalScroll : public Panel {
   void SetValue(Si32 value);
   Si32 GetValue() const;
 };
+
+class Checkbox : public Panel {
+ public:
+  enum CheckboxState {
+    kHidden = 0,
+    kNormal = 1,
+    kHovered = 2,
+    kDown = 3,
+    kDisabled = 4
+  };
+
+  enum CheckboxValue {
+    kValueClear = 0,
+    kValueChecked = 1
+  };
+
+ protected:
+  Sprite normal_[2];
+  Sprite down_[2];
+  Sprite hovered_[2];
+  Sprite disabled_[2];
+  Sound down_sound_;
+  Sound up_sound_;
+  KeyCode hotkey_;
+  CheckboxState state_ = kNormal;
+  CheckboxValue value_ = kValueClear;
+
+ public:
+  Checkbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+    Sprite clear_normal,
+    Sprite checked_normal,
+    Sprite clear_down = Sprite(),
+    Sprite checked_down = Sprite(),
+    Sprite clear_hovered = Sprite(),
+    Sprite checked_hovered = Sprite(),
+    Sprite clear_disabled = Sprite(),
+    Sprite checked_disabled = Sprite(),
+    Sound down_sound = Sound(),
+    Sound up_sound = Sound(),
+    KeyCode hotkey = kKeyNone,
+    CheckboxValue value = kValueClear);
+  void Draw(Vec2Si32 parent_absolute_pos)
+    override;
+  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+  void SetCurrentTab(bool is_current_tab) override;
+  void SetVisible(bool is_visible) override;
+  void SetEnabled(bool is_enabled) override;
+  bool IsVisible() override;
+  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
+  void SetChecked(bool is_checked);
+  bool IsChecked();
+};
+
+class GuiFactory {
+protected:
+  Ui64 last_tag_ = 0;
+ public:
+  std::shared_ptr<GuiTheme> theme_;
+
+  std::shared_ptr<Panel> MakePanel();
+  std::shared_ptr<Button> MakeButton();
+  std::shared_ptr<Text> MakeText();
+  std::shared_ptr<Progressbar> MakeProgressbar();
+  std::shared_ptr<Scrollbar> MakeHScrollbar();
+  std::shared_ptr<Scrollbar> MakeVScrollbar();
+  std::shared_ptr<Checkbox> MakeCheckbox();
+};
+
 /// @}
 
 }  // namespace arctic

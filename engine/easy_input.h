@@ -80,7 +80,7 @@ bool IsKeyUpward(const char *keys);
 bool IsKeyUpward(const char key);
 /// @brief Returns true if the key with the specified key_code was released during the last frame
 /// @param key_code The key code
-bool IsKeyUpward(const Si32 key);
+bool IsKeyUpward(const Si32 key_code);
 /// @brief Returns true if any of the specified keys was released during the last frame
 /// @param keys A std::string specifying one or more key character codes to check
 bool IsKeyUpward(const std::string &keys);

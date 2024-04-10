@@ -1404,7 +1404,7 @@ void EasyMain() {
   g_font.Load("data/arctic_one_bmf.fnt");
 
   Sprite border;
-  border.Load("data/border.tga");
+  border.Load("data/panel_border.tga");
   g_border.Split(border, 32, true, true);
   Sprite button_normal;
   button_normal.Load("data/button_normal.tga");
