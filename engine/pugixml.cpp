@@ -3876,9 +3876,9 @@ PUGI__NS_BEGIN
 		res.encoding = buffer_encoding;
 
     // calculate error position line and column
-    if (res.offset && buffer && res.offset < length) {
+    if (res.offset && buffer && (size_t)res.offset < length) {
       res.line = 1;
-      for (size_t i = 0; i < res.offset; ++i) {
+      for (size_t i = 0; i < (size_t)res.offset; ++i) {
         if (buffer[i] == '\n') {
           res.line++;
           res.column=0;
@@ -6371,27 +6371,6 @@ namespace pugi
 		return impl::xml_memory::deallocate;
 	}
 }
-
-#if (defined(_MSC_VER) || defined(__ICC))
-namespace std
-{
-	// Workarounds for (non-standard) iterator category detection for older versions (MSVC7/IC8 and earlier)
-	std::bidirectional_iterator_tag _Iter_cat(const pugi::xml_node_iterator&)
-	{
-		return std::bidirectional_iterator_tag();
-	}
-
-	std::bidirectional_iterator_tag _Iter_cat(const pugi::xml_attribute_iterator&)
-	{
-		return std::bidirectional_iterator_tag();
-	}
-
-	std::bidirectional_iterator_tag _Iter_cat(const pugi::xml_named_node_iterator&)
-	{
-		return std::bidirectional_iterator_tag();
-	}
-}
-#endif
 
 // Intel C++ does not properly keep warning state for function templates,
 // so popping warning state at the end of translation unit leads to warnings in the middle.

@@ -1498,7 +1498,7 @@ std::shared_ptr<Panel> GuiFactory::MakePanel() {
   ++last_tag_;
   Vec2Si32 size = ScreenSize() * 2 / 3;
   Sprite background = theme_->panel_background_.DrawExternalSize(size);
-  return std::make_shared<Panel>(last_tag_, Vec2Si32(0, 0), size, last_tag_, background, false);
+  return std::make_shared<Panel>(last_tag_, Vec2Si32(0, 0), size, Ui32(last_tag_), background, false);
 }
 
 std::shared_ptr<Button> GuiFactory::MakeButton() {
@@ -1510,13 +1510,13 @@ std::shared_ptr<Button> GuiFactory::MakeButton() {
                                   theme_->button_hovered_.DrawExternalSize(size),
                                   theme_->button_down_sound_,
                                   theme_->button_up_sound_,
-                                  kKeyNone, last_tag_,
+                                  kKeyNone, Ui32(last_tag_),
                                   theme_->button_disabled_.DrawExternalSize(size));
 }
 
 std::shared_ptr<Text> GuiFactory::MakeText() {
   ++last_tag_;
-  return std::make_shared<Text>(last_tag_, Vec2Si32(0, 0), Vec2Si32(0, 0), last_tag_, theme_->text_font_,
+  return std::make_shared<Text>(last_tag_, Vec2Si32(0, 0), Vec2Si32(0, 0), Ui32(last_tag_), theme_->text_font_,
                                 theme_->text_origin_, theme_->text_palete_, "Text", theme_->text_alignment_);
 }
 
@@ -1536,7 +1536,7 @@ std::shared_ptr<Scrollbar> GuiFactory::MakeHScrollbar() {
   ++last_tag_;
   Vec2Si32 size(48, 16);
   Sprite background = theme_->panel_background_.DrawExternalSize(size);
-  return std::make_shared<Scrollbar>(last_tag_, Vec2Si32(0, 0), last_tag_,
+  return std::make_shared<Scrollbar>(last_tag_, Vec2Si32(0, 0), Ui32(last_tag_),
                                      theme_->h_scrollbar_normal_background_.DrawExternalSize(size),
                                      theme_->h_scrollbar_focused_background_.DrawExternalSize(size),
                                      theme_->h_scrollbar_normal_button_dec_,
@@ -1556,7 +1556,7 @@ std::shared_ptr<Scrollbar> GuiFactory::MakeVScrollbar() {
   ++last_tag_;
   Vec2Si32 size(16, 48);
   Sprite background = theme_->panel_background_.DrawExternalSize(size);
-  return std::make_shared<Scrollbar>(last_tag_, Vec2Si32(0, 0), last_tag_,
+  return std::make_shared<Scrollbar>(last_tag_, Vec2Si32(0, 0), Ui32(last_tag_),
                                      theme_->v_scrollbar_normal_background_.DrawExternalSize(size),
                                      theme_->v_scrollbar_focused_background_.DrawExternalSize(size),
                                      theme_->v_scrollbar_normal_button_dec_,
@@ -1576,7 +1576,7 @@ std::shared_ptr<Checkbox> GuiFactory::MakeCheckbox() {
   ++last_tag_;
   Vec2Si32 size = ScreenSize() * 2 / 3;
   Sprite background = theme_->panel_background_.DrawExternalSize(size);
-  return std::make_shared<Checkbox>(last_tag_, Vec2Si32(0, 0), last_tag_,
+  return std::make_shared<Checkbox>(last_tag_, Vec2Si32(0, 0), Ui32(last_tag_),
                                     theme_->checkbox_clear_normal_,
                                     theme_->checkbox_checked_normal_,
                                     theme_->checkbox_clear_down_,
