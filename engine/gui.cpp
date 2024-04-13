@@ -87,6 +87,23 @@ void Panel::SetPos(Vec2Si32 pos) {
   pos_ = pos;
 }
 
+void Panel::SetWidth(Si32 width) {
+  if (size_.x != width) {
+    size_.x = width;
+    RegenerateSprites();
+  }
+}
+
+void Panel::SetHeight(Si32 height) {
+  if (size_.y != height) {
+    size_.y = height;
+    RegenerateSprites();
+  }
+}
+
+void Panel::RegenerateSprites() {
+}
+
 void Panel::SetBackground(const Sprite &background) {
   background_ = background;
 }
@@ -121,8 +138,6 @@ void Panel::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     std::shared_ptr<Panel> *out_current_tab) {
   Check(in_out_is_applied,
     "ApplyInput must not be called with in_out_is_applied == nullptr");
-  Check(out_gui_messages,
-    "ApplyInput must not be called with out_gui_messages == nullptr");
   if (!is_visible_) {
     return;
   }
@@ -140,7 +155,10 @@ void Panel::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (is_inside) {
       if (message.keyboard.key == kKeyMouseLeft &&
           message.keyboard.key_state == 1) {
-        out_gui_messages->emplace_back(shared_from_this(), kGuiPanelLeftDown);
+        if (out_gui_messages) {
+          out_gui_messages->emplace_back(shared_from_this(), kGuiPanelLeftDown);
+        }
+        OnPanelLeftDown();
         *in_out_is_applied = true;
       }
     }
@@ -311,6 +329,20 @@ Button::Button(Ui64 tag, Vec2Si32 pos,
     , hotkey_(hotkey) {
 }
 
+Button::Button(Ui64 tag, std::shared_ptr<GuiThemeButton> theme)
+      : Panel(tag, Vec2Si32(0, 0), Vec2Si32(150, 54), (Ui32)tag)
+      , theme_(theme)
+      , down_sound_(theme->down_sound_)
+      , up_sound_(theme->up_sound_)
+      , hotkey_(kKeyNone) {
+  text_ = std::make_shared<Text>(0, theme->normal_.BorderSize(),
+    size_-theme->normal_.BorderSize()*2, 0,
+    theme->text_font_, kTextOriginBottom, theme->text_palete_, "",
+    theme->text_alignment_);
+  AddChild(text_);
+  RegenerateSprites();
+}
+
 void Button::Draw(Vec2Si32 parent_absolute_pos) {
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
   switch (state_) {
@@ -359,8 +391,6 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   }
   Check(in_out_is_applied,
     "ApplyInput must not be called with in_out_is_applied == nullptr");
-  Check(out_gui_messages,
-    "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
   ButtonState prev_state = state_;
@@ -383,7 +413,10 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           prev_state == kDown) {
         *in_out_is_applied = true;
         up_sound_.Play();
-        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+        if (out_gui_messages) {
+          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+        }
+        OnButtonClick();
       }
     } else {
       if (is_current_tab_) {
@@ -396,7 +429,10 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       if (state_ == kDown) {
         down_sound_.Play();
         *in_out_is_applied = true;
-        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+        if (out_gui_messages) {
+          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+        }
+        OnButtonDown();
       }
       if (prev_state == kDown) {
         up_sound_.Play();
@@ -418,13 +454,19 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             if (is_hotkey && GetTabOrder() != 0) {
               *out_current_tab = shared_from_this();
             }
-            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+            }
+            OnButtonDown();
           }
         } else {
           if (prev_state == kDown) {
             *in_out_is_applied = true;
             up_sound_.Play();
-            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+            }
+            OnButtonClick();
             if (GetTabOrder() == 0 || !is_current_tab_) {
               state_ = kNormal;
             } else {
@@ -487,6 +529,27 @@ bool Button::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
     return false;
   }
   return true;
+}
+
+void Button::SetText(std::string text) {
+  if (text_) {
+    text_->SetText(text);
+  }
+}
+
+void Button::RegenerateSprites() {
+  if (theme_) {
+    normal_ = theme_->normal_.DrawExternalSize(size_);
+    down_ = theme_->down_.DrawExternalSize(size_);
+    hovered_ = theme_->hovered_.DrawExternalSize(size_);
+    disabled_ = theme_->disabled_.DrawExternalSize(size_);
+
+    if (text_) {
+      Vec2Si32 text_size = size_ - theme_->normal_.BorderSize()*2;
+      text_->SetWidth(text_size.x);
+      text_->SetHeight(text_size.y);
+    }
+  }
 }
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
@@ -1011,8 +1074,6 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
   }
   Check(in_out_is_applied,
     "ApplyInput must not be called with in_out_is_applied == nullptr");
-  Check(out_gui_messages,
-    "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
   //    s1    s2  s3    s4
@@ -1041,7 +1102,10 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
       Si32 drag_s = relative_pos[dir_] - start_relative_s_;
       Si32 value_diff = drag_s * (max_value_ - min_value_) / w;
       value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
-      out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+      if (out_gui_messages) {
+        out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+      }
+      OnScrollChange();
     } else if (message.keyboard.state[kKeyMouseLeft] != 1) {
       if (is_inside && !*in_out_is_applied) {
         *out_current_tab = shared_from_this();
@@ -1061,21 +1125,27 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
           Si32 drag_s = relative_pos[dir_] - start_relative_s_;
           Si32 value_diff = drag_s * (max_value_ - min_value_) / w;
           value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
-          out_gui_messages->emplace_back(
-              shared_from_this(), kGuiScrollChange);
+          if (out_gui_messages) {
+            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          }
+          OnScrollChange();
         } else if (relative_pos[dir_] < s1) {
           state_ = kDecDown;
           if (prev_state != state_) {
             value_ = std::max(min_value_, value_ - 1);
-            out_gui_messages->emplace_back(
-                shared_from_this(), kGuiScrollChange);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            }
+            OnScrollChange();
           }
         } else if (relative_pos[dir_] < s2) {
           state_ = kDecFast;
           if (prev_state != state_) {
             value_ = std::max(min_value_, value_ - 5);
-            out_gui_messages->emplace_back(
-                shared_from_this(), kGuiScrollChange);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            }
+            OnScrollChange();
           }
         } else if (relative_pos[dir_] < s3) {
           state_ = kMiddleDragged;
@@ -1087,15 +1157,19 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
           state_ = kIncFast;
           if (prev_state != state_) {
             value_ = std::min(max_value_, value_ + 5);
-            out_gui_messages->emplace_back(
-                shared_from_this(), kGuiScrollChange);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            }
+            OnScrollChange();
           }
         } else {
           state_ = kIncDown;
           if (prev_state != state_) {
             value_ = std::min(max_value_, value_ + 1);
-            out_gui_messages->emplace_back(
-                shared_from_this(), kGuiScrollChange);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+            }
+            OnScrollChange();
           }
         }
       } else {
@@ -1111,10 +1185,16 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
       if (message.keyboard.key_state == 1) {
         if (message.keyboard.key == kKeyLeft) {
           value_ = Clamp(value_ - 1, min_value_, max_value_);
-          out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          if (out_gui_messages) {
+            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          }
+          OnScrollChange();
         } else if (message.keyboard.key == kKeyRight) {
           value_ = Clamp(value_ + 1, min_value_, max_value_);
-          out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          if (out_gui_messages) {
+            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+          }
+          OnScrollChange();
         }
       }
     }
@@ -1260,8 +1340,6 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   }
   Check(in_out_is_applied,
     "ApplyInput must not be called with in_out_is_applied == nullptr");
-  Check(out_gui_messages,
-    "ApplyInput must not be called with out_gui_messages == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
   CheckboxState prev_state = state_;
@@ -1284,8 +1362,11 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           prev_state == kDown) {
         *in_out_is_applied = true;
         up_sound_.Play();
-        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
         value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
+        if (out_gui_messages) {
+          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+        }
+        OnButtonClick();
       }
     } else {
       if (is_current_tab_) {
@@ -1298,7 +1379,10 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       if (state_ == kDown) {
         down_sound_.Play();
         *in_out_is_applied = true;
-        out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+        if (out_gui_messages) {
+          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+        }
+        OnButtonDown();
       }
       if (prev_state == kDown) {
         up_sound_.Play();
@@ -1320,18 +1404,24 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             if (is_hotkey && GetTabOrder() != 0) {
               *out_current_tab = shared_from_this();
             }
-            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
+            }
+            OnButtonDown();
           }
         } else {
           if (prev_state == kDown) {
             *in_out_is_applied = true;
             up_sound_.Play();
-            out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
+            }
             if (GetTabOrder() == 0 || !is_current_tab_) {
               state_ = kNormal;
             } else {
               state_ = kHovered;
             }
+            OnButtonClick();
           }
         }
       }
@@ -1421,13 +1511,6 @@ void GuiTheme::Load(const char *xml_file_path) {
   }
 
   LoadDecoratedFrame(doc, "panel_background", &panel_background_);
-  LoadDecoratedFrame(doc, "button_normal", &button_normal_);
-  LoadDecoratedFrame(doc, "button_down", &button_down_);
-  LoadDecoratedFrame(doc, "button_hovered", &button_hovered_);
-  LoadDecoratedFrame(doc, "button_disabled", &button_disabled_);
-
-  button_down_sound_.Load(doc.child("button_down_sound").attribute("path").as_string("button_down_sound"), true);
-  button_up_sound_.Load(doc.child("button_up_sound").attribute("path").as_string("button_up_sound"), true);
 
   text_font_.Load("data/arctic_one_bmf.fnt");
   text_origin_ = kTextOriginBottom;
@@ -1436,6 +1519,17 @@ void GuiTheme::Load(const char *xml_file_path) {
   text_selection_mode_ = kTextSelectionModeInvert;
   text_selection_color_1_ = Rgba(0, 0, 0);
   text_selection_color_2_ = Rgba(255, 255, 255);
+
+  button_ = std::make_shared<GuiThemeButton>();
+  LoadDecoratedFrame(doc, "button_normal", &button_->normal_);
+  LoadDecoratedFrame(doc, "button_down", &button_->down_);
+  LoadDecoratedFrame(doc, "button_hovered", &button_->hovered_);
+  LoadDecoratedFrame(doc, "button_disabled", &button_->disabled_);
+  button_->down_sound_.Load(doc.child("button_down_sound").attribute("path").as_string("button_down_sound"), true);
+  button_->up_sound_.Load(doc.child("button_up_sound").attribute("path").as_string("button_up_sound"), true);
+  button_->text_font_ = text_font_;
+  button_->text_palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
+  button_->text_alignment_ = kAlignCenter;
 
   LoadDecoratedFrame(doc, "progressbar_incomplete", &progressbar_incomplete_);
   LoadDecoratedFrame(doc, "progressbar_complete", &progressbar_complete_);
@@ -1501,17 +1595,16 @@ std::shared_ptr<Panel> GuiFactory::MakePanel() {
   return std::make_shared<Panel>(last_tag_, Vec2Si32(0, 0), size, Ui32(last_tag_), background, false);
 }
 
+std::shared_ptr<Panel> GuiFactory::MakeTransparentPanel() {
+  ++last_tag_;
+  Vec2Si32 size = ScreenSize() * 2 / 3;
+  Sprite background;
+  return std::make_shared<Panel>(last_tag_, Vec2Si32(0, 0), size, Ui32(last_tag_), background, false);
+}
+
 std::shared_ptr<Button> GuiFactory::MakeButton() {
   ++last_tag_;
-  Vec2Si32 size(48, 16);
-  return std::make_shared<Button>(last_tag_, Vec2Si32(0, 0), 
-                                  theme_->button_normal_.DrawExternalSize(size),
-                                  theme_->button_down_.DrawExternalSize(size),
-                                  theme_->button_hovered_.DrawExternalSize(size),
-                                  theme_->button_down_sound_,
-                                  theme_->button_up_sound_,
-                                  kKeyNone, Ui32(last_tag_),
-                                  theme_->button_disabled_.DrawExternalSize(size));
+  return std::make_shared<Button>(last_tag_, theme_->button_);
 }
 
 std::shared_ptr<Text> GuiFactory::MakeText() {
@@ -1532,7 +1625,7 @@ std::shared_ptr<Progressbar> GuiFactory::MakeProgressbar() {
                                        1.0f, 0.0f);
 }
 
-std::shared_ptr<Scrollbar> GuiFactory::MakeHScrollbar() {
+std::shared_ptr<Scrollbar> GuiFactory::MakeHorizontalScrollbar() {
   ++last_tag_;
   Vec2Si32 size(48, 16);
   Sprite background = theme_->panel_background_.DrawExternalSize(size);
@@ -1552,7 +1645,7 @@ std::shared_ptr<Scrollbar> GuiFactory::MakeHScrollbar() {
                                      Scrollbar::kScrollHorizontal);
 }
 
-std::shared_ptr<Scrollbar> GuiFactory::MakeVScrollbar() {
+std::shared_ptr<Scrollbar> GuiFactory::MakeVerticalScrollbar() {
   ++last_tag_;
   Vec2Si32 size(16, 48);
   Sprite background = theme_->panel_background_.DrawExternalSize(size);

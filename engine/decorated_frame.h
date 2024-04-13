@@ -218,6 +218,10 @@ class DecoratedFrame {
 
     return sprite;
   }
+
+  Vec2Si32 BorderSize() const {
+    return lower_left_.Size();
+  }
 };
 /// @}
 

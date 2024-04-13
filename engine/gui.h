@@ -60,16 +60,29 @@ enum TextSelectionMode {
 
 class Panel;
 
+void inline DoNothing() {
+  return;
+}
+
+class GuiThemeButton {
+ public:
+  DecoratedFrame normal_;
+  DecoratedFrame down_;
+  DecoratedFrame hovered_;
+  DecoratedFrame disabled_;
+  Sound down_sound_;
+  Sound up_sound_;
+
+  Font text_font_;
+  std::vector<Rgba> text_palete_;
+  TextAlignment text_alignment_;
+};
+
 class GuiTheme {
  public:
   DecoratedFrame panel_background_;
 
-  DecoratedFrame button_normal_;
-  DecoratedFrame button_down_;
-  DecoratedFrame button_hovered_;
-  DecoratedFrame button_disabled_;
-  Sound button_down_sound_;
-  Sound button_up_sound_;
+  std::shared_ptr<GuiThemeButton> button_;
 
   Font text_font_;
   TextOrigin text_origin_;
@@ -174,6 +187,8 @@ class Panel : public std::enable_shared_from_this<Panel> {
   void SetTag(Ui64 tag);
   Vec2Si32 GetPos() const;
   void SetPos(Vec2Si32 pos);
+  void SetWidth(Si32 width);
+  void SetHeight(Si32 height);
   void SetBackground(const Sprite &background);
   virtual ~Panel();
   virtual void Draw(Vec2Si32 parent_absolute_pos);
@@ -196,49 +211,9 @@ class Panel : public std::enable_shared_from_this<Panel> {
   virtual bool IsVisible();
   virtual bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos);
   virtual void SetEnabledByTag(Ui64 tag, bool is_enabled);
-};
+  virtual void RegenerateSprites();
 
-class Button : public Panel {
- public:
-  enum ButtonState {
-    kHidden = 0,
-    kNormal = 1,
-    kHovered = 2,
-    kDown = 3,
-    kDisabled = 4
-  };
-
- protected:
-  Sprite normal_;
-  Sprite down_;
-  Sprite hovered_;
-  Sprite disabled_;
-  Sound down_sound_;
-  Sound up_sound_;
-  KeyCode hotkey_;
-  ButtonState state_ = kNormal;
-
- public:
-  Button(Ui64 tag, Vec2Si32 pos,
-    Sprite normal,
-    Sprite down = Sprite(),
-    Sprite hovered = Sprite(),
-    Sound down_sound = Sound(),
-    Sound up_sound = Sound(),
-    KeyCode hotkey = kKeyNone, Ui32 tab_order = 0,
-    Sprite disabled = Sprite());
-  void Draw(Vec2Si32 parent_absolute_pos)
-    override;
-  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
-      bool is_top_level,
-      bool *in_out_is_applied,
-      std::deque<GuiMessage> *out_gui_messages,
-      std::shared_ptr<Panel> *out_current_tab) override;
-  void SetCurrentTab(bool is_current_tab) override;
-  void SetVisible(bool is_visible) override;
-  void SetEnabled(bool is_enabled) override;
-  bool IsVisible() override;
-  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
+  std::function<void(void)> OnPanelLeftDown = DoNothing;
 };
 
 class Text : public Panel {
@@ -269,6 +244,58 @@ class Text : public Panel {
       TextSelectionMode selection_mode = kTextSelectionModeInvert,
       Rgba selection_color_1 = Rgba(0, 0, 0),
       Rgba selection_color_2 = Rgba(255, 255, 255));
+};
+
+class Button : public Panel {
+ public:
+  enum ButtonState {
+    kHidden = 0,
+    kNormal = 1,
+    kHovered = 2,
+    kDown = 3,
+    kDisabled = 4
+  };
+
+ protected:
+  Sprite normal_;
+  Sprite down_;
+  Sprite hovered_;
+  Sprite disabled_;
+  Sound down_sound_;
+  Sound up_sound_;
+  KeyCode hotkey_;
+  ButtonState state_ = kNormal;
+  std::shared_ptr<Text> text_;
+  std::shared_ptr<GuiThemeButton> theme_;
+
+ public:
+  Button(Ui64 tag, Vec2Si32 pos,
+    Sprite normal,
+    Sprite down = Sprite(),
+    Sprite hovered = Sprite(),
+    Sound down_sound = Sound(),
+    Sound up_sound = Sound(),
+    KeyCode hotkey = kKeyNone,
+    Ui32 tab_order = 0,
+    Sprite disabled = Sprite());
+  Button(Ui64 tag, std::shared_ptr<GuiThemeButton> theme);
+  void Draw(Vec2Si32 parent_absolute_pos)
+    override;
+  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+  void SetCurrentTab(bool is_current_tab) override;
+  void SetVisible(bool is_visible) override;
+  void SetEnabled(bool is_enabled) override;
+  bool IsVisible() override;
+  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
+  void SetText(std::string text);
+  void RegenerateSprites() override;
+
+  std::function<void(void)> OnButtonClick = DoNothing;
+  std::function<void(void)> OnButtonDown = DoNothing;
 };
 
 class Progressbar: public Panel {
@@ -385,6 +412,8 @@ public:
   void Draw(Vec2Si32 parent_absolute_pos) override;
   void SetValue(Si32 value);
   Si32 GetValue() const;
+
+  std::function<void(void)> OnScrollChange = DoNothing;
 };
 
 class Checkbox : public Panel {
@@ -441,6 +470,9 @@ class Checkbox : public Panel {
   bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
   void SetChecked(bool is_checked);
   bool IsChecked();
+
+  std::function<void(void)> OnButtonClick = DoNothing;
+  std::function<void(void)> OnButtonDown = DoNothing;
 };
 
 class GuiFactory {
@@ -450,11 +482,12 @@ protected:
   std::shared_ptr<GuiTheme> theme_;
 
   std::shared_ptr<Panel> MakePanel();
+  std::shared_ptr<Panel> MakeTransparentPanel();
   std::shared_ptr<Button> MakeButton();
   std::shared_ptr<Text> MakeText();
   std::shared_ptr<Progressbar> MakeProgressbar();
-  std::shared_ptr<Scrollbar> MakeHScrollbar();
-  std::shared_ptr<Scrollbar> MakeVScrollbar();
+  std::shared_ptr<Scrollbar> MakeHorizontalScrollbar();
+  std::shared_ptr<Scrollbar> MakeVerticalScrollbar();
   std::shared_ptr<Checkbox> MakeCheckbox();
 };
 
