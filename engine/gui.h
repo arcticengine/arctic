@@ -24,6 +24,7 @@
 #define ENGINE_GUI_H_
 
 #include <deque>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_set>
