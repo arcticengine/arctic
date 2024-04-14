@@ -65,7 +65,8 @@ std::vector<Rgba> g_text_palete;
 
 
 Sound g_sound_chime;
-Sound g_sound_click;
+Sound g_sound_button_down;
+Sound g_sound_button_up;
 Sound g_sound_error;
 Sound g_sound_jingle;
 
@@ -230,7 +231,7 @@ std::shared_ptr<Button> MakeButton(Ui64 tag, Vec2Si32 pos,
   Sound silent;
   std::shared_ptr<Button> button(new Button(tag, pos,
     button_normal, button_down, button_hover,
-    silent, g_sound_click, hotkey, tab_order));
+    g_sound_button_down, g_sound_button_up, hotkey, tab_order));
   std::shared_ptr<Text> button_textbox(new Text(
     0, Vec2Si32(2, 8), Vec2Si32(button_size.x - 4, button_text_size.y),
     0, g_font, kTextOriginBottom, g_palete, text, kAlignCenter));
@@ -1393,7 +1394,8 @@ void EasyMain() {
   g_sound_chime.Load("data/chime.wav");
   g_sound_chime.Play();
 
-  g_sound_click.Load("data/click.wav");
+  g_sound_button_down.Load("data/button_down.wav");
+  g_sound_button_up.Load("data/button_up.wav");
   g_sound_error.Load("data/error.wav");
   g_sound_jingle.Load("data/jingle.wav");
 
