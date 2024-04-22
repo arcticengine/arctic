@@ -62,7 +62,7 @@ Panel::Panel(Ui64 tag, std::shared_ptr<GuiTheme> theme)
 : tag_(tag)
 , pos_(Vec2Si32(0, 0))
 , size_(Vec2Si32(64, 64))
-, tab_order_(tag)
+, tab_order_((Ui32)tag)
 , is_current_tab_(0)
 , is_clickable_(false)
 , is_visible_(true)
@@ -358,7 +358,17 @@ void Panel::RemoveChild(std::shared_ptr<Panel> child) {
   Check(child->parent_ != nullptr, "RemoveChild called with child that does not have a parent");
   Check(child->parent_ != this, "RemoveChild called with some other parents child");
   child->parent_ = nullptr;
-  children_.erase(std::remove(children_.begin(), children_.end(), child), children_.end());
+  size_t size = children_.size();
+  for (size_t to = 0; to < size; ++to) {
+    if (children_[to] == child) {
+      for (size_t from = to + 1; from < size; ++to) {
+        children_[to] = children_[from];
+      }
+      children_.pop_back();
+      return;
+    }
+  }
+  Fatal("RemoveChild could not remove the child");
 }
 
 void Panel::SetVisible(bool is_visible) {
@@ -836,7 +846,7 @@ Progressbar::Progressbar(Ui64 tag, Vec2Si32 pos,
 , complete_(complete)
 , total_value_(total_value)
 , current_value_(current_value) {
-  text_ = std::make_shared<Text>(Ui64(-1), Vec2Si32(0, 0), GetSize(), 0,
+  text_ = std::make_shared<Text>(Ui64(0), Vec2Si32(0, 0), GetSize(), 0,
                                  font, kTextOriginBottom, palete, "0% Done", kAlignCenter);
   Panel::AddChild(text_);
   UpdateText();
@@ -849,7 +859,7 @@ Progressbar::Progressbar(Ui64 tag, std::shared_ptr<GuiTheme> theme)
 , theme_(theme) {
   incomplete_ = theme_->progressbar_incomplete_.DrawExternalSize(size_);
   complete_ = theme_->progressbar_complete_.DrawExternalSize(size_);
-  text_ = std::make_shared<Text>(Ui64(-1), theme->button_->text_);
+  text_ = std::make_shared<Text>(Ui64(0), theme->button_->text_);
   text_->SetPos(theme->progressbar_incomplete_.BorderSize());
   text_->SetSize(size_-theme->progressbar_incomplete_.BorderSize()*2);
   text_->SetText("0%");
@@ -936,7 +946,7 @@ Editbox::Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
 }
 
 Editbox::Editbox(Ui64 tag, std::shared_ptr<GuiTheme> theme)
-: Panel(tag, Vec2Si32(0, 0), Vec2Si32(48, 48), Si32(tag))
+: Panel(tag, Vec2Si32(0, 0), Vec2Si32(48, 48), Ui32(tag))
 , font_(theme->editbox_text_->font_)
 , origin_(theme->editbox_text_->origin_)
 , color_(theme->editbox_text_->palete_[0])
@@ -1265,7 +1275,7 @@ Scrollbar::Scrollbar(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
 }
 
 Scrollbar::Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme)
-: Panel(tag, Vec2Si32(0, 0), (theme->is_horizontal_ ? Vec2Si32(48, 29) : Vec2Si32(29, 48)), Si32(tag))
+: Panel(tag, Vec2Si32(0, 0), (theme->is_horizontal_ ? Vec2Si32(48, 29) : Vec2Si32(29, 48)), Ui32(tag))
 , theme_(theme) {
   normal_background_ = theme_->normal_background_.DrawExternalSize(size_);
   focused_background_ = theme_->focused_background_.DrawExternalSize(size_);
@@ -1521,7 +1531,7 @@ Checkbox::Checkbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
 }
 
 Checkbox::Checkbox(Ui64 tag, std::shared_ptr<GuiTheme> theme)
-: Panel(tag, Vec2Si32(0, 0), Vec2Si32(54, 54), tag)
+: Panel(tag, Vec2Si32(0, 0), Vec2Si32(54, 54), (Ui32)tag)
 , theme_(theme)
 , down_sound_(theme->checkbox_down_sound_)
 , up_sound_(theme->checkbox_up_sound_)
@@ -1909,7 +1919,6 @@ std::shared_ptr<Scrollbar> GuiFactory::MakeHorizontalScrollbar() {
 std::shared_ptr<Scrollbar> GuiFactory::MakeVerticalScrollbar() {
   ++last_tag_;
   return std::make_shared<Scrollbar>(last_tag_, theme_->v_scrollbar_);
-
 }
 
 std::shared_ptr<Checkbox> GuiFactory::MakeCheckbox() {
