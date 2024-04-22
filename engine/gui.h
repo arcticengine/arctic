@@ -59,11 +59,47 @@ enum TextSelectionMode {
   kTextSelectionModeSwapColors
 };
 
+enum AnchorKind : Ui8 {
+  kAnchorNone = 0,
+  kAnchorBottom = 1,
+  kAnchorTop = 2,
+  kAnchorLeft = 4,
+  kAnchorRight = 8
+};
+
+inline AnchorKind operator|(AnchorKind a, AnchorKind b) {
+    return static_cast<AnchorKind>(static_cast<Ui8>(a) | static_cast<Ui8>(b));
+}
+
+enum DockKind : Ui8 {
+  kDockNone = 0,
+  kDockBottom = 1,
+  kDockTop = 2,
+  kDockLeft = 4,
+  kDockRight = 8
+};
+
+inline DockKind operator|(DockKind a, DockKind b) {
+    return static_cast<DockKind>(static_cast<Ui8>(a) | static_cast<Ui8>(b));
+}
+
 class Panel;
 
 void inline DoNothing() {
   return;
 }
+
+class GuiThemeText {
+ public:
+  Font font_;
+  std::vector<Rgba> palete_;
+  std::vector<Rgba> disabled_palete_;
+  TextAlignment alignment_;
+  TextOrigin origin_;
+  TextSelectionMode selection_mode_;
+  Rgba selection_color_1_;
+  Rgba selection_color_2_;
+};
 
 class GuiThemeButton {
  public:
@@ -74,9 +110,27 @@ class GuiThemeButton {
   Sound down_sound_;
   Sound up_sound_;
 
-  Font text_font_;
-  std::vector<Rgba> text_palete_;
-  TextAlignment text_alignment_;
+  std::shared_ptr<GuiThemeText> text_;
+};
+
+class GuiThemeScrollbar {
+ public:
+  DecoratedFrame normal_background_;
+  DecoratedFrame focused_background_;
+  DecoratedFrame disabled_background_;
+  Sprite normal_button_dec_;
+  Sprite focused_button_dec_;
+  Sprite down_button_dec_;
+  Sprite disabled_button_dec_;
+  Sprite normal_button_inc_;
+  Sprite focused_button_inc_;
+  Sprite down_button_inc_;
+  Sprite disabled_button_inc_;
+  Sprite normal_button_cur_;
+  Sprite focused_button_cur_;
+  Sprite down_button_cur_;
+  Sprite disabled_button_cur_;
+  bool is_horizontal_;
 };
 
 class GuiTheme {
@@ -85,58 +139,18 @@ class GuiTheme {
 
   std::shared_ptr<GuiThemeButton> button_;
 
-  Font text_font_;
-  TextOrigin text_origin_;
-  std::vector<Rgba> text_palete_;
-  TextAlignment text_alignment_;
-  TextSelectionMode text_selection_mode_;
-  Rgba text_selection_color_1_;
-  Rgba text_selection_color_2_;
+  std::shared_ptr<GuiThemeText> text_;
 
   DecoratedFrame progressbar_incomplete_;
   DecoratedFrame progressbar_complete_;
 
-  Font editbox_font_;
-  TextOrigin editbox_origin_;
-  Rgba editbox_color_;
-  TextAlignment editbox_alignment_;
+  std::shared_ptr<GuiThemeText> editbox_text_;
+
   DecoratedFrame editbox_normal_;
   DecoratedFrame editbox_focused_;
-  TextSelectionMode editbox_selection_mode_;
-  Rgba editbox_selection_color_1_;
-  Rgba editbox_selection_color_2_;
 
-  DecoratedFrame h_scrollbar_normal_background_;
-  DecoratedFrame h_scrollbar_focused_background_;
-  DecoratedFrame h_scrollbar_disabled_background_;
-  Sprite h_scrollbar_normal_button_dec_;
-  Sprite h_scrollbar_focused_button_dec_;
-  Sprite h_scrollbar_down_button_dec_;
-  Sprite h_scrollbar_disabled_button_dec_;
-  Sprite h_scrollbar_normal_button_inc_;
-  Sprite h_scrollbar_focused_button_inc_;
-  Sprite h_scrollbar_down_button_inc_;
-  Sprite h_scrollbar_disabled_button_inc_;
-  Sprite h_scrollbar_normal_button_cur_;
-  Sprite h_scrollbar_focused_button_cur_;
-  Sprite h_scrollbar_down_button_cur_;
-  Sprite h_scrollbar_disabled_button_cur_;
-
-  DecoratedFrame v_scrollbar_normal_background_;
-  DecoratedFrame v_scrollbar_focused_background_;
-  DecoratedFrame v_scrollbar_disabled_background_;
-  Sprite v_scrollbar_normal_button_dec_;
-  Sprite v_scrollbar_focused_button_dec_;
-  Sprite v_scrollbar_down_button_dec_;
-  Sprite v_scrollbar_disabled_button_dec_;
-  Sprite v_scrollbar_normal_button_inc_;
-  Sprite v_scrollbar_focused_button_inc_;
-  Sprite v_scrollbar_down_button_inc_;
-  Sprite v_scrollbar_disabled_button_inc_;
-  Sprite v_scrollbar_normal_button_cur_;
-  Sprite v_scrollbar_focused_button_cur_;
-  Sprite v_scrollbar_down_button_cur_;
-  Sprite v_scrollbar_disabled_button_cur_;
+  std::shared_ptr<GuiThemeScrollbar> h_scrollbar_;
+  std::shared_ptr<GuiThemeScrollbar> v_scrollbar_;
 
   Sprite checkbox_clear_normal_;
   Sprite checkbox_checked_normal_;
@@ -172,22 +186,42 @@ class Panel : public std::enable_shared_from_this<Panel> {
   bool is_current_tab_;
   Sprite background_;
   std::deque<std::shared_ptr<Panel>> children_;
+  Panel *parent_ = nullptr;
+  Si32 anchor_bottom_d_ = 0;
+  Si32 anchor_top_d_ = 0;
+  Si32 anchor_left_d_ = 0;
+  Si32 anchor_right_d_ = 0;
   bool is_clickable_;
   bool is_visible_;
+  AnchorKind anchor_ = kAnchorNone;
+  DockKind dock_ = kDockNone;
+  std::shared_ptr<GuiTheme> theme_;
 
  public:
   Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order = 0,
     Sprite background = Sprite(), bool is_clickable = false);
+  Panel(Ui64 tag, std::shared_ptr<GuiTheme> theme);
   static std::shared_ptr<Panel> Invalid() {
     return invalid_panel_;
   }
   Vec2Si32 GetSize() const;
+  void SetSize(Vec2Si32 size);
+  void SetSize(Si32 width, Si32 height);
+  void ParentSizeChanged(Vec2Si32 prev_size, Vec2Si32 cur_size);
+
+  /// @brief Gets the tab order of the panel
+  /// @return The tab order value of the panel, or 0 if the panel does not participate in the tab order.
   Ui32 GetTabOrder() const;
+
+  /// @brief Sets the tab order of the panel
+  /// @param [in] tab_order Tab order value.
+  /// The panel does not participate in tab order if tab_order is 0.
   void SetTabOrder(Ui32 tab_order);
   Ui64 GetTag() const;
   void SetTag(Ui64 tag);
   Vec2Si32 GetPos() const;
   void SetPos(Vec2Si32 pos);
+  void SetPos(Si32 x, Si32 y);
   void SetWidth(Si32 width);
   void SetHeight(Si32 height);
   void SetBackground(const Sprite &background);
@@ -207,12 +241,16 @@ class Panel : public std::enable_shared_from_this<Panel> {
   Panel *FindCurrentTab();
   virtual void SetCurrentTab(bool is_current_tab);
   virtual void AddChild(std::shared_ptr<Panel> child);
+  virtual void RemoveChild(std::shared_ptr<Panel> child);
   virtual void SetVisible(bool is_visible);
   virtual void SetEnabled(bool is_enabled);
   virtual bool IsVisible();
   virtual bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos);
   virtual void SetEnabledByTag(Ui64 tag, bool is_enabled);
   virtual void RegenerateSprites();
+  virtual void BecomeChild(Panel *parent);
+  virtual void SetAnchor(AnchorKind anchor);
+  virtual void SetDock(DockKind dock);
 
   std::function<void(void)> OnPanelLeftDown = DoNothing;
 };
@@ -230,6 +268,8 @@ class Text : public Panel {
   TextSelectionMode selection_mode_;
   Rgba selection_color_1_;
   Rgba selection_color_2_;
+  std::shared_ptr<GuiThemeText> theme_;
+  bool is_enabled_ = true;
 
  public:
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
@@ -238,6 +278,7 @@ class Text : public Panel {
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text,
       TextAlignment alignment = kAlignLeft);
+  Text(Ui64 tag, std::shared_ptr<GuiThemeText> theme);
   void SetText(std::string text);
   void Draw(Vec2Si32 parent_absolute_pos) override;
   void Select(Si32 selection_begin, Si32 selection_end);
@@ -245,6 +286,8 @@ class Text : public Panel {
       TextSelectionMode selection_mode = kTextSelectionModeInvert,
       Rgba selection_color_1 = Rgba(0, 0, 0),
       Rgba selection_color_2 = Rgba(255, 255, 255));
+  Vec2Si32 EvaluateSize();
+  void SetEnabled(bool is_enabled) override;
 };
 
 class Button : public Panel {
@@ -280,8 +323,7 @@ class Button : public Panel {
     Ui32 tab_order = 0,
     Sprite disabled = Sprite());
   Button(Ui64 tag, std::shared_ptr<GuiThemeButton> theme);
-  void Draw(Vec2Si32 parent_absolute_pos)
-    override;
+  void Draw(Vec2Si32 parent_absolute_pos) override;
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       bool is_top_level,
       bool *in_out_is_applied,
@@ -306,16 +348,19 @@ class Progressbar: public Panel {
   float total_value_;
   float current_value_;
   std::shared_ptr<Text> text_;
+  std::shared_ptr<GuiTheme> theme_;
 
  public:
   Progressbar(Ui64 tag, Vec2Si32 pos,
     Sprite incomplete, Sprite complete,
     std::vector<Rgba> palete, Font font,
     float total_value = 1.0f, float current_value = 0.0f);
+  Progressbar(Ui64 tag, std::shared_ptr<GuiTheme> theme);
   void Draw(Vec2Si32 parent_absolute_pos) override;
   void UpdateText();
   void SetTotalValue(float total_value);
   void SetCurrentValue(float current_value);
+  void RegenerateSprites() override;
 };
 
 class Editbox: public Panel {
@@ -336,6 +381,7 @@ class Editbox: public Panel {
   Rgba selection_color_2_;
   bool is_digits_;
   std::unordered_set<Ui32> allow_list_;
+  std::shared_ptr<GuiTheme> theme_;
 
  public:
   Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
@@ -343,6 +389,7 @@ class Editbox: public Panel {
     Font font, TextOrigin origin, Rgba color, std::string text,
     TextAlignment alignment = kAlignLeft, bool is_digits = false,
     std::unordered_set<Ui32> allow_list = std::unordered_set<Ui32>());
+  Editbox(Ui64 tag, std::shared_ptr<GuiTheme> theme);
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
@@ -356,6 +403,7 @@ class Editbox: public Panel {
       TextSelectionMode selection_mode = kTextSelectionModeInvert,
       Rgba selection_color_1 = Rgba(0, 0, 0),
       Rgba selection_color_2 = Rgba(255, 255, 255));
+  void RegenerateSprites() override;
 };
 
 class Scrollbar : public Panel {
@@ -394,6 +442,7 @@ public:
   Si32 start_relative_s_ = 0;
   Si32 start_value_ = 0;
   Si32 dir_ = 0; // 0 for horizontal, 1 for vertical
+  std::shared_ptr<GuiThemeScrollbar> theme_;
 
  public:
   Scrollbar(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
@@ -405,6 +454,7 @@ public:
     Sprite focused_button_cur, Sprite down_button_cur,
     Si32 min_value, Si32 max_value, Si32 value,
     ScrollKind kind);
+  Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme);
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
@@ -413,6 +463,7 @@ public:
   void Draw(Vec2Si32 parent_absolute_pos) override;
   void SetValue(Si32 value);
   Si32 GetValue() const;
+  void RegenerateSprites() override;
 
   std::function<void(void)> OnScrollChange = DoNothing;
 };
@@ -442,6 +493,8 @@ class Checkbox : public Panel {
   KeyCode hotkey_;
   CheckboxState state_ = kNormal;
   CheckboxValue value_ = kValueClear;
+  std::shared_ptr<Text> text_;
+  std::shared_ptr<GuiTheme> theme_;
 
  public:
   Checkbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
@@ -457,6 +510,7 @@ class Checkbox : public Panel {
     Sound up_sound = Sound(),
     KeyCode hotkey = kKeyNone,
     CheckboxValue value = kValueClear);
+  Checkbox(Ui64 tag, std::shared_ptr<GuiTheme> theme);
   void Draw(Vec2Si32 parent_absolute_pos)
     override;
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -471,6 +525,7 @@ class Checkbox : public Panel {
   bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
   void SetChecked(bool is_checked);
   bool IsChecked();
+  void SetText(std::string text);
 
   std::function<void(void)> OnButtonClick = DoNothing;
   std::function<void(void)> OnButtonDown = DoNothing;
@@ -490,6 +545,7 @@ protected:
   std::shared_ptr<Scrollbar> MakeHorizontalScrollbar();
   std::shared_ptr<Scrollbar> MakeVerticalScrollbar();
   std::shared_ptr<Checkbox> MakeCheckbox();
+  std::shared_ptr<Editbox> MakeEditbox();
 };
 
 /// @}
