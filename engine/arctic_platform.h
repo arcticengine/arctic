@@ -126,6 +126,17 @@ std::string CanonicalizePath(const char *path);
 /// @return relative path *from* source *to* target
 std::string RelativePathFromTo(const char *from, const char *to);
 
+/// @brief Returns a path to a parent directory
+/// @param [in] path Path to the file or directory to get the parent for
+/// @return path to the parent directory for the path provided, or unmodified path if parent path is invalid
+std::string ParentPath(const char *path);
+
+/// @brief Returns a path glued from first_part and second_part
+/// @param [in] first_part Path to a directory
+/// @param [in] second_part name of a file/directory in the first_part directory
+/// @return a composite path built by glueing together first_part and second_part
+std::string GluePath(const char *first_part, const char *second_part);
+
 /// @}
 
 }  // namespace arctic

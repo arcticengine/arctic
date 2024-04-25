@@ -29,6 +29,7 @@
 #include <sstream>
 
 #include <cstring>
+#include <filesystem>
 #include <memory>
 #include <utility>
 #include "engine/easy_advanced.h"
@@ -1675,6 +1676,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           if (prev_state == kDown) {
             *in_out_is_applied = true;
             up_sound_.Play();
+            value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
             if (out_gui_messages) {
               out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
             }
@@ -1760,10 +1762,26 @@ void Checkbox::SetText(std::string text) {
   SetSize(new_size);
 }
 
-void LoadDecoratedFrame(pugi::XmlDocument &doc, const char* child_name, DecoratedFrame *out_decorated_frame) {
-  pugi::XmlNode child = doc.child(child_name);
+struct LoaderContext {
+  std::unordered_map<std::string, Sprite> atlas;
+  std::string parent_path;
+  pugi::XmlDocument doc;
+
+  Sprite LoadSprite(std::string path) {
+    auto it = atlas.find(path);
+    if (it == atlas.end()) {
+      Sprite s;
+      s.Load(GluePath(parent_path.c_str(), path.c_str()));
+      return s;
+    }
+    return it->second;
+  }
+};
+
+void LoadDecoratedFrame(LoaderContext &ctx, const char* child_name, DecoratedFrame *out_decorated_frame) {
+  pugi::XmlNode child = ctx.doc.child(child_name);
   if (!child.empty()) {
-    out_decorated_frame->Split(child.attribute("path").as_string(""),
+    out_decorated_frame->Split(ctx.LoadSprite(child.attribute("path").as_string("")),
                                child.attribute("border").as_int(0),
                                child.attribute("is_x_scaleable").as_bool(false),
                                child.attribute("is_y_scaleable").as_bool(false));
@@ -1771,8 +1789,8 @@ void LoadDecoratedFrame(pugi::XmlDocument &doc, const char* child_name, Decorate
 }
 
 void GuiTheme::Load(const char *xml_file_path) {
-  pugi::XmlDocument doc;
-  pugi::XmlParseResult parse_result = doc.load_file(xml_file_path);
+  LoaderContext ctx;
+  pugi::XmlParseResult parse_result = ctx.doc.load_file(xml_file_path);
   if (parse_result.status != pugi::status_ok) {
     std::stringstream str;
     str << "Error loading " << xml_file_path << " gui theme, at offset " << parse_result.offset << " (line " << parse_result.line;
@@ -1780,10 +1798,41 @@ void GuiTheme::Load(const char *xml_file_path) {
     Fatal(str.str().c_str());
   }
 
-  LoadDecoratedFrame(doc, "panel_background", &panel_background_);
+  ctx.parent_path = ParentPath(xml_file_path);
+
+  const char* atlas_name = ctx.doc.child("gui_texture_atlas").attribute("path").as_string(nullptr);
+  if (atlas_name) {
+    std::string atlas_path = GluePath(ctx.parent_path.c_str(), atlas_name);
+    std::string atlas_parent_path = ParentPath(atlas_path.c_str());
+    pugi::XmlDocument atlas_doc;
+    pugi::XmlParseResult parse_result = atlas_doc.load_file(atlas_path.c_str());
+    if (parse_result.status != pugi::status_ok) {
+      std::stringstream str;
+      str << "Error loading " << atlas_name << " sprite atlas, at offset " << parse_result.offset << " (line " << parse_result.line;
+      str << " column " << parse_result.column << ": " << parse_result.description();
+      Fatal(str.str().c_str());
+    }
+    Sprite atlas_sprite;
+    atlas_sprite.Load(GluePath(atlas_parent_path.c_str(),
+      atlas_doc.child("TextureAtlas").attribute("imagePath").as_string("TextureAtlas")));
+    pugi::XmlObjectRange<pugi::XmlNodeIterator> items = atlas_doc.child("TextureAtlas").children();
+    for (auto it = items.begin(); it != items.end(); ++it) {
+      std::string name = it->attribute("n").as_string();
+      Si32 x = it->attribute("x").as_int(0);
+      Si32 y = it->attribute("y").as_int(0);
+      Si32 w = it->attribute("w").as_int(0);
+      Si32 h = it->attribute("h").as_int(0);
+      if (name.length()) {
+        ctx.atlas[name].Reference(atlas_sprite, x, atlas_sprite.Height() - y - h, w, h);
+      }
+    }
+  }
+
+  LoadDecoratedFrame(ctx, "panel_background", &panel_background_);
 
   text_ = std::make_shared<GuiThemeText>();
-  text_->font_.Load("data/arctic_one_bmf.fnt");
+  text_->font_.Load(GluePath(ctx.parent_path.c_str(),
+    ctx.doc.child("text_font").attribute("path").as_string("text_font")).c_str());
   text_->origin_ = kTextOriginBottom;
   text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
   text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
@@ -1793,13 +1842,13 @@ void GuiTheme::Load(const char *xml_file_path) {
   text_->selection_color_2_ = Rgba(255, 255, 255);
 
   button_ = std::make_shared<GuiThemeButton>();
-  LoadDecoratedFrame(doc, "button_normal", &button_->normal_);
-  LoadDecoratedFrame(doc, "button_down", &button_->down_);
-  LoadDecoratedFrame(doc, "button_hovered", &button_->hovered_);
-  LoadDecoratedFrame(doc, "button_disabled", &button_->disabled_);
-  button_->down_sound_.Load(doc.child("button_down_sound").attribute("path").as_string("button_down_sound"), true);
-  button_->up_sound_.Load(doc.child("button_up_sound").attribute("path").as_string("button_up_sound"), true);
-  
+  LoadDecoratedFrame(ctx, "button_normal", &button_->normal_);
+  LoadDecoratedFrame(ctx, "button_down", &button_->down_);
+  LoadDecoratedFrame(ctx, "button_hovered", &button_->hovered_);
+  LoadDecoratedFrame(ctx, "button_disabled", &button_->disabled_);
+  button_->down_sound_.Load(GluePath(ctx.parent_path.c_str(), ctx.doc.child("button_down_sound").attribute("path").as_string("button_down_sound")), true);
+  button_->up_sound_.Load(GluePath(ctx.parent_path.c_str(), ctx.doc.child("button_up_sound").attribute("path").as_string("button_up_sound")), true);
+
   button_->text_ = std::make_shared<GuiThemeText>();
   button_->text_->font_ = text_->font_;
   button_->text_->origin_ = kTextOriginBottom;
@@ -1810,11 +1859,12 @@ void GuiTheme::Load(const char *xml_file_path) {
   button_->text_->selection_color_1_ = Rgba(0, 0, 0);
   button_->text_->selection_color_2_ = Rgba(255, 255, 255);
 
-  LoadDecoratedFrame(doc, "progressbar_incomplete", &progressbar_incomplete_);
-  LoadDecoratedFrame(doc, "progressbar_complete", &progressbar_complete_);
+  LoadDecoratedFrame(ctx, "progressbar_incomplete", &progressbar_incomplete_);
+  LoadDecoratedFrame(ctx, "progressbar_complete", &progressbar_complete_);
 
   editbox_text_ = std::make_shared<GuiThemeText>();
-  editbox_text_->font_.Load(doc.child("editbox_font").attribute("path").as_string(""));
+  editbox_text_->font_.Load(GluePath(ctx.parent_path.c_str(),
+    ctx.doc.child("editbox_font").attribute("path").as_string("")).c_str());
   editbox_text_->origin_ = kTextOriginBottom;
   editbox_text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
   editbox_text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
@@ -1823,11 +1873,12 @@ void GuiTheme::Load(const char *xml_file_path) {
   editbox_text_->selection_color_1_ = Rgba(0, 0, 0);
   editbox_text_->selection_color_2_ = Rgba(255, 255, 255);
 
-  LoadDecoratedFrame(doc, "editbox_normal", &editbox_normal_);
-  LoadDecoratedFrame(doc, "editbox_focused", &editbox_focused_);
+  LoadDecoratedFrame(ctx, "editbox_normal", &editbox_normal_);
+  LoadDecoratedFrame(ctx, "editbox_focused", &editbox_focused_);
 
 
-  text_->font_.Load("data/arctic_one_bmf.fnt");
+  text_->font_.Load(GluePath(ctx.parent_path.c_str(),
+    ctx.doc.child("text_font").attribute("path").as_string("text_font")).c_str());
   text_->origin_ = kTextOriginBottom;
   text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
   text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
@@ -1837,51 +1888,85 @@ void GuiTheme::Load(const char *xml_file_path) {
   text_->selection_color_2_ = Rgba(255, 255, 255);
 
   h_scrollbar_ = std::make_shared<GuiThemeScrollbar>();
-  LoadDecoratedFrame(doc, "h_scrollbar_normal_background", &h_scrollbar_->normal_background_);
-  LoadDecoratedFrame(doc, "h_scrollbar_focused_background", &h_scrollbar_->focused_background_);
-  LoadDecoratedFrame(doc, "h_scrollbar_disabled_background", &h_scrollbar_->disabled_background_);
-  h_scrollbar_->normal_button_dec_.Load(doc.child("h_scrollbar_normal_button_dec").attribute("path").as_string("h_scrollbar_normal_button_dec"));
-  h_scrollbar_->focused_button_dec_.Load(doc.child("h_scrollbar_focused_button_dec").attribute("path").as_string("h_scrollbar_focused_button_dec"));
-  h_scrollbar_->down_button_dec_.Load(doc.child("h_scrollbar_down_button_dec").attribute("path").as_string("h_scrollbar_down_button_dec"));
-  h_scrollbar_->disabled_button_dec_.Load(doc.child("h_scrollbar_disabled_button_dec").attribute("path").as_string("h_scrollbar_disabled_button_dec"));
-  h_scrollbar_->normal_button_inc_.Load(doc.child("h_scrollbar_normal_button_inc").attribute("path").as_string("h_scrollbar_normal_button_inc"));
-  h_scrollbar_->focused_button_inc_.Load(doc.child("h_scrollbar_focused_button_inc").attribute("path").as_string("h_scrollbar_focused_button_inc"));
-  h_scrollbar_->down_button_inc_.Load(doc.child("h_scrollbar_down_button_inc").attribute("path").as_string("h_scrollbar_down_button_inc"));
-  h_scrollbar_->disabled_button_inc_.Load(doc.child("h_scrollbar_disabled_button_inc").attribute("path").as_string("h_scrollbar_disabled_button_inc"));
-  h_scrollbar_->normal_button_cur_.Load(doc.child("h_scrollbar_normal_button_cur").attribute("path").as_string("h_scrollbar_normal_button_cur"));
-  h_scrollbar_->focused_button_cur_.Load(doc.child("h_scrollbar_focused_button_cur").attribute("path").as_string("h_scrollbar_focused_button_cur"));
-  h_scrollbar_->down_button_cur_.Load(doc.child("h_scrollbar_down_button_cur").attribute("path").as_string("h_scrollbar_down_button_cur"));
-  h_scrollbar_->disabled_button_cur_.Load(doc.child("h_scrollbar_disabled_button_cur").attribute("path").as_string("h_scrollbar_disabled_button_cur"));
+  LoadDecoratedFrame(ctx, "h_scrollbar_normal_background", &h_scrollbar_->normal_background_);
+  LoadDecoratedFrame(ctx, "h_scrollbar_focused_background", &h_scrollbar_->focused_background_);
+  LoadDecoratedFrame(ctx, "h_scrollbar_disabled_background", &h_scrollbar_->disabled_background_);
+  h_scrollbar_->normal_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_normal_button_dec").attribute("path").as_string("h_scrollbar_normal_button_dec"));
+  h_scrollbar_->focused_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_focused_button_dec").attribute("path").as_string("h_scrollbar_focused_button_dec"));
+  h_scrollbar_->down_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_down_button_dec").attribute("path").as_string("h_scrollbar_down_button_dec"));
+  h_scrollbar_->disabled_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_disabled_button_dec").attribute("path").as_string("h_scrollbar_disabled_button_dec"));
+  h_scrollbar_->normal_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_normal_button_inc").attribute("path").as_string("h_scrollbar_normal_button_inc"));
+  h_scrollbar_->focused_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_focused_button_inc").attribute("path").as_string("h_scrollbar_focused_button_inc"));
+  h_scrollbar_->down_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_down_button_inc").attribute("path").as_string("h_scrollbar_down_button_inc"));
+  h_scrollbar_->disabled_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_disabled_button_inc").attribute("path").as_string("h_scrollbar_disabled_button_inc"));
+  h_scrollbar_->normal_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_normal_button_cur").attribute("path").as_string("h_scrollbar_normal_button_cur"));
+  h_scrollbar_->focused_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_focused_button_cur").attribute("path").as_string("h_scrollbar_focused_button_cur"));
+  h_scrollbar_->down_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_down_button_cur").attribute("path").as_string("h_scrollbar_down_button_cur"));
+  h_scrollbar_->disabled_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("h_scrollbar_disabled_button_cur").attribute("path").as_string("h_scrollbar_disabled_button_cur"));
   h_scrollbar_->is_horizontal_ = true;
 
   v_scrollbar_ = std::make_shared<GuiThemeScrollbar>();
-  LoadDecoratedFrame(doc, "v_scrollbar_normal_background", &v_scrollbar_->normal_background_);
-  LoadDecoratedFrame(doc, "v_scrollbar_focused_background", &v_scrollbar_->focused_background_);
-  LoadDecoratedFrame(doc, "v_scrollbar_disabled_background", &v_scrollbar_->disabled_background_);
-  v_scrollbar_->normal_button_dec_.Load(doc.child("v_scrollbar_normal_button_dec").attribute("path").as_string("v_scrollbar_normal_button_dec"));
-  v_scrollbar_->focused_button_dec_.Load(doc.child("v_scrollbar_focused_button_dec").attribute("path").as_string("v_scrollbar_focused_button_dec"));
-  v_scrollbar_->down_button_dec_.Load(doc.child("v_scrollbar_down_button_dec").attribute("path").as_string("v_scrollbar_down_button_dec"));
-  v_scrollbar_->disabled_button_dec_.Load(doc.child("v_scrollbar_disabled_button_dec").attribute("path").as_string("v_scrollbar_disabled_button_dec"));
-  v_scrollbar_->normal_button_inc_.Load(doc.child("v_scrollbar_normal_button_inc").attribute("path").as_string("v_scrollbar_normal_button_inc"));
-  v_scrollbar_->focused_button_inc_.Load(doc.child("v_scrollbar_focused_button_inc").attribute("path").as_string("v_scrollbar_focused_button_inc"));
-  v_scrollbar_->down_button_inc_.Load(doc.child("v_scrollbar_down_button_inc").attribute("path").as_string("v_scrollbar_down_button_inc"));
-  v_scrollbar_->disabled_button_inc_.Load(doc.child("v_scrollbar_disabled_button_inc").attribute("path").as_string("v_scrollbar_disabled_button_inc"));
-  v_scrollbar_->normal_button_cur_.Load(doc.child("v_scrollbar_normal_button_cur").attribute("path").as_string("v_scrollbar_normal_button_cur"));
-  v_scrollbar_->focused_button_cur_.Load(doc.child("v_scrollbar_focused_button_cur").attribute("path").as_string("v_scrollbar_focused_button_cur"));
-  v_scrollbar_->down_button_cur_.Load(doc.child("v_scrollbar_down_button_cur").attribute("path").as_string("v_scrollbar_down_button_cur"));
-  v_scrollbar_->disabled_button_cur_.Load(doc.child("v_scrollbar_disabled_button_cur").attribute("path").as_string("v_scrollbar_disabled_button_cur"));
+  LoadDecoratedFrame(ctx, "v_scrollbar_normal_background", &v_scrollbar_->normal_background_);
+  LoadDecoratedFrame(ctx, "v_scrollbar_focused_background", &v_scrollbar_->focused_background_);
+  LoadDecoratedFrame(ctx, "v_scrollbar_disabled_background", &v_scrollbar_->disabled_background_);
+  v_scrollbar_->normal_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_normal_button_dec").attribute("path").as_string("v_scrollbar_normal_button_dec"));
+  v_scrollbar_->focused_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_focused_button_dec").attribute("path").as_string("v_scrollbar_focused_button_dec"));
+  v_scrollbar_->down_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_down_button_dec").attribute("path").as_string("v_scrollbar_down_button_dec"));
+  v_scrollbar_->disabled_button_dec_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_disabled_button_dec").attribute("path").as_string("v_scrollbar_disabled_button_dec"));
+  v_scrollbar_->normal_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_normal_button_inc").attribute("path").as_string("v_scrollbar_normal_button_inc"));
+  v_scrollbar_->focused_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_focused_button_inc").attribute("path").as_string("v_scrollbar_focused_button_inc"));
+  v_scrollbar_->down_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_down_button_inc").attribute("path").as_string("v_scrollbar_down_button_inc"));
+  v_scrollbar_->disabled_button_inc_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_disabled_button_inc").attribute("path").as_string("v_scrollbar_disabled_button_inc"));
+  v_scrollbar_->normal_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_normal_button_cur").attribute("path").as_string("v_scrollbar_normal_button_cur"));
+  v_scrollbar_->focused_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_focused_button_cur").attribute("path").as_string("v_scrollbar_focused_button_cur"));
+  v_scrollbar_->down_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_down_button_cur").attribute("path").as_string("v_scrollbar_down_button_cur"));
+  v_scrollbar_->disabled_button_cur_ = ctx.LoadSprite(
+    ctx.doc.child("v_scrollbar_disabled_button_cur").attribute("path").as_string("v_scrollbar_disabled_button_cur"));
   v_scrollbar_->is_horizontal_ = false;
 
-  checkbox_clear_normal_.Load(doc.child("checkbox_clear_normal").attribute("path").as_string("checkbox_clear_normal"));
-  checkbox_checked_normal_.Load(doc.child("checkbox_checked_normal").attribute("path").as_string("checkbox_checked_normal"));
-  checkbox_clear_down_.Load(doc.child("checkbox_clear_down").attribute("path").as_string("checkbox_clear_down"));
-  checkbox_checked_down_.Load(doc.child("checkbox_checked_down").attribute("path").as_string("checkbox_checked_down"));
-  checkbox_clear_hovered_.Load(doc.child("checkbox_clear_hovered").attribute("path").as_string("checkbox_clear_hovered"));
-  checkbox_checked_hovered_.Load(doc.child("checkbox_checked_hovered").attribute("path").as_string("checkbox_checked_hovered"));
-  checkbox_clear_disabled_.Load(doc.child("checkbox_clear_disabled").attribute("path").as_string("checkbox_clear_disabled"));
-  checkbox_checked_disabled_.Load(doc.child("checkbox_checked_disabled").attribute("path").as_string("checkbox_checked_disabled"));
-  checkbox_down_sound_.Load(doc.child("checkbox_down_sound").attribute("path").as_string("checkbox_down_sound"), true);
-  checkbox_up_sound_.Load(doc.child("checkbox_up_sound").attribute("path").as_string("checkbox_up_sound"), true);
+  checkbox_clear_normal_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_clear_normal").attribute("path").as_string("checkbox_clear_normal"));
+  checkbox_checked_normal_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_checked_normal").attribute("path").as_string("checkbox_checked_normal"));
+  checkbox_clear_down_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_clear_down").attribute("path").as_string("checkbox_clear_down"));
+  checkbox_checked_down_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_checked_down").attribute("path").as_string("checkbox_checked_down"));
+  checkbox_clear_hovered_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_clear_hovered").attribute("path").as_string("checkbox_clear_hovered"));
+  checkbox_checked_hovered_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_checked_hovered").attribute("path").as_string("checkbox_checked_hovered"));
+  checkbox_clear_disabled_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_clear_disabled").attribute("path").as_string("checkbox_clear_disabled"));
+  checkbox_checked_disabled_ = ctx.LoadSprite(
+    ctx.doc.child("checkbox_checked_disabled").attribute("path").as_string("checkbox_checked_disabled"));
+  checkbox_down_sound_.Load(GluePath(ctx.parent_path.c_str(),
+    ctx.doc.child("checkbox_down_sound").attribute("path").as_string("checkbox_down_sound")), true);
+  checkbox_up_sound_.Load(GluePath(ctx.parent_path.c_str(),
+    ctx.doc.child("checkbox_up_sound").attribute("path").as_string("checkbox_up_sound")), true);
 }
 
 std::shared_ptr<Panel> GuiFactory::MakePanel() {

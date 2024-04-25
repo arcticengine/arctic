@@ -1017,6 +1017,51 @@ std::string RelativePathFromTo(const char *from, const char *to) {
   return res.str();
 }
 
+std::string ParentPath(const char *path) {
+  size_t len = 0;
+  size_t prev_len = 0;
+  if (path) {
+    const char *p = path;
+    while (*p != 0) {
+      if (*p == '/') {
+        prev_len = len;
+        len = p - path + 1;
+      }
+      ++p;
+    }
+    if (p - path + 1 == len) {
+      len = prev_len;
+    }
+    if (len == 0) {
+      return std::string(path);
+    }
+    return std::string(path, 0, len);
+  }
+  return std::string("");
+}
+
+std::string GluePath(const char *first_part, const char *second_part) {
+  if (!first_part || *first_part == 0) {
+    if (!second_part || *second_part == 0) {
+      return std::string("");
+    }
+    return std::string(second_part);
+  }
+  if (!second_part || *second_part == 0) {
+    return std::string(first_part);
+  }
+  std::stringstream str;
+  str << first_part;
+  if (first_part[strlen(first_part)-1] != '/') {
+    str << "/";
+  }
+  if (*second_part == '/') {
+    ++second_part;
+  }
+  str << second_part;
+  return str.str();
+}
+
 std::string PrepareInitialPath() {
   std::string initial_path([[[NSBundle mainBundle] bundlePath] UTF8String]);
   initial_path += "/..";
