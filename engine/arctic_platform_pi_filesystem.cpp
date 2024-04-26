@@ -171,7 +171,7 @@ std::string ParentPath(const char *path) {
   size_t len = 0;
   size_t prev_len = 0;
   if (path) {
-    const char *p = path
+    const char *p = path;
     while (*p != 0) {
       if (*p == '/') {
         prev_len = len;
