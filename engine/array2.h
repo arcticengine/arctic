@@ -25,7 +25,7 @@
 
 #include <vector>
 #include "engine/arctic_types.h"
-#include "engine/vec3si32.h"
+#include "engine/vec2si32.h"
 
 namespace arctic {
 

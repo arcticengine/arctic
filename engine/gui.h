@@ -48,12 +48,6 @@ enum GuiMessageKind {
   kGuiPanelLeftDown,
 };
 
-enum TextAlignment {
-  kAlignLeft,
-  kAlignCenter,
-  kAlignRight
-};
-
 enum TextSelectionMode {
   kTextSelectionModeInvert,
   kTextSelectionModeSwapColors
@@ -274,12 +268,16 @@ class Text : public Panel {
  public:
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       Font font, TextOrigin origin, Rgba color, std::string text,
-      TextAlignment alignment = kAlignLeft);
+      TextAlignment alignment = kTextAlignmentLeft);
   Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
       Font font, TextOrigin origin, std::vector<Rgba> palete, std::string text,
-      TextAlignment alignment = kAlignLeft);
+      TextAlignment alignment = kTextAlignmentLeft);
   Text(Ui64 tag, std::shared_ptr<GuiThemeText> theme);
+  void SetColor(Rgba rgba);
   void SetText(std::string text);
+  void SetFont(Font font);
+  void SetOrigin(TextOrigin origin);
+  void SetAlignment(TextAlignment alignment);
   void Draw(Vec2Si32 parent_absolute_pos) override;
   void Select(Si32 selection_begin, Si32 selection_end);
   void SetSelectionMode(
@@ -334,8 +332,11 @@ class Button : public Panel {
   void SetEnabled(bool is_enabled) override;
   bool IsVisible() override;
   bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
+  void SetTextColor(Rgba rgba);
   void SetText(std::string text);
+  void SetFont(Font font);
   void RegenerateSprites() override;
+  void SetHotkey(KeyCode hotkey);
 
   std::function<void(void)> OnButtonClick = DoNothing;
   std::function<void(void)> OnButtonDown = DoNothing;
@@ -387,7 +388,7 @@ class Editbox: public Panel {
   Editbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
     Sprite normal, Sprite focused,
     Font font, TextOrigin origin, Rgba color, std::string text,
-    TextAlignment alignment = kAlignLeft, bool is_digits = false,
+    TextAlignment alignment = kTextAlignmentLeft, bool is_digits = false,
     std::unordered_set<Ui32> allow_list = std::unordered_set<Ui32>());
   Editbox(Ui64 tag, std::shared_ptr<GuiTheme> theme);
   void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
@@ -435,6 +436,7 @@ public:
   Sprite focused_button_cur_;
   Sprite down_button_cur_;
 
+  Si32 step_;
   Si32 min_value_;
   Si32 max_value_;
   Si32 value_;
@@ -461,8 +463,13 @@ public:
     std::deque<GuiMessage> *out_gui_messages,
     std::shared_ptr<Panel> *out_current_tab) override;
   void Draw(Vec2Si32 parent_absolute_pos) override;
+  void SetStep(Si32 step);
   void SetValue(Si32 value);
   Si32 GetValue() const;
+  void SetMinValue(Si32 min_value);
+  Si32 GetMinValue() const;
+  void SetMaxValue(Si32 max_value);
+  Si32 GetMaxValue() const;
   void RegenerateSprites() override;
 
   std::function<void(void)> OnScrollChange = DoNothing;
@@ -526,6 +533,7 @@ class Checkbox : public Panel {
   void SetChecked(bool is_checked);
   bool IsChecked();
   void SetText(std::string text);
+  void SetHotkey(KeyCode hotkey);
 
   std::function<void(void)> OnButtonClick = DoNothing;
   std::function<void(void)> OnButtonDown = DoNothing;

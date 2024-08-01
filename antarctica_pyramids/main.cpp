@@ -1009,7 +1009,8 @@ void Render() {
   prev_time = time;
   char fps_text[128];
   snprintf(fps_text, sizeof(fps_text), u8"FPS: %.1F", smooth_fps);
-  g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop);
+  g_font.Draw(fps_text, 0, ScreenSize().y - 1, kTextOriginTop, kTextAlignmentLeft);
+
 
 /*  const char *long_text = u8"Длинный текст на русском языке по центру!\n"
   u8"Second line !@#$%^&*()_+ with \\r at the end\r"
@@ -1045,7 +1046,7 @@ void Render() {
     hero.endurance, hero.full_endurance,
     hero.action_units, hero.full_action_units,
     hero.ammo);
-  g_font.Draw(text, 0, ScreenSize().y - 25 , kTextOriginTop);
+  g_font.Draw(text, 0, ScreenSize().y - 25 , kTextOriginTop, kTextAlignmentLeft);
 
   Creature *enemy = nullptr;
   for (Ui32 idx = 0; idx < g_creatures.size(); ++idx) {
@@ -1066,7 +1067,7 @@ void Render() {
   }
   g_font.Draw(text,
     ScreenSize().x - g_font.EvaluateSize(text, false).x,
-    ScreenSize().y - 50, kTextOriginTop);
+    ScreenSize().y - 50, kTextOriginTop, kTextAlignmentLeft);
 
   length = 0;
   for (Ui32 idx = 0; idx < hero.innate_actions.size(); ++idx) {
@@ -1097,7 +1098,7 @@ void Render() {
     length += snprintf(text + length, sizeof(text) - length,
          u8")%s", (idx == hero.innate_actions.size() - 1 ? "" : "\n"));
   }
-  g_font.Draw(text, 0, 0);
+  g_font.Draw(text, 0, 0, kTextOriginTop, kTextAlignmentLeft);
 
   ShowFrame();
 }

@@ -34,7 +34,7 @@
 #include "engine/easy_files.h"
 #include "engine/log.h"
 #include "engine/unicode.h"
-
+#include "engine/pugixml.h"
 
 namespace arctic {
 
@@ -226,6 +226,98 @@ void FontInstance::GenerateCodepointVector() {
 }
 
 void FontInstance::Load(const char *file_name) {
+  Check(!!file_name, "Error in FontInstance::Load, file_name is nullptr.");
+  const char *last_dot = strrchr(file_name, '.');
+  if (!last_dot || strcmp(last_dot, ".fnt") == 0) {
+    LoadBinaryFnt(file_name);
+    return;
+  }
+  if (strcmp(last_dot, ".xml") == 0) {
+    LoadXml(file_name);
+    return;
+  }
+  Fatal("Error in FontInstance::Load, file_name has an unknown extension: ", file_name);
+}
+
+void FontInstance::LoadXml(const char *file_name) {
+  pugi::XmlDocument doc;
+  pugi::XmlParseResult parse_result = doc.load_file(file_name);
+  if (parse_result.status != pugi::status_ok) {
+    std::stringstream str;
+    str << "Error loading " << file_name << " FontInstance, at offset " << parse_result.offset << " (line " << parse_result.line;
+    str << " column " << parse_result.column << ": " << parse_result.description();
+    Fatal(str.str().c_str());
+  }
+  std::string parent_path = ParentPath(file_name);
+
+  const char* font_type_str = doc.child("font").attribute("type").as_string(nullptr);
+  if (!font_type_str) {
+    std::stringstream str;
+    str << "Error loading " << file_name << " FontInstance, font type is missing";
+    Fatal(str.str().c_str());
+  }
+  if (strcmp(font_type_str, "ascii_square") == 0) {
+    // 16x16 square of ASCII letters
+    const char* font_sprite_path = doc.child("font").attribute("path").as_string(nullptr);
+    bool is_dense = doc.child("font").attribute("is_dense").as_bool(false);
+    LoadAsciiSquare(GluePath(parent_path.c_str(), font_sprite_path).c_str(), is_dense);
+  } else {
+    std::stringstream str;
+    str << "Error loading " << file_name << " FontInstance, font type " << font_type_str << " is unknown";;
+    Fatal(str.str().c_str());
+  }
+}
+
+void FontInstance::LoadAsciiSquare(const char *file_name, bool is_dense) {
+  Sprite sprites;
+  sprites.Load(file_name);
+
+  Si32 width = sprites.Width() / 16 - 1;
+  Si32 height = sprites.Height() / 16 - 1;
+
+  CreateEmpty(height, height);
+  for (Ui32 y = 0; y < 16; ++y) {
+    for (Ui32 x = 0; x < 16; ++x) {
+      Ui32 codepoint = x + y * 16;
+      Sprite letter;
+      letter.Reference(sprites,
+                       x * (width + 1), (16 - 1 - y) * (height + 1) + 1,
+                       width, height);
+      Si32 dense_width = width;
+      if (is_dense && codepoint != 32) {
+        bool is_empty = true;
+        for (Si32 xx = width - 1; xx > 0; --xx) {
+          for (Si32 yy = 0; yy < height; ++yy) {
+            Si32 offset = xx + yy * letter.StridePixels();
+            Rgba *rgba = letter.RgbaData() + offset;
+            if (rgba->a != 0) {
+              is_empty = false;
+              break;
+            }
+          }
+          if (!is_empty) {
+            break;
+          }
+          dense_width = xx;
+        }
+        letter.Reference(sprites,
+                         x * (width + 1), (16 - 1 - y) * (height + 1) + 1,
+                         dense_width, height);
+      }
+      Sprite optimized;
+      optimized.Clone(letter);
+      optimized.UpdateOpaqueSpans();
+      AddGlyph(codepoint, dense_width + 1, optimized);
+    }
+  }
+  codepoint_[32]->sprite.Reference(
+    codepoint_[32]->sprite, 0, 0,
+    codepoint_['I']->sprite.Width(),
+    codepoint_['I']->sprite.Height());
+  codepoint_[32]->xadvance = codepoint_['I']->xadvance;
+}
+
+void FontInstance::LoadBinaryFnt(const char *file_name) {
   codepoint_.clear();
   glyph_.clear();
 
@@ -447,27 +539,29 @@ void FontInstance::LoadLetterBits(Letter *in_letters,
 
 void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
     const char *text, bool do_keep_xadvance,
-    Si32 x, Si32 y, TextOrigin origin,
+    Si32 x, Si32 y, TextOrigin origin, TextAlignment alignment,
     DrawBlendingMode blending_mode,
     DrawFilterMode filter_mode,
     Rgba color, const std::vector<Rgba> &palete, bool do_draw,
-    Vec2Si32 *out_size) {
-  Si32 next_x = x + outline_;
+    Vec2Si32 *out_size, bool is_one_line) {
+
   Si32 next_y = y;
+  Vec2Si32 total_size(0, 0);
   if (do_draw) {
+    DrawEvaluateSizeImpl(to_sprite, text, do_keep_xadvance,
+      x, y, origin, alignment, blending_mode, filter_mode, color, palete, false,
+      &total_size, false);
     if (origin == kTextOriginTop) {
       next_y = y - base_to_top_ + line_height_ - outline_;
     } else if (origin == kTextOriginFirstBase) {
       next_y = y + line_height_;
     } else {
-      Vec2Si32 size;
-      DrawEvaluateSizeImpl(to_sprite, text, do_keep_xadvance,
-        x, y, origin, blending_mode, filter_mode, color, palete, false,
-        &size);
       if (origin == kTextOriginBottom) {
-        next_y = y + size.y - base_to_top_ + line_height_ - outline_;
+        next_y = y + total_size.y - base_to_top_ + line_height_ - outline_;
       } else if (origin == kTextOriginLastBase) {
-        next_y = y + size.y;
+        next_y = y + total_size.y;
+      } else if (origin == kTextOriginCenter) {
+        next_y = y + total_size.y / 2;
       }
     }
   }
@@ -477,25 +571,19 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
   Si32 lines = 0;
   Ui32 prev_code = 0;
   bool is_newline = false;
+  bool is_first_line = true;
   Si32 newline_count = 1;
   Ui32 color_idx = 0;
   Utf32Reader reader;
   reader.Reset(reinterpret_cast<const Ui8*>(text));
   Glyph *glyph = nullptr;
+  Si32 next_x = x + outline_;
+
   while (true) {
+    const char *p = (const char*)reader.p;
     Ui32 code = reader.ReadOne();
-    if (!code) {
-      if (glyph && !do_keep_xadvance) {
-        width += glyph->sprite.Width() - glyph->xadvance;
-      }
-      max_width = std::max(max_width, width);
-      if (out_size) {
-        *out_size = Vec2Si32(max_width + outline_*2,
-          lines * line_height_+outline_*2);
-      }
-      return;
-    }
-    if (code == '\r' || code == '\n') {
+    if (code && (code == '\r' || code == '\n')) {
+      is_first_line = false;
       if (is_newline) {
         if (code == prev_code) {
           newline_count++;
@@ -508,6 +596,17 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
         newline_count++;
       }
     } else {
+      if (!code || (newline_count && is_one_line && !is_first_line)) {
+        if (glyph && !do_keep_xadvance) {
+          width += glyph->sprite.Width() - glyph->xadvance;
+        }
+        max_width = std::max(max_width, width);
+        if (out_size) {
+          *out_size = Vec2Si32(max_width + outline_*2,
+                               lines * line_height_+outline_*2);
+        }
+        return;
+      }
       is_newline = false;
       if (code <= 8) {
         color_idx = code;
@@ -523,6 +622,19 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
           max_width = std::max(max_width, width);
           width = 0;
           next_x = x + outline_;
+          if (do_draw) {
+            if (alignment != kTextAlignmentLeft) {
+              Vec2Si32 size;
+              DrawEvaluateSizeImpl(to_sprite, p, do_keep_xadvance,
+                x, y, origin, alignment, blending_mode, filter_mode, color, palete, false,
+                &size, true);
+              if (alignment == kTextAlignmentRight) {
+                next_x += total_size.x - size.x;
+              } else if (alignment == kTextAlignmentCenter) {
+                next_x += (total_size.x - size.x) / 2;
+              }
+            }
+          }
           lines += newline_count;
           next_y -= newline_count * line_height_;
           newline_count = 0;
@@ -547,24 +659,26 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
 
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin,
+    const TextAlignment alignment,
     const DrawBlendingMode blending_mode,
     const DrawFilterMode filter_mode,
     const Rgba color) {
   font_instance_->DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
-      text, false, x, y, origin,
+      text, false, x, y, origin, alignment,
       blending_mode, filter_mode, color,
-      std::vector<Rgba>(), true, nullptr);
+      std::vector<Rgba>(), true, nullptr, false);
 }
 
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
     const TextOrigin origin,
+    const TextAlignment alignment,
     const DrawBlendingMode blending_mode,
     const DrawFilterMode filter_mode,
     const std::vector<Rgba> &palete) {
   font_instance_->DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
-      text, false, x, y, origin,
+      text, false, x, y, origin, alignment,
       blending_mode, filter_mode, palete[0],
-      palete, true, nullptr);
+      palete, true, nullptr, false);
 }
 
 

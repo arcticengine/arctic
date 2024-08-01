@@ -467,6 +467,7 @@ Button::Button(Ui64 tag, std::shared_ptr<GuiThemeButton> theme)
   text_ = std::make_shared<Text>(0, theme_->text_);
   text_->SetPos(theme->normal_.BorderSize());
   text_->SetSize(size_ - theme->normal_.BorderSize()*2);
+  text_->SetOrigin(kTextOriginCenter);
   AddChild(text_);
   RegenerateSprites();
 }
@@ -662,9 +663,21 @@ bool Button::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
   return true;
 }
 
+void Button::SetTextColor(Rgba rgba) {
+  if (text_) {
+    text_->SetColor(rgba);
+  }
+}
+
 void Button::SetText(std::string text) {
   if (text_) {
     text_->SetText(text);
+  }
+}
+
+void Button::SetFont(Font font) {
+  if (text_) {
+    text_->SetFont(font);
   }
 }
 
@@ -680,6 +693,10 @@ void Button::RegenerateSprites() {
       text_->SetSize(text_size);
     }
   }
+}
+
+void Button::SetHotkey(KeyCode hotkey) {
+  hotkey_ = hotkey;
 }
 
 
@@ -735,10 +752,21 @@ Text::Text(Ui64 tag, std::shared_ptr<GuiThemeText> theme)
   color_ = palete_[0];
 }
 
+void Text::SetColor(Rgba rgba) {
+  color_ = rgba;
+  if (!palete_.empty()) {
+    palete_[0] = rgba;
+  }
+}
+
 void Text::SetText(std::string text) {
   text_ = std::move(text);
   selection_begin_ = 0;
   selection_end_ = 0;
+}
+
+void Text::SetFont(Font font) {
+  font_ = font;
 }
 
 void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2,
@@ -780,28 +808,58 @@ void Text::SetEnabled(bool is_enabled) {
   is_enabled_ = is_enabled;
 }
 
+void Text::SetOrigin(TextOrigin origin) {
+  origin_ = origin;
+}
+
+void Text::SetAlignment(TextAlignment alignment) {
+  alignment_ = alignment;
+}
+
 void Text::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!IsVisible()) {
+    return;
+  }
   Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
-  Vec2Si32 offset = (size_ - size) / 2;
-  if (offset.x < 0) {
-    offset.x = 0;
+  Vec2Si32 offset;
+
+  switch (origin_) {
+    case kTextOriginTop:
+      offset.y = size_.y;
+      break;
+    case kTextOriginBottom:
+      offset.y = 0;
+      break;
+    case kTextOriginCenter:
+      offset.y = size_.y / 2;
+      break;
+    case kTextOriginLastBase:
+      offset.y = 0;
+      break;
+    case kTextOriginFirstBase:
+      offset.y = 0;
+      break;
   }
-  if (offset.y < 0) {
-    offset.y = 0;
+  switch (alignment_) {
+    case kTextAlignmentLeft:
+      offset.x = 0;
+      break;
+    case kTextAlignmentRight:
+      offset.x = (size_.x - size.x);
+      break;
+    case kTextAlignmentCenter:
+      offset.x = (size_.x - size.x) / 2;
+      break;
   }
-  if (alignment_ == kAlignLeft) {
-    offset.x = 0;
-  } else if (alignment_ == kAlignRight) {
-    offset.x = (size_.x - size.x);
-  }
+
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
   if (!palete_.empty()) {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
-               origin_, kDrawBlendingModeColorize, kFilterNearest,
+               origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest,
                (is_enabled_ || !theme_ || theme_->disabled_palete_.empty()) ? palete_ : theme_->disabled_palete_);
   } else {
     font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
-               origin_, kDrawBlendingModeColorize, kFilterNearest, color_);
+               origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
   }
 
   if (selection_begin_ != selection_end_) {
@@ -848,7 +906,7 @@ Progressbar::Progressbar(Ui64 tag, Vec2Si32 pos,
 , total_value_(total_value)
 , current_value_(current_value) {
   text_ = std::make_shared<Text>(Ui64(0), Vec2Si32(0, 0), GetSize(), 0,
-                                 font, kTextOriginBottom, palete, "0% Done", kAlignCenter);
+                                 font, kTextOriginBottom, palete, "0% Done", kTextAlignmentCenter);
   Panel::AddChild(text_);
   UpdateText();
 }
@@ -890,7 +948,7 @@ void Progressbar::UpdateText() {
   if (current_value_ >= 0.0f
       && total_value_ > 0.0f
       && current_value_ <= total_value_) {
-    p = Si32(current_value_ / total_value_ * 100);
+    p = Si32(current_value_ / total_value_ * 100.0f);
   }
   char str[32];
   snprintf(str, sizeof(str), "%d%%", p);
@@ -1167,7 +1225,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   if (available_width) {
     while (visible_width > displayable_width) {
       Si32 visible_len = (Si32)display_text.length();
-      Si32 desired_len = visible_len * displayable_width / visible_width;
+      Si32 desired_len = Si32(Si64(visible_len) * Si64(displayable_width) / Si64(visible_width));
       if (desired_len >= visible_len) {
         desired_len = visible_len - 1;
       }
@@ -1179,7 +1237,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   }
 
   font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
-             origin_, kDrawBlendingModeColorize, kFilterNearest, color_);
+             origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
 
   Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
   std::string left_part = text_.substr(0, static_cast<size_t>(cursor_pos));
@@ -1269,6 +1327,7 @@ Scrollbar::Scrollbar(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
 , normal_button_cur_(std::move(normal_button_cur))
 , focused_button_cur_(std::move(focused_button_cur))
 , down_button_cur_(std::move(down_button_cur))
+, step_(5)
 , min_value_(min_value)
 , max_value_(max_value)
 , value_(value)
@@ -1276,7 +1335,7 @@ Scrollbar::Scrollbar(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
 }
 
 Scrollbar::Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme)
-: Panel(tag, Vec2Si32(0, 0), (theme->is_horizontal_ ? Vec2Si32(48, 29) : Vec2Si32(29, 48)), Ui32(tag))
+: Panel(tag, Vec2Si32(0, 0), (theme->is_horizontal_ ? Vec2Si32(150, 29) : Vec2Si32(29, 150)), Ui32(tag))
 , theme_(theme) {
   normal_background_ = theme_->normal_background_.DrawExternalSize(size_);
   focused_background_ = theme_->focused_background_.DrawExternalSize(size_);
@@ -1289,6 +1348,7 @@ Scrollbar::Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme)
   normal_button_cur_ = theme_->normal_button_cur_;
   focused_button_cur_ = theme_->focused_button_cur_;
   down_button_cur_ = theme_->down_button_cur_;
+  step_ = 5;
   min_value_ = 0;
   max_value_ = 100;
   value_ = 0;
@@ -1315,7 +1375,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
   Si32 s1 = 1 + normal_button_dec_.Size()[dir_];
   Si32 s4 = size_[dir_] - 1 - normal_button_inc_.Size()[dir_];
   Si32 w = s4 - s1 - normal_button_cur_.Size()[dir_];
-  Si32 s2 = s1 + w * (value_ - min_value_) / (max_value_ - min_value_);
+  Si32 s2 = Si32(Si64(s1) + Si64(w) * (Si64(value_) - Si64(min_value_)) / (Si64(max_value_) - Si64(min_value_)));
   Si32 s3 = s2 + normal_button_cur_.Size()[dir_];
 
   ScrollState prev_state = state_;
@@ -1332,7 +1392,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
       *out_current_tab = shared_from_this();
       *in_out_is_applied = true;
       Si32 drag_s = relative_pos[dir_] - start_relative_s_;
-      Si32 value_diff = drag_s * (max_value_ - min_value_) / w;
+      Si32 value_diff = Si32(Si64(drag_s) * (Si64(max_value_) - Si64(min_value_)) / Si64(w));
       value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
       if (out_gui_messages) {
         out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
@@ -1355,7 +1415,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         *in_out_is_applied = true;
         if (state_ == kMiddleDragged) {
           Si32 drag_s = relative_pos[dir_] - start_relative_s_;
-          Si32 value_diff = drag_s * (max_value_ - min_value_) / w;
+          Si32 value_diff = Si32(Si64(drag_s) * (Si64(max_value_) - Si64(min_value_)) / Si64(w));
           value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
           if (out_gui_messages) {
             out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
@@ -1373,7 +1433,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         } else if (relative_pos[dir_] < s2) {
           state_ = kDecFast;
           if (prev_state != state_) {
-            value_ = std::max(min_value_, value_ - 5);
+            value_ = std::max(min_value_, value_ - step_);
             if (out_gui_messages) {
               out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
             }
@@ -1388,7 +1448,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         } else if (relative_pos[dir_] < s4) {
           state_ = kIncFast;
           if (prev_state != state_) {
-            value_ = std::min(max_value_, value_ + 5);
+            value_ = std::min(max_value_, value_ + step_);
             if (out_gui_messages) {
               out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
             }
@@ -1472,7 +1532,7 @@ void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
   Si32 length = inc_pos[dir_] - after_dec[dir_] - normal_button_cur_.Size()[dir_] + 1;
   Si32 offset = 0;
   if (length > 0 && max_value_ != min_value_) {
-    offset = length * (value_ - min_value_) / (max_value_ - min_value_);
+    offset = Si32(Si64(length) * (Si64(value_) - Si64(min_value_)) / (Si64(max_value_) - Si64(min_value_)));
   }
   Vec2Si32 cur_pos = after_dec + (dir_ ? Vec2Si32(1, offset) : Vec2Si32(offset, 1));
   if (state_ == kMiddleDragged) {
@@ -1483,12 +1543,36 @@ void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
   Panel::Draw(parent_absolute_pos);
 }
 
+void Scrollbar::SetStep(Si32 step) {
+  step_ = std::max(1, step);
+}
+
 void Scrollbar::SetValue(Si32 value) {
   value_ = std::min(max_value_, std::max(min_value_, value));
 }
 
 Si32 Scrollbar::GetValue() const {
   return value_;
+}
+
+void Scrollbar::SetMinValue(Si32 min_value) {
+  min_value_ = min_value;
+  max_value_ = std::max(min_value_, max_value_);
+  value_ = std::min(max_value_, std::max(min_value_, value_));
+}
+
+Si32 Scrollbar::GetMinValue() const {
+  return min_value_;
+}
+
+void Scrollbar::SetMaxValue(Si32 max_value) {
+  max_value_ = max_value;
+  min_value_ = std::min(min_value_, max_value_);
+  value_ = std::min(max_value_, std::max(min_value_, value_));
+}
+
+Si32 Scrollbar::GetMaxValue() const {
+  return max_value_;
 }
 
 void Scrollbar::RegenerateSprites() {
@@ -1762,6 +1846,10 @@ void Checkbox::SetText(std::string text) {
   SetSize(new_size);
 }
 
+void Checkbox::SetHotkey(KeyCode hotkey) {
+  hotkey_ = hotkey;
+}
+
 struct LoaderContext {
   std::unordered_map<std::string, Sprite> atlas;
   std::string parent_path;
@@ -1836,7 +1924,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   text_->origin_ = kTextOriginBottom;
   text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
   text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
-  text_->alignment_ = kAlignLeft;
+  text_->alignment_ = kTextAlignmentLeft;
   text_->selection_mode_ = kTextSelectionModeInvert;
   text_->selection_color_1_ = Rgba(0, 0, 0);
   text_->selection_color_2_ = Rgba(255, 255, 255);
@@ -1852,9 +1940,16 @@ void GuiTheme::Load(const char *xml_file_path) {
   button_->text_ = std::make_shared<GuiThemeText>();
   button_->text_->font_ = text_->font_;
   button_->text_->origin_ = kTextOriginBottom;
-  button_->text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
+
+  for (auto it = ctx.doc.child("text_palete").children().begin(); it != ctx.doc.child("text_palete").children().end(); ++it) {
+    Rgba rgb(it->attribute("r").as_uint(255),
+      it->attribute("g").as_uint(255),
+      it->attribute("b").as_uint(255));
+    button_->text_->palete_.push_back(rgb);
+  }
+  //{Rgba(255, 255, 255), Rgba(128, 255, 128)};
   button_->text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
-  button_->text_->alignment_ = kAlignCenter;
+  button_->text_->alignment_ = kTextAlignmentCenter;
   button_->text_->selection_mode_ = kTextSelectionModeInvert;
   button_->text_->selection_color_1_ = Rgba(0, 0, 0);
   button_->text_->selection_color_2_ = Rgba(255, 255, 255);
@@ -1868,7 +1963,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   editbox_text_->origin_ = kTextOriginBottom;
   editbox_text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
   editbox_text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
-  editbox_text_->alignment_ = kAlignLeft;
+  editbox_text_->alignment_ = kTextAlignmentLeft;
   editbox_text_->selection_mode_ = kTextSelectionModeInvert;
   editbox_text_->selection_color_1_ = Rgba(0, 0, 0);
   editbox_text_->selection_color_2_ = Rgba(255, 255, 255);
@@ -1882,7 +1977,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   text_->origin_ = kTextOriginBottom;
   text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
   text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
-  text_->alignment_ = kAlignLeft;
+  text_->alignment_ = kTextAlignmentLeft;
   text_->selection_mode_ = kTextSelectionModeInvert;
   text_->selection_color_1_ = Rgba(0, 0, 0);
   text_->selection_color_2_ = Rgba(255, 255, 255);

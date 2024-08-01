@@ -235,7 +235,7 @@ std::shared_ptr<Button> MakeButton(Ui64 tag, Vec2Si32 pos,
     g_sound_button_down, g_sound_button_up, hotkey, tab_order));
   std::shared_ptr<Text> button_textbox(new Text(
     0, Vec2Si32(2, 8), Vec2Si32(button_size.x - 4, button_text_size.y),
-    0, g_font, kTextOriginBottom, g_palete, text, kAlignCenter));
+    0, g_font, kTextOriginBottom, g_palete, text, kTextAlignmentCenter));
   button->AddChild(button_textbox);
   if (out_text) {
     *out_text = button_textbox;
@@ -260,7 +260,7 @@ bool GetOperationMode() {
 
   std::shared_ptr<Text> textbox(new Text(
     0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
-    0, g_font, kTextOriginTop, g_palete, welcome, kAlignLeft));
+    0, g_font, kTextOriginTop, g_palete, welcome, kTextAlignmentLeft));
   box->AddChild(textbox);
   y = 8 + 16 + 64 + 64;
   std::shared_ptr<Button> create_button = MakeButton(
@@ -311,7 +311,7 @@ bool GetProjectKind() {
 
   std::shared_ptr<Text> textbox(new Text(
     0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
-    0, g_font, kTextOriginTop, g_palete, welcome, kAlignLeft));
+    0, g_font, kTextOriginTop, g_palete, welcome, kTextAlignmentLeft));
   box->AddChild(textbox);
   y = 8 + 16 + 64 + 64 + 64 + 64 + 64 + 64;
   std::shared_ptr<Button> tetramino_button = MakeButton(
@@ -397,7 +397,7 @@ bool GetProjectName() {
 
   std::shared_ptr<Text> textbox(new Text(
     0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
-    0, g_font, kTextOriginTop, g_palete, welcome, kAlignLeft));
+    0, g_font, kTextOriginTop, g_palete, welcome, kTextAlignmentLeft));
   box->AddChild(textbox);
   y = 8 + 16 + 64 + 64 + 48;
 
@@ -422,7 +422,7 @@ bool GetProjectName() {
     kTextOriginBottom,
     Rgba(255, 255, 255, 255),
     "",
-    kAlignLeft,
+    kTextAlignmentLeft,
     false,
     allow_list));
   box->AddChild(editbox);
@@ -550,7 +550,7 @@ bool SelectProject() {
       str << "\n";
     }
 
-    g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop,
+    g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop, kTextAlignmentLeft,
       kDrawBlendingModeColorize, kFilterNearest, g_palete);
     ShowFrame();
     if (is_done) {
@@ -794,7 +794,7 @@ bool ShowProgress() {
     snprintf(text, sizeof(text), welcome,
         g_project_name.c_str(), g_current_directory.c_str(),
         g_progress.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32,  kTextOriginTop,
+    g_font.Draw(text, 32, ScreenSize().y - 32,  kTextOriginTop, kTextAlignmentLeft,
                 kDrawBlendingModeColorize, kFilterNearest, g_palete);
     ShowFrame();
   }
@@ -1403,7 +1403,7 @@ bool ShowUpdateProgress() {
     snprintf(text, sizeof(text), welcome,
              g_project_name.c_str(), g_current_directory.c_str(),
              g_progress.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
+    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop, kTextAlignmentLeft,
                 kDrawBlendingModeColorize, kFilterNearest, g_palete);
     ShowFrame();
   }

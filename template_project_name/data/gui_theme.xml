@@ -10,6 +10,11 @@
 <button_up_sound path="button_up.wav" />
 
 <text_font path="arctic_one_bmf.fnt" />
+<text_palete>
+  <color r="255" g="255" b="255" />
+  <color r="128" g="255" b="128" />
+</text_palete>
+
 
 <progressbar_incomplete path="progressbar_incomplete.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
 <progressbar_complete path="progressbar_complete.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />

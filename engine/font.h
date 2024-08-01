@@ -171,7 +171,14 @@ enum TextOrigin {
   kTextOriginBottom = 0,  ///< The bottom of the last text line
   kTextOriginFirstBase = 1,  ///< The base of the first text line
   kTextOriginLastBase = 2,  ///< The base of the last text line
-  kTextOriginTop = 3  ///< The top of the first text line
+  kTextOriginTop = 3,  ///< The top of the first text line
+  kTextOriginCenter = 4 ///< The center between the top of the first and the bottom of the last text line
+};
+
+enum TextAlignment {
+  kTextAlignmentLeft = 0,
+  kTextAlignmentCenter = 1,
+  kTextAlignmentRight = 2
 };
 
 class FontInstance {
@@ -199,6 +206,9 @@ public:
   void AddGlyph(const Glyph &glyph);
   void AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite);
   void Load(const char *file_name);
+  void LoadXml(const char *file_name);
+  void LoadAsciiSquare(const char *file_name, bool is_dense);
+  void LoadBinaryFnt(const char *file_name);
   void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
                             Si32 base_to_top, Si32 line_height, Si32 space_width);
   void LoadTable(Sprite sprite, const char* utf8_letters,
@@ -209,10 +219,11 @@ public:
   void DrawEvaluateSizeImpl(Sprite to_sprite,
                             const char *text, bool do_keep_xadvance,
                             Si32 x, Si32 y, TextOrigin origin,
+                            TextAlignment alignment,
                             DrawBlendingMode blending_mode,
                             DrawFilterMode filter_mode,
                             Rgba color, const std::vector<Rgba> &palete, bool do_draw,
-                            Vec2Si32 *out_size);
+                            Vec2Si32 *out_size, bool is_one_line);
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
   void Draw(Sprite to_sprite, const char *text,
             const Si32 x, const Si32 y,
@@ -337,9 +348,9 @@ class Font {
     Vec2Si32 size;
     Sprite empty;
     font_instance_->DrawEvaluateSizeImpl(empty, text, do_keep_xadvance,
-                                         0, 0, kTextOriginFirstBase, kDrawBlendingModeCopyRgba, kFilterNearest,
+                                         0, 0, kTextOriginFirstBase, kTextAlignmentLeft, kDrawBlendingModeCopyRgba, kFilterNearest,
                                          Rgba(255, 255, 255), std::vector<Rgba>(), false,
-                                         &size);
+                                         &size, false);
     return size;
   }
 
@@ -352,6 +363,7 @@ class Font {
   /// @param [in] y Y destination sprite coordinate to draw text at.
   /// @param [in] origin The origin that will be located at the specified
   ///   coordinates.
+  /// @param [in] alignment The alignment that will be used for the text.
   /// @param [in] blending_mode The blending mode to use when drawing the text.
   /// @param [in] filter_mode The filtering mode to use when drawing the text.
   /// @param [in] color The color used by some blending modes (for example,
@@ -359,12 +371,13 @@ class Font {
   void Draw(Sprite to_sprite, const char *text,
       const Si32 x, const Si32 y,
       const TextOrigin origin = kTextOriginBottom,
+      const TextAlignment alignment = kTextAlignmentLeft,
       const DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       const DrawFilterMode filter_mode = kFilterNearest,
       const Rgba color = Rgba(0xffffffff)) {
     font_instance_->DrawEvaluateSizeImpl(to_sprite,
-                                         text, false, x, y, origin, blending_mode, filter_mode, color,
-                                         std::vector<Rgba>(), true, nullptr);
+                                         text, false, x, y, origin, alignment, blending_mode, filter_mode, color,
+                                         std::vector<Rgba>(), true, nullptr, false);
   }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
@@ -376,6 +389,7 @@ class Font {
   /// @param [in] y Y destination sprite coordinate to draw text at.
   /// @param [in] origin The origin that will be located at the specified
   ///   coordinates.
+  /// @param [in] alignment The alignment that will be used for the text.
   /// @param [in] blending_mode The blending mode to use when drawing the text.
   /// @param [in] filter_mode The filtering mode to use when drawing the text.
   /// @param [in] palete The vector of Rgba colors used to colorize the text
@@ -386,12 +400,13 @@ class Font {
   void Draw(Sprite to_sprite, const char *text,
       const Si32 x, const Si32 y,
       const TextOrigin origin,
+      const TextAlignment alignment,
       const DrawBlendingMode blending_mode,
       const DrawFilterMode filter_mode,
       const std::vector<Rgba> &palete) {
     font_instance_->DrawEvaluateSizeImpl(to_sprite,
-                                         text, false, x, y, origin, blending_mode, filter_mode, palete[0],
-                                         palete, true, nullptr);
+                                         text, false, x, y, origin, alignment, blending_mode, filter_mode, palete[0],
+                                         palete, true, nullptr, false);
   }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
@@ -402,15 +417,18 @@ class Font {
   /// @param [in] y Y screen coordinate to draw text at.
   /// @param [in] origin The origin that will be located at the specified screen
   ///   coordinates.
+  /// @param [in] alignment The alignment that will be used for the text.
   /// @param [in] blending_mode The blending mode to use when drawing the text.
   /// @param [in] filter_mode The filtering mode to use when drawing the text.
   /// @param [in] color The color used by some blending modes (for example,
   ///   the kDrawBlendingModeColorize blending mode).
   void Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin = kTextOriginBottom,
+      const TextAlignment alignment = kTextAlignmentLeft,
       const DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       const DrawFilterMode filter_mode = kFilterNearest,
       const Rgba color = Rgba(0xffffffff));
+
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
   ///   backbuffer
@@ -420,6 +438,7 @@ class Font {
   /// @param [in] y Y screen coordinate to draw text at.
   /// @param [in] origin The origin that will be located at the specified screen
   ///   coordinates.
+  /// @param [in] alignment The alignment that will be used for the text.
   /// @param [in] blending_mode The blending mode to use when drawing the text.
   /// @param [in] filter_mode The filtering mode to use when drawing the text.
   /// @param [in] palete The vector of Rgba colors used to colorize the text
@@ -429,6 +448,7 @@ class Font {
   ///   following text.
   void Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
+      const TextAlignment alignment,
       const DrawBlendingMode blending_mode,
       const DrawFilterMode filter_mode,
       const std::vector<Rgba> &palete);
