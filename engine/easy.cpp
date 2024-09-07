@@ -620,65 +620,323 @@ void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color) {
 }
 
 void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color) {
-  Sprite back = to_sprite;
-  Vec2Si32 limit = back.Size();
-  MathTables &tables = GetEngine()->GetMathTables();
+  DrawOval(to_sprite, color, c-r, c+r);
+}
 
-  Rgba *data = back.RgbaData();
-  Si32 stride = back.StridePixels();
+void DrawOval(Sprite to_sprite, Rgba color, Vec2Si32 ll, Vec2Si32 ur) {
+  if (ll.x <= ur.x && ll.y <= ur.y) {
+    Sprite back = to_sprite;
+    Vec2Si32 limit = back.Size();
+    MathTables &tables = GetEngine()->GetMathTables();
+    Rgba *data = back.RgbaData();
+    Si32 stride = back.StridePixels();
+    Vec2Si32 half_axis_31_1 = (ur - ll) + Vec2Si32(1, 1);
+    Vec2Si32 c_31_1 = ll + ur;
+    Si32 y_off_31_1_min;
+    Si32 y_off_31_1_max;
+    Si32 y_dwn_31_1_min;
+    Si32 y_dwn_31_1_max;
+    if (c_31_1.y % 2) {
+      c_31_1 += Vec2Si32(1, 1);
+      y_off_31_1_min = std::max(0, -c_31_1.y) + 1;
+      y_off_31_1_max = std::min(half_axis_31_1.y, std::max(0, limit.y*2 - c_31_1.y));
+      if (c_31_1.y <= limit.y*2 - 2) {
+        y_dwn_31_1_min = 1;
+      } else {
+        y_dwn_31_1_min = c_31_1.y - limit.y*2 + 1;
+      }
+      y_dwn_31_1_max = half_axis_31_1.y - std::max(0, half_axis_31_1.y - c_31_1.y+1);
+    } else {
+      c_31_1 += Vec2Si32(1, 0);
+      y_off_31_1_min = std::max(0, -c_31_1.y);
+      y_off_31_1_max = std::min(half_axis_31_1.y, std::max(0, limit.y*2 - c_31_1.y)) - 1;
 
-  if (r.x >= 0) {
-    // from c up
-    {
-      Si32 y1 = std::max(c.y + 1, 0);
-      Si32 y2 = std::min(c.y + r.y + 1, limit.y);
-      if (y1 < y2) {
-        for (Si32 y = y1; y < y2; ++y) {
-          Si32 table_y = (tables.cicrle_16_16_mask * (y - c.y)
-            - tables.cicrle_16_16_half_mask) / r.y;
-          Si32 table_x = ((tables.circle_16_16[static_cast<size_t>(table_y)]
-            * r.x) + 32767)>> 16u;
-          Si32 x1 = std::max(c.x - table_x, 0);
-          Si32 x2 = std::min(c.x + table_x + 1, limit.x);
-          Rgba *p = data + stride * y + x1;
-          Rgba *p_end = p + (x2 - x1);
-          for (; p < p_end; ++p) {
-            p->rgba = color.rgba;
-          }
+      y_dwn_31_1_min = std::max(0, c_31_1.y - limit.y*2+2);
+      y_dwn_31_1_max = half_axis_31_1.y - std::max(0, half_axis_31_1.y - c_31_1.y);
+    }
+    // from c to top
+    for (Si32 y_off_31_1 = y_off_31_1_min; y_off_31_1 <= y_off_31_1_max; y_off_31_1 += 2) {
+      Si32 y = (c_31_1.y + y_off_31_1) / 2;
+      Si32 table_y = y_off_31_1 * tables.cicrle_16_16_one / (half_axis_31_1.y);
+      Si32 table_x = tables.circle_16_16[static_cast<size_t>(table_y)];
+      Si32 x_off_31_1 = (table_x * half_axis_31_1.x) >> 16;
+      Si32 x1 = std::max((c_31_1.x - x_off_31_1) / 2 , 0);
+      Si32 x2 = std::min((c_31_1.x + x_off_31_1 + 1) / 2, limit.x);
+      if (x1 < x2) {
+        Rgba *p = data + stride * y + x1;
+        Rgba *p_max = p + (x2 - x1);
+        for (; p < p_max; ++p) {
+          p->rgba = color.rgba;
         }
       }
     }
-    // center line
-    if (c.y > 0 && c.y < limit.y) {
-      Si32 x1 = std::max(c.x - r.x, 0);
-      Si32 x2 = std::min(c.x + r.x, limit.x - 1);
-      Rgba *p = data + stride * c.y + x1;
-      Rgba *p_end = p + (x2 - x1);
-      for (; p <= p_end; ++p) {
-        p->rgba = color.rgba;
-      }
-    }
-
-    // from bottom to c
-    {
-      Si32 y1 = std::max(c.y - r.y, 0);
-      Si32 y2 = std::min(c.y, limit.y);
-      if (y1 < y2) {
-        for (Si32 y = y1; y < y2; ++y) {
-          Si32 table_y = (tables.cicrle_16_16_mask * (c.y - y)
-              - tables.cicrle_16_16_mask/2) / r.y;
-          Si32 table_x =
-              ((tables.circle_16_16[static_cast<size_t>(table_y)] * r.x)
-                + 32767) >> 16u;
-          Si32 x1 = std::max(c.x - table_x, 0);
-          Si32 x2 = std::min(c.x + table_x + 1, limit.x);
-          Rgba *p = data + stride * y + x1;
-          Rgba *p_end = p + (x2 - x1);
-          for (; p < p_end; ++p) {
-            p->rgba = color.rgba;
-          }
+    // from c to bottom
+    for (Si32 y_off_31_1 = y_dwn_31_1_min; y_off_31_1 <= y_dwn_31_1_max; y_off_31_1 += 2) {
+      Si32 y = (c_31_1.y - y_off_31_1) / 2;
+      Si32 table_y = y_off_31_1 * tables.cicrle_16_16_one / (half_axis_31_1.y);
+      Si32 table_x = tables.circle_16_16[static_cast<size_t>(table_y)];
+      Si32 x_off_31_1 = (table_x * half_axis_31_1.x) >> 16;
+      Si32 x1 = std::max((c_31_1.x - x_off_31_1) / 2 , 0);
+      Si32 x2 = std::min((c_31_1.x + x_off_31_1 + 1) / 2, limit.x);
+      if (x1 < x2) {
+        Rgba *p = data + stride * y + x1;
+        Rgba *p_max = p + (x2 - x1);
+        for (; p < p_max; ++p) {
+          p->rgba = color.rgba;
         }
       }
+    }
+  }
+}
+
+/// @brief Draw a rounded corner rectangular block shape.
+/// @param [in] to_sprite Sprite to draw the block on.
+/// @param [in] lower_left_pos Lower-left block corner position (as if it was not rounded).
+/// @param [in] size Block size.
+/// @param [in] corner_radius External radius of block corners.
+/// @param [in] color Fill color of the block.
+void DrawBlock(Sprite &to_sprite, Vec2F lower_left_pos, Vec2F size, float corner_radius, Rgba color) {
+  if (size.x > 0 && size.y > 0 &&
+      lower_left_pos.x < to_sprite.Width() &&
+      lower_left_pos.y < to_sprite.Height() &&
+      lower_left_pos.x + size.x >= 0.f &&
+      lower_left_pos.y + size.y >= 0.f) {
+    corner_radius = std::max(0.f, std::min(corner_radius, std::min(size.x, size.y) * 0.5f));
+    float d = corner_radius * 2.f;
+    if (corner_radius > 0.f) {
+      Sprite frame;
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, color, Vec2Si32(0,0), Vec2Si32(Vec2F(d, d)));
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x + size.x - corner_radius, lower_left_pos.y), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, color, Vec2Si32(-corner_radius,0), Vec2Si32(Vec2F(corner_radius, d)));
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x, lower_left_pos.y + size.y - corner_radius), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, color, Vec2Si32(0,-corner_radius), Vec2Si32(Vec2F(d, corner_radius)));
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x + size.x - corner_radius, lower_left_pos.y + size.y - corner_radius), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, color, Vec2Si32(-corner_radius,-corner_radius), Vec2Si32(Vec2F(corner_radius, corner_radius)));
+
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y)),
+                    Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + corner_radius)), color);
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y + size.y - corner_radius)),
+                    Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + size.y)), color);
+    }
+    DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + corner_radius)),
+                  Vec2Si32(Si32(lower_left_pos.x + size.x), Si32(lower_left_pos.y + size.y - corner_radius)), color);
+  }
+}
+
+/// @brief Draw a rounded corner rectangular block shape. The shape has a border.
+/// @param [in] to_sprite Sprite to draw the block on.
+/// @param [in] lower_left_pos Lower-left block corner position (as if it was not rounded).
+/// @param [in] size Block size.
+/// @param [in] corner_radius External radius of block corners.
+/// @param [in] color Fill color of the block.
+/// @param [in] border_size Border width.
+/// @param [in] border_color Border color.
+void DrawBlock(Sprite &to_sprite, Vec2F lower_left_pos, Vec2F size, float corner_radius,
+               Rgba color, float border_size, Rgba border_color) {
+
+  if (size.x > 0 && size.y > 0 &&
+      lower_left_pos.x < to_sprite.Width() &&
+      lower_left_pos.y < to_sprite.Height() &&
+      lower_left_pos.x + size.x >= 0.f &&
+      lower_left_pos.y + size.y >= 0.f) {
+    corner_radius = std::max(0.f, std::min(corner_radius, std::min(size.x, size.y) * 0.5f));
+    float d = corner_radius * 2.f;
+    if (corner_radius > 0.f) {
+      Sprite frame;
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, border_color, Vec2Si32(0,0), Vec2Si32(Vec2F(d, d)));
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x + size.x - corner_radius, lower_left_pos.y), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, border_color, Vec2Si32(-corner_radius,0), Vec2Si32(Vec2F(corner_radius, d)));
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x, lower_left_pos.y + size.y - corner_radius), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, border_color, Vec2Si32(0,-corner_radius), Vec2Si32(Vec2F(d, corner_radius)));
+      frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x + size.x - corner_radius, lower_left_pos.y + size.y - corner_radius), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+      DrawOval(frame, border_color, Vec2Si32(-corner_radius,-corner_radius), Vec2Si32(Vec2F(corner_radius, corner_radius)));
+
+      float stripe_size = border_size < corner_radius ? border_size : corner_radius;
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y)),
+                    Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + stripe_size)), border_color);
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y + size.y - stripe_size)),
+                    Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + size.y)), border_color);
+    }
+
+    if (border_size >= size.x * 0.5f || border_size >= size.y * 0.5f) {
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + corner_radius)),
+                    Vec2Si32(Si32(lower_left_pos.x + size.x), Si32(lower_left_pos.y + size.y - corner_radius)), border_color);
+    } else {
+      if (border_size > corner_radius) {
+        DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + corner_radius)),
+                      Vec2Si32(Si32(lower_left_pos.x + size.x), Si32(lower_left_pos.y + border_size)), border_color);
+        DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + size.y - border_size)),
+                      Vec2Si32(Si32(lower_left_pos.x + size.x), Si32(lower_left_pos.y + size.y - corner_radius)), border_color);
+      }
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + corner_radius)),
+                    Vec2Si32(Si32(lower_left_pos.x + border_size), Si32(lower_left_pos.y + size.y - corner_radius)), border_color);
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + size.x - border_size), Si32(lower_left_pos.y + corner_radius)),
+                    Vec2Si32(Si32(lower_left_pos.x + size.x), Si32(lower_left_pos.y + size.y - corner_radius)), border_color);
+    }
+
+    lower_left_pos.x += border_size;
+    lower_left_pos.y += border_size;
+    size.x -= border_size * 2.f;
+    size.y -= border_size * 2.f;
+    corner_radius = std::max(0.f, corner_radius - border_size);
+
+    if (size.x > 0 && size.y > 0) {
+      corner_radius = std::max(0.f, std::min(corner_radius, std::min(size.x, size.y) * 0.5f));
+      float d = corner_radius * 2.f;
+      if (corner_radius > 0.f) {
+        Sprite frame;
+        frame.Reference(to_sprite, Vec2Si32(lower_left_pos), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+        DrawOval(frame, color, Vec2Si32(0,0), Vec2Si32(Vec2F(d, d)));
+        frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x + size.x - corner_radius, lower_left_pos.y), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+        DrawOval(frame, color, Vec2Si32(-corner_radius,0), Vec2Si32(Vec2F(corner_radius, d)));
+        frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x, lower_left_pos.y + size.y - corner_radius), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+        DrawOval(frame, color, Vec2Si32(0,-corner_radius), Vec2Si32(Vec2F(d, corner_radius)));
+        frame.Reference(to_sprite, Vec2Si32(lower_left_pos.x + size.x - corner_radius, lower_left_pos.y + size.y - corner_radius), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
+        DrawOval(frame, color, Vec2Si32(-corner_radius,-corner_radius), Vec2Si32(Vec2F(corner_radius, corner_radius)));
+
+        DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y)),
+                      Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + corner_radius)), color);
+        DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y + size.y - corner_radius)),
+                      Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + size.y)), color);
+      }
+      DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + corner_radius)),
+                    Vec2Si32(Si32(lower_left_pos.x + size.x), Si32(lower_left_pos.y + size.y - corner_radius)), color);
+    }
+  }
+}
+
+Vec2F BlockEdgePos(Vec2F lower_left_pos, Vec2F size, float corner_radius, Vec2F direction) {
+  Vec2F half_size = size * 0.5f;
+  float time;
+  if (size.x == 0.f || size.y == 0.f) {
+    return lower_left_pos + half_size;
+  }
+  direction = NormalizeSafe(direction);
+  if (std::abs(half_size.x * direction.y) < std::abs(half_size.y * direction.x)) {
+    time = std::abs(half_size.x / direction.x);
+  } else {
+    time = std::abs(half_size.y / direction.y);
+  }
+  float min_r = std::min(half_size.x, half_size.y);
+  corner_radius = std::max(0.f, std::min(min_r, corner_radius));
+  Vec2F vec = direction * time;
+  Vec2F O;
+  if (vec.x > half_size.x - corner_radius) {
+    if (vec.y > half_size.y - corner_radius) {
+      O = Vec2F(half_size.x - corner_radius, half_size.y - corner_radius);
+    } else if (vec.y < -half_size.y + corner_radius) {
+      O = Vec2F(half_size.x - corner_radius, -half_size.y + corner_radius);
+    } else {
+      return lower_left_pos + half_size + vec;
+    }
+  } else if (vec.x < -half_size.x + corner_radius) {
+    if (vec.y > half_size.y - corner_radius) {
+      O = Vec2F(-half_size.x + corner_radius, half_size.y - corner_radius);
+    } else if (vec.y < -half_size.y + corner_radius) {
+      O = Vec2F(-half_size.x + corner_radius, -half_size.y + corner_radius);
+    } else {
+      return lower_left_pos + half_size + vec;
+    }
+  } else {
+    return lower_left_pos + half_size + vec;
+  }
+
+  float proj = direction.x * O.x + direction.y * O.y;
+  float dSq = LengthSquared(O) - proj * proj;
+  float xSq = corner_radius * corner_radius - dSq;
+  float length = std::sqrt(xSq) + proj;
+  Vec2F vecC = direction * length;
+  return lower_left_pos + half_size + vecC;
+}
+
+/// @brief Draw an arrow shape.
+/// @param [in] to_sprite Sprite to draw the arrow on.
+/// @param [in] source_pos Tail position (source point).
+/// @param [in] destination_pos Head position (destination point).
+/// @param [in] body_width Tail width.
+/// @param [in] head_width Head width.
+/// @param [in] head_length Head length.
+/// @param [in] color Fill color of the arrow.
+void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
+               float body_width, float head_width, float head_length, Rgba color) {
+  float maxw = std::max(body_width, head_width) * 0.5f;
+  if (std::min(source_pos.x, destination_pos.x) - maxw < to_sprite.Width() &&
+      std::max(source_pos.x, destination_pos.x) + maxw >= 0 &&
+      std::min(source_pos.y, destination_pos.y) - maxw < to_sprite.Height() &&
+      std::max(source_pos.y, destination_pos.y) + maxw >= 0) {
+    Vec2F SD = destination_pos - source_pos;
+
+    float sd_length = Length(SD);
+    if (sd_length < head_length) {
+      head_width = head_width * sd_length / head_length;
+      head_length = sd_length;
+      body_width = 0.f;
+    }
+
+    Vec2F ED = SD * head_length / sd_length;
+    Vec2F SE = SD - ED;
+    Vec2F E = source_pos + SE;
+    Vec2F SDn = SD / sd_length;
+    Vec2F Perp = Vec2F(-SDn.y, SDn.x);
+    Vec2F EL = Perp * head_width * 0.5f;
+    Vec2F L = E + EL;
+    Vec2F R = E - EL;
+    Vec2F SA = Perp * body_width * 0.5f;
+    Vec2F A = source_pos + SA;
+    Vec2F B = source_pos - SA;
+    Vec2F M = E + SA;
+    Vec2F N = E - SA;
+
+    //                   L-
+    // A-----------------M --
+    // S                     -D
+    // B-----------------N --
+    //                   R-
+
+    DrawTriangle(to_sprite, Vec2Si32(A), Vec2Si32(M), Vec2Si32(N), color);
+    DrawTriangle(to_sprite, Vec2Si32(A), Vec2Si32(N), Vec2Si32(B), color);
+    DrawTriangle(to_sprite, Vec2Si32(M), Vec2Si32(L), Vec2Si32(destination_pos), color);
+    DrawTriangle(to_sprite, Vec2Si32(M), Vec2Si32(destination_pos), Vec2Si32(N), color);
+    DrawTriangle(to_sprite, Vec2Si32(N), Vec2Si32(destination_pos), Vec2Si32(R), color);
+  }
+}
+
+/// @brief Draw an arrow shape. The shape has a border.
+/// @param [in] to_sprite Sprite to draw the arrow on.
+/// @param [in] source_pos Tail position (source point).
+/// @param [in] destination_pos Head position (destination point).
+/// @param [in] body_width Tail width.
+/// @param [in] head_width Head width.
+/// @param [in] head_length Head length.
+/// @param [in] color Fill color of the arrow.
+/// @param [in] border_size Border width.
+/// @param [in] border_color Border color.
+void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
+               float body_width, float head_width, float head_length, Rgba color,
+               float border_size, Rgba border_color) {
+  Vec2F SD = destination_pos - source_pos;
+  float sd_length = Length(SD);
+  if (sd_length > 0.f) {
+    if (sd_length < head_length) {
+      head_width = head_width * sd_length / head_length;
+      head_length = sd_length;
+      body_width = 0;
+    }
+    DrawArrow(to_sprite, source_pos, destination_pos, body_width, head_width, head_length, border_color);
+
+    Vec2F S2 = source_pos + ((SD * border_size / sd_length));
+    float L=std::sqrt((head_width * 0.5f) * (head_width * 0.5f) + head_length * head_length);
+    float DestDist = L*border_size / (head_width * 0.5f);
+
+    Vec2F D2 = destination_pos - (SD / sd_length * DestDist);
+    float BodyWidth2 = std::max(0.f, body_width - (border_size * 2.f));
+    float HeadLength2 = head_length - border_size -DestDist;
+    float HeadWidth2 = head_width / head_length * HeadLength2;
+
+    if (Dot(D2-S2, SD) > 0.f) {
+      DrawArrow(to_sprite, S2, D2, BodyWidth2, HeadWidth2, HeadLength2, color);
     }
   }
 }

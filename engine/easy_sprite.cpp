@@ -1045,6 +1045,10 @@ void Sprite::InvReference(const Sprite &from, const Si32 from_x, const Si32 from
   Reference(from, from_x, from.ref_size_.y - from_inv_y - from_height, from_width , from_height);
 }
 
+void Sprite::Reference(const Sprite &from, const Vec2Si32 from_pos, const Vec2Si32 from_size) {
+  Reference(from, from_pos.x, from_pos.y, from_size.x, from_size.y);
+}
+
 void Sprite::Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height) {
   ref_pos_ = Vec2Si32(

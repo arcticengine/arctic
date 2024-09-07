@@ -101,6 +101,55 @@ void DrawOval(Vec2Si32 c, Vec2Si32 r, Rgba color);
 /// @brief Draws a solid color filled oval to a sprite
 void DrawOval(Sprite to_sprite, Vec2Si32 c, Vec2Si32 r, Rgba color);
 
+/// @brief Draws a solid color filled oval to a sprite
+void DrawOval(Sprite to_sprite, Rgba color, Vec2Si32 ll, Vec2Si32 ur);
+
+/// @brief Draw a rounded corner rectangular block shape.
+/// @param [in] to_sprite Sprite to draw the block on.
+/// @param [in] lower_left_pos Lower-left block corner position (as if it was not rounded).
+/// @param [in] size Block size.
+/// @param [in] corner_radius External radius of block corners.
+/// @param [in] color Fill color of the block.
+void DrawBlock(Sprite &to_sprite, Vec2F lower_left_pos, Vec2F size, float corner_radius, Rgba color);
+
+/// @brief Draw a rounded corner rectangular block shape. The shape has a border.
+/// @param [in] to_sprite Sprite to draw the block on.
+/// @param [in] lower_left_pos Lower-left block corner position (as if it was not rounded).
+/// @param [in] size Block size.
+/// @param [in] corner_radius External radius of block corners.
+/// @param [in] color Fill color of the block.
+/// @param [in] border_size Border width.
+/// @param [in] border_color Border color.
+void DrawBlock(Sprite &to_sprite, Vec2F lower_left_pos, Vec2F size, float corner_radius,
+    Rgba color, float border_size, Rgba border_color);
+
+/// @brief Draw an arrow shape.
+/// @param [in] to_sprite Sprite to draw the arrow on.
+/// @param [in] source_pos Tail position (source point).
+/// @param [in] destination_pos Head position (destination point).
+/// @param [in] body_width Tail width.
+/// @param [in] head_width Head width.
+/// @param [in] head_length Head length.
+/// @param [in] color Fill color of the arrow.
+void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
+               float body_width, float head_width, float head_length, Rgba color);
+
+/// @brief Draw an arrow shape. The shape has a border.
+/// @param [in] to_sprite Sprite to draw the arrow on.
+/// @param [in] source_pos Tail position (source point).
+/// @param [in] destination_pos Head position (destination point).
+/// @param [in] body_width Tail width.
+/// @param [in] head_width Head width.
+/// @param [in] head_length Head length.
+/// @param [in] color Fill color of the arrow.
+/// @param [in] border_size Border width.
+/// @param [in] border_color Border color.
+void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
+               float body_width, float head_width, float head_length, Rgba color,
+               float border_size, Rgba border_color);
+
+Vec2F BlockEdgePos(Vec2F lower_left_pos, Vec2F size, float corner_radius, Vec2F direction);
+
 /// @brief Show the current backbuffer and update the input state
 void ShowFrame();
 

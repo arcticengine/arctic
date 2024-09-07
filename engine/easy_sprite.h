@@ -97,6 +97,8 @@ class Sprite {
   void InvReference(const Sprite &from, const Si32 from_x, const Si32 from_inv_y,
     const Si32 from_width, const Si32 from_height);
   /// @brief Make current sprite reference to a rectangular part of another sprite
+  void Reference(const Sprite &from, const Vec2Si32 from_pos, const Vec2Si32 from_size);
+  /// @brief Make current sprite reference to a rectangular part of another sprite
   void Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height);
   /// @brief Fill the sprite with black

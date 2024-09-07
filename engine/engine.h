@@ -47,9 +47,9 @@ namespace arctic {
 
 struct MathTables {
   std::vector<Si32> circle_16_16;
-  Si32 cicrle_16_16_size_bits = 0;
-  Si32 cicrle_16_16_mask = 0;
-  Si32 cicrle_16_16_half_mask = 0;
+  Si32 cicrle_16_16_size = 0;
+  Si32 cicrle_16_16_one = 0;
+  Si32 cicrle_16_16_half = 0;
 
   void Init();
 };
