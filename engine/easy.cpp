@@ -709,12 +709,12 @@ void DrawBlock(Sprite &to_sprite, Vec2F lower_left_pos, Vec2F size, float corner
       DrawOval(frame, color, Vec2Si32(0,0), Vec2Si32(Vec2F(d, d)));
       frame.Reference(to_sprite, Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y)),
                       Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
-      DrawOval(frame, color, Vec2Si32(-corner_radius,0), Vec2Si32(Vec2F(corner_radius, d)));
+      DrawOval(frame, color, Vec2Si32(Si32(-corner_radius),0), Vec2Si32(Vec2F(corner_radius, d)));
       frame.Reference(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + size.y - corner_radius)),
                       Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
-      DrawOval(frame, color, Vec2Si32(0,-corner_radius), Vec2Si32(Vec2F(d, corner_radius)));
+      DrawOval(frame, color, Vec2Si32(0,Si32(-corner_radius)), Vec2Si32(Vec2F(d, corner_radius)));
       frame.Reference(to_sprite, Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + size.y - corner_radius)), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
-      DrawOval(frame, color, Vec2Si32(-corner_radius,-corner_radius), Vec2Si32(Vec2F(corner_radius, corner_radius)));
+      DrawOval(frame, color, Vec2Si32(Vec2F(-corner_radius,-corner_radius)), Vec2Si32(Vec2F(corner_radius, corner_radius)));
 
       DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y)),
                     Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + corner_radius)), color);
@@ -750,12 +750,12 @@ void DrawBlock(Sprite &to_sprite, Vec2F lower_left_pos, Vec2F size, float corner
       DrawOval(frame, border_color, Vec2Si32(0,0), Vec2Si32(Vec2F(d, d)));
       frame.Reference(to_sprite, Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y)),
                       Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
-      DrawOval(frame, border_color, Vec2Si32(-corner_radius,0), Vec2Si32(Vec2F(corner_radius, d)));
+      DrawOval(frame, border_color, Vec2Si32(Si32(-corner_radius),0), Vec2Si32(Vec2F(corner_radius, d)));
       frame.Reference(to_sprite, Vec2Si32(Si32(lower_left_pos.x), Si32(lower_left_pos.y + size.y - corner_radius)),
                       Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
-      DrawOval(frame, border_color, Vec2Si32(0,-corner_radius), Vec2Si32(Vec2F(d, corner_radius)));
+      DrawOval(frame, border_color, Vec2Si32(0,Si32(-corner_radius)), Vec2Si32(Vec2F(d, corner_radius)));
       frame.Reference(to_sprite, Vec2Si32(Si32(lower_left_pos.x + size.x - corner_radius), Si32(lower_left_pos.y + size.y - corner_radius)), Vec2Si32(Si32(corner_radius+1.f), Si32(corner_radius+1.f)));
-      DrawOval(frame, border_color, Vec2Si32(-corner_radius,-corner_radius), Vec2Si32(Vec2F(corner_radius, corner_radius)));
+      DrawOval(frame, border_color, Vec2Si32(Vec2F(-corner_radius,-corner_radius)), Vec2Si32(Vec2F(corner_radius, corner_radius)));
 
       float stripe_size = border_size < corner_radius ? border_size : corner_radius;
       DrawRectangle(to_sprite, Vec2Si32(Si32(lower_left_pos.x + corner_radius), Si32(lower_left_pos.y)),
