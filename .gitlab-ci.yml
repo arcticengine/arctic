@@ -4,7 +4,7 @@
 # See https://docs.gitlab.com/ee/ci/variables/#priority-of-environment-variables
 include:
   - template: Security/License-Scanning.gitlab-ci.yml
-image: chainguard/clang
+image: silkeh/clang
 stages:
 - test
 - deploy
@@ -133,7 +133,7 @@ fuzz_csv:
   - "./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_csv -max_total_time=600"
 fuzz_tga:
   extends: ".fuzz_base"
-  image: chainguard/clang
+  image: silkeh/clang
   variables:
     COVFUZZ_SEED_CORPUS: "./fuzz_tests/tga_corpus"
   script:
