@@ -98,13 +98,13 @@ variables:
   SAST_EXCLUDED_ANALYZERS: "semgrep"
 fuzz_wav:
   extends: ".fuzz_base"
-  image: ubuntu:22.04
+  image: silkeh/clang
   variables:
     COVFUZZ_SEED_CORPUS: "./fuzz_tests/wav_corpus"
   script:
   - pwd
-  - apt-get update -qq && apt-get install -y -qq git make clang cmake
-  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+  - apt-get update -qq && apt-get install -y -qq git
+  - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
     libglfw3-dev libgles2-mesa-dev xvfb
   - export CC=`which clang`
   - export CXX=`which clang++`
@@ -116,12 +116,12 @@ fuzz_wav:
   - "./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_harness -max_total_time=600"
 fuzz_csv:
   extends: ".fuzz_base"
-  image: ubuntu:22.04
+  image: silkeh/clang
   variables:
     COVFUZZ_SEED_CORPUS: "./fuzz_tests/csv_corpus"
   script:
-  - apt-get update -qq && apt-get install -y -qq git make clang cmake
-  - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
+  - apt-get update -qq && apt-get install -y -qq git
+  - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
     libglfw3-dev libgles2-mesa-dev xvfb
   - export CC=`which clang`
   - export CXX=`which clang++`
@@ -137,7 +137,7 @@ fuzz_tga:
   variables:
     COVFUZZ_SEED_CORPUS: "./fuzz_tests/tga_corpus"
   script:
-  - apt-get update -qq && apt-get install -y -qq git make clang cmake
+  - apt-get update -qq && apt-get install -y -qq git
   - apt-get install --yes cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev
     libglfw3-dev libgles2-mesa-dev xvfb
   - export CC=`which clang`
