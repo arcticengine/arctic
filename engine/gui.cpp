@@ -29,7 +29,6 @@
 #include <sstream>
 
 #include <cstring>
-#include <filesystem>
 #include <memory>
 #include <utility>
 #include "engine/easy_advanced.h"
