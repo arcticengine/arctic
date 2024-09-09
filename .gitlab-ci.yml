@@ -98,7 +98,7 @@ variables:
   SAST_EXCLUDED_ANALYZERS: "semgrep"
 fuzz_wav:
   extends: ".fuzz_base"
-  image: ubuntu:20.04
+  image: ubuntu:22.04
   variables:
     COVFUZZ_SEED_CORPUS: "./fuzz_tests/wav_corpus"
   script:
@@ -116,7 +116,7 @@ fuzz_wav:
   - "./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_harness -max_total_time=600"
 fuzz_csv:
   extends: ".fuzz_base"
-  image: ubuntu:20.04
+  image: ubuntu:24.04
   variables:
     COVFUZZ_SEED_CORPUS: "./fuzz_tests/csv_corpus"
   script:
@@ -133,7 +133,7 @@ fuzz_csv:
   - "./gitlab-cov-fuzz run --regression=$REGRESSION -- ./build/fuzz_csv -max_total_time=600"
 fuzz_tga:
   extends: ".fuzz_base"
-  image: ubuntu:20.04
+  image: ubuntu:24.10
   variables:
     COVFUZZ_SEED_CORPUS: "./fuzz_tests/tga_corpus"
   script:
