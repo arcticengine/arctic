@@ -4,7 +4,7 @@ Copyright (c) 2016 - 2022 Huldra
 Copyright (c) 2013 - 2021 Mikle
 Copyright (c) 2020 - 2021 The Lasting Curator
 Copyright (c) 2021 Vlad2001_MFS
-Copyright (c) 2006 - 2020 Arseny Kapoulkine
+Copyright (c) 2006 - 2020 Arseny Kapoulkine <arseny.kapoulkine@gmail.com>
 Copyright (c) 2020 Asyc
 Copyright (c) 2020 Luke de Oliveira <lukedeo@ldo.io>
 Copyright (c) 2019 Juan Carlos
@@ -13,12 +13,14 @@ Copyright (c) 2013 - 2017 Martin Mitas
 Copyright (c) 2017 Mikulas Florek
 Copyright (c) 2017 Romain Sylvian
 Copyright (c) 2016 Martin Raiber
+Copyright (c) 2016 Maxim Gumin
 Copyright (c) 2015 - 2017 Inigo Quilez
 Copyright (c) 2013 - 2016 The Khronos Group Inc.
 Copyright (c) 2013 - 2014 RAD Game Tools and Valve Software
 Copyright (c) 2010 - 2014 Rich Geldreich and Tenacious Software LLC
 Copyright (c) 2014 Shizuo KAJI <shizuo.kaji@gmail.com>
 Copyright (c) 2009 - 2010 Barry Schwartz
+Copyright (c) 2003 Kristen Wegner (kristen@tima.net)
 Copyright (c) 2001 Robert Penner
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -38,3 +40,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
