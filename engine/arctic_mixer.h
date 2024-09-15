@@ -48,19 +48,22 @@ namespace arctic {
 /// @addtogroup global_sound
 /// @{
 
+/// @brief Represents the listener's head in 3D space for sound positioning
 struct SoundListenerHead {
+  /// @brief Represents an ear of the listener
   struct Ear {
-    Vec3F pos = Vec3F(0.f, 0.f, 0.f);
-    Vec3F max_vec = Vec3F(0.f, 0.f, 0.f);
+    Vec3F pos = Vec3F(0.f, 0.f, 0.f);  ///< Position of the ear
+    Vec3F max_vec = Vec3F(0.f, 0.f, 0.f);  ///< Vector for maximum hearing direction
   };
 
-  Transform3F loc;
-  std::array<Ear, 2> ears;
+  Transform3F loc;  ///< Location of the listener's head
+  std::array<Ear, 2> ears;  ///< Array of two ears
 
-  const float radius = 0.09f;
-  const float ear_angle_degrees = 90.f;
-  const float ear_max_angle_degrees = 60.f;
+  const float radius = 0.09f;  ///< Radius of the listener's head
+  const float ear_angle_degrees = 90.f;  ///< Angle between ear and front direction in degrees
+  const float ear_max_angle_degrees = 60.f;  ///< Angle between front and the maximum hearing direction in degrees
 
+  /// @brief Updates the positions and orientations of the ears
   void UpdateEars() {
     Vec3F dir(0.0f, 0.f, radius);
     Vec3F unit(0.0f, 0.f, 1.f);
@@ -76,11 +79,12 @@ struct SoundListenerHead {
   }
 };
 
-
+/// @brief Represents a sound source in 3D space
 struct SoundSource {
-  Transform3F loc;
-  ChannelPlaybackState channel_playback_state[2];
+  Transform3F loc;  ///< Location of the sound source
+  ChannelPlaybackState channel_playback_state[2];  ///< Playback state for each channel
 
+  /// @brief Clears the sound source data
   void Clear() {
     loc.Clear();
     channel_playback_state[0].Clear();
@@ -88,7 +92,16 @@ struct SoundSource {
   }
 };
 
-
+/// @brief Renders sound for a specific listener head position and orientation
+/// @tparam T Type of the destination buffer samples
+/// @param sound Pointer to the SoundTask, representing the sound to render
+/// @param head Reference to the SoundListenerHead, containing head position and orientation
+/// @param channel_idx Index of the channel to render, either 0 or 1
+/// @param dst_buffer Destination buffer for rendered audio
+/// @param dst_stride Stride of the destination buffer
+/// @param dst_size_samples Size of the destination buffer in samples
+/// @param dst_sample_rate Sample rate of the destination buffer
+/// @param master_volume Master volume level
 template <class T>
 void RenderSound(SoundTask *sound, const SoundListenerHead &head, Si32 channel_idx,
                  T *dst_buffer, Si32 dst_stride, Si32 dst_size_samples, double dst_sample_rate,
@@ -145,24 +158,26 @@ void RenderSound(SoundTask *sound, const SoundListenerHead &head, Si32 channel_i
   channel->acc = acc;
 }
 
+/// @brief Manages the state of the sound mixer
 struct SoundMixerState {
-  std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);
-  std::atomic<bool> is_ok = ATOMIC_VAR_INIT(true);
-  std::mutex error_mutex;
-  MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080> page_pool;
-  MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>> tasks;
-  SpmcArray<SoundTask, true> pool;
-  static constexpr Si32 kPoolSize = 1024;
+  std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);  ///< Flag to indicate if the mixer should quit
+  std::atomic<bool> is_ok = ATOMIC_VAR_INIT(true);  ///< Flag to indicate if the mixer state is okay
+  std::mutex error_mutex;  ///< Mutex for protecting error-related data
+  MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080> page_pool;  ///< Pool for memory allocation
+  MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>> tasks;  ///< Queue for sound tasks
+  SpmcArray<SoundTask, true> pool;  ///< Pool for SoundTask objects
+  static constexpr Si32 kPoolSize = 1024;  ///< Size of the SoundTask pool
 
   // Mutex-protected state begin
-  std::string error_description = "Error description is not set.";
+  std::string error_description = "Error description is not set.";  ///< Error description string
   // Mixer-only state begin
-  std::atomic<Ui64> next_uid = ATOMIC_VAR_INIT(2);
-  std::atomic<float> master_volume = ATOMIC_VAR_INIT(0.7f);
-  std::vector<SoundTask*> buffers;
-  SoundListenerHead head;
-  float compressor_level = 1.f;
+  std::atomic<Ui64> next_uid = ATOMIC_VAR_INIT(2);  ///< Next unique ID for SoundTask
+  std::atomic<float> master_volume = ATOMIC_VAR_INIT(0.7f);  ///< Master volume level
+  std::vector<SoundTask*> buffers;  ///< Vector of active sound buffers
+  SoundListenerHead head;  ///< Sound listener head
+  float compressor_level = 1.f;  ///< Compressor level
 
+  /// @brief Constructor for SoundMixerState
   SoundMixerState()
       : tasks(&page_pool)
       , pool(kPoolSize) {
@@ -171,6 +186,8 @@ struct SoundMixerState {
     }
   }
 
+  /// @brief Releases a buffer at the specified index
+  /// @param idx Index of the buffer to release
   void ReleaseBufferAt(Si32 idx) {
     SoundTask *buffer = buffers[idx];
     buffers[idx] = buffers[buffers.size() - 1];
@@ -179,21 +196,29 @@ struct SoundMixerState {
     pool.enqueue(buffer);
   }
 
+  /// @brief Sets the mixer to error state and saves the error description
+  /// @param description Error description string
   void SetError(std::string description) {  //-V813
     std::lock_guard<std::mutex> lock(error_mutex);
     error_description = description;  //-V820
     is_ok = false;
   }
 
+  /// @brief Checks if the mixer state is okay
+  /// @return True if the state is okay, false otherwise
   bool IsOk() {
     return is_ok;
   }
 
+  /// @brief Gets the current error description
+  /// @return Error description string
   std::string GetErrorDescription() {
     std::lock_guard<std::mutex> lock(error_mutex);
     return error_description;
   }
 
+  /// @brief Allocates a new SoundTask
+  /// @return Pointer to the allocated SoundTask, nullptr if allocation fails
   SoundTask *AllocateSoundTask() {
     SoundTask *p = pool.dequeue();
     if (p) {
@@ -201,12 +226,16 @@ struct SoundMixerState {
     }
     return p;
   }
+
+  /// @brief Adds a SoundTask to the mixer queue
+  /// @param buffer Pointer to the SoundTask to add, nullptr is ignored
   void AddSoundTask(SoundTask *buffer) {
     if (buffer) {
       tasks.enqueue(buffer);
     }
   }
 
+  /// @brief Processes input tasks for the mixer thread, dequeues tasks and processes them. Tasks are processed in a loop until the queue is empty or a nullptr is encountered.
   void InputTasksToMixerThread() {
     for (Si32 i = 0; i < 512; ++i) {
       SoundTask *task = tasks.dequeue();
@@ -269,6 +298,9 @@ struct SoundMixerState {
     }
   }
 
+  /// @brief Applies soft clipping to a sound sample, used to prevent clipping and maintain audio quality
+  /// @param d Input sample value
+  /// @return Soft-clipped sample value
   inline float SoftClipSound(float d) {
     constexpr float a = 0.97f;
     constexpr float b = 1.f - a;
@@ -283,6 +315,13 @@ struct SoundMixerState {
     }
   }
 
+  /// @brief Mixes sound for output, processes input tasks and applies compression to the output buffer
+  /// @tparam T Type of the output buffer samples
+  /// @param mix_l Left channel output buffer
+  /// @param mix_r Right channel output buffer
+  /// @param mix_stride Stride of the output buffers
+  /// @param buffer_samples_per_channel Number of samples per channel
+  /// @param tmp Temporary buffer for processing
   template <class T>
   void MixSound(T *mix_l, T *mix_r, Si32 mix_stride, Si32 buffer_samples_per_channel, Si16 *tmp) {
     InputTasksToMixerThread();
