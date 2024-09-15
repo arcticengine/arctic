@@ -42,6 +42,9 @@
 
 namespace arctic {
 
+/// @brief Fixed size allocator for fixed size buffers
+/// @tparam kArraySize Size of the array
+/// @tparam kBufferSize Size of the buffer
 template<size_t kArraySize, size_t kBufferSize>
 class alignas(64) MpmcBestEffortFixedSizeBufferFixedSizePool : public I_FixedSizeAllocator {
   std::array<std::atomic<void*>, kArraySize> items;
@@ -61,6 +64,8 @@ class alignas(64) MpmcBestEffortFixedSizeBufferFixedSizePool : public I_FixedSiz
     }
   }
 
+  /// @brief Allocates a buffer
+  /// @return Pointer to the allocated buffer
   void *alloc() override {
     for (size_t i = 0; i < items.size(); ++i) {
       void *p = std::atomic_exchange(&items[i], (void*)nullptr);
@@ -82,6 +87,8 @@ class alignas(64) MpmcBestEffortFixedSizeBufferFixedSizePool : public I_FixedSiz
     return;
   }
 
+  /// @brief Gets the size of the buffer
+  /// @return Size of the buffer
   size_t getBlockSize() override {
     return kBufferSize;
   }

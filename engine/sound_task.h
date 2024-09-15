@@ -34,19 +34,22 @@ namespace arctic {
 /// @addtogroup global_sound
 /// @{
 
+/// @brief The action to perform for the sound task.
 enum class SoundTaskAction {
-  kStart = 0,
-  kStop = 1,
-  kSetHeadLocation = 2,
-  kSetLocation = 3,
-  kStart3d = 4
+  kStart = 0, ///< Start the sound.
+  kStop = 1, ///< Stop the sound.
+  kSetHeadLocation = 2, ///< Set the head location.
+  kSetLocation = 3, ///< Set the sound source location.
+  kStart3d = 4 ///< Start the sound as 3D.
 };
 
+/// @brief The playback state of a channel.
 struct ChannelPlaybackState {
-  double play_position = 0.0;
-  double delay = 0.0;
-  float acc = 0.f;
+  double play_position = 0.0; ///< The playback position of the channel.
+  double delay = 0.0; ///< The delay of the channel.
+  float acc = 0.f; ///< The accumulated amplitude of the channel.
 
+  /// @brief Clears the playback state.
   void Clear() {
     play_position = 0.0;
     delay = 0.0;
@@ -54,19 +57,22 @@ struct ChannelPlaybackState {
   }
 };
 
+/// @brief The task to perform for the sound.
 struct SoundTask {
-  static constexpr Ui64 kInvalidSoundTaskUid = 0;
-  std::atomic<Ui64> uid = ATOMIC_VAR_INIT(kInvalidSoundTaskUid);
-  Ui64 target_uid = kInvalidSoundTaskUid;
-  Sound sound;
-  float volume = 1.0f;
-  Si32 next_position = 0;
-  Transform3F location;
-  ChannelPlaybackState channel_playback_state[2];
-  SoundTaskAction action = SoundTaskAction::kStart;
-  bool is_3d = false;
-  std::atomic<bool> is_playing = ATOMIC_VAR_INIT(false);
-
+  static constexpr Ui64 kInvalidSoundTaskUid = 0; ///< The invalid sound task uid.
+  std::atomic<Ui64> uid = ATOMIC_VAR_INIT(kInvalidSoundTaskUid); ///< The uid of the sound task.
+  Ui64 target_uid = kInvalidSoundTaskUid; ///< The target uid of the sound task.
+  Sound sound; ///< The sound to play.
+  float volume = 1.0f; ///< The volume of the sound.
+  Si32 next_position = 0; ///< The next position of the sound.
+  Transform3F location; ///< The location of the sound source.
+  ChannelPlaybackState channel_playback_state[2]; ///< The playback state of the sound.
+  SoundTaskAction action = SoundTaskAction::kStart; ///< The action to perform for the sound task.
+  bool is_3d = false; ///< Whether the sound is 3D.
+  std::atomic<bool> is_playing = ATOMIC_VAR_INIT(false); ///< Whether the sound is playing.
+    
+  /// @brief Clears the sound task.
+  /// @param in_uid The uid of the sound task.
   void Clear(Ui64 in_uid) {
     uid = in_uid;
     target_uid = kInvalidSoundTaskUid;

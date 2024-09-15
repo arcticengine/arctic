@@ -32,6 +32,8 @@ namespace arctic {
 
 /// @addtogroup global_input
 /// @{
+
+/// @brief Enumeration of key codes for various input devices
 enum KeyCode {
   kKeyNone = 0,   ///< Indicates absence of any key, like SQL null
   kKeyUnknown = 1,   ///< Indicates an unidentified key
@@ -242,6 +244,7 @@ enum KeyCode {
   kKeyCount = 388  // Key count, not a code
 };
 
+/// @brief Enumeration of controller axis identifiers
 enum ControllerAxis {
   kAxis0 = 0,
   kAxis1,
@@ -252,34 +255,44 @@ enum ControllerAxis {
   kAxisCount
 };
 
+/// @brief Structure representing an input message
 struct InputMessage {
-  constexpr static Si32 kControllerCount = 4;
-  enum Kind {
-    kKeyboard = 0,
-    kMouse = 1,
-    kController = 2
-  };
-  struct Keyboard {
-    Ui32 state[kKeyCount] = {0};
-    Ui32 key = 0;
-    Ui32 key_state = 0;
-    char characters[16]  = {0};
-    Ui32 queue[1024] = {0};
-    Ui32 queueLen = 0;
-  };
-  struct Mouse {
-    Vec2F pos;
-    Vec2Si32 backbuffer_pos;  // Not set by the engine
-    Si32 wheel_delta = 0;
-  };
-  struct Controller {
-    Si32 controller_idx = 0;
-    float axis[kAxisCount] = {0};
-  };
-  Kind kind = kKeyboard;
-  Keyboard keyboard;
-  Mouse mouse;
-  Controller controller;
+    constexpr static Si32 kControllerCount = 4;
+
+    /// @brief Enumeration of input message types
+    enum Kind {
+        kKeyboard = 0,
+        kMouse = 1,
+        kController = 2
+    };
+
+    /// @brief Structure containing keyboard input information
+    struct Keyboard {
+        Ui32 state[kKeyCount] = {0};  ///< State of all keys
+        Ui32 key = 0;                 ///< Current key being processed
+        Ui32 key_state = 0;           ///< State of the current key
+        char characters[16]  = {0};   ///< Characters input, accumulated from key presses
+        Ui32 queue[1024] = {0};       ///< Queue of input events
+        Ui32 queueLen = 0;            ///< Length of the input queue
+    };
+
+    /// @brief Structure containing mouse input information
+    struct Mouse {
+        Vec2F pos;                    ///< Mouse position in floating-point coordinates
+        Vec2Si32 backbuffer_pos;      ///< Mouse position in backbuffer coordinates (Not set by the engine)
+        Si32 wheel_delta = 0;         ///< Mouse wheel delta
+    };
+
+    /// @brief Structure containing controller input information
+    struct Controller {
+        Si32 controller_idx = 0;      ///< Index of the controller
+        float axis[kAxisCount] = {0}; ///< State of controller axes
+    };
+
+    Kind kind = kKeyboard;            ///< Type of input message
+    Keyboard keyboard;                ///< Keyboard input information
+    Mouse mouse;                      ///< Mouse input information
+    Controller controller;            ///< Controller input information
 };
 /// @}
 
@@ -290,6 +303,7 @@ struct InputMessage {
 /// @param [out] out_message Address to write the message to
 /// @return true if the message is successfuly poped, false otherwise
 bool PopInputMessage(InputMessage *out_message);
+
 /// @brief Pushes an input message to the queue as if it came from the user
 /// @param [in] message Message to push
 void PushInputMessage(const InputMessage &message);
@@ -297,7 +311,5 @@ void PushInputMessage(const InputMessage &message);
 /// @}
 
 }  // namespace arctic
-
-
 
 #endif  // ENGINE_ARCTIC_INPUT_H_

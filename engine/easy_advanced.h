@@ -31,6 +31,7 @@ namespace arctic {
 /// @{
 
 /// @brief Returns a pointer to the Engine instance.
+/// @return A pointer to the Engine instance. The pointer is guaranteed to be valid.
 Engine* GetEngine();
 
 /// @}

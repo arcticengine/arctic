@@ -29,21 +29,30 @@
 
 namespace arctic {
 
+/// @brief A 2D transform.
 struct Transform2F {
-  DualComplexF dc;
-  float scale = 1.f;
+  DualComplexF dc; ///< The dual complex number, which is a combination of translation and rotation.
+  float scale = 1.f; ///< The scale of the transform.
 
+  /// @brief Sets the position of the transform.
+  /// @param position The position to set.
   void SetPosition(Vec2F position) {
     dc.dual_x = position.x * 0.5f;
     dc.dual_y = position.y * 0.5f;
   }
 
+  /// @brief Sets the position of the transform.
+  /// @param x The x position to set.
+  /// @param y The y position to set.
   void SetPosition(float x, float y) {
     dc.dual_x = x * 0.5f;
     dc.dual_y = y * 0.5f;
   }
 
-  Vec2F Transform(Vec2F point) {
+  /// @brief Transforms a point using the transform.
+  /// @param point The point to transform.
+  /// @return The transformed point.
+  Vec2F Transform(Vec2F point) const {
     return scale * dc.Transform(point);
   }
 };

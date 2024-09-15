@@ -470,25 +470,54 @@ namespace pugi
 		/// @param rhs Value to set
 		/// @return Reference to the attribute
 		XmlAttribute& operator=(long rhs);
+		
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(unsigned long rhs);
+		
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(double rhs);
+		
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(float rhs);
+		
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(bool rhs);
+		
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(long long rhs);
+		
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(unsigned long long rhs);
 
-		// Get next/previous attribute in the attribute list of the parent node
+		/// @brief Get next attribute in the attribute list of the parent node
+		/// @return Next attribute
 		XmlAttribute next_attribute() const;
+		
+		/// @brief Get previous attribute in the attribute list of the parent node
+		/// @return Previous attribute
 		XmlAttribute previous_attribute() const;
 
-		// Get hash value (unique for handles to the same object)
+		/// @brief Get hash value (unique for handles to the same object)
+		/// @return Hash value
 		size_t hash_value() const;
 
-		// Get internal pointer
+		/// @brief Get internal pointer
 		xml_attribute_struct* internal_object() const;
 	};
 
-	// A light-weight handle for manipulating nodes in DOM tree
+	/// @brief A light-weight handle for manipulating nodes in DOM tree
 	class XmlNode
 	{
 		friend class XmlAttributeIterator;
@@ -501,104 +530,229 @@ namespace pugi
 		typedef void (*unspecified_bool_type)(XmlNode***);
 
 	public:
-		// Default constructor. Constructs an empty node.
+		/// @brief Default constructor. Constructs an empty node.
 		XmlNode();
 
-		// Constructs node from internal pointer
+		/// @brief Constructs node from internal pointer
+		/// @param p Internal pointer
 		explicit XmlNode(xml_node_struct* p);
 
-		// Safe bool conversion operator
+		/// @brief Safe bool conversion operator
+		/// @return Unspecified bool type
 		operator unspecified_bool_type() const;
 
-		// Borland C++ workaround
+		/// @brief Borland C++ workaround
+		/// @return True if node is not empty, false otherwise
 		bool operator!() const;
 
-		// Comparison operators (compares wrapped node pointers)
+		/// @brief Comparison operators (compares wrapped node pointers)
+		/// @param r Node to compare with
+		/// @return True if nodes are equal, false otherwise
 		bool operator==(const XmlNode& r) const;
+		
+		/// @brief Comparison operators (compares wrapped node pointers)
+		/// @param r Node to compare with
+		/// @return True if nodes are not equal, false otherwise
 		bool operator!=(const XmlNode& r) const;
+		
+		/// @brief Comparison operators (compares wrapped node pointers)
+		/// @param r Node to compare with
+		/// @return True if this node is less than r, false otherwise
 		bool operator<(const XmlNode& r) const;
+		
+		/// @brief Comparison operators (compares wrapped node pointers)
+		/// @param r Node to compare with
+		/// @return True if this node is greater than r, false otherwise
 		bool operator>(const XmlNode& r) const;
+		
+		/// @brief Comparison operators (compares wrapped node pointers)
+		/// @param r Node to compare with
+		/// @return True if this node is less than or equal to r, false otherwise
 		bool operator<=(const XmlNode& r) const;
+		
+		/// @brief Comparison operators (compares wrapped node pointers)
+		/// @param r Node to compare with
+		/// @return True if this node is greater than or equal to r, false otherwise
 		bool operator>=(const XmlNode& r) const;
 
-		// Check if node is empty.
+		/// @brief Check if node is empty.
+		/// @return True if node is empty, false otherwise
 		bool empty() const;
 
-		// Get node type
+		/// @brief Get node type
+		/// @return Node type
 		xml_node_type type() const;
 
-		// Get node name, or "" if node is empty or it has no name
+		/// @brief Get node name, or "" if node is empty or it has no name
+		/// @return Node name
 		const char_t* name() const;
 
-		// Get node value, or "" if node is empty or it has no value
-		// Note: For <node>text</node> node.value() does not return "text"! Use child_value() or text() methods to access text inside nodes.
+		/// @brief Get node value, or "" if node is empty or it has no value
+		/// @note For <node>text</node> node.value() does not return "text"! Use child_value() or text() methods to access text inside nodes.
+		/// @return Node value
 		const char_t* value() const;
 
-		// Get attribute list
+		/// @brief Get attribute list
+		/// @return First attribute
 		XmlAttribute first_attribute() const;
+
+		/// @brief Get attribute list
+		/// @return Last attribute
 		XmlAttribute last_attribute() const;
 
-		// Get children list
+		/// @brief Get children list
+		/// @return First child
 		XmlNode first_child() const;
+		/// @brief Get children list
+		/// @return Last child
 		XmlNode last_child() const;
 
-		// Get next/previous sibling in the children list of the parent node
+		/// @brief Get next/previous sibling in the children list of the parent node
+		/// @return Next sibling
 		XmlNode next_sibling() const;
+		/// @brief Get next/previous sibling in the children list of the parent node
+		/// @return Previous sibling
 		XmlNode previous_sibling() const;
 
-		// Get parent node
+		/// @brief Get parent node
+		/// @return Parent node
 		XmlNode parent() const;
 
-		// Get root of DOM tree this node belongs to
+		/// @brief Get root of DOM tree this node belongs to
+		/// @return Root node
 		XmlNode root() const;
 
-		// Get text object for the current node
+		/// @brief Get text object for the current node
+		/// @return Text object
 		XmlText text() const;
 
-		// Get child, attribute or next/previous sibling with the specified name
+		/// @brief Get child, attribute or next/previous sibling with the specified name
+		/// @param name Name to search for
+		/// @return Node, attribute, or sibling with the specified name
 		XmlNode child(const char_t* name) const;
+
+		/// @brief Get attribute with the specified name
+		/// @param name Name to search for
+		/// @return Attribute with the specified name, or empty attribute if not found
 		XmlAttribute attribute(const char_t* name) const;
+
+		/// @brief Get next/previous sibling with the specified name
+		/// @param name Name to search for
+		/// @return Next/previous sibling with the specified name, or empty node if not found
 		XmlNode next_sibling(const char_t* name) const;
+
+		/// @brief Get next/previous sibling with the specified name
+		/// @param name Name to search for
+		/// @return Next/previous sibling with the specified name, or empty node if not found
 		XmlNode previous_sibling(const char_t* name) const;
 
-		// Get attribute, starting the search from a hint (and updating hint so that searching for a sequence of attributes is fast)
+		/// @brief Get attribute, starting the search from a hint (and updating hint so that searching for a sequence of attributes is fast)
+		/// @param name Name to search for
+		/// @param hint Hint for the search
+		/// @return Attribute with the specified name, or empty attribute if not found
 		XmlAttribute attribute(const char_t* name, XmlAttribute& hint) const;
 
-		// Get child value of current node; that is, value of the first child node of type PCDATA/CDATA
+		/// @brief Get child value of current node; that is, value of the first child node of type PCDATA/CDATA
+		/// @return Child value
 		const char_t* child_value() const;
 
-		// Get child value of child with specified name. Equivalent to child(name).child_value().
+		/// @brief Get child value of child with specified name. Equivalent to child(name).child_value().
+		/// @param name Name to search for
+		/// @return Child value
 		const char_t* child_value(const char_t* name) const;
 
-		// Set node name/value (returns false if node is empty, there is not enough memory, or node can not have name/value)
+		/// @brief Set node name/value (returns false if node is empty, there is not enough memory, or node can not have name/value)
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_name(const char_t* rhs);
+		/// @brief Set node name/value (returns false if node is empty, there is not enough memory, or node can not have name/value)
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(const char_t* rhs);
 
-		// Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+		/// @param name Name to search for
+		/// @return Added attribute
 		XmlAttribute append_attribute(const char_t* name);
+		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+		/// @param name Name to search for
+		/// @return Added attribute
 		XmlAttribute prepend_attribute(const char_t* name);
+		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+		/// @param name Name to search for
+		/// @param attr Attribute to insert
+		/// @return Added attribute
 		XmlAttribute insert_attribute_after(const char_t* name, const XmlAttribute& attr);
+		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+		/// @param name Name to search for
+		/// @param attr Attribute to insert
+		/// @return Added attribute
 		XmlAttribute insert_attribute_before(const char_t* name, const XmlAttribute& attr);
 
-		// Add a copy of the specified attribute. Returns added attribute, or empty attribute on errors.
+		/// @brief Add a copy of the specified attribute. Returns added attribute, or empty attribute on errors.
+		/// @param proto Attribute to copy
+		/// @return Added attribute
 		XmlAttribute append_copy(const XmlAttribute& proto);
+		/// @brief Add a copy of the specified attribute. Returns added attribute, or empty attribute on errors.
+		/// @param proto Attribute to copy
+		/// @return Added attribute
 		XmlAttribute prepend_copy(const XmlAttribute& proto);
+		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+		/// @param name Name to search for
+		/// @param attr Attribute to insert
+		/// @return Added attribute
 		XmlAttribute insert_copy_after(const XmlAttribute& proto, const XmlAttribute& attr);
+		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+		/// @param proto Attribute to copy
+		/// @param attr Attribute to insert
+		/// @return Added attribute
 		XmlAttribute insert_copy_before(const XmlAttribute& proto, const XmlAttribute& attr);
 
-		// Add child node with specified type. Returns added node, or empty node on errors.
+		/// @brief Add child node with specified type. Returns added node, or empty node on errors.
+		/// @param type Node type to add
+		/// @return Added node
 		XmlNode append_child(xml_node_type type = node_element);
+		
+		/// @brief Add child node with specified type. Returns added node, or empty node on errors.
+		/// @param type Node type to add
+		/// @return Added node
 		XmlNode prepend_child(xml_node_type type = node_element);
+		
+		/// @brief Add child node with specified type. Returns added node, or empty node on errors.
+		/// @param type Node type to add
+		/// @param node Node to insert
+		/// @return Added node
 		XmlNode insert_child_after(xml_node_type type, const XmlNode& node);
+		
+		/// @brief Add child node with specified type. Returns added node, or empty node on errors.
+		/// @param type Node type to add
+		/// @param node Node to insert
+		/// @return Added node
 		XmlNode insert_child_before(xml_node_type type, const XmlNode& node);
 
-		// Add child element with specified name. Returns added node, or empty node on errors.
+		/// @brief Add child element with specified name. Returns added node, or empty node on errors.
+		/// @param name Name to search for
+		/// @return Added node
 		XmlNode append_child(const char_t* name);
+		
+		/// @brief Add child element with specified name. Returns added node, or empty node on errors.
+		/// @param name Name to search for
+		/// @return Added node
 		XmlNode prepend_child(const char_t* name);
+		
+		/// @brief Add child element with specified name. Returns added node, or empty node on errors.
+		/// @param name Name to search for
+		/// @param node Node to insert
+		/// @return Added node
 		XmlNode insert_child_after(const char_t* name, const XmlNode& node);
+		
+		/// @brief Add child element with specified name. Returns added node, or empty node on errors.
+		/// @param name Name to search for
+		/// @param node Node to insert
+		/// @return Added node
 		XmlNode insert_child_before(const char_t* name, const XmlNode& node);
 
-		// Add a copy of the specified node as a child. Returns added node, or empty node on errors.
+		/// @brief Add a copy of the specified node as a child. Returns added node, or empty node on errors.
 		XmlNode append_copy(const XmlNode& proto);
 		XmlNode prepend_copy(const XmlNode& proto);
 		XmlNode insert_copy_after(const XmlNode& proto, const XmlNode& node);
@@ -610,26 +764,43 @@ namespace pugi
 		XmlNode insert_move_after(const XmlNode& moved, const XmlNode& node);
 		XmlNode insert_move_before(const XmlNode& moved, const XmlNode& node);
 
-		// Remove specified attribute
+		/// @brief Remove specified attribute
+		/// @param a Attribute to remove
+		/// @return True if successful, false otherwise
 		bool remove_attribute(const XmlAttribute& a);
+		/// @brief Remove specified attribute
+		/// @param name Name to search for
+		/// @return True if successful, false otherwise
 		bool remove_attribute(const char_t* name);
 
-		// Remove all attributes
+		/// @brief Remove all attributes
+		/// @return True if successful, false otherwise
 		bool remove_attributes();
 
-		// Remove specified child
+		/// @brief Remove specified child
+		/// @param n Child to remove
+		/// @return True if successful, false otherwise
 		bool remove_child(const XmlNode& n);
+		/// @brief Remove specified child
+		/// @param name Name to search for
+		/// @return True if successful, false otherwise
 		bool remove_child(const char_t* name);
 
-		// Remove all children
+		/// @brief Remove all children
+		/// @return True if successful, false otherwise
 		bool remove_children();
 
-		// Parses buffer as an XML document fragment and appends all nodes as children of the current node.
-		// Copies/converts the buffer, so it may be deleted or changed after the function returns.
-		// Note: append_buffer allocates memory that has the lifetime of the owning document; removing the appended nodes does not immediately reclaim that memory.
+		/// @brief Parses buffer as an XML document fragment and appends all nodes as children of the current node.
+		/// @param contents Buffer to parse
+		/// @param size Size of the buffer
+		/// @param options Parsing options
+		/// @param encoding Encoding of the buffer
+		/// @return Parsing result
 		XmlParseResult append_buffer(const void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
-		// Find attribute using predicate. Returns first attribute for which predicate returned true.
+		/// @brief Find attribute using predicate. Returns first attribute for which predicate returned true.
+		/// @param pred Predicate to use
+		/// @return First attribute for which predicate returned true
 		template <typename Predicate> XmlAttribute find_attribute(Predicate pred) const
 		{
 			if (!_root) return XmlAttribute();
@@ -641,7 +812,9 @@ namespace pugi
 			return XmlAttribute();
 		}
 
-		// Find child node using predicate. Returns first child for which predicate returned true.
+		/// @brief Find child node using predicate. Returns first child for which predicate returned true.
+		/// @param pred Predicate to use
+		/// @return First child for which predicate returned true
 		template <typename Predicate> XmlNode find_child(Predicate pred) const
 		{
 			if (!_root) return XmlNode();
@@ -653,7 +826,9 @@ namespace pugi
 			return XmlNode();
 		}
 
-		// Find node from subtree using predicate. Returns first node from subtree (depth-first), for which predicate returned true.
+		/// @brief Find node from subtree using predicate. Returns first node from subtree (depth-first), for which predicate returned true.
+		/// @param pred Predicate to use
+		/// @return First node from subtree (depth-first), for which predicate returned true
 		template <typename Predicate> XmlNode find_node(Predicate pred) const
 		{
 			if (!_root) return XmlNode();
@@ -677,24 +852,57 @@ namespace pugi
 			return XmlNode();
 		}
 
-		// Find child node by attribute name/value
+		/// @brief Find child node by attribute name/value
+		/// @param name Name to search for
+		/// @param attr_name Attribute name to search for
+		/// @param attr_value Attribute value to search for
+		/// @return Child node by attribute name/value
 		XmlNode find_child_by_attribute(const char_t* name, const char_t* attr_name, const char_t* attr_value) const;
+		
+		/// @brief Find child node by attribute name/value
+		/// @param attr_name Attribute name to search for
+		/// @param attr_value Attribute value to search for
+		/// @return Child node by attribute name/value
 		XmlNode find_child_by_attribute(const char_t* attr_name, const char_t* attr_value) const;
 
-		// Get the absolute node path from root as a text string.
+		/// @brief Get the absolute node path from root as a text string.
+		/// @param delimiter Delimiter to use
+		/// @return Absolute node path from root as a text string
 		string_t path(char_t delimiter = '/') const;
 
-		// Search for a node by path consisting of node names and . or .. elements.
+		/// @brief Search for a node by path consisting of node names and . or .. elements.
+		/// @param path Path to search for
+		/// @param delimiter Delimiter to use
+		/// @return Node by path
 		XmlNode first_element_by_path(const char_t* path, char_t delimiter = '/') const;
 
-		// Recursively traverse subtree with xml_tree_walker
+		/// @brief Recursively traverse subtree with xml_tree_walker
+		/// @param walker Walker to use
+		/// @return True if successful, false otherwise
 		bool traverse(XmlTreeWalker& walker);
 
-		// Print subtree using a writer object
+		/// @brief Print subtree using a writer object
+		/// @param writer Writer to use
+		/// @param indent Indent to use
+		/// @param flags Formatting flags
+		/// @param encoding Encoding to use
+		/// @param depth Depth to use
 		void print(XmlWriter& writer, const char_t* indent = "\t", unsigned int flags = format_default, xml_encoding encoding = encoding_auto, unsigned int depth = 0) const;
 
-		// Print subtree to stream
+		/// @brief Print subtree to stream
+		/// @param os Stream to use
+		/// @param indent Indent to use
+		/// @param flags Formatting flags
+		/// @param encoding Encoding to use
+		/// @param depth Depth to use
 		void print(std::basic_ostream<char, std::char_traits<char> >& os, const char_t* indent = "\t", unsigned int flags = format_default, xml_encoding encoding = encoding_auto, unsigned int depth = 0) const;
+		
+		/// @brief Print subtree to stream
+		/// @param os Stream to use
+		/// @param indent Indent to use
+		/// @param flags Formatting flags
+		/// @param encoding Encoding to use
+		/// @param depth Depth to use
 		void print(std::basic_ostream<wchar_t, std::char_traits<wchar_t> >& os, const char_t* indent = "\t", unsigned int flags = format_default, unsigned int depth = 0) const;
 
 		// Child nodes iterators
@@ -714,17 +922,20 @@ namespace pugi
 		XmlObjectRange<XmlNamedNodeIterator> children(const char_t* name) const;
 		XmlObjectRange<XmlAttributeIterator> attributes() const;
 
-		// Get node offset in parsed file/string (in char_t units) for debugging purposes
+		/// @brief Get node offset in parsed file/string (in char_t units) for debugging purposes
+		/// @return Node offset in parsed file/string (in char_t units)
 		ptrdiff_t offset_debug() const;
 
-		// Get hash value (unique for handles to the same object)
+		/// @brief Get hash value (unique for handles to the same object)
+		/// @return Hash value
 		size_t hash_value() const;
 
-		// Get internal pointer
+		/// @brief Get internal pointer
+		/// @return Internal pointer
 		xml_node_struct* internal_object() const;
 	};
 
-	// A helper for working with text inside PCDATA nodes
+	/// @brief A helper for working with text inside PCDATA nodes
 	class XmlText
 	{
 		friend class XmlNode;
@@ -733,74 +944,189 @@ namespace pugi
 
 		typedef void (*unspecified_bool_type)(XmlText***);
 
+		/// @brief Constructor
+		/// @param root Root node
 		explicit XmlText(xml_node_struct* root);
 
 		xml_node_struct* _data_new();
 		xml_node_struct* _data() const;
 
 	public:
-		// Default constructor. Constructs an empty object.
+		/// @brief Default constructor. Constructs an empty object.
 		XmlText();
 
-		// Safe bool conversion operator
+		/// @brief Safe bool conversion operator
+		/// @return Safe bool conversion operator
 		operator unspecified_bool_type() const;
 
-		// Borland C++ workaround
+		/// @brief Borland C++ workaround
+		/// @return Borland C++ workaround
 		bool operator!() const;
 
-		// Check if text object is empty
+		/// @brief Check if text object is empty
+		/// @return True if text object is empty, false otherwise
 		bool empty() const;
 
-		// Get text, or "" if object is empty
+		/// @brief Get text, or "" if object is empty
+		/// @return Text, or "" if object is empty
 		const char_t* get() const;
 
-		// Get text, or the default value if object is empty
+		/// @brief Get text, or the default value if object is empty
+		/// @param def Default value to return if object is empty
+		/// @return Text, or the default value if object is empty
 		const char_t* as_string(const char_t* def = "") const;
 
-		// Get text as a number, or the default value if conversion did not succeed or object is empty
+		/// @brief Get text as a number, or the default value if conversion did not succeed or object is empty
+		/// @param def Default value to return if conversion did not succeed or object is empty
+		/// @return Text as a number, or the default value if conversion did not succeed or object is empty
 		int as_int(int def = 0) const;
+		
+		/// @brief Get text as an unsigned integer, or the default value if conversion did not succeed or object is empty
+		/// @param def Default value to return if conversion did not succeed or object is empty
+		/// @return Text as an unsigned integer, or the default value if conversion did not succeed or object is empty
 		unsigned int as_uint(unsigned int def = 0) const;
+		
+		/// @brief Get text as a double, or the default value if conversion did not succeed or object is empty
+		/// @param def Default value to return if conversion did not succeed or object is empty
+		/// @return Text as a double, or the default value if conversion did not succeed or object is empty
 		double as_double(double def = 0) const;
+		
+		/// @brief Get text as a float, or the default value if conversion did not succeed or object is empty
+		/// @param def Default value to return if conversion did not succeed or object is empty
+		/// @return Text as a float, or the default value if conversion did not succeed or object is empty
 		float as_float(float def = 0) const;
+		
+		/// @brief Get text as a long long, or the default value if conversion did not succeed or object is empty
+		/// @param def Default value to return if conversion did not succeed or object is empty
+		/// @return Text as a long long, or the default value if conversion did not succeed or object is empty
 		long long as_llong(long long def = 0) const;
+		
+		/// @brief Get text as an unsigned long long, or the default value if conversion did not succeed or object is empty
+		/// @param def Default value to return if conversion did not succeed or object is empty
+		/// @return Text as an unsigned long long, or the default value if conversion did not succeed or object is empty
 		unsigned long long as_ullong(unsigned long long def = 0) const;
 
-		// Get text as bool (returns true if first character is in '1tTyY' set), or the default value if object is empty
+		/// @brief Get text as a bool, or the default value if object is empty
+		/// @param def Default value to return if object is empty
+		/// @return Text as a bool, or the default value if object is empty
 		bool as_bool(bool def = false) const;
 
-		// Set text (returns false if object is empty or there is not enough memory)
+		/// @brief Set text (returns false if object is empty or there is not enough memory)
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(const char_t* rhs);
 
-		// Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(int rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(unsigned int rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(long rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(unsigned long rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(double rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(double rhs, int precision);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(float rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(float rhs, int precision);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(bool rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(long long rhs);
+		
+		/// @brief Set text with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Text to set
+		/// @return True if successful, false otherwise
 		bool set(unsigned long long rhs);
 
-		// Set text (equivalent to set without error checking)
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(const char_t* rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(int rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(unsigned int rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(long rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(unsigned long rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(double rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(float rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(bool rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(long long rhs);
+		
+		/// @brief Set text (equivalent to set without error checking)
+		/// @param rhs Text to set
+		/// @return Reference to this object
 		XmlText& operator=(unsigned long long rhs);
 
-		// Get the data node (node_pcdata or node_cdata) for this object
+		/// @brief Get the data node (node_pcdata or node_cdata) for this object
+		/// @return Data node
 		XmlNode data() const;
 	};
 
-	// Child node iterator (a bidirectional iterator over a collection of xml_node)
+	/// @brief Child node iterator (a bidirectional iterator over a collection of xml_node)
 	class XmlNodeIterator
 	{
 		friend class XmlNode;
@@ -819,27 +1145,42 @@ namespace pugi
 		typedef XmlNode& reference;
 		typedef std::bidirectional_iterator_tag iterator_category;
 
-		// Default constructor
+		/// @brief Default constructor
 		XmlNodeIterator();
 
-		// Construct an iterator which points to the specified node
+		/// @brief Construct an iterator which points to the specified node
 		XmlNodeIterator(const XmlNode& node);
 
 		// Iterator operators
 		bool operator==(const XmlNodeIterator& rhs) const;
 		bool operator!=(const XmlNodeIterator& rhs) const;
 
+		/// @brief Get the current node
+		/// @return Current node
 		XmlNode& operator*() const;
+
+		/// @brief Get the current node
+		/// @return Current node
 		XmlNode* operator->() const;
 
+		/// @brief Move to the next node
+		/// @return Reference to this object
 		XmlNodeIterator& operator++();
+
+		/// @brief Move to the next node
+		/// @return Copy of this object
 		XmlNodeIterator operator++(int);
 
+		/// @brief Move to the previous node
+		/// @return Reference to this object
 		XmlNodeIterator& operator--();
+
+		/// @brief Move to the previous node
+		/// @return Copy of this object
 		XmlNodeIterator operator--(int);
 	};
 
-	// Attribute iterator (a bidirectional iterator over a collection of xml_attribute)
+	/// @brief Attribute iterator (a bidirectional iterator over a collection of xml_attribute)
 	class  XmlAttributeIterator
 	{
 		friend class XmlNode;
@@ -858,27 +1199,44 @@ namespace pugi
 		typedef XmlAttribute& reference;
 		typedef std::bidirectional_iterator_tag iterator_category;
 
-		// Default constructor
+		/// @brief Default constructor
 		XmlAttributeIterator();
 
-		// Construct an iterator which points to the specified attribute
+		/// @brief Construct an iterator which points to the specified attribute
+		/// @param attr Attribute to point to
+		/// @param parent Parent node
 		XmlAttributeIterator(const XmlAttribute& attr, const XmlNode& parent);
 
 		// Iterator operators
 		bool operator==(const XmlAttributeIterator& rhs) const;
 		bool operator!=(const XmlAttributeIterator& rhs) const;
 
+		/// @brief Get the current attribute
+		/// @return Current attribute
 		XmlAttribute& operator*() const;
+
+		/// @brief Get the current attribute
+		/// @return Current attribute
 		XmlAttribute* operator->() const;
 
+		/// @brief Move to the next attribute
+		/// @return Reference to this object
 		XmlAttributeIterator& operator++();
+
+		/// @brief Move to the next attribute
+		/// @return Copy of this object
 		XmlAttributeIterator operator++(int);
 
+		/// @brief Move to the previous attribute
+		/// @return Reference to this object
 		XmlAttributeIterator& operator--();
+
+		/// @brief Move to the previous attribute
+		/// @return Copy of this object
 		XmlAttributeIterator operator--(int);
 	};
 
-	// Named node range helper
+	/// @brief Named node range helper
 	class XmlNamedNodeIterator
 	{
 		friend class XmlNode;
@@ -891,10 +1249,12 @@ namespace pugi
 		typedef XmlNode& reference;
 		typedef std::bidirectional_iterator_tag iterator_category;
 
-		// Default constructor
+		/// @brief Default constructor
 		XmlNamedNodeIterator();
 
-		// Construct an iterator which points to the specified node
+		/// @brief Construct an iterator which points to the specified node
+		/// @param node Node to point to
+		/// @param name Name of the node to point to
 		XmlNamedNodeIterator(const XmlNode& node, const char_t* name);
 
 		// Iterator operators
@@ -918,7 +1278,7 @@ namespace pugi
 		XmlNamedNodeIterator(xml_node_struct* ref, xml_node_struct* parent, const char_t* name);
 	};
 
-	// Abstract tree walker class (see xml_node::traverse)
+	/// @brief Abstract tree walker class (see xml_node::traverse)
 	class XmlTreeWalker
 	{
 		friend class XmlNode;
@@ -927,24 +1287,31 @@ namespace pugi
 		int _depth;
 
 	protected:
-		// Get current traversal depth
+		/// @brief Get current traversal depth
+		/// @return Current traversal depth
 		int depth() const;
 
 	public:
 		XmlTreeWalker();
 		virtual ~XmlTreeWalker();
 
-		// Callback that is called when traversal begins
+		/// @brief Callback that is called when traversal begins
+		/// @param node Node being traversed
+		/// @return True to continue traversal, false to stop
 		virtual bool begin(XmlNode& node);
 
-		// Callback that is called for each node traversed
+		/// @brief Callback that is called for each node traversed
+		/// @param node Node being traversed
+		/// @return True to continue traversal, false to stop
 		virtual bool for_each(XmlNode& node) = 0;
 
-		// Callback that is called when traversal ends
+		/// @brief Callback that is called when traversal ends
+		/// @param node Node being traversed
+		/// @return True to continue traversal, false to stop
 		virtual bool end(XmlNode& node);
 	};
 
-	// Parsing status, returned as part of xml_parse_result object
+	/// @brief Parsing status, returned as part of xml_parse_result object
 	enum XmlParseStatus
 	{
 		status_ok = 0,				// No error
@@ -971,31 +1338,43 @@ namespace pugi
 		status_no_document_element	// Parsing resulted in a document without element nodes
 	};
 
-	// Parsing result
+	/// @brief Parsing result
 	struct XmlParseResult
 	{
-		// Parsing status (see xml_parse_status)
+		/// @brief Parsing status (see xml_parse_status)
+		/// @details This member holds the status of the parsing operation. It can be one of the values defined in the XmlParseStatus enumeration.
 		XmlParseStatus status;
 
-		// Last parsed offset (in char_t units from start of input data)
+		/// @brief Last parsed offset (in char_t units from start of input data)
+		/// @details This member holds the offset of the last parsed character in the input data. It is measured in char_t units from the start of the input data.
 		ptrdiff_t offset;
+    
+    /// @brief Line number of the last parsed character
+    /// @details This member holds the line number of the last parsed character in the input data.
     arctic::Ui64 line = 0;
+
+    /// @brief Column number of the last parsed character
+    /// @details This member holds the column number of the last parsed character in the input data.
     arctic::Ui64 column = 0;
 
-		// Source document encoding
+		/// @brief Source document encoding
+		/// @details This member holds the encoding of the source document. It can be one of the values defined in the xml_encoding enumeration.
 		xml_encoding encoding;
 
-		// Default constructor, initializes object to failed state
+		/// @brief Default constructor, initializes object to failed state
 		XmlParseResult();
 
-		// Cast to bool operator
+		/// @brief Cast to bool operator
+		/// @details This operator allows the object to be used in boolean contexts. It returns true if the parsing was successful, and false otherwise.
 		operator bool() const;
 
-		// Get error description
+		/// @brief Get error description
+		/// @details This function returns a string description of the parsing error. If the parsing was successful, it returns an empty string.
+    /// @return String description of the parsing error
 		const char* description() const;
 	};
 
-	// Document class (DOM tree root)
+	/// @brief Document class (DOM tree root)
 	class  XmlDocument: public XmlNode
 	{
 	private:
@@ -1003,8 +1382,10 @@ namespace pugi
 
 		char _memory[192];
 
-		// Non-copyable semantics
+		/// @brief Non-copyable semantics
+		/// @details This class does not support copying.
 		XmlDocument(const XmlDocument&);
+		
 		XmlDocument& operator=(const XmlDocument&);
 
 		void _create();
@@ -1012,82 +1393,194 @@ namespace pugi
 		void _move(XmlDocument& rhs) noexcept;
 
 	public:
-		// Default constructor, makes empty document
+		/// @brief Default constructor, makes empty document
+		/// @details This constructor creates an empty XML document.
 		XmlDocument();
 
-		// Destructor, invalidates all node/attribute handles to this document
 		~XmlDocument();
 
-		// Move semantics support
+		/// @brief Move semantics support
+		/// @details This constructor and assignment operator support move semantics.
 		XmlDocument(XmlDocument&& rhs) noexcept;
+
+		/// @brief Assignment operator
+		/// @details This assignment operator supports move semantics.
 		XmlDocument& operator=(XmlDocument&& rhs) noexcept;
 
-		// Removes all nodes, leaving the empty document
+		/// @brief Removes all nodes, leaving the empty document
+		/// @details This function removes all nodes from the document, leaving it empty.
 		void reset();
 
-		// Removes all nodes, then copies the entire contents of the specified document
+		/// @brief Removes all nodes, then copies the entire contents of the specified document
+		/// @details This function removes all nodes from the document and then copies the entire contents of the specified document.
 		void reset(const XmlDocument& proto);
 
-		// Load document from stream.
+		/// @brief Load document from stream.
+		/// @details This function loads a document from a stream. The stream is read until it is exhausted or a parse error occurs.
+		/// @param stream The stream to load the document from.
+		/// @param options Optional parsing options (see xml_parse_options).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
+		/// @return The result of the parsing operation.
 		XmlParseResult load(std::basic_istream<char, std::char_traits<char> >& stream, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
+
+		/// @brief Load document from stream.
+		/// @details This function loads a document from a stream. The stream is read until it is exhausted or a parse error occurs.
+		/// @param stream The stream to load the document from.
+		/// @param options Optional parsing options (see xml_parse_options).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
+		/// @return The result of the parsing operation.  
 		XmlParseResult load(std::basic_istream<wchar_t, std::char_traits<wchar_t> >& stream, unsigned int options = parse_default);
 
 		// (deprecated: use load_string instead) Load document from zero-terminated string. No encoding conversions are applied.
 		PUGIXML_DEPRECATED XmlParseResult load(const char_t* contents, unsigned int options = parse_default);
 
-		// Load document from zero-terminated string. No encoding conversions are applied.
+		/// @brief Load document from zero-terminated string. No encoding conversions are applied.
+		/// @details This function loads a document from a zero-terminated string. No encoding conversions are applied.
+		/// @param contents The zero-terminated string to load the document from.
+		/// @param options Optional parsing options (see xml_parse_options).
+		/// @return The result of the parsing operation.
 		XmlParseResult load_string(const char_t* contents, unsigned int options = parse_default);
 
-		// Load document from file
+		/// @brief Load document from file
+		/// @details This function loads a document from a file.
+		/// @param path The path to the file to load the document from.
+		/// @param options Optional parsing options (see xml_parse_options).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
+		/// @return The result of the parsing operation.
 		XmlParseResult load_file(const char* path, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
-		XmlParseResult load_file(const wchar_t* path, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
+		
+    /// @brief Load document from file
+    /// @param path The path to the file to load the document from.
+    /// @param options Optional parsing options (see xml_parse_options).
+    /// @param encoding Optional encoding to use for the document (see xml_encoding).
+    /// @return The result of the parsing operation.
+    XmlParseResult load_file(const wchar_t* path, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
-		// Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the function returns.
+		/// @brief Load document from buffer. Copies/converts the buffer, so it may be deleted or changed after the function returns.
+		/// @details This function loads a document from a buffer. The buffer is copied and converted if necessary.
+		/// @param contents The buffer to load the document from.
+		/// @param size The size of the buffer.
+		/// @param options Optional parsing options (see xml_parse_options).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
+		/// @return The result of the parsing operation.
 		XmlParseResult load_buffer(const void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
-		// Load document from buffer, using the buffer for in-place parsing (the buffer is modified and used for storage of document data).
-		// You should ensure that buffer data will persist throughout the document's lifetime, and free the buffer memory manually once document is destroyed.
+		/// @brief Load document from buffer, using the buffer for in-place parsing (the buffer is modified and used for storage of document data).
+		/// @details This function loads a document from a buffer. The buffer is modified and used for storage of document data.
+		/// @param contents The buffer to load the document from.
+		/// @param size The size of the buffer.
+		/// @param options Optional parsing options (see xml_parse_options).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
+		/// @return The result of the parsing operation.
+		/// @note You should ensure that buffer data will persist throughout the document's lifetime, and free the buffer memory manually once document is destroyed.
 		XmlParseResult load_buffer_inplace(void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
-		// Load document from buffer, using the buffer for in-place parsing (the buffer is modified and used for storage of document data).
-		// You should allocate the buffer with pugixml allocation function; document will free the buffer when it is no longer needed (you can't use it anymore).
+		/// @brief Load document from buffer, using the buffer for in-place parsing (the buffer is modified and used for storage of document data).
+		/// @details This function loads a document from a buffer. The buffer is modified and used for storage of document data.
+		/// @param contents The buffer to load the document from.
+		/// @param size The size of the buffer.
+		/// @param options Optional parsing options (see xml_parse_options).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
+		/// @return The result of the parsing operation.
+		/// @note You should ensure that buffer data will persist throughout the document's lifetime, and free the buffer memory manually once document is destroyed.
 		XmlParseResult load_buffer_inplace_own(void* contents, size_t size, unsigned int options = parse_default, xml_encoding encoding = encoding_auto);
 
-		// Save XML document to writer (semantics is slightly different from xml_node::print, see documentation for details).
+		/// @brief Save XML document to writer (semantics is slightly different from xml_node::print, see documentation for details).
+		/// @details This function saves the XML document to a writer. The semantics are slightly different from xml_node::print, see documentation for details.
+		/// @param writer The writer to save the document to.
+		/// @param indent The indentation string to use.
+		/// @param flags Optional formatting flags (see xml_format_flags).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
 		void save(XmlWriter& writer, const char_t* indent = "\t", unsigned int flags = format_default, xml_encoding encoding = encoding_auto) const;
 
-		// Save XML document to stream (semantics is slightly different from xml_node::print, see documentation for details).
+		/// @brief Save XML document to stream (semantics is slightly different from xml_node::print, see documentation for details).
+		/// @details This function saves the XML document to a stream. The semantics are slightly different from xml_node::print, see documentation for details.
+		/// @param stream The stream to save the document to.
+		/// @param indent The indentation string to use.
+		/// @param flags Optional formatting flags (see xml_format_flags).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
 		void save(std::basic_ostream<char, std::char_traits<char> >& stream, const char_t* indent = "\t", unsigned int flags = format_default, xml_encoding encoding = encoding_auto) const;
+
+		/// @brief Save XML document to stream (semantics is slightly different from xml_node::print, see documentation for details).
+		/// @details This function saves the XML document to a stream. The semantics are slightly different from xml_node::print, see documentation for details.
+		/// @param stream The stream to save the document to.
+		/// @param indent The indentation string to use.
+		/// @param flags Optional formatting flags (see xml_format_flags).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
 		void save(std::basic_ostream<wchar_t, std::char_traits<wchar_t> >& stream, const char_t* indent = "\t", unsigned int flags = format_default) const;
 
-		// Save XML to file
+		/// @brief Save XML to file
+		/// @details This function saves the XML document to a file.
+		/// @param path The path to the file to save the document to.
+		/// @param indent The indentation string to use.
+		/// @param flags Optional formatting flags (see xml_format_flags).
+		/// @param encoding Optional encoding to use for the document (see xml_encoding).
 		bool save_file(const char* path, const char_t* indent = "\t", unsigned int flags = format_default, xml_encoding encoding = encoding_auto) const;
-		bool save_file(const wchar_t* path, const char_t* indent = "\t", unsigned int flags = format_default, xml_encoding encoding = encoding_auto) const;
+		
+    /// @brief Save XML to file
+    /// @param path The path to the file to save the document to.
+    /// @param indent The indentation string to use.
+    /// @param flags Optional formatting flags (see xml_format_flags).
+    /// @param encoding Optional encoding to use for the document (see xml_encoding).
+    /// @return True if the document was saved successfully, false otherwise.
+    bool save_file(const wchar_t* path, const char_t* indent = "\t", unsigned int flags = format_default, xml_encoding encoding = encoding_auto) const;
 
-		// Get document element
+		/// @brief Get document element
+		/// @details This function returns the document element.
+		/// @return The document element.
 		XmlNode document_element() const;
 	};
 
-	// Convert wide string to UTF8
+	/// @brief Convert wide string to UTF8
+	/// @details This function converts a wide string to a UTF8 string.
+	/// @param str The wide string to convert.
+	/// @return The UTF8 string.
 	std::basic_string<char, std::char_traits<char>, std::allocator<char> >  as_utf8(const wchar_t* str);
+
+	/// @brief Convert wide string to UTF8
+	/// @details This function converts a wide string to a UTF8 string.
+	/// @param str The wide string to convert.
+	/// @return The UTF8 string.
 	std::basic_string<char, std::char_traits<char>, std::allocator<char> >  as_utf8(const std::basic_string<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t> >& str);
 
-	// Convert UTF8 to wide string
+	/// @brief Convert UTF8 to wide string
+	/// @details This function converts a UTF8 string to a wide string.
+	/// @param str The UTF8 string to convert.
+	/// @return The wide string.
 	std::basic_string<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t> >  as_wide(const char* str);
+
+	/// @brief Convert UTF8 to wide string
+	/// @details This function converts a UTF8 string to a wide string.
+	/// @param str The UTF8 string to convert.
+	/// @return The wide string.
 	std::basic_string<wchar_t, std::char_traits<wchar_t>, std::allocator<wchar_t> >  as_wide(const std::basic_string<char, std::char_traits<char>, std::allocator<char> >& str);
 
-	// Memory allocation function interface; returns pointer to allocated memory or NULL on failure
+	/// @brief Memory allocation function interface; returns pointer to allocated memory or NULL on failure
+	/// @details This function interface is used to allocate memory.
+	/// @param size The size of the memory to allocate.
+	/// @return Pointer to the allocated memory or NULL on failure.
 	typedef void* (*allocation_function)(size_t size);
 
-	// Memory deallocation function interface
+	/// @brief Memory deallocation function interface
+	/// @details This function interface is used to deallocate memory.
+	/// @param ptr The pointer to the memory to deallocate.
 	typedef void (*deallocation_function)(void* ptr);
 
-	// Override default memory management functions. All subsequent allocations/deallocations will be performed via supplied functions.
+	/// @brief Override default memory management functions
+	/// @details This function overrides the default memory management functions. All subsequent allocations/deallocations will be performed via supplied functions.
+	/// @param allocate The allocation function.
+	/// @param deallocate The deallocation function.
 	void  set_memory_management_functions(allocation_function allocate, deallocation_function deallocate);
 
-	// Get current memory management functions
+	/// @brief Get current memory management functions
+	/// @details This function returns the current memory management functions.
+	/// @return The allocation function.
 	allocation_function  get_memory_allocation_function();
-	deallocation_function  get_memory_deallocation_function();
+	
+	/// @brief Get current memory management functions
+	/// @details This function returns the current memory management functions.
+	/// @return The deallocation function.
+  deallocation_function  get_memory_deallocation_function();
 }
 
 #endif

@@ -100,6 +100,10 @@ namespace arctic {
 // outside the main scope of the library
 namespace utils {
 
+/// @brief Splits a string into a vector of strings
+/// @param s String to split
+/// @param delimiter Delimiter to split the string
+/// @return Vector of strings
 std::vector<std::string> SplitStr(std::string s,
     const std::string &delimiter = " ") {
   size_t pos = 0;
@@ -113,6 +117,11 @@ std::vector<std::string> SplitStr(std::string s,
   return vals;
 }
 
+/// @brief Stitches a vector of strings into a single string
+/// @param text Vector of strings to stitch
+/// @param max_per_line Maximum number of characters per line
+/// @param leading_str Leading string to add to each line
+/// @return Stitched string
 std::string StitchStr(const std::vector<std::string> &text,
     unsigned max_per_line, const std::string &leading_str) {
   std::vector<std::string> result;
@@ -144,14 +153,23 @@ std::string StitchStr(const std::vector<std::string> &text,
 
 }  // namespace utils
 
+/// @brief Interface for value checker
 struct ValueChecker {
+  /// @brief Checks if a value is valid
+  /// @param value Value to check
+  /// @return True if the value is valid, false otherwise
   virtual bool Check(const std::string &value) const {
     return true;
   }
 };
 
+/// @brief Template for value type checker
+/// @tparam T Type to check
 template<typename T>
 struct ValueTypeChecker : public ValueChecker {
+  /// @brief Checks if a value is valid
+  /// @param value Value to check
+  /// @return True if the value is valid, false otherwise
   bool Check(const std::string &value) const override {
     std::stringstream ss(value);
     T res;
@@ -166,11 +184,13 @@ struct ValueTypeChecker : public ValueChecker {
   }
 };
 
-// Enums for Option config
+/// @brief Enum for storage mode
 enum StorageMode { STORE_TRUE = 0, STORE_VALUE, STORE_MULT_VALUES };
+
+/// @brief Enum for option type
 enum OptionType { LONG_OPT = 0, SHORT_OPT, POSITIONAL_OPT, EMPTY_OPT };
 
-// Option class definition
+/// @brief Class for option
 class Option {
 private:
   bool found_ = false;
@@ -191,32 +211,56 @@ private:
 public:
   Option() = default;
 
+  /// @brief Getter for help documentation
+  /// @return Help documentation
   std::string HelpDoc();
 
+  /// @brief Getter for short flag
+  /// @return Short flag
   std::string &ShortFlag() { return short_flag_; }
+  /// @brief Getter for long flag
+  /// @return Long flag
   std::string &LongFlag() { return long_flag_; }
+  /// @brief Getter for positional flag
+  /// @return Positional flag
   std::string &PosFlag() { return pos_flag_; }
 
+  /// @brief Getter for found flag
+  /// @return Found flag
   bool GetFound() { return found_; }
+  /// @brief Setter for found flag
+  /// @param found Found flag
+  /// @return Reference to the option
   Option &SetFound(bool found) {
     found_ = found;
     return *this;
   }
 
+  /// @brief Getter for storage mode
+  /// @return Storage mode
   StorageMode GetMode() { return mode_; }
+  /// @brief Setter for no arguments
+  /// @return Reference to the option
   Option &NoArguments() {
     mode_ = StorageMode::STORE_TRUE;
     return *this;
   }
+  /// @brief Setter for single argument
+  /// @return Reference to the option
   Option &SingleArgument() {
     mode_ = StorageMode::STORE_VALUE;
     return *this;
   }
+  /// @brief Setter for multiple arguments
+  /// @return Reference to the option
   Option &MultipleArguments() {
     mode_ = StorageMode::STORE_MULT_VALUES;
     return *this;
   }
 
+  /// @brief Checks if a value is valid
+  /// @param value Value to check
+  /// @return True if the value is valid, false otherwise
   bool CheckValue(const std::string &value) {
     if (!value_checker_) {
       return true;
@@ -224,18 +268,27 @@ public:
     return value_checker_->Check(value);
   }
 
+  /// @brief Sets the argument type
+  /// @tparam T Type to set
+  /// @return Reference to the option
   template<typename T>
   Option &ArgumentType() {
     value_checker_ = std::make_shared<ValueTypeChecker<T>>();
     return *this;
   }
 
+  /// @brief Getter for required flag
+  /// @return Required flag
   bool GetRequired() { return required_; }
+  /// @brief Setter for required flag
+  /// @return Reference to the option
   Option &Required() {
     required_ = true;
     return *this;
   }
 
+  /// @brief Getter for metavar
+  /// @return Metavar
   std::string GetMetavar() {
     std::string formatted_metavar;
     if (!metavar_.empty()) {
@@ -261,43 +314,79 @@ public:
     return formatted_metavar;
   }
 
+  /// @brief Setter for metavar
+  /// @param mvar Metavar
+  /// @return Reference to the option
   Option &Metavar(const std::string &mvar) {
     metavar_ = mvar;
     return *this;
   }
 
+  /// @brief Getter for help
+  /// @return Help
   std::string GetHelp() { return help_; }
+  /// @brief Setter for help
+  /// @param help Help
+  /// @return Reference to the option
   Option &Help(const std::string &help) {
     help_ = help;
     return *this;
   }
+  /// @brief Getter for destination
+  /// @return Destination
   std::string GetDest() { return dest_; }
+  /// @brief Setter for destination
+  /// @param dest Destination
+  /// @return Reference to the option
   Option &Dest(const std::string &dest) {
     dest_ = dest;
     return *this;
   }
+  /// @brief Getter for default value
+  /// @return Default value
   std::string GetDefaultValue() { return default_value_; }
+  /// @brief Setter for default value
+  /// @param default_value Default value
+  /// @return Reference to the option
   Option &DefaultValue(const std::string &default_value) {
     default_value_ = default_value;
     return *this;
   }
+  /// @brief Setter for default value
+  /// @param default_value Default value
+  /// @return Reference to the option
   Option &DefaultValue(const char *default_value) {
     default_value_ = std::string(default_value);
     return *this;
   }
+  /// @brief Setter for default value
+  /// @tparam T Type to set
+  /// @param default_value Default value
+  /// @return Reference to the option
   template <typename T> Option &DefaultValue(const T &default_value) {
     default_value_ = std::to_string(default_value);
     return *this;
   }
 
+  /// @brief Getter for option type
+  /// @param opt Option
+  /// @return Option type
   static OptionType GetType(std::string opt);
+  /// @brief Getter for destination
+  /// @param first_option First option
+  /// @param second_option Second option
+  /// @param out_dest Output destination
   static bool GetDestination(const std::string &first_option,
       const std::string &second_option, std::string *out_dest);
+  /// @brief Validates option types
+  /// @param first_option_type First option type
+  /// @param second_option_type Second option type
+  /// @param out_last_error Output last error
   static bool ValidateOptionTypes(const OptionType &first_option_type,
       const OptionType &second_option_type, std::string *out_last_error);
 };
 
-// Non-inline definitions for Option methods
+/// @brief  Inline definitions for Option methods
 std::string Option::HelpDoc() {
   std::string h = "    ";
   if (!long_flag_.empty()) {
@@ -323,6 +412,9 @@ std::string Option::HelpDoc() {
   return std::string(char_buf);
 }
 
+/// @brief Getter for option type
+/// @param opt Option
+/// @return Option type
 OptionType Option::GetType(std::string opt) {
   if (opt.empty()) {
     return OptionType::EMPTY_OPT;
@@ -340,6 +432,10 @@ OptionType Option::GetType(std::string opt) {
   return OptionType::POSITIONAL_OPT;
 }
 
+/// @brief Validates option types
+/// @param first_option_type First option type
+/// @param second_option_type Second option type
+/// @param out_last_error Output last error
 bool Option::ValidateOptionTypes(const OptionType &first_option_type,
     const OptionType &second_option_type, std::string *out_last_error) {
 
@@ -360,6 +456,10 @@ bool Option::ValidateOptionTypes(const OptionType &first_option_type,
   return true;
 }
 
+/// @brief Getter for destination
+/// @param first_option First option
+/// @param second_option Second option
+/// @param out_dest Output destination
 bool Option::GetDestination(const std::string &first_option,
     const std::string &second_option, std::string *out_dest) {
   std::string dest;
@@ -397,7 +497,7 @@ bool Option::GetDestination(const std::string &first_option,
   return true;
 }
 
-// OptionParser class definition
+/// @brief OptionParser class definition
 class OptionParser {
 public:
   explicit OptionParser(std::string description = "")
@@ -407,13 +507,24 @@ public:
 
   ~OptionParser() = default;
 
+  /// @brief Parses arguments
+  /// @param argc Argument count
+  /// @param argv Argument values
+  /// @return True if parsing is successful, false otherwise
   bool ParseArgcArgv(Ui32 argc, char const *argv[]);
 
+  /// @brief Adds an option
+  /// @param first_option First option
+  /// @param second_option Second option
+  /// @return Reference to the option
   Option &AddOption(const std::string &first_option,
       const std::string &second_option = "") {
     return AddOptionInternal(first_option, second_option);
   }
   
+  /// @brief Checks if a value is present
+  /// @param key Key
+  /// @return True if the value is present, false otherwise
   bool HasValue(const std::string &key) {
     auto it = option_idx_.find(key);
     Check(it != option_idx_.end(),
@@ -421,8 +532,11 @@ public:
     return options_[it->second].GetFound();
   }
 
-  // Provide all template specializations for get_value<T>(keyName)
-
+  /// @brief Getter for value
+  /// @tparam T Type to get
+  /// @param key Key
+  /// @param default_value Default value
+  /// @return Value
   template<typename T>
     const T GetValue(const std::string &key, T default_value) {
       auto it = values_.find(key);
@@ -442,6 +556,11 @@ public:
       return default_value;
     }
 
+  /// @brief Getter for values
+  /// @tparam T Type to get
+  /// @param key Key
+  /// @param default_value Default value
+  /// @return Values
   template<typename T>
   std::vector<T> GetValues(const std::string &key, T default_value) {
     auto it = values_.find(key);
@@ -465,9 +584,16 @@ public:
     return std::move(v);
   }
 
+  /// @brief Getter for help
+  /// @return Help
   std::string Help();
 
+  /// @brief Checks for missing arguments
+  /// @return True if no missing arguments, false otherwise
   bool CheckForMissingArgs();
+
+  /// @brief Getter for last error
+  /// @return Last error
   std::string get_last_error() { return last_error_; }
 private:
   Option &AddOptionInternal(const std::string &first_option,
@@ -484,13 +610,17 @@ private:
   std::vector<Option> options_;
   std::string prog_name_;
   std::string description_;
-  std::vector<std::string> pos_option_names_;
+  std::vector<std::string> pos_option_names_; 
   std::map<std::string, Ui32> option_idx_;
   bool is_ok_ = true;
   std::string last_error_ = "";
 };
 
 
+/// @brief Adds an option
+/// @param first_option First option
+/// @param second_option Second option
+/// @return Reference to the option
 Option &OptionParser::AddOptionInternal(const std::string &first_option,
     const std::string &second_option) {
   options_.resize(options_.size() + 1);
@@ -526,6 +656,12 @@ Option &OptionParser::AddOptionInternal(const std::string &first_option,
   return opt;
 }
 
+/// @brief Getter for value argument
+/// @param arguments Arguments
+/// @param arg Argument
+/// @param opt Option
+/// @param flag Flag
+/// @return True if value argument is obtained, false otherwise
 bool OptionParser::GetValueArg(std::vector<std::string> &arguments,
     Ui32 &arg, Option &opt, std::string &flag) {
   std::string val;
@@ -623,6 +759,12 @@ bool OptionParser::GetValueArg(std::vector<std::string> &arguments,
   return true;
 }
 
+/// @brief Tries to get option
+/// @param arguments Arguments
+/// @param arg Argument
+/// @param option Option
+/// @param flag Flag
+/// @return True if option is obtained, false otherwise
 bool OptionParser::TryToGetOpt(std::vector<std::string> &arguments,
     Ui32 &arg, Option &option, std::string &flag) {
   if (flag.empty()) {
@@ -656,6 +798,8 @@ bool OptionParser::TryToGetOpt(std::vector<std::string> &arguments,
   return false;
 }
 
+/// @brief Checks for missing arguments
+/// @return True if no missing arguments, false otherwise
 bool OptionParser::CheckForMissingArgs() {
   std::vector<std::string> missing;
   for (Option &opt : options_) {
@@ -680,6 +824,10 @@ bool OptionParser::CheckForMissingArgs() {
   return true;
 }
 
+/// @brief Parses arguments
+/// @param argc Argument count
+/// @param argv Argument values
+/// @return True if parsing is successful, false otherwise
 bool OptionParser::ParseArgcArgv(Ui32 argc, char const *argv[]) {
   Ui32 idx_ctr = 0;
   for (Option &opt : options_) {
@@ -736,6 +884,8 @@ bool OptionParser::ParseArgcArgv(Ui32 argc, char const *argv[]) {
   return true;
 }
 
+/// @brief Getter for help
+/// @return Help
 std::string OptionParser::Help() {
   std::stringstream str;
   auto split = prog_name_.find_last_of('/');

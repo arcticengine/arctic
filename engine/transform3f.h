@@ -28,21 +28,44 @@
 
 namespace arctic {
 
+/// @brief A 3D transform.
 class Transform3F {
  public:
-	Vec3F displacement;
-	QuaternionF rotation;
-  float scale = 1.f;
+  Vec3F displacement; ///< The displacement of the transform.	
+  QuaternionF rotation; ///< The rotation of the transform.
+  float scale = 1.f; ///< The scale of the transform.
 
-	Transform3F();
-	Transform3F(const Vec3F& displacement_, const QuaternionF& rotation_);
-	Transform3F Transform(const Transform3F& a) const;
+  /// @brief Default constructor.
+  Transform3F();
+
+  /// @brief Constructor.
+  /// @param displacement_ The displacement of the transform.
+  /// @param rotation_ The rotation of the transform.
+  Transform3F(const Vec3F& displacement_, const QuaternionF& rotation_);
+
+  /// @brief Transforms a transform using the transform.
+  /// @param a The transform to transform.
+  /// @return The transformed transform.
+  Transform3F Transform(const Transform3F& a) const;
+
+  /// @brief Transforms a point using the transform.
+  /// @param a The point to transform.
+  /// @return The transformed point.
 	Vec3F Transform(const Vec3F& a) const;
+
+  /// @brief Transforms a quaternion using the transform.
+  /// @param a The quaternion to transform.
+  /// @return The transformed quaternion.
 	QuaternionF Transform(const QuaternionF& a) const;
 	//Mat33F ToMatrix33F() const;
+
+  /// @brief Clears the transform.
   void Clear();
 };
 
+/// @brief Inverts a transform.
+/// @param a The transform to invert.
+/// @return The inverted transform.
 Transform3F Inverse(const Transform3F& a);
 
 }  // namespace arctic

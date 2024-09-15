@@ -29,6 +29,7 @@
 
 namespace arctic {
 
+/// @brief Interface for fixed size allocator
 class I_FixedSizeAllocator {
  public:
   virtual void *alloc() = 0;

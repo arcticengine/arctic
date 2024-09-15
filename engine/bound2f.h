@@ -33,19 +33,27 @@ namespace arctic {
 
 /// @addtogroup global_math
 /// @{
+
+/// @brief A 2D bounding box.
 struct Bound2F {
   union {
     struct {
-      float min_x;
-      float max_x;
-      float min_y;
-      float max_y;
+      float min_x; ///< The minimum x-coordinate of the bounding box.
+      float max_x; ///< The maximum x-coordinate of the bounding box.
+      float min_y; ///< The minimum y-coordinate of the bounding box.
+      float max_y; ///< The maximum y-coordinate of the bounding box.
     };
-    float element[4];
+    float element[4]; ///< The elements of the bounding box.
   };
 
+  /// @brief Default constructor.
   Bound2F() {}
 
+  /// @brief Constructor from minimum and maximum coordinates.
+  /// @param mix The minimum x-coordinate.
+  /// @param max The maximum x-coordinate.
+  /// @param miy The minimum y-coordinate.
+  /// @param may The maximum y-coordinate.
   explicit Bound2F(float mix, float max, float miy, float may) {
     min_x = mix;
     max_x = max;
@@ -53,13 +61,17 @@ struct Bound2F {
     max_y = may;
   }
 
-  explicit Bound2F(float infi) {
-    min_x = infi;
-    max_x = -infi;
-    min_y = infi;
-    max_y = -infi;
+  /// @brief Constructor for a symmetric bounding box.
+  /// @param val The value to use as the magnitude of the bounding box size, positive or negative.
+  explicit Bound2F(float val) {
+    min_x = -val;
+    max_x = val;
+    min_y = -val;
+    max_y = val;
   }
 
+  /// @brief Constructor from an array of floats.
+  /// @param v The array of floats. The order is min_x, max_x, min_y, max_y.
   explicit Bound2F(float const *const v) {
     min_x = v[0];
     max_x = v[1];
@@ -67,6 +79,9 @@ struct Bound2F {
     max_y = v[3];
   }
 
+  /// @brief Constructor from two arrays of floats.
+  /// @param vmin The array of floats for the minimum coordinates. The order is min_x, min_y.
+  /// @param vmax The array of floats for the maximum coordinates. The order is max_x, max_y.
   explicit Bound2F(float const *const vmin, float const *const vmax) {
     min_x = vmin[0];
     max_x = vmax[0];
@@ -74,6 +89,9 @@ struct Bound2F {
     max_y = vmax[1];
   }
 
+  /// @brief Constructor from two vectors.
+  /// @param mi The minimum vector.
+  /// @param ma The maximum vector.
   explicit Bound2F(const Vec2F &mi, const Vec2F &ma) {
     min_x = mi.x;
     max_x = ma.x;
@@ -81,14 +99,25 @@ struct Bound2F {
     max_y = ma.y;
   }
 
+  /// @brief Access the elements of the bounding box.
+  /// @param i The index of the element to access. The order is min_x, max_x, min_y, max_y.
+  /// @return The element at the specified index.
   float &operator[](Si32 i) {
     return element[i];
   }
+
+  /// @brief Access the elements of the bounding box.
+  /// @param i The index of the element to access. The order is min_x, max_x, min_y, max_y.
+  /// @return The element at the specified index.
   const float &operator[](Si32 i) const {
     return element[i];
   }
 };
 
+/// @brief Check if a point is inside a bounding box.
+/// @param b The bounding box.
+/// @param p The point.
+/// @return True if the point is inside the bounding box, false otherwise.
 inline bool Contains(Bound2F const &b, Vec2F const &p) {
   if (p.x < b.min_x) {
     return false;

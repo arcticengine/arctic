@@ -37,60 +37,78 @@ namespace arctic {
 // true if key transitioned from up to down state last frame
 /// @brief Returns true if the key with the specified key_code travelled downwards during the last frame
 /// @param key_code The key code
+/// @return True if the key with the specified key_code travelled downwards during the last frame, false otherwise.
 bool IsKeyDownward(const KeyCode key_code);
 /// @brief Returns true if any of the specified keys travelled downwards during the last frame
 /// @param keys A c-string specifying one or more key character codes to check
+/// @return True if any of the specified keys travelled downwards during the last frame, false otherwise.
 bool IsKeyDownward(const char *keys);
 /// @brief Returns true if the key specified travelled downwards during the last frame
 /// @param key The key character code
+/// @return True if the key specified travelled downwards during the last frame, false otherwise.
 bool IsKeyDownward(const char key);
 /// @brief Returns true if the key with the specified key_code travelled downwards during the last frame
 /// @param key_code The key code
+/// @return True if the key with the specified key_code travelled downwards during the last frame, false otherwise.
 bool IsKeyDownward(const Si32 key_code);
 /// @brief Returns true if any of the specified keys travelled downwards during the last frame
 /// @param keys A std::string specifying one or more key character codes to check
+/// @return True if any of the specified keys travelled downwards during the last frame, false otherwise.
 bool IsKeyDownward(const std::string &keys);
 
 // true is key is currently down
 /// @brief Returns true if the key with the specified key_code was pressed during the last frame
 /// @param key_code The key code
+/// @return True if the key with the specified key_code was pressed during the last frame, false otherwise.
 bool IsKeyDown(const KeyCode key_code);
 /// @brief Returns true if any of the specified keys was pressed during the last frame
 /// @param keys A c-string specifying one or more key character codes to check
+/// @return True if any of the specified keys was pressed during the last frame, false otherwise.
 bool IsKeyDown(const char *keys);
 /// @brief Returns true if the key specified was pressed during the last frame
 /// @param key The key character code
+/// @return True if the key specified was pressed during the last frame, false otherwise.
 bool IsKeyDown(const char key);
 /// @brief Returns true if the key with the specified key_code was pressed during the last frame
 /// @param key_code The key code
+/// @return True if the key with the specified key_code was pressed during the last frame, false otherwise.
 bool IsKeyDown(const Si32 key_code);
 /// @brief Returns true if any of the specified keys was pressed during the last frame
 /// @param keys A std::string specifying one or more key character codes to check
+/// @return True if any of the specified keys was pressed during the last frame, false otherwise.
 bool IsKeyDown(const std::string &keys);
 
 // true if key transitioned from down to up since last frame
 /// @brief Returns true if the key with the specified key_code was released during the last frame
 /// @param key_code The key code
+/// @return True if the key with the specified key_code was released during the last frame, false otherwise.
 bool IsKeyUpward(const KeyCode key_code);
 /// @brief Returns true if any of the specified keys was released during the last frame
 /// @param keys A c-string specifying one or more key character codes to check
+/// @return True if any of the specified keys was released during the last frame, false otherwise.
 bool IsKeyUpward(const char *keys);
 /// @brief Returns true if the key specified was released during the last frame
 /// @param key The key character code
+/// @return True if the key specified was released during the last frame, false otherwise.
 bool IsKeyUpward(const char key);
 /// @brief Returns true if the key with the specified key_code was released during the last frame
 /// @param key_code The key code
+/// @return True if the key with the specified key_code was released during the last frame, false otherwise.
 bool IsKeyUpward(const Si32 key_code);
 /// @brief Returns true if any of the specified keys was released during the last frame
 /// @param keys A std::string specifying one or more key character codes to check
+/// @return True if any of the specified keys was released during the last frame, false otherwise.
 bool IsKeyUpward(const std::string &keys);
 
 
 /// @brief Returns true if key transitioned from up to down state last frame
+/// @return True if key transitioned from up to down state last frame, false otherwise.
 bool IsAnyKeyDownward();
 /// @brief Returns true if key is currently down
+/// @return True if key is currently down, false otherwise.
 bool IsAnyKeyDown();
 /// @brief Returns true if key transitioned from down to up since last frame
+/// @return True if key transitioned from down to up since last frame, false otherwise.
 bool IsAnyKeyUpward();
 
 /// @brief Changes the stored key state
@@ -122,42 +140,54 @@ void ClearKeyStateTransitions();
 /// @brief Returns controller axis position
 /// @param [in] controller_idx Index of the controller.
 /// @param [in] axis_idx Index of the axis.
+/// @return The controller axis position
 float ControllerAxis(Si32 controller_idx, Si32 axis_idx);
 /// @brief Returns mouse cursor position
+/// @return The mouse cursor position
 Vec2Si32 MousePos();
 /// @brief Returns mouse cursor position x coordinate
+/// @return The mouse cursor position x coordinate
 Si32 MouseX();
 /// @brief Returns mouse cursor position y coordinate
+/// @return The mouse cursor position y coordinate
 Si32 MouseY();
 /// @brief Returns mouse movement vector
+/// @return The mouse movement vector
 Vec2Si32 MouseMove();
 /// @brief Returns mouse wheel rotation delta
+/// @return The mouse wheel rotation delta
 Si32 MouseWheelDelta();
 
-/// @brief Returns the number of user input messages obtained by the
-/// last Swap() call
+/// @brief Returns the number of user input messages obtained by the last Swap() call
+/// @return The number of user input messages obtained by the last Swap() call
 Si32 InputMessageCount();
 
 /// @brief Returns the user input message with the index specified
 /// @param idx Index of the message to return.
+/// @return The user input message with the index specified.
 const InputMessage& GetInputMessage(Si32 idx);
 
 /// @}
 
 /// @brief Returns true if the key with the specified key_code is pressed
 /// @param key_code The key code
+/// @return True if the key with the specified key_code is pressed, false otherwise.
 bool IsKey(const KeyCode key_code);
 /// @brief Returns true if any of the specified keys is pressed
 /// @param keys A c-string specifying one or more key character codes to check
+/// @return True if any of the specified keys is pressed, false otherwise.
 bool IsKey(const char *keys);
 /// @brief Returns true if the key specified is pressed
 /// @param key The key character code
+/// @return True if the key specified is pressed, false otherwise.
 bool IsKey(const char key);
 /// @brief Returns true if the key with the specified key_code is pressed
 /// @param key_code The key code
+/// @return True if the key with the specified key_code is pressed, false otherwise.
 bool IsKey(const Si32 key_code);
 /// @brief Returns true if any of the specified keys is pressed
 /// @param keys A std::string specifying one or more key character codes to check
+/// @return True if any of the specified keys is pressed, false otherwise.
 bool IsKey(const std::string &keys);
 
 }  // namespace arctic
