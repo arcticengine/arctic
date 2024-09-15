@@ -32,25 +32,47 @@ namespace arctic {
 /// @addtogroup global_utility
 /// @{
 
+/// @brief A structure for reading UTF-32 characters from UTF-8 encoded data.
 struct Utf32Reader {
   const Ui8 *begin = nullptr;
   const Ui8 *p = nullptr;
 
+  /// @brief Resets the reader with new UTF-8 encoded data.
+  /// @param data Pointer to the UTF-8 encoded data.
   void Reset(const Ui8 *data);
+
+  /// @brief Resets the reader with new UTF-8 encoded data.
+  /// @param data Pointer to the UTF-8 encoded data as a C-style string.
   inline void Reset(const char *data) {
     Reset(reinterpret_cast<const Ui8 *>(data));
   }
+
+  /// @brief Rewinds the reader to the beginning of the data.
   void Rewind();
+
+  /// @brief Reads one UTF-32 character while converting it from UTF-8.
+  /// @return The read UTF-32 character.
   Ui32 ReadOne();  // Read one Utf32 character while converting it from Utf8
 };
 
+/// @brief A class for converting UTF-16 encoded data to UTF-32.
 class Utf32FromUtf16 {
  public:
+  /// @brief Resets the converter with new UTF-16 encoded data.
+  /// @param data Pointer to the UTF-16 encoded data.
   void Reset(const Ui8 *data);
+
+  /// @brief Resets the converter with new UTF-16 encoded data.
+  /// @param data Pointer to the UTF-16 encoded data as a C-style string.
   inline void Reset(const char *data) {
     Reset(reinterpret_cast<const Ui8 *>(data));
   }
+
+  /// @brief Rewinds the converter to the beginning of the data.
   void Rewind();
+
+  /// @brief Reads one UTF-32 character from the UTF-16 encoded data.
+  /// @return The read UTF-32 character.
   Ui32 ReadOne();
 
  protected:
@@ -60,9 +82,13 @@ class Utf32FromUtf16 {
   Ui16 Read16();
 };
 
+/// @brief A structure representing a UTF-8 codepoint.
 struct Utf8Codepoint {
   Ui64 size = 0;
   Ui8 buffer[4] = {0, 0, 0, 0};
+
+  /// @brief Writes a UTF-32 codepoint as UTF-8.
+  /// @param codepoint The UTF-32 codepoint to write.
   void WriteUtf32(Ui32 codepoint);
 };
 

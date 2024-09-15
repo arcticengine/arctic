@@ -20,14 +20,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-
 #ifndef ENGINE_DECORATED_FRAME_H_
 #define ENGINE_DECORATED_FRAME_H_
 
 #include "engine/easy_sprite.h"
 
 namespace arctic {
-
 
 /// @addtogroup global_drawing
 /// @{
@@ -48,6 +46,18 @@ class DecoratedFrame {
   DecoratedFrame() {
   }
 
+  /// @brief Loads the sprites and scaleability settings for the frame.
+  /// @param left The left sprite.
+  /// @param right The right sprite.
+  /// @param top The top sprite.
+  /// @param bottom The bottom sprite.
+  /// @param upper_left The upper left corner sprite.
+  /// @param upper_right The upper right corner sprite.
+  /// @param lower_left The lower left corner sprite.
+  /// @param lower_right The lower right corner sprite.
+  /// @param background The background tile sprite.
+  /// @param is_x_scaleable Whether the frame is scaleable in the x direction.
+  /// @param is_y_scaleable Whether the frame is scaleable in the y direction.
   void Load(Sprite left, Sprite right,
       Sprite top, Sprite bottom,
       Sprite upper_left, Sprite upper_right,
@@ -67,6 +77,11 @@ class DecoratedFrame {
     is_y_scaleable_ = is_y_scaleable;
   }
 
+  /// @brief Splits a sprite into frame components.
+  /// @param s The sprite to split.
+  /// @param border_size The size of the border.
+  /// @param is_x_scaleable Whether the frame is scaleable in the x direction.
+  /// @param is_y_scaleable Whether the frame is scaleable in the y direction.
   void Split(Sprite s, Si32 border_size,
       bool is_x_scaleable, bool is_y_scaleable) {
     //    | w |
@@ -99,12 +114,20 @@ class DecoratedFrame {
     is_y_scaleable_ = is_y_scaleable;
   }
 
+  /// @brief Splits a sprite from a file into frame components.
+  /// @param file_name The name of the file containing the sprite.
+  /// @param border_size The size of the border.
+  /// @param is_x_scaleable Whether the frame is scaleable in the x direction.
+  /// @param is_y_scaleable Whether the frame is scaleable in the y direction.
   void Split(const char *file_name, Si32 border_size, bool is_x_scaleable, bool is_y_scaleable) {
     Sprite s;
     s.Load(file_name);
     Split(s, border_size, is_x_scaleable, is_y_scaleable);
   }
 
+  /// @brief Estimates the size of the frame for a given client area size.
+  /// @param client_area_size The size of the client area.
+  /// @return The estimated size of the frame.
   Vec2Si32 EstimateSizeForClienArea(Vec2Si32 client_area_size) {
     Vec2Si32 size_bound = client_area_size;
     if (!is_x_scaleable_) {
@@ -121,6 +144,9 @@ class DecoratedFrame {
     return size;
   }
 
+  /// @brief Calculates the client area size for a given frame size.
+  /// @param size The size of the frame.
+  /// @return The size of the client area.
   Vec2Si32 ClientAreaForSize(Vec2Si32 size) {
     Vec2Si32 size_bound;
     size_bound.x = size.x - left_.Width() - right_.Width();
@@ -128,17 +154,27 @@ class DecoratedFrame {
     return size_bound;
   }
 
+  /// @brief Draws the frame for a given client area size.
+  /// @param client_area_size The size of the client area.
+  /// @return The sprite containing the drawn frame.
   Sprite DrawClientSize(Vec2Si32 client_area_size) {
     Vec2Si32 size = EstimateSizeForClienArea(client_area_size);
     client_area_size = ClientAreaForSize(size);
     return DrawBothSizes(client_area_size, size);
   }
 
+  /// @brief Draws the frame for a given external size.
+  /// @param size The external size of the frame.
+  /// @return The sprite containing the drawn frame.
   Sprite DrawExternalSize(Vec2Si32 size) {
     Vec2Si32 client_area_size = ClientAreaForSize(size);
     return DrawBothSizes(client_area_size, size);
   }
 
+  /// @brief Draws the frame for both client and external sizes.
+  /// @param client_size The size of the client area.
+  /// @param size The external size of the frame.
+  /// @return The sprite containing the drawn frame.
   Sprite DrawBothSizes(Vec2Si32 client_size, Vec2Si32 size) {
     Sprite sprite;
     sprite.Create(size.x, size.y);
@@ -219,6 +255,8 @@ class DecoratedFrame {
     return sprite;
   }
 
+  /// @brief Returns the size of the border.
+  /// @return The size of the border.
   Vec2Si32 BorderSize() const {
     return lower_left_.Size();
   }

@@ -34,27 +34,39 @@ namespace arctic {
 
 /// @addtogroup global_color
 /// @{
+
+/// @brief Represents a color in RGBA format.
 struct Rgba {
   union {
     struct {
-      Ui8 r;
-      Ui8 g;
-      Ui8 b;
-      Ui8 a;
+      Ui8 r;  ///< Red component
+      Ui8 g;  ///< Green component
+      Ui8 b;  ///< Blue component
+      Ui8 a;  ///< Alpha component
     };
-    Ui32 rgba;
-    Ui8 element[4];
+    Ui32 rgba;  ///< Combined RGBA value
+    Ui8 element[4];  ///< Array access to color components
   };
 
+  /// @brief Default constructor.
   Rgba() {}
 
+  /// @brief Constructor for RGB color (alpha set to 255).
+  /// @param r_in Red component
+  /// @param g_in Green component
+  /// @param b_in Blue component
   explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in) {
     r = r_in;
     g = g_in;
     b = b_in;
     a = 255;
   }
-  /// a = 255 is opaque, a = 0 is transparent.
+
+  /// @brief Constructor for RGBA color.
+  /// @param r_in Red component
+  /// @param g_in Green component
+  /// @param b_in Blue component
+  /// @param a_in Alpha component (255 is opaque, 0 is transparent)
   explicit Rgba(Ui8 r_in, Ui8 g_in, Ui8 b_in, Ui8 a_in) {
     r = r_in;
     g = g_in;
@@ -62,64 +74,119 @@ struct Rgba {
     a = a_in;
   }
 
-  /// rgba_in is 32 bits containing 0xAABBGGRR. 0xff00ff00 is opaque green.
+  /// @brief Constructor from 32-bit RGBA value.
+  /// @param rgba_in 32-bit value containing 0xAABBGGRR (e.g., 0xff00ff00 is opaque green)
   explicit Rgba(Ui32 rgba_in) {
     rgba = rgba_in;
   }
+
+  /// @brief Array subscript operator.
+  /// @param i Index of the color component (0-3)
+  /// @return Reference to the color component
   Ui8 &operator[](Si32 i) {
     return element[i];
   }
+
+  /// @brief Const array subscript operator.
+  /// @param i Index of the color component (0-3)
+  /// @return Const reference to the color component
   const Ui8 &operator[](Si32 i) const {
     return element[i];
   }
 
+  /// @brief Assignment operator.
+  /// @param v Rgba color to assign
+  /// @return Reference to this object
   Rgba &operator =(const Rgba &v) {
     rgba = v.rgba;
     return *this;
   }
 
+  /// @brief Equality comparison operator.
+  /// @param v Rgba color to compare
+  /// @return True if colors are equal, false otherwise
   const bool operator== (const Rgba &v) const {
     return rgba == v.rgba;
   }
+
+  /// @brief Inequality comparison operator.
+  /// @param v Rgba color to compare
+  /// @return True if colors are not equal, false otherwise
   const bool operator!= (const Rgba &v) const {
     return rgba != v.rgba;
   }
 };
 
+/// @brief Linearly interpolate between two colors.
+/// @param a First color
+/// @param b Second color
+/// @param f Interpolation factor (0.0 to 1.0)
+/// @return Interpolated color
 inline Rgba Mix(Rgba const &a, Rgba const &b, float const f) {
   return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
     static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),
     static_cast<Ui8>(a.b * (1.0f - f) + f * b.b),
     static_cast<Ui8>(a.a * (1.0f - f) + f * b.a));
 }
+
+/// @brief Linearly interpolate between two colors (alternative version).
+/// @param a First color
+/// @param b Second color
+/// @param f Interpolation factor (0.0 to 1.0)
+/// @return Interpolated color
 inline Rgba Mix(Rgba const a, Rgba const b, float const f) {
   return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
               static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),
               static_cast<Ui8>(a.b * (1.0f - f) + f * b.b),
               static_cast<Ui8>(a.a * (1.0f - f) + f * b.a));
 }
+
+/// @brief Get the minimum of two colors component-wise.
+/// @param a First color
+/// @param b Second color
+/// @return Color with minimum components
 inline Rgba Min(const Rgba a, const Rgba b) {
   return Rgba((a.r < b.r) ? a.r : b.r,
               (a.g < b.g) ? a.g : b.g,
               (a.b < b.b) ? a.b : b.b,
               (a.a < b.a) ? a.a : b.a);
 }
+
+/// @brief Get the maximum of two colors component-wise.
+/// @param a First color
+/// @param b Second color
+/// @return Color with maximum components
 inline Rgba Max(const Rgba a, const Rgba b) {
   return Rgba((a.r > b.r) ? a.r : b.r,
               (a.g > b.g) ? a.g : b.g,
               (a.b > b.b) ? a.b : b.b,
               (a.a > b.a) ? a.a : b.a);
 }
+
+/// @brief Clamp color components between two colors.
+/// @param rgba Color to clamp
+/// @param mi Minimum color
+/// @param ma Maximum color
+/// @return Clamped color
 inline Rgba Clamp(const Rgba rgba, const Rgba mi, const Rgba ma) {
   return Max(Min(rgba, ma), mi);
 }
 
+/// @brief Fast blend of two colors.
+/// @param c1 First color
+/// @param c2 Second color
+/// @return Blended color
 inline Rgba BlendFast(Rgba c1, Rgba c2) {
   return Rgba(static_cast<Ui32>((
       (static_cast<Ui64>(c1.rgba) & MASK_BLEND) +
       (static_cast<Ui64>(c2.rgba) & MASK_BLEND)) >> 1u));
 }
 
+/// @brief Mix two colors with a given alpha value.
+/// @param c1 First color
+/// @param c2 Second color
+/// @param alpha_1_8 Alpha value (0-255)
+/// @return Mixed color
 inline Rgba Mix(Rgba c1, Rgba c2, Ui32 alpha_1_8) {
   Ui32 a = c1.rgba & MASK_LO;
   Ui32 b = c2.rgba & MASK_LO;
@@ -134,6 +201,10 @@ inline Rgba Mix(Rgba c1, Rgba c2, Ui32 alpha_1_8) {
   return Rgba(d | e);
 }
 
+/// @brief Scale color by an alpha value.
+/// @param c Color to scale
+/// @param alpha_1_8 Alpha value (0-255)
+/// @return Scaled color
 inline Rgba Scale(Rgba c, Ui32 alpha_1_8) {
   Ui32 a = c.rgba & MASK_LO;
   Ui32 d = (a * alpha_1_8) >> 8u;
@@ -146,6 +217,11 @@ inline Rgba Scale(Rgba c, Ui32 alpha_1_8) {
   return Rgba(d | e);
 }
 
+/// @brief Linear interpolation between two colors.
+/// @param c1 First color
+/// @param c2 Second color
+/// @param alpha_1_8 Interpolation factor (0-255)
+/// @return Interpolated color
 inline Rgba Lerp(Rgba c1, Rgba c2, Si32 alpha_1_8) {
   Ui32 a = c1.rgba & MASK_LO;
   Ui32 b = c2.rgba & MASK_LO;
@@ -160,6 +236,9 @@ inline Rgba Lerp(Rgba c1, Rgba c2, Si32 alpha_1_8) {
   return Rgba(d | e);
 }
 
+/// @brief Convert color to grayscale.
+/// @param c Color to convert
+/// @return Grayscale color
 inline Rgba GetGray(Rgba c) {
   Ui32 res = 19595 * static_cast<Ui32>(c.r)
     + 38470 * static_cast<Ui32>(c.g)
@@ -179,6 +258,13 @@ inline Rgba GetGray(Rgba c) {
 ///    +-+---+--+-->x
 ///      0   ax 256
 /// @endcode
+/// @param a Bottom-left color
+/// @param b Bottom-right color
+/// @param c Top-left color
+/// @param d Top-right color
+/// @param ax X-axis interpolation factor (0-255), 0 = left, 255 = right
+/// @param ay Y-axis interpolation factor (0-255), 0 = bottom, 255 = top
+/// @return Interpolated color  
 inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   const Si32 axy = (ax * ay) >> 8u;
   Ui32 aa = a.rgba & MASK_LO;

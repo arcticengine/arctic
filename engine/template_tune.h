@@ -29,6 +29,10 @@
 
 namespace arctic {
 
+/// @brief A template struct for fusing multiple parameter types.
+/// @tparam BaseType The base type to apply the fused parameters to.
+/// @tparam FuseType The first parameter type to fuse.
+/// @tparam MoreFuseTypes Additional parameter types to fuse.
 template<typename BaseType,
   typename FuseType,
   typename ... MoreFuseTypes>
@@ -38,12 +42,18 @@ struct FuseParams
     MoreFuseTypes...> {
 };
 
+/// @brief A template struct for fusing a single parameter type.
+/// @tparam BaseType The base type to apply the fused parameter to.
+/// @tparam FuseType The parameter type to fuse.
 template<typename BaseType, typename FuseType>
 struct FuseParams<BaseType, FuseType>
   : public FuseType::template ApplyTemplate<BaseType> {
 };
 
-
+/// @brief Macro to declare a tunable value parameter.
+/// @param TemplateParamName The name of the template parameter.
+/// @param ParamType The type of the parameter.
+/// @param InStructParamName The name of the parameter inside the struct.
 #define                                                                       \
     DECLARE_TUNE_VALUE_PARAM(TemplateParamName, ParamType, InStructParamName) \
     template <ParamType VALUE>                                                \
@@ -54,7 +64,11 @@ struct FuseParams<BaseType, FuseType>
         };                                                                    \
     }
 
-
+/// @brief Macro to declare a tunable value parameter with a default value.
+/// @param TemplateParamName The name of the template parameter.
+/// @param ParamType The type of the parameter.
+/// @param DefaultValue The default value for the parameter.
+/// @param InStructParamName The name of the parameter inside the struct.
 #define                                                           \
     DECLARE_TUNE_VALUE_PARAM_DEFVALUE(                            \
         TemplateParamName,                                        \
@@ -69,7 +83,9 @@ struct FuseParams<BaseType, FuseType>
         };                                                        \
     }
 
-
+/// @brief Macro to declare a tunable type parameter.
+/// @param TemplateParamName The name of the template parameter.
+/// @param InStructParamName The name of the parameter inside the struct.
 #define DECLARE_TUNE_TYPE_PARAM(TemplateParamName, InStructParamName) \
     template <typename Value>                                         \
     struct TemplateParamName {                                        \
@@ -79,7 +95,10 @@ struct FuseParams<BaseType, FuseType>
         };                                                            \
     }
 
-
+/// @brief Macro to declare a tunable type parameter with a default type.
+/// @param TemplateParamName The name of the template parameter.
+/// @param InStructParamName The name of the parameter inside the struct.
+/// @param DefaultType The default type for the parameter.
 #define DECLARE_TUNE_TYPE_PARAM_DEFTYPE(\
     TemplateParamName, InStructParamName, DefaultType) \
     template <typename Value = DefaultType>            \

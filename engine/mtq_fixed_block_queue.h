@@ -40,20 +40,39 @@
 
 namespace arctic {
 
+/// @brief A class that provides the core functionality for a fixed block queue.
 class FixedBlockQueue_Gears {
  protected:
+  /// @brief Prepares a slot for a new item in the queue.
+  /// @param pool The memory pool allocator.
+  /// @param item_size The size of the item to be added.
   void prepare_slot(I_FixedSizeAllocator *pool, size_t item_size);
+
+  /// @brief Gets a pointer to the front item in the queue.
+  /// @param pool The memory pool allocator.
+  /// @param item_size The size of the items in the queue.
+  /// @return A pointer to the front item.
   void *get_front(I_FixedSizeAllocator *pool, size_t item_size);
+
+  /// @brief Cleans up the front item after it has been processed.
+  /// @param pool The memory pool allocator.
+  /// @param item_size The size of the items in the queue.
   void front_cleanup(I_FixedSizeAllocator *pool, size_t item_size);
 
+  /// @brief Gets a pointer to the back item in the queue.
+  /// @param item_size The size of the items in the queue.
+  /// @return A pointer to the back item.
   inline void *get_back(size_t item_size) {
     return &back->items[item_size * (back_offset - 1)];
   }
 
+  /// @brief Checks if the queue is empty.
+  /// @return True if the queue is empty, false otherwise.
   bool empty() const {
     return front == nullptr;
   }
 
+  /// @brief A structure representing a block of items in the queue.
   struct BlockItems {
     BlockItems *next = nullptr;
     alignas(std::max_align_t) char items[0];
@@ -65,25 +84,37 @@ class FixedBlockQueue_Gears {
     BlockItems& operator=(BlockItems const & ) = delete;
   };
 
+  /// @brief Allocates a new block of items.
+  /// @param pool The memory pool allocator.
+  /// @return A pointer to the newly allocated block.
   BlockItems *getNewBlock(I_FixedSizeAllocator *pool) {
     void *block = pool->alloc();
     return new(block) BlockItems;
   }
 
+  /// @brief Gets the number of items in the queue.
+  /// @param pool The memory pool allocator.
+  /// @param item_size The size of the items in the queue.
+  /// @return The number of items in the queue.
   size_t inline getItemCount(
     I_FixedSizeAllocator *pool,
     size_t item_size);
 
-  size_t front_offset = 0;
-  size_t back_offset = 0;
-  BlockItems *back = nullptr;
-  BlockItems *front = nullptr;
+  size_t front_offset = 0;  ///< Offset of the front item in the front block.
+  size_t back_offset = 0;   ///< Offset of the back item in the back block.
+  BlockItems *back = nullptr;  ///< Pointer to the back block of items.
+  BlockItems *front = nullptr; ///< Pointer to the front block of items.
 };
 
 
+/// @brief A template class for a fixed block queue.
+/// @tparam ElemType The type of elements stored in the queue.
 template<typename ElemType>
 class FixedBlockQueue : protected FixedBlockQueue_Gears {
  public:
+  /// @brief Pushes an element to the back of the queue.
+  /// @param elem The element to push.
+  /// @param pool The memory pool allocator.
   void push_back(ElemType elem, I_FixedSizeAllocator *pool) {
     prepare_slot(pool, sizeof(ElemType));
     // state is absolutely not nullptr after prepare_slot
@@ -92,12 +123,17 @@ class FixedBlockQueue : protected FixedBlockQueue_Gears {
   }
 
 
+  /// @brief Gets a reference to the front element of the queue.
+  /// @param pool The memory pool allocator.
+  /// @return A reference to the front element.
   ElemType &front(I_FixedSizeAllocator *pool) {
     // let's find out where is the front element
     return *static_cast<ElemType *>(get_front(pool, sizeof(ElemType)));
   }
 
 
+  /// @brief Removes the front element from the queue.
+  /// @param pool The memory pool allocator.
   void pop_front(I_FixedSizeAllocator *pool) {
     // let's find out where is the front element
     ElemType *front = static_cast<ElemType *>(
@@ -108,6 +144,8 @@ class FixedBlockQueue : protected FixedBlockQueue_Gears {
     front_cleanup(pool, sizeof(ElemType));
   }
 
+  /// @brief Checks if the queue is empty.
+  /// @return True if the queue is empty, false otherwise.
   bool empty() const {
     return FixedBlockQueue_Gears::empty();
   }

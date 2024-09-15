@@ -78,6 +78,9 @@ class DualComplex {
     dual_y = -std::sin(theta * (T)0.5) * x;
   }
 
+  /// @brief Constructor that creates DualComplex representing a rotation around a given point.
+  /// @param p the point around which the rotation is performed
+  /// @param theta the degree in radian of the rotation. Positive values represent counter-clockwise rotation.
   DualComplex(Vec2F p, T theta) {
 //        DualComplex v(cos(theta/2.0),sin(theta/2.0),0,0);
 //        DualComplex u(1,0,-x/2.0,-y/2.0);
@@ -89,6 +92,9 @@ class DualComplex {
     dual_y = -std::sin(theta * (T)0.5) * p.x;
   }
 
+  /// @brief Constructor that creates DualComplex representing a translation.
+  /// @param x the x-coordinate of the translation
+  /// @param y the y-coordinate of the translation
   DualComplex(T x, T y)
       : real_x((T)1)
       , real_y((T)0)
@@ -96,16 +102,21 @@ class DualComplex {
       , dual_y(y * (T)0.5) {
   }
 
+  /// @brief Gets the angle of the rotation represented by the DualComplex
+  /// @return the angle in radians, with positive values representing counter-clockwise rotation
   T GetAngle() const {
     return std::acos(real_x) * (real_y >= (T)0 ? 2.f : -2.f);
   }
 
-  /// @brief Conjugation
+  /// @brief Conjugation. The conjugate of a DualComplex represents the same transformation, but in the opposite direction.
   /// @return the conjugate of the DualComplex
   DualComplex Conj() const {
     return DualComplex(real_x, -real_y, dual_x, dual_y);
   }
 
+  /// @brief Transform a vector using the DualComplex
+  /// @param vec the vector to be transformed
+  /// @return the transformed vector
   Vec2F Transform(Vec2F vec) const {
     return Vec2F(
         static_cast<float>(
@@ -118,26 +129,31 @@ class DualComplex {
             real_y * dual_x)));
   }
 
-  /// @brief normalisation to unit length DualComplex
-  /// @return DualComplex the unit length DualComplex
+  /// @brief Normalisation to unit length DualComplex. Nomalised DualComplex can be used for interpolation.
+  /// @return the unit length DualComplex
   DualComplex Normalised() const {
     T norm = std::sqrt(real_x * real_x + real_y * real_y);
     return DualComplex(real_x / norm, real_y / norm,
       dual_x / norm, dual_y / norm);
   }
 
+  /// @brief Scale the translation part of the DualComplex, the resulting DualComplex will represent the same transformation, but in a different scale.
+  /// @param scale the scaling factor
+  /// @return the scaled DualComplex
   DualComplex TranslationScaled(T scale) const {
     return DualComplex(real_x, real_y,
       dual_x * scale, dual_y * scale);
   }
 
-  /// @brief norm
-  /// @return norm of the DualComplex
+  /// @brief Get the norm of the DualComplex. The norm corresponds to the scaling factor of the transformation.
+  /// @return the norm of the DualComplex
   T Norm() const {
     return (std::sqrt(real_x * real_x + real_y * real_y));
   }
 
-  /// @brief multiplication by a scalar
+  /// @brief Multiplication by a scalar. This operation is used to scale the transformation represented by the DualComplex.
+  /// @param scale the scalar to multiply with
+  /// @return reference to the modified DualComplex
   DualComplex& operator*=(T scale) {
     real_x *= scale;
     real_y *= scale;
@@ -146,7 +162,9 @@ class DualComplex {
     return *this;
   }
 
-  /// @brief sum
+  /// @brief Addition of another DualComplex, this operation is used to combine two transformations.  First the current transformation is applied, then the transformation represented by toSum is applied.
+  /// @param toSum the DualComplex to add, representing a transformation to be combined with the current transformation.
+  /// @return reference to the modified DualComplex
   DualComplex& operator+=(DualComplex toSum) {
     real_x += toSum.real_x;
     real_y += toSum.real_y;
@@ -155,13 +173,17 @@ class DualComplex {
     return *this;
   }
 
-  /// @brief multiplication by a scalar
+  /// @brief Multiplication by a scalar, this operation is used to scale the transformation represented by the DualComplex.
+  /// @param scale the scalar to multiply with
+  /// @return the resulting DualComplex
   DualComplex operator*(T scale) const {
     return DualComplex(real_x * scale, real_y * scale,
       dual_x * scale, dual_y * scale);
   }
 
-  /// @brief substitution
+  /// @brief Assignment operator
+  /// @param dcn the DualComplex to assign from
+  /// @return the assigned DualComplex
   DualComplex operator=(DualComplex dcn) {
     real_x = dcn.real_x;
     real_y = dcn.real_y;
@@ -170,7 +192,9 @@ class DualComplex {
     return *this;
   }
 
-  /// @brief multiplication by a DualComplex
+  /// @brief Multiplication by another DualComplex, this operation is used to combine two transformations. First the transformation represented by dcn is applied, then the current transformation is applied.
+  /// @param dcn the DualComplex to multiply with, representing a transformation to be combined with the current transformation.
+  /// @return the resulting DualComplex
   DualComplex operator*(DualComplex dcn) const {
     return DualComplex(
       real_x * dcn.real_x - real_y * dcn.real_y,
@@ -181,15 +205,17 @@ class DualComplex {
         dual_y * dcn.real_x);
   }
 
-  /// @brief sum
+  /// @brief Addition of another DualComplex.
+  /// @param dcn the DualComplex to add
+  /// @return the resulting DualComplex
   DualComplex operator+(DualComplex dcn) const {
     return DualComplex(real_x + dcn.real_x, real_y + dcn.real_y,
       dual_x + dcn.dual_x, dual_y + dcn.dual_y);
   }
 
-  /// @brief linear blend (DLB)
+  /// @brief Linear blend (DLB)
   /// @param dcns array of DualComplex's to be blended
-  /// @param weights weights of the correspoding DualComplex's
+  /// @param weights weights of the corresponding DualComplex's
   /// @return blended normalised DualComplex
   static DualComplex Blend(std::vector<DualComplex> dcns, std::vector<T> weights) {
     assert(dcns.size() == weights.size());
@@ -200,10 +226,20 @@ class DualComplex {
     return result.Normalised();
   }
 
+  /// @brief Linear interpolation, this operation is used to interpolate between two transformations.
+  /// @param a the starting DualComplex
+  /// @param b the ending DualComplex
+  /// @param t the interpolation factor, t=0 returns a, t=1 returns b
+  /// @return the interpolated DualComplex
   static DualComplex Lerp(DualComplex a, DualComplex b, T t) {
     return (a * ((T)1 - t) + b * t).Normalised();
   }
 
+  /// @brief Corrected linear interpolation, this operation is used to interpolate between two transformations. Corrected linear interpolation ensures that the interpolation is always in the correct direction, even if the transformations are not in the same direction.
+  /// @param a the starting DualComplex
+  /// @param b the ending DualComplex
+  /// @param t the interpolation factor, t=0 returns a, t=1 returns b
+  /// @return the interpolated DualComplex
   static DualComplex Clerp(DualComplex a, DualComplex b, T t) {
     if (a.real_x * b.real_x + a.real_y * b.real_y < (T)0) {
       return (a * ((T)1 - t) + b * -t).Normalised();
@@ -211,6 +247,11 @@ class DualComplex {
     return (a * ((T)1 - t) + b * t).Normalised();
   }
 
+  /// @brief Spherical linear interpolation, spherical means that the interpolation is performed on the surface of a sphere in the complex plane. This operation is used to interpolate between two transformations so that the interpolation is always on the shortest path on the sphere.
+  /// @param a the starting DualComplex
+  /// @param b the ending DualComplex
+  /// @param t the interpolation factor, t=0 returns a, t=1 returns b
+  /// @return the interpolated DualComplex
   static DualComplex Slerp(DualComplex a, DualComplex b, T t) {
     T cos_theta = a.real_x * b.real_x + a.real_y * b.real_y;
     if (cos_theta < (T) 0) {
@@ -235,7 +276,6 @@ class DualComplex {
       ((T)1-t) * a.dual_y + t*b.dual_y).Normalised();
   }
 };
-
 
 extern template class DualComplex<float>;
 extern template class DualComplex<double>;

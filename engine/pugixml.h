@@ -57,146 +57,149 @@
 
 namespace pugi
 {
-	// Character type used for all internal storage and operations;
+	/// @brief Character type used for all internal storage and operations
 	typedef char char_t;
 
-	// String type used for operations that work with STL string;
+	/// @brief String type used for operations that work with STL string
 	typedef std::basic_string<char, std::char_traits<char>, std::allocator<char> > string_t;
 }
 
 // The PugiXML namespace
 namespace pugi
 {
-	// Tree node types
+	/// @brief Tree node types
 	enum xml_node_type
 	{
-		node_null,			// Empty (null) node handle
-		node_document,		// A document tree's absolute root
-		node_element,		// Element tag, i.e. '<node/>'
-		node_pcdata,		// Plain character data, i.e. 'text'
-		node_cdata,			// Character data, i.e. '<![CDATA[text]]>'
-		node_comment,		// Comment tag, i.e. '<!-- text -->'
-		node_pi,			// Processing instruction, i.e. '<?name?>'
-		node_declaration,	// Document declaration, i.e. '<?xml version="1.0"?>'
-		node_doctype		// Document type declaration, i.e. '<!DOCTYPE doc>'
+		node_null,			///< Empty (null) node handle
+		node_document,		///< A document tree's absolute root
+		node_element,		///< Element tag, i.e. '<node/>'
+		node_pcdata,		///< Plain character data, i.e. 'text'
+		node_cdata,			///< Character data, i.e. '<![CDATA[text]]>'
+		node_comment,		///< Comment tag, i.e. '<!-- text -->'
+		node_pi,			///< Processing instruction, i.e. '<?name?>'
+		node_declaration,	///< Document declaration, i.e. '<?xml version="1.0"?>'
+		node_doctype		///< Document type declaration, i.e. '<!DOCTYPE doc>'
 	};
 
 	// Parsing options
 
-	// Minimal parsing mode (equivalent to turning all other flags off).
-	// Only elements and PCDATA sections are added to the DOM tree, no text conversions are performed.
+	/// @brief Minimal parsing mode (equivalent to turning all other flags off).
+	/// Only elements and PCDATA sections are added to the DOM tree, no text conversions are performed.
 	const unsigned int parse_minimal = 0x0000;
 
-	// This flag determines if processing instructions (node_pi) are added to the DOM tree. This flag is off by default.
+	/// @brief This flag determines if processing instructions (node_pi) are added to the DOM tree. This flag is off by default.
 	const unsigned int parse_pi = 0x0001;
 
-	// This flag determines if comments (node_comment) are added to the DOM tree. This flag is off by default.
+	/// @brief This flag determines if comments (node_comment) are added to the DOM tree. This flag is off by default.
 	const unsigned int parse_comments = 0x0002;
 
-	// This flag determines if CDATA sections (node_cdata) are added to the DOM tree. This flag is on by default.
+	/// @brief This flag determines if CDATA sections (node_cdata) are added to the DOM tree. This flag is on by default.
 	const unsigned int parse_cdata = 0x0004;
 
-	// This flag determines if plain character data (node_pcdata) that consist only of whitespace are added to the DOM tree.
-	// This flag is off by default; turning it on usually results in slower parsing and more memory consumption.
+	/// @brief This flag determines if plain character data (node_pcdata) that consist only of whitespace are added to the DOM tree.
+	/// This flag is off by default; turning it on usually results in slower parsing and more memory consumption.
 	const unsigned int parse_ws_pcdata = 0x0008;
 
-	// This flag determines if character and entity references are expanded during parsing. This flag is on by default.
+	/// @brief This flag determines if character and entity references are expanded during parsing. This flag is on by default.
 	const unsigned int parse_escapes = 0x0010;
 
-	// This flag determines if EOL characters are normalized (converted to #xA) during parsing. This flag is on by default.
+	/// @brief This flag determines if EOL characters are normalized (converted to #xA) during parsing. This flag is on by default.
 	const unsigned int parse_eol = 0x0020;
 
-	// This flag determines if attribute values are normalized using CDATA normalization rules during parsing. This flag is on by default.
+	/// @brief This flag determines if attribute values are normalized using CDATA normalization rules during parsing. This flag is on by default.
 	const unsigned int parse_wconv_attribute = 0x0040;
 
-	// This flag determines if attribute values are normalized using NMTOKENS normalization rules during parsing. This flag is off by default.
+	/// @brief This flag determines if attribute values are normalized using NMTOKENS normalization rules during parsing. This flag is off by default.
 	const unsigned int parse_wnorm_attribute = 0x0080;
 
-	// This flag determines if document declaration (node_declaration) is added to the DOM tree. This flag is off by default.
+	/// @brief This flag determines if document declaration (node_declaration) is added to the DOM tree. This flag is off by default.
 	const unsigned int parse_declaration = 0x0100;
 
-	// This flag determines if document type declaration (node_doctype) is added to the DOM tree. This flag is off by default.
+	/// @brief This flag determines if document type declaration (node_doctype) is added to the DOM tree. This flag is off by default.
 	const unsigned int parse_doctype = 0x0200;
 
-	// This flag determines if plain character data (node_pcdata) that is the only child of the parent node and that consists only
-	// of whitespace is added to the DOM tree.
-	// This flag is off by default; turning it on may result in slower parsing and more memory consumption.
+	/// @brief This flag determines if plain character data (node_pcdata) that is the only child of the parent node and that consists only
+	/// of whitespace is added to the DOM tree.
+	/// This flag is off by default; turning it on may result in slower parsing and more memory consumption.
 	const unsigned int parse_ws_pcdata_single = 0x0400;
 
-	// This flag determines if leading and trailing whitespace is to be removed from plain character data. This flag is off by default.
+	/// @brief This flag determines if leading and trailing whitespace is to be removed from plain character data. This flag is off by default.
 	const unsigned int parse_trim_pcdata = 0x0800;
 
-	// This flag determines if plain character data that does not have a parent node is added to the DOM tree, and if an empty document
-	// is a valid document. This flag is off by default.
+	/// @brief This flag determines if plain character data that does not have a parent node is added to the DOM tree, and if an empty document
+	/// is a valid document. This flag is off by default.
 	const unsigned int parse_fragment = 0x1000;
 
-	// This flag determines if plain character data is be stored in the parent element's value. This significantly changes the structure of
-	// the document; this flag is only recommended for parsing documents with many PCDATA nodes in memory-constrained environments.
-	// This flag is off by default.
+	/// @brief This flag determines if plain character data is be stored in the parent element's value. This significantly changes the structure of
+	/// the document; this flag is only recommended for parsing documents with many PCDATA nodes in memory-constrained environments.
+	/// This flag is off by default.
 	const unsigned int parse_embed_pcdata = 0x2000;
 
-	// The default parsing mode.
-	// Elements, PCDATA and CDATA sections are added to the DOM tree, character/reference entities are expanded,
-	// End-of-Line characters are normalized, attribute values are normalized using CDATA normalization rules.
+	/// @brief The default parsing mode.
+	/// Elements, PCDATA and CDATA sections are added to the DOM tree, character/reference entities are expanded,
+	/// End-of-Line characters are normalized, attribute values are normalized using CDATA normalization rules.
 	const unsigned int parse_default = parse_cdata | parse_escapes | parse_wconv_attribute | parse_eol;
 
-	// The full parsing mode.
-	// Nodes of all types are added to the DOM tree, character/reference entities are expanded,
-	// End-of-Line characters are normalized, attribute values are normalized using CDATA normalization rules.
+	/// @brief The full parsing mode.
+	/// Nodes of all types are added to the DOM tree, character/reference entities are expanded,
+	/// End-of-Line characters are normalized, attribute values are normalized using CDATA normalization rules.
 	const unsigned int parse_full = parse_default | parse_pi | parse_comments | parse_declaration | parse_doctype;
 
-	// These flags determine the encoding of input data for XML document
+	/// @brief These flags determine the encoding of input data for XML document
 	enum xml_encoding
 	{
-		encoding_auto,		// Auto-detect input encoding using BOM or < / <? detection; use UTF8 if BOM is not found
-		encoding_utf8,		// UTF8 encoding
-		encoding_utf16_le,	// Little-endian UTF16
-		encoding_utf16_be,	// Big-endian UTF16
-		encoding_utf16,		// UTF16 with native endianness
-		encoding_utf32_le,	// Little-endian UTF32
-		encoding_utf32_be,	// Big-endian UTF32
-		encoding_utf32,		// UTF32 with native endianness
-		encoding_wchar,		// The same encoding wchar_t has (either UTF16 or UTF32)
+		encoding_auto,		///< Auto-detect input encoding using BOM or < / <? detection; use UTF8 if BOM is not found
+		encoding_utf8,		///< UTF8 encoding
+		encoding_utf16_le,	///< Little-endian UTF16
+		encoding_utf16_be,	///< Big-endian UTF16
+		encoding_utf16,		///< UTF16 with native endianness
+		encoding_utf32_le,	///< Little-endian UTF32
+		encoding_utf32_be,	///< Big-endian UTF32
+		encoding_utf32,		///< UTF32 with native endianness
+		encoding_wchar,		///< The same encoding wchar_t has (either UTF16 or UTF32)
 		encoding_latin1
 	};
 
 	// Formatting flags
 
-	// Indent the nodes that are written to output stream with as many indentation strings as deep the node is in DOM tree. This flag is on by default.
+	/// @brief Indent the nodes that are written to output stream with as many indentation strings as deep the node is in DOM tree. This flag is on by default.
 	const unsigned int format_indent = 0x01;
 
-	// Write encoding-specific BOM to the output stream. This flag is off by default.
+	/// @brief Write encoding-specific BOM to the output stream. This flag is off by default.
 	const unsigned int format_write_bom = 0x02;
 
-	// Use raw output mode (no indentation and no line breaks are written). This flag is off by default.
+	/// @brief Use raw output mode (no indentation and no line breaks are written). This flag is off by default.
 	const unsigned int format_raw = 0x04;
 
-	// Omit default XML declaration even if there is no declaration in the document. This flag is off by default.
+	/// @brief Omit default XML declaration even if there is no declaration in the document. This flag is off by default.
 	const unsigned int format_no_declaration = 0x08;
 
-	// Don't escape attribute values and PCDATA contents. This flag is off by default.
+	/// @brief Don't escape attribute values and PCDATA contents. This flag is off by default.
 	const unsigned int format_no_escapes = 0x10;
 
-	// Open file using text mode in xml_document::save_file. This enables special character (i.e. new-line) conversions on some systems. This flag is off by default.
+	/// @brief Open file using text mode in xml_document::save_file. This enables special character (i.e. new-line) conversions on some systems. This flag is off by default.
 	const unsigned int format_save_file_text = 0x20;
 
-	// Write every attribute on a new line with appropriate indentation. This flag is off by default.
+	/// @brief Write every attribute on a new line with appropriate indentation. This flag is off by default.
 	const unsigned int format_indent_attributes = 0x40;
 
-	// Don't output empty element tags, instead writing an explicit start and end tag even if there are no children. This flag is off by default.
+	/// @brief Don't output empty element tags, instead writing an explicit start and end tag even if there are no children. This flag is off by default.
 	const unsigned int format_no_empty_element_tags = 0x80;
 
-	// Skip characters belonging to range [0; 32) instead of "&#xNN;" encoding. This flag is off by default.
+	/// @brief Skip characters belonging to range [0; 32) instead of "&#xNN;" encoding. This flag is off by default.
 	const unsigned int format_skip_control_chars = 0x100;
 
-	// Use single quotes ' instead of double quotes " for enclosing attribute values. This flag is off by default.
+	/// @brief Use single quotes ' instead of double quotes " for enclosing attribute values. This flag is off by default.
 	const unsigned int format_attribute_single_quote = 0x200;
 
-	// The default set of formatting flags.
-	// Nodes are indented depending on their depth in DOM tree, a default declaration is output if document has none.
+	/// @brief The default set of formatting flags.
+	/// Nodes are indented depending on their depth in DOM tree, a default declaration is output if document has none.
 	const unsigned int format_default = format_indent;
 
+	/// @brief Default precision for double values
 	const int default_double_precision = 17;
+
+	/// @brief Default precision for float values
 	const int default_float_precision = 9;
 
 	// Forward declarations
@@ -215,57 +218,80 @@ namespace pugi
 
 	class XmlText;
 
-	// Range-based for loop support
+	/// @brief Range-based for loop support
 	template <typename It> class XmlObjectRange
 	{
 	public:
 		typedef It const_iterator;
 		typedef It iterator;
 
+		/// @brief Constructor
+		/// @param b Beginning iterator
+		/// @param e Ending iterator
 		XmlObjectRange(It b, It e): _begin(b), _end(e)
 		{
 		}
 
+		/// @brief Get the beginning iterator
+		/// @return Beginning iterator
 		It begin() const { return _begin; }
+
+		/// @brief Get the ending iterator
+		/// @return Ending iterator
 		It end() const { return _end; }
 
+		/// @brief Check if the range is empty
+		/// @return True if empty, false otherwise
 		bool empty() const { return _begin == _end; }
 
 	private:
 		It _begin, _end;
 	};
 
-	// Writer interface for node printing (see xml_node::print)
+	/// @brief Writer interface for node printing (see xml_node::print)
 	class  XmlWriter
 	{
 	public:
 		virtual ~XmlWriter() {}
 
-		// Write memory chunk into stream/file/whatever
+		/// @brief Write memory chunk into stream/file/whatever
+		/// @param data Pointer to the data
+		/// @param size Size of the data
 		virtual void write(const void* data, size_t size) = 0;
 	};
 
-	// xml_writer implementation for FILE*
+	/// @brief xml_writer implementation for FILE*
 	class  XmlWriterFile: public XmlWriter
 	{
 	public:
-		// Construct writer from a FILE* object; void* is used to avoid header dependencies on stdio
+		/// @brief Construct writer from a FILE* object
+		/// @param file Pointer to FILE object
 		XmlWriterFile(void* file);
 
+		/// @brief Write data to the file
+		/// @param data Pointer to the data
+		/// @param size Size of the data
 		virtual void write(const void* data, size_t size) override;
 
 	private:
 		void* file;
 	};
 
-	// xml_writer implementation for streams
+	/// @brief xml_writer implementation for streams
 	class  XmlWriterStream: public XmlWriter
 	{
 	public:
-		// Construct writer from an output stream object
+		/// @brief Construct writer from an output stream object
+		/// @param stream Reference to the output stream
 		XmlWriterStream(std::basic_ostream<char, std::char_traits<char> >& stream);
+
+		/// @brief Construct writer from an output stream object
+		/// @param stream Reference to the output stream
 		XmlWriterStream(std::basic_ostream<wchar_t, std::char_traits<wchar_t> >& stream);
 
+		/// @brief Write data to the stream
+		/// @param data Pointer to the data
+		/// @param size Size of the data
 		virtual void write(const void* data, size_t size) override;
 
 	private:
@@ -273,7 +299,7 @@ namespace pugi
 		std::basic_ostream<wchar_t, std::char_traits<wchar_t> >* wide_stream;
 	};
 
-	// A light-weight handle for manipulating attributes in DOM tree
+	/// @brief A light-weight handle for manipulating attributes in DOM tree
 	class XmlAttribute
 	{
 		friend class XmlAttributeIterator;
@@ -285,19 +311,20 @@ namespace pugi
 		typedef void (*unspecified_bool_type)(XmlAttribute***);
 
 	public:
-		// Default constructor. Constructs an empty attribute.
+		/// @brief Default constructor. Constructs an empty attribute
 		XmlAttribute();
 
-		// Constructs attribute from internal pointer
+		/// @brief Constructs attribute from internal pointer
+		/// @param attr Pointer to the internal attribute structure
 		explicit XmlAttribute(xml_attribute_struct* attr);
 
-		// Safe bool conversion operator
+		/// @brief Safe bool conversion operator
 		operator unspecified_bool_type() const;
 
-		// Borland C++ workaround
+		/// @brief Borland C++ workaround
 		bool operator!() const;
 
-		// Comparison operators (compares wrapped attribute pointers)
+		/// @brief Comparison operators (compares wrapped attribute pointers)
 		bool operator==(const XmlAttribute& r) const;
 		bool operator!=(const XmlAttribute& r) const;
 		bool operator<(const XmlAttribute& r) const;
@@ -305,48 +332,211 @@ namespace pugi
 		bool operator<=(const XmlAttribute& r) const;
 		bool operator>=(const XmlAttribute& r) const;
 
-		// Check if attribute is empty
+		/// @brief Check if attribute is empty
+		/// @return True if empty, false otherwise
 		bool empty() const;
 
-		// Get attribute name/value, or "" if attribute is empty
+		/// @brief Get attribute name, or "" if attribute is empty
+		/// @return Attribute name
 		const char_t* name() const;
+
+		/// @brief Get attribute value, or "" if attribute is empty
+		/// @return Attribute value
 		const char_t* value() const;
 
-		// Get attribute value, or the default value if attribute is empty
+		/// @brief Get attribute value, or the default value if attribute is empty
+		/// @param def Default value
+		/// @return Attribute value or default value
 		const char_t* as_string(const char_t* def = "") const;
 
-		// Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as int or default value
 		int as_int(int def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as unsigned int or default
 		unsigned int as_uint(unsigned int def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as double or default value
 		double as_double(double def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as float or default value
 		float as_float(float def = 0) const;
+
+		/// @brief Get attribute value as a boolean, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as bool or default value
+		bool as_bool(bool def = false) const;
+	};
+}
+
+#endif
+
+	public:
+		/// @brief Default constructor. Constructs an empty attribute
+		XmlAttribute();
+
+		/// @brief Constructs attribute from internal pointer
+		/// @param attr Pointer to the internal attribute structure
+		explicit XmlAttribute(xml_attribute_struct* attr);
+
+		/// @brief Safe bool conversion operator
+		operator unspecified_bool_type() const;
+
+		/// @brief Borland C++ workaround
+		bool operator!() const;
+
+		/// @brief Comparison operators (compares wrapped attribute pointers)
+		bool operator==(const XmlAttribute& r) const;
+		bool operator!=(const XmlAttribute& r) const;
+		bool operator<(const XmlAttribute& r) const;
+		bool operator>(const XmlAttribute& r) const;
+		bool operator<=(const XmlAttribute& r) const;
+		bool operator>=(const XmlAttribute& r) const;
+
+		/// @brief Check if attribute is empty
+		/// @return True if empty, false otherwise
+		bool empty() const;
+
+		/// @brief Get attribute name, or "" if attribute is empty
+		/// @return Attribute name
+		const char_t* name() const;
+
+		/// @brief Get attribute value, or "" if attribute is empty
+		/// @return Attribute value
+		const char_t* value() const;
+
+		/// @brief Get attribute value, or the default value if attribute is empty
+		/// @param def Default value
+		/// @return Attribute value or default value
+		const char_t* as_string(const char_t* def = "") const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as int or default value
+		int as_int(int def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as unsigned int or default value
+		unsigned int as_uint(unsigned int def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as double or default value
+		double as_double(double def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as float or default value
+		float as_float(float def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as long long or default value
 		long long as_llong(long long def = 0) const;
+
+		/// @brief Get attribute value as a number, or the default value if conversion did not succeed or attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as unsigned long long or default value
 		unsigned long long as_ullong(unsigned long long def = 0) const;
 
-		// Get attribute value as bool (returns true if first character is in '1tTyY' set), or the default value if attribute is empty
+		/// @brief Get attribute value as bool (returns true if first character is in '1tTyY' set), or the default value if attribute is empty
+		/// @param def Default value
+		/// @return Attribute value as bool or default value
 		bool as_bool(bool def = false) const;
 
-		// Set attribute name/value (returns false if attribute is empty or there is not enough memory)
+		/// @brief Set attribute name/value (returns false if attribute is empty or there is not enough memory)
+		/// @param rhs New attribute name
+		/// @return True if successful, false otherwise
 		bool set_name(const char_t* rhs);
+
+		/// @brief Set attribute name/value (returns false if attribute is empty or there is not enough memory)
+		/// @param rhs New attribute value
+		/// @return True if successful, false otherwise
 		bool set_value(const char_t* rhs);
 
-		// Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(int rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(unsigned int rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(long rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(unsigned long rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(double rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @param precision Precision for floating-point numbers
+		/// @return True if successful, false otherwise
 		bool set_value(double rhs, int precision);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(float rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @param precision Precision for floating-point numbers
+		/// @return True if successful, false otherwise
 		bool set_value(float rhs, int precision);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(bool rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(long long rhs);
+
+		/// @brief Set attribute value with type conversion (numbers are converted to strings, boolean is converted to "true"/"false")
+		/// @param rhs Value to set
+		/// @return True if successful, false otherwise
 		bool set_value(unsigned long long rhs);
 
-		// Set attribute value (equivalent to set_value without error checking)
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(const char_t* rhs);
+
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(int rhs);
+
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(unsigned int rhs);
+
+		/// @brief Set attribute value (equivalent to set_value without error checking)
+		/// @param rhs Value to set
+		/// @return Reference to the attribute
 		XmlAttribute& operator=(long rhs);
 		XmlAttribute& operator=(unsigned long rhs);
 		XmlAttribute& operator=(double rhs);

@@ -32,23 +32,43 @@ namespace arctic {
 
 struct SoundTask;
 
+/// @brief A handle to a sound task.
 class SoundHandle {
   Ui64 uid_;
   SoundTask* sound_task_;
  public:
+  /// @brief Constructs a SoundHandle with a given SoundTask.
+  /// @param sound_task Pointer to the SoundTask.
   SoundHandle(SoundTask *sound_task);
+
+  /// @brief Default constructor.
   SoundHandle();
+
+  /// @brief Copy constructor.
+  /// @param h The SoundHandle to copy from.
   SoundHandle(const SoundHandle &h);
 
+  /// @brief Assignment operator.
+  /// @param other The SoundHandle to assign from.
+  /// @return Reference to this SoundHandle.
   SoundHandle& operator=(const SoundHandle& other);
 
+  /// @brief Checks if the sound is currently playing.
+  /// @return True if the sound is playing, false otherwise.
   bool IsPlaying() const;
+
+  /// @brief Checks if the SoundHandle is valid.
+  /// @return True if the SoundHandle is valid, false otherwise.
   bool IsValid() const;
 
+  /// @brief Gets the unique identifier of the SoundHandle.
+  /// @return The unique identifier.
   Ui64 GetUid() const {
     return uid_;
   }
 
+  /// @brief Creates an invalid SoundHandle.
+  /// @return An invalid SoundHandle.
   inline static SoundHandle Invalid() {
     return SoundHandle(nullptr);
   }

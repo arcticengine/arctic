@@ -33,18 +33,38 @@ namespace arctic {
 /// @addtogroup global_math
 /// @{
 
+/// @brief Clamps an Si32 value between a minimum and maximum value.
+/// @param v The value to clamp.
+/// @param mi The minimum allowed value.
+/// @param ma The maximum allowed value.
+/// @return The clamped value.
 inline Si32 Clamp(const Si32 v, const Si32 mi, const Si32 ma) {
   return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
+/// @brief Clamps a float value between a minimum and maximum value.
+/// @param v The value to clamp.
+/// @param mi The minimum allowed value.
+/// @param ma The maximum allowed value.
+/// @return The clamped value.
 inline float Clamp(const float v, const float mi, const float ma) {
     return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
+/// @brief Clamps a double value between a minimum and maximum value.
+/// @param v The value to clamp.
+/// @param mi The minimum allowed value.
+/// @param ma The maximum allowed value.
+/// @return The clamped value.
 inline double Clamp(const double v, const double mi, const double ma) {
     return (v < mi) ? mi : ((v > ma) ? ma : v);
 }
 
+/// @brief Performs linear interpolation between two float values.
+/// @param a The starting value.
+/// @param b The ending value.
+/// @param alpha The interpolation factor (0.0 to 1.0).
+/// @return The interpolated value.
 inline float Lerp(float a, float b, float alpha) {
   float d = a + ((b - a) * alpha);
   return d;

@@ -34,15 +34,22 @@ namespace arctic {
 /// @{
 
 /// @brief Writes message text to log
+/// @param text The text message to be logged
 void Log(const char *text);
 
-/// @brief Writes message text to log
+/// @brief Writes two message texts to log
+/// @param text1 The first text message to be logged
+/// @param text2 The second text message to be logged
 void Log(const char *text1, const char *text2);
 
-/// @brief Writes message text to log
+/// @brief Writes three message texts to log
+/// @param text1 The first text message to be logged
+/// @param text2 The second text message to be logged
+/// @param text3 The third text message to be logged
 void Log(const char *text1, const char *text2, const char *text3);
 
 /// @brief Provides a streaming interface to write log
+/// @return A unique pointer to an ostringstream with a custom deleter
 /// Usage example:
 /// @code
 ///   *Log() << "Hello World!";

@@ -50,14 +50,6 @@ float DataReader::ReadFloat() {
   return n;
 }
 
-void DataReader::ReadFloatarray(float *dst, int num, int size, Ui64 amount) {
-  Ui8 *ptr = (Ui8 *)dst;
-  for (Ui64 i=0; i<amount; i++) {
-    Read(ptr, num*4);
-    ptr += size;
-  }
-}
-
 void DataReader::ReadFloatarray2(float *dst, Ui64 amount) {
   Read(dst, amount*4);
 }

@@ -90,47 +90,127 @@ class Engine {
   std::string initial_path_;
 
  public:
+  /// @brief Adds a new HwSpriteDrawing to the engine.
+  /// @return Pointer to the newly added HwSpriteDrawing.
   HwSpriteDrawing *AddHwSpriteDrawing() {
     hw_sprite_drawing_.emplace_back();
     return &hw_sprite_drawing_.back();
   }
   void SetArgcArgv(Si32 argc, const char **argv);
+
+  /// @brief Sets the command line arguments for the engine (wide character version).
+  /// @param argc The number of command line arguments.
+  /// @param argv The array of wide character command line argument strings.
   void SetArgcArgvW(Si32 argc, const wchar_t **argv);
 
+  /// @brief Sets the initial path for the engine.
+  /// @param initial_path The initial path to set.
   void SetInitialPath(const std::string &initial_path);
+
+  /// @brief Gets the initial path set for the engine.
+  /// @return The initial path as a string.
   std::string GetInitialPath() const;
 
+  /// @brief Gets the number of command line arguments.
+  /// @return The number of command line arguments. 
   Si32 GetArgc() const {
     return static_cast<Si32>(cmd_line_arguments_.size());
   }
+
+  /// @brief Gets the array of command line argument strings.
+  /// @return Pointer to the array of command line argument strings.
   const char *const * GetArgv() const {
     return cmd_line_argv_.data();
   }
+
+  /// @brief Initializes the engine for headless mode.
   void HeadlessInit();
+
+  /// @brief Initializes the engine with the specified width and height.
+  /// @param width The width of the engine window.
+  /// @param height The height of the engine window.
   void Init(Si32 width, Si32 height);
+
+  /// @brief Performs 2D drawing operations.
   void Draw2d();
+
+  /// @brief Gets the backbuffer sprite.
+  /// @return Reference to the backbuffer sprite.
   Sprite &GetBackbuffer() {
     return backbuffer_texture_;
   }
+
+  /// @brief Gets the hardware backbuffer sprite.
+  /// @return Reference to the hardware backbuffer sprite.
   HwSprite &GetHwBackbuffer() {
       return hw_backbuffer_texture_;
   }
+
+  /// @brief Resizes the backbuffer to the specified dimensions.
+  /// @param width The new width of the backbuffer.
+  /// @param height The new height of the backbuffer.
   void ResizeBackbuffer(const Si32 width, const Si32 height);
+
+  /// @brief Gets the current time.
+  /// @return The current time as a double.
   double GetTime();
+
+  /// @brief Generates a random integer within the specified range.
+  /// @param min The minimum value of the range (inclusive).
+  /// @param max The maximum value of the range (inclusive).
+  /// @return A random integer within the specified range.
   Si64 GetRandom(Si64 min, Si64 max);
+
+  /// @brief Generates a random 64-bit unsigned integer.
+  /// @return A random 64-bit unsigned integer.
   Ui64 GetRandom64();
+
+  /// @brief Generates a random 32-bit unsigned integer.
+  /// @return A random 32-bit unsigned integer.
   Ui32 GetRandom32();
+
+  /// @brief Generates a random 16-bit unsigned integer.
+  /// @return A random 16-bit unsigned integer.
   Ui16 GetRandom16();
+
+  /// @brief Generates a random 8-bit unsigned integer.
+  /// @return A random 8-bit unsigned integer.
   Ui8 GetRandom8();
+
+  /// @brief Generates a random float in the range [0, 1) with 23-bit precision.
+  /// @return A random float in the range [0, 1).
   float GetRandomFloat23();
+
+  /// @brief Generates a random signed float in the range [-1, 1) with 23-bit precision.
+  /// @return A random signed float in the range [-1, 1).
   float GetRandomSFloat23();
+
+  /// @brief Converts mouse coordinates to backbuffer coordinates.
+  /// @param pos The mouse position as a Vec2F.
+  /// @return The corresponding position in backbuffer coordinates as a Vec2Si32.
   Vec2Si32 MouseToBackbuffer(Vec2F pos) const;
+
+  /// @brief Handles window resize events.
+  /// @param width The new width of the window.
+  /// @param height The new height of the window.
   void OnWindowResize(Si32 width, Si32 height);
+
+  /// @brief Gets the current window size.
+  /// @return The current window size as a Vec2Si32.
   Vec2Si32 GetWindowSize() const;
+
+  /// @brief Sets the inverse Y flag.
+  /// @param is_inverse True to set inverse Y, false otherwise.
   void SetInverseY(bool is_inverse);
+
+  /// @brief Gets the math tables used by the engine.
+  /// @return Reference to the MathTables object.
   MathTables &GetMathTables() {
     return math_tables_;
   }
+
+  /// @brief Gets the default sprite program.
+  /// @return Const reference to the shared pointer of the default GlProgram.
   const std::shared_ptr<GlProgram> &GetDefaultSpriteProgram() const {
     return default_sprite_program_;
   }

@@ -36,23 +36,27 @@ namespace arctic {
 /// @{
 
 #pragma pack(push, 1)
+/// @brief Enumeration of BMFont block types
 enum BmFontBlockType {
-  kBlockInfo = 1,
-  kBlockCommon = 2,
-  kBlockPages = 3,
-  kBlockChars = 4,
-  kBlockKerningPairs = 5
+  kBlockInfo = 1,  ///< Font information block
+  kBlockCommon = 2,  ///< Common block
+  kBlockPages = 3,  ///< Pages block
+  kBlockChars = 4,  ///< Characters block
+  kBlockKerningPairs = 5  ///< Kerning pairs block
 };
 
+/// @brief Structure representing the BMFont binary header
 struct BmFontBinHeader {
   Si8 b;
   Si8 m;
   Si8 f;
-  Ui8 version;
-  void Log() const;
+  Ui8 version;  ///< Version of the BMFont format
+  void Log() const;  ///< Log the header information
 };
 
+/// @brief Structure representing the BMFont binary info block
 struct BmFontBinInfo {
+  /// @brief Enumeration of bit flags for the info block
   enum Bits {
     kSmooth = 128,
     kUnicode = 64,
@@ -81,27 +85,30 @@ struct BmFontBinInfo {
   // as following the block comes the font name,
   // including the terminating null char.
   // Most of the time this block can simply be ignored.
-  void Log() const;
+  void Log() const;  ///< Log the info block information
 };
 
+/// @brief Structure representing the BMFont binary common block
 struct BmFontBinCommon {
+  /// @brief Enumeration of bit flags for the common block
   enum Bits {
     kPacked = 1
   };
 
-  Ui16 line_height;
-  Ui16 base;
-  Ui16 scale_w;
-  Ui16 scale_h;
-  Ui16 pages;
-  Ui8 bits;
-  Ui8 alpha_chnl;
-  Ui8 red_chnl;
-  Ui8 green_chnl;
-  Ui8 blue_chnl;
+  Ui16 line_height;  ///< Line height
+  Ui16 base;  ///< Base line
+  Ui16 scale_w;  ///< Width scale
+  Ui16 scale_h;  ///< Height scale
+  Ui16 pages;  ///< Number of pages
+  Ui8 bits;  ///< Bits per pixel
+  Ui8 alpha_chnl;  ///< Alpha channel
+  Ui8 red_chnl;  ///< Red channel
+  Ui8 green_chnl;  ///< Green channel
+  Ui8 blue_chnl;  ///< Blue channel
   void Log() const;
 };
 
+/// @brief Structure representing the BMFont binary pages block
 struct BmFontBinPages {
   char *page_name;  // p*(n+1) strings 0 p null terminated strings,
                     // each with length n
@@ -114,6 +121,7 @@ struct BmFontBinPages {
   void Log(Si32 id) const;
 };
 
+/// @brief Structure representing the BMFont binary characters block
 struct BmFontBinChars {
   Ui32 id;  // These fields are repeated until all characters have been
               // described
@@ -132,6 +140,7 @@ struct BmFontBinChars {
   void Log() const;
 };
 
+/// @brief Structure representing the BMFont binary kerning pairs block
 struct BmFontBinKerningPair {
   // kerning pairs
   Ui32 first;  // These fields are repeated until all kerning pairs have been
@@ -143,18 +152,25 @@ struct BmFontBinKerningPair {
 
 #pragma pack(pop)
 
+/// @brief Structure representing a letter in the tiny font
 struct Letter {
   Ui64 glyph_bitmap;
   const char *utf8_letter;
 };
 
+/// @brief Array of letters for the tiny font
 extern Letter g_tiny_font_letters[];
 
+/// @brief Structure representing a glyph in the font
 struct Glyph {
   Ui32 codepoint;
   Si32 xadvance;
   Sprite sprite;
 
+  /// @brief Constructor for a glyph
+  /// @param [in] in_codepoint The codepoint of the glyph
+  /// @param [in] in_xadvance The x advance of the glyph
+  /// @param [in] in_sprite The sprite containing the glyph
   Glyph(Ui32 in_codepoint, Si32 in_xadvance, Sprite in_sprite)
     : codepoint(in_codepoint)
     , xadvance(in_xadvance)
@@ -166,7 +182,7 @@ struct Glyph {
 /// @addtogroup global_drawing
 /// @{
 
-/// The origin point used for rendering
+/// @brief The origin point used for rendering
 enum TextOrigin {
   kTextOriginBottom = 0,  ///< The bottom of the last text line
   kTextOriginFirstBase = 1,  ///< The base of the first text line
@@ -175,12 +191,14 @@ enum TextOrigin {
   kTextOriginCenter = 4 ///< The center between the top of the first and the bottom of the last text line
 };
 
+/// @brief Enumeration of text alignment options
 enum TextAlignment {
   kTextAlignmentLeft = 0,
   kTextAlignmentCenter = 1,
   kTextAlignmentRight = 2
 };
 
+/// @brief Class representing a font instance
 class FontInstance {
 public:
   std::vector<Glyph*> codepoint_;
@@ -193,6 +211,8 @@ public:
   FontInstance() {
   }
 
+  /// @brief Copy constructor for a font instance
+  /// @param [in] font The font instance to copy
   FontInstance(const FontInstance &font) {
     glyph_ = font.glyph_;
     base_to_top_ = font.base_to_top_;
@@ -202,20 +222,82 @@ public:
     GenerateCodepointVector();
   }
 
+  /// @brief Creates an empty font instance
+  /// @param [in] base_to_top Distance from baseline to top of the font
+  /// @param [in] line_height Height of a line of text
   void CreateEmpty(Si32 base_to_top, Si32 line_height);
+
+  /// @brief Adds a glyph to the font instance
+  /// @param [in] glyph The glyph to add
   void AddGlyph(const Glyph &glyph);
+
+  /// @brief Adds a glyph to the font instance
+  /// @param [in] codepoint Unicode codepoint of the glyph
+  /// @param [in] xadvance Horizontal advance of the glyph
+  /// @param [in] sprite Sprite representing the glyph
   void AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite);
+
+  /// @brief Loads a font from a file
+  /// @param [in] file_name Path to the font file
   void Load(const char *file_name);
+
+  /// @brief Loads a font from an XML file
+  /// @param [in] file_name Path to the XML font file
   void LoadXml(const char *file_name);
+
+  /// @brief Loads an ASCII square font from a file
+  /// @param [in] file_name Path to the font file
+  /// @param [in] is_dense Whether the font is densely packed
   void LoadAsciiSquare(const char *file_name, bool is_dense);
+
+  /// @brief Loads a binary BMFont file
+  /// @param [in] file_name Path to the binary BMFont file
   void LoadBinaryFnt(const char *file_name);
+
+  /// @brief Loads a font from a horizontal stripe of glyphs
+  /// @param [in] sprite Sprite containing the glyph stripe
+  /// @param [in] utf8_letters UTF-8 encoded string of letters in the sprite
+  /// @param [in] base_to_top Distance from baseline to top of the font
+  /// @param [in] line_height Height of a line of text
+  /// @param [in] space_width Width of the space character
   void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
                             Si32 base_to_top, Si32 line_height, Si32 space_width);
+
+  /// @brief Loads a font from a table of glyphs
+  /// @param [in] sprite Sprite containing the glyph table
+  /// @param [in] utf8_letters UTF-8 encoded string of letters in the sprite
+  /// @param [in] cell_width Width of each cell in the table
+  /// @param [in] cell_height Height of each cell in the table
+  /// @param [in] base_to_top Distance from baseline to top of the font
+  /// @param [in] line_height Height of a line of text
+  /// @param [in] space_width Width of the space character
+  /// @param [in] left_offset Left offset of glyphs within cells
   void LoadTable(Sprite sprite, const char* utf8_letters,
                  Si32 cell_width, Si32 cell_height,
                  Si32 base_to_top, Si32 line_height, Si32 space_width,
                  Si32 left_offset);
+
+  /// @brief Loads a font from an array of Letter structures
+  /// @param [in] in_letters Array of Letter structures
+  /// @param [in] base_to_top Distance from baseline to top of the font
+  /// @param [in] line_height Height of a line of text
   void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height);
+
+  /// @brief Draws text or evaluates its size
+  /// @param [in] to_sprite Sprite to draw on (can be empty for size evaluation)
+  /// @param [in] text Text to draw or evaluate
+  /// @param [in] do_keep_xadvance Whether to keep x-advance
+  /// @param [in] x X-coordinate for drawing
+  /// @param [in] y Y-coordinate for drawing
+  /// @param [in] origin Text origin
+  /// @param [in] alignment Text alignment
+  /// @param [in] blending_mode Blending mode for drawing
+  /// @param [in] filter_mode Filter mode for drawing
+  /// @param [in] color Color for drawing
+  /// @param [in] palete Color palette for drawing
+  /// @param [in] do_draw Whether to actually draw or just evaluate size
+  /// @param [out] out_size Output size of the text
+  /// @param [in] is_one_line Whether the text is single-line
   void DrawEvaluateSizeImpl(Sprite to_sprite,
                             const char *text, bool do_keep_xadvance,
                             Si32 x, Si32 y, TextOrigin origin,
@@ -224,32 +306,82 @@ public:
                             DrawFilterMode filter_mode,
                             Rgba color, const std::vector<Rgba> &palete, bool do_draw,
                             Vec2Si32 *out_size, bool is_one_line);
+
+  /// @brief Evaluates the size of text
+  /// @param [in] text Text to evaluate
+  /// @param [in] do_keep_xadvance Whether to keep x-advance
+  /// @return Size of the text
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance);
+
+  /// @brief Draws text to a sprite
+  /// @param [in] to_sprite Sprite to draw on
+  /// @param [in] text Text to draw
+  /// @param [in] x X-coordinate for drawing
+  /// @param [in] y Y-coordinate for drawing
+  /// @param [in] origin Text origin
+  /// @param [in] blending_mode Blending mode for drawing
+  /// @param [in] filter_mode Filter mode for drawing
+  /// @param [in] color Color for drawing
   void Draw(Sprite to_sprite, const char *text,
             const Si32 x, const Si32 y,
             const TextOrigin origin,
             const DrawBlendingMode blending_mode,
             const DrawFilterMode filter_mode,
             const Rgba color);
+
+  /// @brief Draws text to a sprite using a color palette
+  /// @param [in] to_sprite Sprite to draw on
+  /// @param [in] text Text to draw
+  /// @param [in] x X-coordinate for drawing
+  /// @param [in] y Y-coordinate for drawing
+  /// @param [in] origin Text origin
+  /// @param [in] blending_mode Blending mode for drawing
+  /// @param [in] filter_mode Filter mode for drawing
+  /// @param [in] palete Color palette for drawing
   void Draw(Sprite to_sprite, const char *text,
             const Si32 x, const Si32 y,
             const TextOrigin origin,
             const DrawBlendingMode blending_mode,
             const DrawFilterMode filter_mode,
             const std::vector<Rgba> &palete);
+
+  /// @brief Draws text to the screen
+  /// @param [in] text Text to draw
+  /// @param [in] x X-coordinate for drawing
+  /// @param [in] y Y-coordinate for drawing
+  /// @param [in] origin Text origin
+  /// @param [in] alignment Text alignment
+  /// @param [in] blending_mode Blending mode for drawing
+  /// @param [in] filter_mode Filter mode for drawing
+  /// @param [in] color Color for drawing
   void Draw(const char *text, const Si32 x, const Si32 y,
             const TextOrigin origin,
+            const TextAlignment alignment,
             const DrawBlendingMode blending_mode,
             const DrawFilterMode filter_mode,
             const Rgba color);
+
+  /// @brief Draws text to the screen using a color palette
+  /// @param [in] text Text to draw
+  /// @param [in] x X-coordinate for drawing
+  /// @param [in] y Y-coordinate for drawing
+  /// @param [in] origin Text origin
+  /// @param [in] alignment Text alignment
+  /// @param [in] blending_mode Blending mode for drawing
+  /// @param [in] filter_mode Filter mode for drawing
+  /// @param [in] palete Color palette for drawing
   void Draw(const char *text, const Si32 x, const Si32 y,
             const TextOrigin origin,
+            const TextAlignment alignment,
             const DrawBlendingMode blending_mode,
             const DrawFilterMode filter_mode,
             const std::vector<Rgba> &palete);
+
+  /// @brief Generates the codepoint vector for the font instance
   void GenerateCodepointVector();
 };
 
+/// @brief Class representing a font
 class Font {
  private:
   std::shared_ptr<arctic::FontInstance> font_instance_;
@@ -285,6 +417,7 @@ class Font {
   void AddGlyph(const Glyph &glyph) {
     font_instance_->AddGlyph(glyph);
   }
+
   /// @brief Adds a glyph to the font
   /// @param [in] codepoint UTF32 codepoint the glyph represents.
   /// @param [in] xadvance The increment of the 'cursor' x position used

@@ -120,6 +120,8 @@ void SetKey(const char key, bool is_set_down);
 void ClearKeyStateTransitions();
 
 /// @brief Returns controller axis position
+/// @param [in] controller_idx Index of the controller.
+/// @param [in] axis_idx Index of the axis.
 float ControllerAxis(Si32 controller_idx, Si32 axis_idx);
 /// @brief Returns mouse cursor position
 Vec2Si32 MousePos();
@@ -137,14 +139,25 @@ Si32 MouseWheelDelta();
 Si32 InputMessageCount();
 
 /// @brief Returns the user input message with the index specified
+/// @param idx Index of the message to return.
 const InputMessage& GetInputMessage(Si32 idx);
 
 /// @}
 
+/// @brief Returns true if the key with the specified key_code is pressed
+/// @param key_code The key code
 bool IsKey(const KeyCode key_code);
+/// @brief Returns true if any of the specified keys is pressed
+/// @param keys A c-string specifying one or more key character codes to check
 bool IsKey(const char *keys);
+/// @brief Returns true if the key specified is pressed
+/// @param key The key character code
 bool IsKey(const char key);
+/// @brief Returns true if the key with the specified key_code is pressed
+/// @param key_code The key code
 bool IsKey(const Si32 key_code);
+/// @brief Returns true if any of the specified keys is pressed
+/// @param keys A std::string specifying one or more key character codes to check
 bool IsKey(const std::string &keys);
 
 }  // namespace arctic

@@ -47,10 +47,23 @@ class BitStream {
   Ui64 read_bit_shift_ = 0;
  public:
   BitStream();
+
+  /// @param data The data to initialize the bitstream with
   explicit BitStream(const std::vector<Ui8> &data);
+
+  /// @brief Push a bit to the bitstream
+  /// @param bit The bit to push. Only the lowest bit is used.
   void PushBit(Ui64 bit);
+
+  /// @brief Begin reading from the bitstream
   void BeginRead();
+
+  /// @brief Read a bit from the bitstream
+  /// @return The bit read. Only the lowest bit is used.
   Ui8 ReadBit();
+
+  /// @brief Get the underlying data of the bitstream
+  /// @return The underlying data of the bitstream
   const std::deque<Ui8>& GetData();
 };
 /// @}
