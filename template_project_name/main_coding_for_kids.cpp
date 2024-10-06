@@ -163,6 +163,7 @@ void PixelPrint(Si32 x, Si32 y, string text) {
   g_font.Draw(GetEngine()->GetBackbuffer(), text.c_str(),
               x, y,
               kTextOriginFirstBase,
+              kTextAlignmentLeft,
               kDrawBlendingModeColorize,
               kFilterNearest,
               InkRgba());
