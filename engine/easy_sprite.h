@@ -117,8 +117,8 @@ class Sprite {
 
   /// @brief Make current sprite reference to a rectangular part of another sprite using inverted y
   /// @param from Source sprite
-  /// @param from_x X coordinate of the top-left corner of the referenced area
-  /// @param from_inv_y Inverted Y coordinate of the top-left corner of the referenced area
+  /// @param from_x X coordinate of the bottom-left corner of the referenced area
+  /// @param from_inv_y Inverted Y coordinate of the bottom-left corner of the referenced area
   /// @param from_width Width of the referenced area
   /// @param from_height Height of the referenced area
   void InvReference(const Sprite &from, const Si32 from_x, const Si32 from_inv_y,
@@ -126,14 +126,14 @@ class Sprite {
 
   /// @brief Make current sprite reference to a rectangular part of another sprite
   /// @param from Source sprite
-  /// @param from_pos Top-left corner position of the referenced area
+  /// @param from_pos Bottom-left corner position of the referenced area
   /// @param from_size Size of the referenced area
   void Reference(const Sprite &from, const Vec2Si32 from_pos, const Vec2Si32 from_size);
 
   /// @brief Make current sprite reference to a rectangular part of another sprite
   /// @param from Source sprite
-  /// @param from_x X coordinate of the top-left corner of the referenced area
-  /// @param from_y Y coordinate of the top-left corner of the referenced area
+  /// @param from_x X coordinate of the bottom-left corner of the referenced area
+  /// @param from_y Y coordinate of the bottom-left corner of the referenced area
   /// @param from_width Width of the referenced area
   /// @param from_height Height of the referenced area
   void Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
@@ -161,8 +161,8 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
@@ -175,12 +175,12 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
-  /// @param from_x X coordinate of the top-left corner of the source area
-  /// @param from_y Y coordinate of the top-left corner of the source area
+  /// @param from_x X coordinate of the bottom-left corner of the source area
+  /// @param from_y Y coordinate of the bottom-left corner of the source area
   void Draw(const Si32 to_x, const Si32 to_y,
     DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
@@ -188,11 +188,11 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
-  /// @param from_x X coordinate of the top-left corner of the source area
+  /// @param from_x X coordinate of the bottom-left corner of the source area
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
@@ -201,12 +201,12 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
-  /// @param from_x X coordinate of the top-left corner of the source area
-  /// @param from_y Y coordinate of the top-left corner of the source area
+  /// @param from_x X coordinate of the bottom-left corner of the source area
+  /// @param from_y Y coordinate of the bottom-left corner of the source area
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
@@ -217,11 +217,11 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
-  /// @param from_x X coordinate of the top-left corner of the source area
+  /// @param from_x X coordinate of the bottom-left corner of the source area
   void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
@@ -230,7 +230,7 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_pos Position of the top-left corner of the destination area
+  /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing (0xffffffff by default)
@@ -241,7 +241,7 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_pos Position of the top-left corner of the destination area
+  /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -251,7 +251,7 @@ class Sprite {
     Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_pos Position of the top-left corner of the destination area
+  /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing (0xffffffff by default)
@@ -261,7 +261,7 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_pos Position of the top-left corner of the destination area
+  /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -272,9 +272,9 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_pos Position of the top-left corner of the destination area
+  /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param to_size Size of the destination area
-  /// @param from_pos Position of the top-left corner of the source area
+  /// @param from_pos Position of the bottom-left corner of the source area
   /// @param from_size Size of the source area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -286,12 +286,12 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
-  /// @param from_x X coordinate of the top-left corner of the source area
-  /// @param from_y Y coordinate of the top-left corner of the source area
+  /// @param from_x X coordinate of the bottom-left corner of the source area
+  /// @param from_y Y coordinate of the bottom-left corner of the source area
   /// @param from_width Width of the source area
   /// @param from_height Height of the source area
   void Draw(const Si32 to_x, const Si32 to_y,
@@ -303,7 +303,7 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff)) const;
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_pos Position of the top-left corner of the destination area
+  /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -314,8 +314,8 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -325,8 +325,8 @@ class Sprite {
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   /// @brief Draw the sprite to another sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
@@ -338,8 +338,8 @@ class Sprite {
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   /// @brief Draw the sprite to another sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
@@ -356,8 +356,8 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_x X coordinate of the top-left corner of the destination area
-  /// @param to_y Y coordinate of the top-left corner of the destination area
+  /// @param to_x X coordinate of the bottom-left corner of the destination area
+  /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
