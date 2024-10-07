@@ -125,7 +125,7 @@ void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
   Vec2Si32 abs_ab(std::abs(ab.x), std::abs(ab.y));
   if (abs_ab.x >= abs_ab.y) {
     if (a.x > b.x) {
-      DrawLine(b, a, color_b, color_a);
+      DrawLine(to_sprite, b, a, color_b, color_a);
     } else {
       Vec2Si32 back_size = to_sprite.Size();
       if (ab.x == 0) {
