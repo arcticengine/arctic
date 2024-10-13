@@ -68,10 +68,8 @@ struct KeyState {
   }
 
   void OnControllerState(bool is_down) {
-    was_pressed_this_frame = was_pressed_this_frame
-      || (current_state_is_down == false && is_down == true);
-    was_released_this_frame = was_released_this_frame
-      || (current_state_is_down == true && is_down == false);
+    was_pressed_this_frame = was_pressed_this_frame || (current_state_is_down == false && is_down == true);
+    was_released_this_frame = was_released_this_frame || (current_state_is_down == true && is_down == false);
     current_state_is_down = is_down;
   }
 
@@ -119,184 +117,282 @@ void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b) {
   DrawLine(GetEngine()->GetBackbuffer(), a, b, color_a, color_b);
 }
 
-void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b,
-    Rgba color_a, Rgba color_b) {
-  Vec2Si32 ab = b - a;
-  Vec2Si32 abs_ab(std::abs(ab.x), std::abs(ab.y));
-  if (abs_ab.x >= abs_ab.y) {
+void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b) {
+  Si64 ab_x = Si64(b.x) - Si64(a.x);
+  Si64 ab_y = Si64(b.y) - Si64(a.y);
+  if (abs(ab_x) >= abs(ab_y)) {
+    // The line is closer to horizontal
+    if (ab_x == 0) {
+      // Ths line is single pixel
+      if (a.x >= 0 && a.y >= 0) {
+        const Vec2Si32 back_size = to_sprite.Size();
+        if (a.x < back_size.x && a.y < back_size.y) {
+          const Rgba color((Si16(color_a.r) + Si16(color_b.r))/2,
+                           (Si16(color_a.g) + Si16(color_b.g))/2,
+                           (Si16(color_a.b) + Si16(color_b.b))/2,
+                           (Si16(color_a.a) + Si16(color_b.a))/2);
+          to_sprite.RgbaData()[a.x + a.y * to_sprite.StridePixels()] = color;
+        }
+      }
+      return;
+    }
+    // The line is at least one pixel long
     if (a.x > b.x) {
-      DrawLine(to_sprite, b, a, color_b, color_a);
-    } else {
-      Vec2Si32 back_size = to_sprite.Size();
-      if (ab.x == 0) {
-        if (a.x >= 0 && a.x < back_size.x &&
-            a.y >= 0 && a.y < back_size.y) {
-          to_sprite.RgbaData()[a.x + a.y * to_sprite.StridePixels()] = color_a;
+      std::swap(a, b);
+      std::swap(color_a, color_b);
+      ab_x = -ab_x;
+      ab_y = -ab_y;
+    }
+    // a--b
+    if (b.x < 0) {
+      return;
+    }
+    if (std::max(a.y, b.y) < 0) {
+      return;
+    }
+    const Vec2Si32 back_size = to_sprite.Size();
+    if (a.x >= back_size.x) {
+      return;
+    }
+    if (std::min(a.y, b.y) >= back_size.y) {
+      return;
+    }
+    Si64 y_for_x_16 = ab_y * 65536ll / ab_x;
+    Si64 ax = Si64(a.x);
+    Si64 bx = Si64(b.x);
+    Si64 ay_16 = Si64(a.y) * 65536ll + 32767ll;
+
+
+    Si64 x_exc = 0ll - ax;
+    if (x_exc > 0) {
+      ay_16 += y_for_x_16 * x_exc;
+      ax = 0;
+    }
+    Si64 x_ovr = bx - Si64(back_size.x) + 1ll;
+    if (x_ovr > 0) {
+      bx = Si64(back_size.x) - 1ll;
+    }
+    Si64 by_16 = ay_16 + (bx - ax) * y_for_x_16;
+
+    if (y_for_x_16 > 0) {
+      Si64 y_exc_16 = 0ll - ay_16;
+      if (y_exc_16 > 0) {
+        Si64 dax = y_exc_16 / y_for_x_16;
+        ay_16 = ay_16 + dax * y_for_x_16;
+        ax += dax;
+        while (ay_16 < 0) {
+          ay_16 += y_for_x_16;
+          ax++;
         }
+        by_16 = ay_16 + (bx - ax) * y_for_x_16;
+      }
+      Si64 y_ovr_16 = by_16 - Si64(back_size.y) * 65536ll + 1ll;
+      if (y_ovr_16 > 0) {
+        bx -= y_ovr_16 / y_for_x_16;
+        do {
+          by_16 = ay_16 + (bx - ax) * y_for_x_16;
+          if (by_16 < Si64(back_size.y) * 65536ll) {
+            break;
+          }
+          bx--;
+        } while (true);
+      }
+      if (bx < ax) {
         return;
       }
-      Si32 x1 = std::max(0, a.x);
-      Si32 x2 = std::min(back_size.x - 1, b.x);
-      Si32 y1 = a.y + ab.y * (x1 - a.x) / ab.x;
-      Si32 y2 = a.y + ab.y * (x2 - a.x) / ab.x;
-      if (y1 < 0) {
-        if (y2 < 0) {
-          return;
+    } else if (y_for_x_16 < 0) {
+      Si64 y_exc_16 = ay_16 - Si64(back_size.y)*65536ll + 1ll;
+      if (y_exc_16 > 0) {
+        Si64 dax = -y_exc_16 / y_for_x_16;
+        ay_16 = ay_16 + dax * y_for_x_16;
+        ax += dax;
+        while (ay_16 >= Si64(back_size.y)*65536ll) {
+          ay_16 += y_for_x_16;
+          ax++;
         }
-        // lower left -> upper right
-        y1 = 0;
-        x1 = a.x + ab.x * (y1 - a.y) / ab.y;
-        x1 = std::max(0, x1);
-      } else if (y1 >= back_size.y) {
-        if (y2 >= back_size.y) {
-          return;
-        }
-        // upper left -> lower right
-        y1 = back_size.y - 1;
-        x1 = a.x + ab.x * (y1 - a.y) / ab.y;
-        x1 = std::max(0, x1);
+        by_16 = ay_16 + (bx - ax) * y_for_x_16;
       }
-      if (y2 < 0) {
-        // upper left -> lower right
-        y2 = 0;
-        x2 = a.x + ab.x * (y2 - a.y) / ab.y;
-        x2 = std::min(back_size.x - 1, x2);
-      } else if (y2 >= back_size.y) {
-        // lower left -> upper right
-        y2 = back_size.y - 1;
-        x2 = a.x + ab.x * (y2 - a.y) / ab.y;
-        x2 = std::min(back_size.x - 1, x2);
+      Si64 y_ovr_16 = 0ll - by_16;
+      if (y_ovr_16 > 0) {
+        bx += y_ovr_16 / y_for_x_16;
+        do {
+          by_16 = ay_16 + (bx - ax) * y_for_x_16;
+          if (by_16 >= 0) {
+            break;
+          }
+          bx--;
+        } while (true);
       }
-
-      Vec4Si32 rgba_a(
-        static_cast<Si32>(color_a.r),
-        static_cast<Si32>(color_a.g),
-        static_cast<Si32>(color_a.b),
-        static_cast<Si32>(color_a.a));
-      Vec4Si32 rgba_b(
-        static_cast<Si32>(color_b.r),
-        static_cast<Si32>(color_b.g),
-        static_cast<Si32>(color_b.b),
-        static_cast<Si32>(color_b.a));
-      Vec4Si32 rgba_ab = rgba_b - rgba_a;
-      Vec4Si32 rgba_1 = rgba_a + rgba_ab * (x1 - a.x) / ab.x;
-      Vec4Si32 rgba_2 = rgba_a + rgba_ab * (x2 - a.x) / ab.x;
-      Vec4Si32 rgba_12 = rgba_2 - rgba_1;
-
-      if (x2 <= x1) {
-        if (x2 == x1) {
-          Rgba color(static_cast<Ui8>(rgba_1.x),
-            static_cast<Ui8>(rgba_1.y),
-            static_cast<Ui8>(rgba_1.z),
-            static_cast<Ui8>(rgba_1.w));
-          to_sprite.RgbaData()[
-            x1 + y1 * to_sprite.StridePixels()] = color;
-        }
+      if (bx < ax) {
         return;
-      }
-      Vec4Si32 rgba_16 = rgba_1 * 65536;
-      Vec4Si32 rgba_12_16 = rgba_12 * 65536;
-      Vec4Si32 rgba_12_16_step = rgba_12_16 / (x2 - x1);
-      Si32 y_16 = y1 * 65536;
-      Si32 y12_16_step = ((y2 - y1) * 65536) / (x2 - x1);
-      Si32 stride = to_sprite.StridePixels();
-      for (Si32 x = x1; x <= x2; ++x) {
-        Rgba color(
-          static_cast<Ui8>(rgba_16.x >> 16),
-          static_cast<Ui8>(rgba_16.y >> 16),
-          static_cast<Ui8>(rgba_16.z >> 16),
-          static_cast<Ui8>(rgba_16.w >> 16));
-        to_sprite.RgbaData()[x + (y_16 >> 16) * stride] = color;
-        rgba_16 += rgba_12_16_step;
-        y_16 += y12_16_step;
       }
     }
+
+    Vec4Si32 rgba_a_16(
+                       static_cast<Si32>(color_a.r) * 65536,
+                       static_cast<Si32>(color_a.g) * 65536,
+                       static_cast<Si32>(color_a.b) * 65536,
+                       static_cast<Si32>(color_a.a) * 65536);
+    Vec4Si32 rgba_b_16(
+                       static_cast<Si32>(color_b.r) * 65536,
+                       static_cast<Si32>(color_b.g) * 65536,
+                       static_cast<Si32>(color_b.b) * 65536,
+                       static_cast<Si32>(color_b.a) * 65536);
+    Vec4Si32 rgba_ab_16 = rgba_b_16 - rgba_a_16;
+    Vec4Si32 rgba_1_16;
+    rgba_1_16.x = Si32(rgba_a_16.x + rgba_ab_16.x * (ax - Si64(a.x)) / ab_x);
+    rgba_1_16.y = Si32(rgba_a_16.y + rgba_ab_16.y * (ax - Si64(a.x)) / ab_x);
+    rgba_1_16.z = Si32(rgba_a_16.z + rgba_ab_16.z * (ax - Si64(a.x)) / ab_x);
+    rgba_1_16.w = Si32(rgba_a_16.w + rgba_ab_16.w * (ax - Si64(a.x)) / ab_x);
+    Vec4Si32 rgba_12_16_step;
+    rgba_12_16_step.x = Si32(rgba_ab_16.x / ab_x);
+    rgba_12_16_step.y = Si32(rgba_ab_16.y / ab_x);
+    rgba_12_16_step.z = Si32(rgba_ab_16.z / ab_x);
+    rgba_12_16_step.w = Si32(rgba_ab_16.w / ab_x);
+
+    Si32 stride = to_sprite.StridePixels();
+    Rgba *dst = to_sprite.RgbaData();
+    for (Si64 x = ax; x <= bx; ++x) {
+      Rgba color(
+                 static_cast<Ui8>(rgba_1_16.x >> 16),
+                 static_cast<Ui8>(rgba_1_16.y >> 16),
+                 static_cast<Ui8>(rgba_1_16.z >> 16),
+                 static_cast<Ui8>(rgba_1_16.w >> 16));
+      dst[x + (ay_16 >> 16) * stride] = color;
+      rgba_1_16 += rgba_12_16_step;
+      ay_16 += y_for_x_16;
+    }
   } else {
+    // The line is closer to vertical
+    // The line is at least one pixel long
     if (a.y > b.y) {
-      DrawLine(to_sprite, b, a, color_b, color_a);
-    } else {
-      Vec2Si32 back_size = to_sprite.Size();
-      if (ab.y == 0) {
-        if (a.y >= 0 && a.y < back_size.y &&
-          a.x >= 0 && a.x < back_size.x) {
-          to_sprite.RgbaData()[
-            a.x + a.y * to_sprite.StridePixels()] = color_a;
-        }
-        return;
-      }
-      Si32 y1 = std::max(0, a.y);
-      Si32 y2 = std::min(back_size.y - 1, b.y);
-      Si32 x1 = a.x + ab.x * (y1 - a.y) / ab.y;
-      Si32 x2 = a.x + ab.x * (y2 - a.y) / ab.y;
-      if (x1 < 0) {
-        if (x2 < 0) {
+      std::swap(a, b);
+      std::swap(color_a, color_b);
+      ab_x = -ab_x;
+      ab_y = -ab_y;
+    }
+    // b
+    // |
+    // |
+    // a
+
+    if (b.y < 0) {
           return;
         }
-        // lower left -> upper right
-        x1 = 0;
-        y1 = a.y + ab.y * (x1 - a.x) / ab.x;
-        y1 = std::max(0, y1);
-      } else if (x1 >= back_size.x) {
-        if (x2 >= back_size.x) {
+        if (std::max(a.x, b.x) < 0) {
           return;
         }
-        // lower right -> upper left
-        x1 = back_size.x - 1;
-        y1 = a.y + ab.y * (x1 - a.x) / ab.x;
-        y1 = std::max(0, y1);
-      }
-      if (x2 < 0) {
-        // lower right -> upper left
-        x2 = 0;
-        y2 = a.y + ab.y * (x2 - a.x) / ab.x;
-        y2 = std::min(back_size.y - 1, y2);
-      } else if (x2 >= back_size.x) {
-        // lower left -> upper right
-        x2 = back_size.x - 1;
-        y2 = a.y + ab.y * (x2 - a.x) / ab.x;
-        y2 = std::min(back_size.y - 1, y2);
-      }
-
-      Vec4Si32 rgba_a(
-        static_cast<Si32>(color_a.r),
-        static_cast<Si32>(color_a.g),
-        static_cast<Si32>(color_a.b),
-        static_cast<Si32>(color_a.a));
-      Vec4Si32 rgba_b(
-        static_cast<Si32>(color_b.r),
-        static_cast<Si32>(color_b.g),
-        static_cast<Si32>(color_b.b),
-        static_cast<Si32>(color_b.a));
-      Vec4Si32 rgba_ab = rgba_b - rgba_a;
-      Vec4Si32 rgba_1 = rgba_a + rgba_ab * (y1 - a.y) / ab.y;
-      Vec4Si32 rgba_2 = rgba_a + rgba_ab * (y2 - a.y) / ab.y;
-      Vec4Si32 rgba_12 = rgba_2 - rgba_1;
-
-      if (y2 <= y1) {
-        if (y2 == y1) {
-          Rgba color((Ui8)rgba_1.y, (Ui8)rgba_1.x,
-            (Ui8)rgba_1.z, (Ui8)rgba_1.w);
-          to_sprite.RgbaData()[
-            x1 + y1 * to_sprite.StridePixels()] = color;
+        const Vec2Si32 back_size = to_sprite.Size();
+        if (a.y >= back_size.y) {
+          return;
         }
-        return;
-      }
-      Vec4Si32 rgba_16 = rgba_1 * 65536;
-      Vec4Si32 rgba_12_16 = rgba_12 * 65536;
-      Vec4Si32 rgba_12_16_step = rgba_12_16 / (y2 - y1);
-      Si32 x_16 = x1 * 65536;
-      Si32 x12_16_step = ((x2 - x1) * 65536) / (y2 - y1);
-      Si32 stride = to_sprite.StridePixels();
-      for (Si32 y = y1; y <= y2; ++y) {
-        Rgba color(
-          static_cast<Ui8>(rgba_16.x >> 16u),
-          static_cast<Ui8>(rgba_16.y >> 16u),
-          static_cast<Ui8>(rgba_16.z >> 16u),
-          static_cast<Ui8>(rgba_16.w >> 16u));
-        to_sprite.RgbaData()[(x_16 >> 16u) + y * stride] = color;
-        rgba_16 += rgba_12_16_step;
-        x_16 += x12_16_step;
-      }
+        if (std::min(a.x, b.x) >= back_size.x) {
+          return;
+        }
+        Si64 x_for_y_16 = ab_x * 65536ll / ab_y;
+        Si64 ay = Si64(a.y);
+        Si64 by = Si64(b.y);
+        Si64 ax_16 = Si64(a.x) * 65536ll + 32767ll;
+
+
+        Si64 y_exc = 0ll - ay;
+        if (y_exc > 0) {
+          ax_16 += x_for_y_16 * y_exc;
+          ay = 0;
+        }
+        Si64 y_ovr = by - Si64(back_size.y) + 1ll;
+        if (y_ovr > 0) {
+          by = Si64(back_size.y) - 1ll;
+        }
+        Si64 bx_16 = ax_16 + (by - ay) * x_for_y_16;
+
+        if (x_for_y_16 > 0) {
+          Si64 x_exc_16 = 0ll - ax_16;
+          if (x_exc_16 > 0) {
+            Si64 day = x_exc_16 / x_for_y_16;
+            ax_16 = ax_16 + day * x_for_y_16;
+            ay += day;
+            while (ax_16 < 0) {
+              ax_16 += x_for_y_16;
+              ay++;
+            }
+            bx_16 = ax_16 + (by - ay) * x_for_y_16;
+          }
+          Si64 x_ovr_16 = bx_16 - Si64(back_size.x) * 65536ll + 1ll;
+          if (x_ovr_16 > 0) {
+            by -= x_ovr_16 / x_for_y_16;
+            do {
+              bx_16 = ax_16 + (by - ay) * x_for_y_16;
+              if (bx_16 < Si64(back_size.x) * 65536ll) {
+                break;
+              }
+              by--;
+            } while (true);
+          }
+          if (by < ay) {
+            return;
+          }
+        } else if (x_for_y_16 < 0) {
+          Si64 x_exc_16 = ax_16 - Si64(back_size.x)*65536ll + 1ll;
+          if (x_exc_16 > 0) {
+            Si64 day = -x_exc_16 / x_for_y_16;
+            ax_16 = ax_16 + day * x_for_y_16;
+            ay += day;
+            while (ax_16 >= Si64(back_size.x)*65536ll) {
+              ax_16 += x_for_y_16;
+              ay++;
+            }
+            bx_16 = ax_16 + (by - ay) * x_for_y_16;
+          }
+          Si64 x_ovr_16 = 0ll - bx_16;
+          if (x_ovr_16 > 0) {
+            by += x_ovr_16 / x_for_y_16;
+            do {
+              bx_16 = ax_16 + (by - ay) * x_for_y_16;
+              if (bx_16 >= 0) {
+                break;
+              }
+              by--;
+            } while (true);
+          }
+          if (by < ay) {
+            return;
+          }
+        }
+
+        Vec4Si32 rgba_a_16(
+                           static_cast<Si32>(color_a.r) * 65536,
+                           static_cast<Si32>(color_a.g) * 65536,
+                           static_cast<Si32>(color_a.b) * 65536,
+                           static_cast<Si32>(color_a.a) * 65536);
+        Vec4Si32 rgba_b_16(
+                           static_cast<Si32>(color_b.r) * 65536,
+                           static_cast<Si32>(color_b.g) * 65536,
+                           static_cast<Si32>(color_b.b) * 65536,
+                           static_cast<Si32>(color_b.a) * 65536);
+        Vec4Si32 rgba_ab_16 = rgba_b_16 - rgba_a_16;
+        Vec4Si32 rgba_1_16;
+        rgba_1_16.x = Si32(rgba_a_16.x + rgba_ab_16.x * (ay - Si64(a.y)) / ab_y);
+        rgba_1_16.y = Si32(rgba_a_16.y + rgba_ab_16.y * (ay - Si64(a.y)) / ab_y);
+        rgba_1_16.z = Si32(rgba_a_16.z + rgba_ab_16.z * (ay - Si64(a.y)) / ab_y);
+        rgba_1_16.w = Si32(rgba_a_16.w + rgba_ab_16.w * (ay - Si64(a.y)) / ab_y);
+        Vec4Si32 rgba_12_16_step;
+        rgba_12_16_step.x = Si32(rgba_ab_16.x / ab_y);
+        rgba_12_16_step.y = Si32(rgba_ab_16.y / ab_y);
+        rgba_12_16_step.z = Si32(rgba_ab_16.z / ab_y);
+        rgba_12_16_step.w = Si32(rgba_ab_16.w / ab_y);
+
+        Si32 stride = to_sprite.StridePixels();
+    Rgba *dst = to_sprite.RgbaData();
+    for (Si64 y = ay; y <= by; ++y) {
+      Rgba color(
+                 static_cast<Ui8>(rgba_1_16.x >> 16),
+                 static_cast<Ui8>(rgba_1_16.y >> 16),
+                 static_cast<Ui8>(rgba_1_16.z >> 16),
+                 static_cast<Ui8>(rgba_1_16.w >> 16));
+      dst[(ax_16 >> 16) + y * stride] = color;
+      rgba_1_16 += rgba_12_16_step;
+      ax_16 += x_for_y_16;
     }
   }
 }
@@ -1218,10 +1314,12 @@ void ResizeScreen(const Si32 width, const Si32 height) {
   Vec2Si32 prev_size = GetEngine()->GetBackbuffer().Size();
   GetEngine()->ResizeBackbuffer(width, height);
   Vec2Si32 new_size = GetEngine()->GetBackbuffer().Size();
-  Vec2F scale(prev_size.x ? static_cast<float>(new_size.x) / static_cast<float>(prev_size.x) : 1.f,
-              prev_size.y ? static_cast<float>(new_size.y) / static_cast<float>(prev_size.y) : 1.f);
+  Vec2F scale((prev_size.x - 1) ? static_cast<float>(new_size.x - 1) / static_cast<float>(prev_size.x - 1) : 1.f,
+              (prev_size.y - 1) ? static_cast<float>(new_size.y - 1) / static_cast<float>(prev_size.y - 1) : 1.f);
   g_mouse_pos_prev = Vec2Si32(Vec2F(g_mouse_pos_prev) * scale);
   g_mouse_pos = Vec2Si32(Vec2F(g_mouse_pos) * scale);
+  g_mouse_pos_prev = Clamp(g_mouse_pos_prev, Vec2Si32(0, 0), Vec2Si32(new_size.x - 1, new_size.y - 1));
+  g_mouse_pos = Clamp(g_mouse_pos, Vec2Si32(0, 0), Vec2Si32(new_size.x - 1, new_size.y - 1));
 }
 
 void ResizeScreen(const Vec2Si32 size) {

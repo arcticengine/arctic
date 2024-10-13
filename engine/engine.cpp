@@ -605,13 +605,15 @@ Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
   float y_aspect = aspect < back_aspect ? 1.f / ratio : 1.f;
   Vec2F cor_pos(rel_pos.x / x_aspect, rel_pos.y / y_aspect);
   Vec2F back_rel_pos = cor_pos + Vec2F(0.5f, 0.5f);
+  Vec2Si32 back_size = backbuffer_texture_.Size();
   Vec2F scale = Vec2F(backbuffer_texture_.Size());
   Vec2F back_pos(
       Clamp(back_rel_pos.x, 0.f, 1.f) * scale.x,
       Clamp(back_rel_pos.y, 0.f, 1.f) * scale.y);
 
-  return Vec2Si32(static_cast<Si32>(back_pos.x),
-      static_cast<Si32>(back_pos.y));
+  Vec2Si32 int_pos = Vec2Si32(static_cast<Si32>(back_pos.x), static_cast<Si32>(back_pos.y));
+  int_pos = Clamp(int_pos, Vec2Si32(0, 0), Vec2Si32(back_size.x - 1, back_size.y - 1));
+  return int_pos;
 }
 
 void Engine::OnWindowResize(Si32 width, Si32 height) {
