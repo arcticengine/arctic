@@ -24,15 +24,25 @@ Look how easy it is to use:
 Installation
 ------------
 
-Clone `%https://gitlab.com/seaice/arctic.git` or download and unzip https://gitlab.com/seaice/arctic/-/archive/master/arctic-master.zip \n
-Enter the `wizard` directory.\n
-Build it with `cmake . && make` or open and build the project with Visual Studio, XCode or CLion. \n
-Run the wizard and follow the instructions.
+**Windows**
+
+Install Visual Studio Community 2019. Make sure to select the 'Desktop development with C++' workload. Run Visual Studio and click the 'Clone or check out code' button. Enter 'https://gitlab.com/seaice/arctic.git' as the Repository location. In the solution explorer open the 'wizard' folder and doubleclick the 'wizard.sln'. Click the green triangle 'Local Windows Debugger'.
 
 A 3-minute videoguide:\n
 \htmlonly
 <iframe width="560" height="315" src="https://www.youtube.com/embed/sGG-fGHGwQs" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 \endhtmlonly
+
+**Linux**
+
+Install some dependencies, clone the source code, make and run the wizard:
+~~~~~{.bash}
+    cd ~ && sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libgles2-mesa-dev && git clone https://gitlab.com/seaice/arctic.git && cd ~/arctic/wizard && cmake . && make -j 4 && ./wizard
+~~~~~
+
+**MacOS**
+
+Install XCode. Run XCode and select 'Souce Control -> Clone' menu option. Enter 'https://gitlab.com/seaice/arctic.git' in the 'Enter repository URL' field and click 'Clone' buttons. Select 'File -> Open' menu option, open the 'arctic/wizard' directory (by default located in your Documents directory). Click the 'Product -> Run' menu option.
 
 Features
 --------
