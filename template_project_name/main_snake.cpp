@@ -10,15 +10,18 @@ using namespace arctic;  // NOLINT
 
 Font g_font;
 
-void Move_snake_tail( int previous_x, int previous_y, std::deque<std::pair<int, int>>& snake)
-{
-    for (auto snake_iter = ++snake.begin(); snake_iter < snake.end(); ++snake_iter)
-    {
+/// @brief Moves the snake tail
+/// @param previous_x Previous x coordinate
+/// @param previous_y Previous y coordinate
+/// @param snake Snake body coordinates in a deque
+void Move_snake_tail(int previous_x, int previous_y, std::deque<std::pair<int, int>>& snake) {
+    for (auto snake_iter = ++snake.begin(); snake_iter < snake.end(); ++snake_iter) {
         std::swap(previous_x, (*snake_iter).first);
         std::swap(previous_y, (*snake_iter).second);
     }
 }
 
+/// @brief Shows the failure message
 void ShowFailureMessage() {
     g_font.Draw("Game over. Press esc to quit", ScreenSize().x / 2, ScreenSize().y / 2, kTextOriginBottom);
     ShowFrame();
@@ -27,6 +30,9 @@ void ShowFailureMessage() {
     }
 }
 
+/// @brief Draws the scene
+/// @param snake Snake body coordinates in a deque
+/// @param food Food coordinates in a list
 void Draw_scene(const std::deque<std::pair<int, int>>& snake, const std::list<std::pair<int, int>>& food) {
     Clear();
     for (auto snake_part : snake){
@@ -40,13 +46,16 @@ void Draw_scene(const std::deque<std::pair<int, int>>& snake, const std::list<st
     ShowFrame();
 }
 
+/// @brief Checks if the snake intersects with itself
+/// @param snake Snake body coordinates in a deque
+/// @return True if the snake intersects with itself, false otherwise
 bool Snake_intersect(const std::deque<std::pair<int, int>>& snake) {
     int begin_x = (*snake.begin()).first;
     int begin_y = (*snake.begin()).second;
-    if ( begin_x <= 0 || begin_y <= 0 || begin_x >= ScreenSize().x || begin_y >= ScreenSize().y ) {
+    if (begin_x <= 0 || begin_y <= 0 || begin_x >= ScreenSize().x || begin_y >= ScreenSize().y) {
         return true;
     }
-    for (auto snake_iter = ++snake.begin(); snake_iter < --snake.end(); ++snake_iter){
+    for (auto snake_iter = ++snake.begin(); snake_iter < --snake.end(); ++snake_iter) {
         if (begin_x == (*snake_iter).first && begin_y == (*snake_iter).second) {
             return true;
         }
@@ -54,6 +63,8 @@ bool Snake_intersect(const std::deque<std::pair<int, int>>& snake) {
     return false;
 }
 
+/// @brief Generates food
+/// @param food A reference to the list of food coordinates
 void Generate_food(std::list<std::pair<int, int>> &food) {
     int food_quantity = 100;
     static std::mt19937 rand;
@@ -62,14 +73,17 @@ void Generate_food(std::list<std::pair<int, int>> &food) {
     static std::uniform_int_distribution<unsigned> random_x (1, ScreenSize().x - 1);
     static std::uniform_int_distribution<unsigned> random_y (1, ScreenSize().y - 1);
     
-    for (int i = 0; i <= food_quantity; ++i )
-    {
+    for (int i = 0; i <= food_quantity; ++i ) {
         int x = random_x(rand) / 10 * 10;
         int y = random_y(rand) / 10 * 10;
         food.push_back({x , y});
     }
 }
 
+/// @brief Checks if the snake intersects with food
+/// @param snake Snake body coordinates in a deque
+/// @param food Food coordinates in a list
+/// @return True if the snake intersects with food, false otherwise
 bool Food_intersect( std::deque<std::pair<int, int>>& snake, std::list<std::pair<int, int>>& food) {
     for (auto food_part= food.begin(); food_part != food.end(); ++food_part) {
         if ((*food_part).first == (*snake.begin()).first && (*food_part).second == (*snake.begin()).second) {
@@ -81,15 +95,13 @@ bool Food_intersect( std::deque<std::pair<int, int>>& snake, std::list<std::pair
     return false;
 }
 
+/// @brief Main function for the snake game
 void EasyMain() {
-  g_font.Load("data/arctic_one_bmf.fnt");
+    g_font.Load("data/arctic_one_bmf.fnt"); // Load the font from the file
     int xoffset = 10;
     int yoffset = 10;
     std::deque<std::pair<int, int>> snake = {{40, 10}, {30, 10}, {20, 10}, {10, 10}};
-    int previous_x = (*snake.begin()).first;
-    int previous_y = (*snake.begin()).second;
     double snake_time = Time();
-    bool game_over = false;
     enum Direction { up, down, right, left};
     Direction direction = up;
     std::list<std::pair<int, int>> food = {{0,0}};
@@ -97,73 +109,43 @@ void EasyMain() {
     
     Draw_scene(snake, food);
     
-    while (!IsKeyDownward(kKeyEscape) && !game_over) {
+    while (!IsKeyDownward(kKeyEscape)) {
         ShowFrame();
+
+        int xmul = 0;
+        int ymul = 0;
+        int previous_x = (*snake.begin()).first;
+        int previous_y = (*snake.begin()).second;
+
         if (IsKeyDownward(kKeyUp) || direction == up && Time() > snake_time + 1) {
-            previous_x = (*snake.begin()).first;
-            previous_y = (*snake.begin()).second;
+            ymul = 1;
             direction = up;
-            (*snake.begin()).second += yoffset;
-            if(!Snake_intersect(snake)) {
-                Move_snake_tail(previous_x, previous_y, snake);
-                Food_intersect(snake, food);
-                Draw_scene(snake, food);
-                snake_time = Time();
-            }
-            else {
-                ShowFailureMessage();
-                game_over = true;
-            }
         }
         if (IsKeyDownward(kKeyDown) || direction == down && Time() > snake_time + 1) {
-            previous_x = (*snake.begin()).first;
-            previous_y = (*snake.begin()).second;
+            ymul = -1;
             direction = down;
-            (*snake.begin()).second -= yoffset;
-            if(!Snake_intersect(snake)) {
-                Move_snake_tail(previous_x, previous_y, snake);
-                Food_intersect(snake, food);
-                Draw_scene(snake, food);
-                snake_time = Time();
-            }
-            else {
-                ShowFailureMessage();
-                game_over = true;
-            }
         }
-        
         if (IsKeyDownward(kKeyRight) || direction == right && Time() > snake_time + 1) {
-            previous_x = (*snake.begin()).first;
-            previous_y = (*snake.begin()).second;
-            direction = right;
-            (*snake.begin()).first += xoffset;
-            if (!Snake_intersect(snake)) {
-                Move_snake_tail(previous_x, previous_y, snake);
-                Food_intersect(snake, food);
-                Draw_scene(snake, food);
-                snake_time = Time();
-            }
-            else {
-                ShowFailureMessage();
-                game_over = true;
-            }
-                
+            xmul = 1;
+            direction = right;      
         }
-        
         if (IsKeyDownward(kKeyLeft) || direction == left && Time() > snake_time + 1) {
-            previous_x = (*snake.begin()).first;
-            previous_y = (*snake.begin()).second;
+            xmul = -1;
             direction = left;
-            (*snake.begin()).first -= xoffset;
+        }
+
+        if (xmul != 0 || ymul != 0) {
+            (*snake.begin()).first += xoffset * xmul;
+            (*snake.begin()).second += yoffset * ymul;
+            
             if (!Snake_intersect(snake)) {
                 Move_snake_tail(previous_x, previous_y, snake);
                 Food_intersect(snake, food);
                 Draw_scene(snake, food);
                 snake_time = Time();
-            }
-            else {
+            } else {
                 ShowFailureMessage();
-                game_over = true;
+                return;
             }
         }
     }

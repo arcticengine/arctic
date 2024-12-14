@@ -1,19 +1,57 @@
+/// @brief A simulator that simulates client-server communication with packet transmission
+/// This simulation shows how network packets are transmitted between clients and a server
+/// through a router, including packet loss, latency, and bandwidth limitations.
+
+/// This simulation visualizes how multiplayer games work over the internet, showing:
+/// - How clients connect to a server through a router
+/// - How game data (level, player positions, etc.) is sent in packets
+/// - Network issues like packet loss and latency
+/// - Server and router buffer management
+/// - Network congestion and its effects
+/// 
+/// Key concepts demonstrated:
+/// - White dots: Regular data packets
+/// - Yellow dots: Acknowledgment packets (confirming data receipt) and retransmitted packets
+/// - Red dots: Invalid packets (packets of a timed out session)
+/// - Blue dots: World state updates (player positions, etc.)
+/// - Cyan dots: Player control inputs
+///
+/// You can experiment by:
+/// - Adding/removing clients to see how network load changes
+/// - Adjusting simulation speed to observe details
+/// - Rebooting server/router to see reconnection behavior
+/// - Enabling server buffer limits to simulate resource constraints
+
 #include "engine/easy.h"
 #include <map>
 
 using namespace arctic;  //NOLINT
 
+/// Maximum number of packets for level data transmission
 const Si32 kLevelSizePackets = 1000000/576;
 
+/// Simulation time step
 double g_dt = 0.0001;
+/// Current simulation time
 double g_t = 0.0;
+/// Time multiplier for simulation speed control
 double g_t_mult = 1.0/128.0;
+/// Next available IP address for new clients
 Si32 g_next_ip_address = 2;
+/// Next available session ID
 Ui64 g_next_session_id = 1;
+
+// GUI elements
 std::shared_ptr<GuiTheme> g_theme;
 std::shared_ptr<Panel> g_gui;
 std::shared_ptr<Checkbox> g_checkbox_limit_server_buffer;
 
+/// @brief Creates a glowing ball sprite with specified color and size
+/// @param rm Red component multiplier
+/// @param gm Green component multiplier
+/// @param bm Blue component multiplier
+/// @param min Minimum brightness
+/// @param size Size of the sprite in pixels
 Sprite CreateLightball(Ui8 rm, Ui8 gm, Ui8 bm, float min, Si32 size) {
   Sprite sprite;
   sprite.Create(size, size);
@@ -35,55 +73,62 @@ Sprite CreateLightball(Ui8 rm, Ui8 gm, Ui8 bm, float min, Si32 size) {
   return sprite;
 }
 
+/// @brief Gets the next available session ID
+/// @return Unique session identifier
 Ui64 GetNextSessionId() {
   return g_next_session_id++;
 }
 
+/// @brief Represents a network packet in the simulation
 struct Packet {
+  /// Different types of packets in the simulation
   enum class Kind {
-    kConnectionRequest,
-    kData,
-    kDataAck,
-    kDataRetransmitt,
-    kPlayerControls,
-    kWorldState,
+    kConnectionRequest,  ///< Initial connection request from client
+    kData,              ///< Level data from server to client
+    kDataAck,           ///< Acknowledgment of received data
+    kDataRetransmitt,   ///< Retransmitted data after packet loss
+    kPlayerControls,    ///< Player input sent to server
+    kWorldState,        ///< Game state update from server
   };
 
   // all types
-  Ui64 session_id;
-  Si32 source_ip;
-  Si32 destination_ip;
-  Si32 size_bytes;
-  Kind kind;
+  Ui64 session_id; ///< Session identifier
+  Si32 source_ip;  ///< Source IP address
+  Si32 destination_ip; ///< Destination IP address
+  Si32 size_bytes; ///< Size of the packet in bytes
+  Kind kind; ///< Type of the packet
 
   // kData, kDataRetransmitt, kDataAck
   double server_t0; // also, filled in kWorldState
-  Si32 part_idx;
+  Si32 part_idx; ///< Index of the packet part
 
   // simulation
-  bool is_lost;
-  double t_in;
-  double t_out;
+  bool is_lost; ///< Whether the packet is lost
+  double t_in; ///< Time when the packet was received
+  double t_out; ///< Time when the packet was sent
 };
 
+/// @brief Represents a network node (client, server, or router)
 struct Node {
-  Vec2Si32 screen_pos = Vec2Si32(0, 0);
-  Si32 ip_address;
-  std::deque<Packet> in_buffer;
-  bool is_active;
-  Si64 received_bytes = 0;
+  Vec2Si32 screen_pos = Vec2Si32(0, 0);  ///< Position for visualization
+  Si32 ip_address;                        ///< Node's IP address
+  std::deque<Packet> in_buffer;           ///< Incoming packet buffer
+  bool is_active;                         ///< Whether node is active
+  Si64 received_bytes = 0;                ///< Total bytes received
 };
 
+/// @brief Represents a network channel between two nodes
 struct Channel {
-  Node* in_node;
-  Node* out_node;
-  double speed_bit_per_second;
-  double delay;
-  double t_busy_up_to;
-  double loss_probability;
-  bool is_active;
-  std::multimap<double, Packet> packets;
+  Node* in_node;                          ///< Source node
+  Node* out_node;                         ///< Destination node
+  double speed_bit_per_second;            ///< Channel bandwidth
+  double delay;                           ///< Base latency
+  double t_busy_up_to;                    ///< Channel busy until this time
+  double loss_probability;                ///< Probability of packet loss
+  bool is_active;                         ///< Whether channel is active
+  std::multimap<double, Packet> packets;  ///< In-flight packets
 
+  /// @brief Updates packet delivery in the channel
   void Update() {
     while (!packets.empty()) {
       auto it = packets.begin();
@@ -107,6 +152,9 @@ struct Channel {
     }
   }
 
+  /// @brief Attempts to send a packet through the channel
+  /// @param packet Packet to send
+  /// @return true if packet was accepted, false if channel is busy
   bool TrySendPacket(Packet& packet) {
     if (t_busy_up_to > g_t + g_dt) {
       return false;
@@ -124,12 +172,13 @@ struct Channel {
   }
 };
 
+/// @brief Manages buffered output for a node
 struct BufferedOutput {
-  Si64 used_memory = 0;
-  Si64 sent_bytes = 0;
-  Si64 drpooed_bytes = 0;
-  Channel* out_channel = nullptr;
-  std::deque<Packet> out_buffer;
+  Si64 used_memory = 0;                   ///< Current buffer memory usage
+  Si64 sent_bytes = 0;                    ///< Total bytes sent
+  Si64 drpooed_bytes = 0;                 ///< Total bytes dropped
+  Channel* out_channel = nullptr;         ///< Output channel
+  std::deque<Packet> out_buffer;          ///< Output packet buffer
 
   void ApplyLimit(Si32 limit) {
     while (used_memory > limit) {
@@ -168,12 +217,13 @@ struct BufferedOutput {
   }
 };
 
+/// @brief Tracks state of a client session on the server
 struct SessionState {
-  Si32 ip_address;
-  Si64 session_id;
-  double t_last_received;
+  Si32 ip_address;                        ///< Client's IP address
+  Si64 session_id;                        ///< Session identifier
+  double t_last_received;                 ///< Time of last received packet
   double ping_window[5] = {0.5, 0.5, 0.5, 0.5, 0.5};
-  Si32 next_ping_idx = 0;
+  Si32 next_ping_idx = 0;                 ///< Next ping measurement index
   std::map<Si32, double> unconfirmed_send_t_by_part_idx;
 
   double GetAvgPing() {
@@ -185,12 +235,19 @@ struct SessionState {
   }
 };
 
+/// @brief Server node implementation
 struct Server : Node {
-  BufferedOutput output;
-  std::map<Si32, SessionState> session_state_by_ip_address;
-  double next_world_state_send_t = 0.0;
-  Si32 buffer_limit = -1;
+  BufferedOutput output;                  ///< Server's output buffer
+  std::map<Si32, SessionState> session_state_by_ip_address;  ///< Active sessions
+  double next_world_state_send_t = 0.0;   ///< Next world state broadcast time
+  Si32 buffer_limit = -1;                 ///< Server buffer size limit
 
+  /// @brief Handles server logic including:
+  /// - Processing incoming packets
+  /// - Managing client sessions
+  /// - Sending level data
+  /// - Broadcasting world state
+  /// - Handling packet retransmission
   void Reboot() {
     received_bytes = 0;
     output.Clear();
@@ -306,15 +363,21 @@ struct Server : Node {
   }
 };
 
+/// @brief Client node implementation
 struct Client : Node {
-  BufferedOutput output;
-  bool is_world_state_obtained = false;
-  double next_controls_send_t = 0.0;
-  double last_receive_t = -3.0;
-  Ui64 session_id;
-  double last_delay = 0.0;
-  bool level_obtained[kLevelSizePackets] = {0};
+  BufferedOutput output;                  ///< Client's output buffer
+  bool is_world_state_obtained = false;   ///< Has received world state
+  double next_controls_send_t = 0.0;      ///< Next control update time
+  double last_receive_t = -3.0;           ///< Time of last received packet
+  Ui64 session_id;                        ///< Current session ID
+  double last_delay = 0.0;                ///< Last measured delay
+  bool level_obtained[kLevelSizePackets] = {0}; ///< Tracking received level chunks
 
+  /// @brief Handles client logic including:
+  /// - Processing incoming packets
+  /// - Managing connection state
+  /// - Sending control updates
+  /// - Acknowledging received data
   void Update() {
     if (!is_active) {
       return;
@@ -384,22 +447,30 @@ struct Client : Node {
   }
 };
 
+/// @brief Router node implementation
 struct Router : Node {
-  Si32 total_memory = 1000000;
-  Si32 used_memory = 0;
-  Si64 dropped_bytes = 0;
-  std::map<Si32, BufferedOutput> output_by_ip_address;
+  Si32 total_memory = 1000000;            ///< Total buffer memory
+  Si32 used_memory = 0;                   ///< Current memory usage
+  Si64 dropped_bytes = 0;                 ///< Total bytes dropped
+  std::map<Si32, BufferedOutput> output_by_ip_address;  ///< Output buffers by destination
 
+  /// @brief Handles router logic including:
+  /// - Buffer management
+  /// - Packet forwarding
+  /// - Congestion handling
   void RegisterChannel(Channel* channel) {
     if (channel && channel->in_node == this && channel->out_node) {
       output_by_ip_address[channel->out_node->ip_address].out_channel = channel;
     }
   }
 
+  /// @brief Drops a packet from the router's buffer
+  /// @param packet The packet to drop
   void Drop(Packet &packet) {
     dropped_bytes += packet.size_bytes;
   }
 
+  /// @brief Updates the router's state
   void Update() {
     Si32 in_buffer_size = 0;
     Si32 in_buffer_items = (Si32)in_buffer.size();
@@ -444,6 +515,7 @@ struct Router : Node {
     }
   }
 
+  /// @brief Resets router state
   void Reboot() {
     for (auto it = output_by_ip_address.begin(); it != output_by_ip_address.end(); ++it) {
       dropped_bytes += it->second.used_memory;
@@ -453,19 +525,28 @@ struct Router : Node {
   }
 };
 
+// Global simulation state
 const Si32 kMaxClients = 100000;
 std::vector<Channel> g_channels;
 std::vector<Client> g_clients;
 Server g_server;
 Router g_router;
 
+// Visual elements
 Font g_font;
-Sprite white_ball;
-Sprite red_ball;
-Sprite yellow_ball;
-Sprite cyan_ball;
-Sprite blue_ball;
+Sprite white_ball;   ///< Connection request packets
+Sprite red_ball;     ///< Lost/invalid packets
+Sprite yellow_ball;  ///< Acknowledgment packets
+Sprite cyan_ball;    ///< Control packets
+Sprite blue_ball;    ///< World state packets
 
+/// @brief Creates bidirectional channels between two nodes
+/// @param a First node
+/// @param b Second node
+/// @param delay Base latency
+/// @param loss_probability Packet loss probability
+/// @param speed_bit_per_second Channel bandwidth
+/// @return Index of the channel created
 Si32 AddSymmetricChannels(Node *a, Node *b, double delay, double loss_probability, double speed_bit_per_second) {
   Si32 idx = (Si32)g_channels.size();
   g_channels.resize(idx + 2);
@@ -481,6 +562,7 @@ Si32 AddSymmetricChannels(Node *a, Node *b, double delay, double loss_probabilit
   return idx;
 }
 
+/// @brief Positions clients evenly on screen
 void PositionClients() {
   Si32 client_count = (Si32)g_clients.size();
   for (Si32 i = 0; i < client_count; ++i) {
@@ -492,6 +574,7 @@ void PositionClients() {
   g_router.screen_pos.x = center_x;
 }
 
+/// @brief Adds a new client to the simulation
 void AddClient() {
   for (Si32 i = 0; i < g_clients.size(); ++i) {
     if (!g_clients[i].is_active) {
@@ -520,6 +603,7 @@ void AddClient() {
   PositionClients();
 }
 
+/// @brief Removes an active client from the simulation
 void RemoveClient() {
   for (Si32 i = 0; i < g_clients.size(); ++i) {
     Client &client = g_clients[i];
@@ -534,6 +618,7 @@ void RemoveClient() {
   }
 }
 
+/// @brief Creates initial simulation state with server, router, and initial clients
 void CreateInitialState() {
   g_router.ip_address = 0;
   g_router.is_active = true;
@@ -554,6 +639,7 @@ void CreateInitialState() {
   }
 }
 
+/// @brief Updates simulation state for one time step
 void UpdateModel() {
   g_t += g_dt;
   Si32 channel_count = (Si32)g_channels.size();
@@ -568,6 +654,11 @@ void UpdateModel() {
   g_router.Update();
 }
 
+/// @brief Draws current simulation state including:
+/// - Network topology
+/// - Node status
+/// - In-flight packets
+/// - Performance statistics
 void DrawModel() {
   char text[128];
   // chennel lines
@@ -691,14 +782,17 @@ void DrawModel() {
   }
 }
 
+/// @brief Increases simulation speed
 void SpeedUp() {
   g_t_mult = std::min(32.0, g_t_mult * 2.0);
 }
 
+/// @brief Decreases simulation speed
 void SlowDown() {
   g_t_mult = std::max(1.0 / 128.0, g_t_mult / 2.0);
 }
 
+/// @brief Toggles server buffer limit
 void LimitServerBuffer() {
   if (g_checkbox_limit_server_buffer->IsChecked()) {
     g_server.buffer_limit = 1000000;
@@ -707,18 +801,24 @@ void LimitServerBuffer() {
   }
 }
 
+/// @brief Main entry point for the simulation
 void EasyMain() {
+  // Load GUI theme and font
   g_theme = std::make_shared<GuiTheme>();
   g_theme->Load("data/gui_theme.xml");
   g_font.Load("data/arctic_one_bmf.fnt");
+
+  // Create lightballs for visualizing packets
   white_ball = CreateLightball(255, 255, 255, 6.0, 32);
   red_ball = CreateLightball(255, 8, 8, 6, 32);
   yellow_ball = CreateLightball(255, 255, 84, 6, 32);
   cyan_ball = CreateLightball(30, 191, 255, 6, 32);
   blue_ball = CreateLightball(8, 8, 255, 12, 32);
 
+  // Resize screen to match the desired resolution
   ResizeScreen(1920, 1080);
 
+  // Create GUI elements
   GuiFactory gf;
   gf.theme_ = g_theme;
   g_gui = gf.MakeTransparentPanel();
@@ -772,37 +872,48 @@ void EasyMain() {
   button->OnButtonClick = AddClient;
   g_gui->AddChild(button);
 
+  // Reserve memory for channels and clients
   g_channels.reserve(kMaxClients*2+2);
   g_clients.reserve(kMaxClients);
 
+  // Create initial simulation state
   CreateInitialState();
 
+  // Main simulation loop
   double rt0 = Time();
   double rt1 = Time();
   double t_target = 0.0;
 
   while (!IsKeyDownward(kKeyEscape)) {
+    // Update simulation time
     rt0 = rt1;
     rt1 = Time();
     double rdt = rt1 - rt0;
     t_target = g_t + rdt * g_t_mult;
 
+    // Clear screen
     Clear();
 
+    // Update simulation state until target time is reached or timeout
     while (g_t < t_target && Time() - rt1 < 0.1) {
       UpdateModel();
     }
 
+    // Apply GUI input
     for (Si32 i = 0; i < InputMessageCount(); ++i) {
       g_gui->ApplyInput(GetInputMessage(i), nullptr);
     }
 
+    // Draw simulation state
     DrawModel();
     g_gui->Draw(Vec2Si32(0, 0));
 
+    // Draw time info
     char text[128];
     snprintf(text, sizeof(text), u8"Model time: %f s\nTarget multiplier: %f", g_t, g_t_mult);
     g_font.Draw(text, 20, ScreenSize().y - 20, kTextOriginTop);
+
+    // Show frame
     ShowFrame();
   }
 }
