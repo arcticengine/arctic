@@ -68,36 +68,59 @@ std::vector<const char*> g_color_names = {
   ,"dark gray"
 };
 
+/// @brief Gets the current ink color as RGBA value
+/// @return RGBA color value for current ink
 Rgba InkRgba() {
   return (g_ink < g_colors.size() ? g_colors[g_ink] : Rgba(g_ink));
 }
 
+/// @brief Gets the current paper color as RGBA value
+/// @return RGBA color value for current paper
 Rgba PaperRgba() {
   return (g_paper < g_colors.size() ? g_colors[g_paper] : Rgba(g_paper));
 }
 
+/// @brief Sets the current ink (foreground) color using a predefined color index
+/// @param [in] color_index Index of the color from the predefined color palette
 void Ink(Ui32 color_index) {
   g_ink = std::min(color_index, (Ui32)g_colors.size() - 1u);
 }
 
+/// @brief Sets the current ink (foreground) color using RGB values
+/// @param [in] red Red component (0-255)
+/// @param [in] green Green component (0-255)
+/// @param [in] blue Blue component (0-255)
 void Ink(Si32 red, Si32 green, Si32 blue) {
   g_ink = Rgba(Clamp(red, 0, 255), Clamp(green, 0, 255), Clamp(blue, 0, 255), 255).rgba;
 }
 
+/// @brief Sets the current paper (background) color using a predefined color index
+/// @param [in] color_index Index of the color from the predefined color palette
 void Paper(Ui32 color_index) {
   g_paper = std::min(color_index, (Ui32)g_colors.size() - 1u);
 }
 
+/// @brief Sets the current paper (background) color using RGB values
+/// @param [in] red Red component (0-255)
+/// @param [in] green Green component (0-255)
+/// @param [in] blue Blue component (0-255)
 void Paper(Si32 red, Si32 green, Si32 blue) {
   g_paper = Rgba(Clamp(red, 0, 255), Clamp(green, 0, 255), Clamp(blue, 0, 255), 255).rgba;
 }
 
+/// @brief Plots a single pixel at the specified coordinates using current ink color
+/// @param [in] x X-coordinate of the pixel
+/// @param [in] y Y-coordinate of the pixel
 void Plot(Si32 x, Si32 y) {
   g_pos.x = x;
   g_pos.y = y;
   SetPixel(g_pos.x, g_pos.y, InkRgba());
 }
 
+/// @brief Gets the color index of a pixel at specified coordinates
+/// @param [in] x X-coordinate of the pixel
+/// @param [in] y Y-coordinate of the pixel
+/// @return Color index from the predefined palette, or raw RGBA value if not in palette
 Ui32 Point(Si32 x, Si32 y) {
   Rgba color = GetPixel(x, y);
   for (Ui32 i = 0; i < g_colors.size(); ++i) {
@@ -108,12 +131,19 @@ Ui32 Point(Si32 x, Si32 y) {
   return color.rgba;
 }
 
+/// @brief Draws a line from current position to specified coordinates using current ink color
+/// @param [in] x X-coordinate of the end point
+/// @param [in] y Y-coordinate of the end point
 void Draw(Si32 x, Si32 y) {
   DrawLine(g_pos, Vec2Si32(x, y), InkRgba());
   g_pos.x = x;
   g_pos.y = y;
 }
 
+/// @brief Draws a circle with specified center and radius using current ink color
+/// @param [in] x X-coordinate of the center
+/// @param [in] y Y-coordinate of the center
+/// @param [in] r Radius of the circle
 void Circle(Si32 x, Si32 y, float r) {
   for (Si32 i = 0; i < 1024; ++i) {
     float alpha = (float)i * (1.f / 1024.f * (float)M_PI * 2.f);
@@ -123,7 +153,9 @@ void Circle(Si32 x, Si32 y, float r) {
   }
 }
 
-
+/// @brief Fills an area starting from specified point with current ink color
+/// @param [in] x X-coordinate of the starting point
+/// @param [in] y Y-coordinate of the starting point
 void Fill(Si32 x, Si32 y) {
   Rgba c = GetPixel(x, y);
   Rgba target = InkRgba();
@@ -156,6 +188,10 @@ void Fill(Si32 x, Si32 y) {
   }
 }
 
+/// @brief Prints text at specified coordinates using pixel font
+/// @param [in] x X-coordinate of the text position
+/// @param [in] y Y-coordinate of the text position
+/// @param [in] text Text to print
 void PixelPrint(Si32 x, Si32 y, string text) {
   if (g_font.IsEmpty()) {
     g_font.LoadLetterBits(g_tiny_font_letters, 6, 8);
@@ -171,30 +207,49 @@ void PixelPrint(Si32 x, Si32 y, string text) {
   g_text_pos.y = y - g_font.EvaluateSize(text.c_str(), false).y;
 }
 
+/// @brief Prints an integer value at specified coordinates
+/// @param [in] x X-coordinate of the text position
+/// @param [in] y Y-coordinate of the text position
+/// @param [in] value Integer value to print
 void PixelPrint(Si32 x, Si32 y, Si32 value) {
   char buffer[1024];
   snprintf(buffer, 1024, "%d", value);
   PixelPrint(x, y, buffer);
 }
 
+/// @brief Prints a floating-point value at specified coordinates
+/// @param [in] x X-coordinate of the text position
+/// @param [in] y Y-coordinate of the text position
+/// @param [in] value Floating-point value to print
 void PixelPrint(Si32 x, Si32 y, double value) {
   char buffer[1024];
   snprintf(buffer, 1024, "%f", value);
   PixelPrint(x, y, buffer);
 }
 
+/// @brief Prints text at current text position
+/// @param [in] text Text to print
 void PixelPrint(string text) {
   PixelPrint(g_text_pos.x, g_text_pos.y, text);
 }
 
+/// @brief Prints an integer value at current text position
+/// @param [in] value Integer value to print
 void PixelPrint(Si32 value) {
   PixelPrint(g_text_pos.x, g_text_pos.y, value);
 }
 
+/// @brief Prints a floating-point value at current text position
+/// @param [in] value Floating-point value to print
 void PixelPrint(double value) {
   PixelPrint(g_text_pos.x, g_text_pos.y, value);
 }
 
+/// @brief Gets text input from user at specified coordinates
+/// @param [in] x X-coordinate of the input position
+/// @param [in] y Y-coordinate of the input position
+/// @param [in] text Prompt text to display
+/// @return User input as string
 string PixelInput(Si32 x, Si32 y, string text) {
   Sprite prev_backbuffer;
   prev_backbuffer.Clone(GetEngine()->GetBackbuffer());
@@ -236,10 +291,16 @@ string PixelInput(Si32 x, Si32 y, string text) {
   }
 }
 
+/// @brief Gets text input from user at specified coordinates
+/// @param [in] text Prompt text to display
+/// @return User input as string
 string PixelInput(string text) {
   return PixelInput(g_text_pos.x, g_text_pos.y, text);
 }
 
+/// @brief Converts a string to a number
+/// @param [in] text String to convert
+/// @return Converted number value
 double Number(string text) {
   double result = 0.0;
   double sign = 1.0;
@@ -277,6 +338,10 @@ double Number(string text) {
   return result * sign;
 }
 
+/// @brief Calculates squared distance between two RGBA colors
+/// @param [in] a First RGBA color
+/// @param [in] b Second RGBA color
+/// @return Squared distance between the colors
 Si32 DistanceSq(Rgba a, Rgba b) {
   Si32 deltaR = Si32(a.r) - Si32(b.r);
   Si32 deltaG = Si32(a.g) - Si32(b.g);
@@ -285,6 +350,9 @@ Si32 DistanceSq(Rgba a, Rgba b) {
   return deltaR * deltaR + deltaG * deltaG + deltaB * deltaB + deltaA * deltaA;
 }
 
+/// @brief Gets the name of a color closest to the specified RGBA value
+/// @param [in] color RGBA color to find name for
+/// @return Name of the closest matching color from predefined palette
 const char* ColorName(Rgba color) {
   const char* name = g_color_names[0];
   Si32 min_dist_sq = DistanceSq(color, g_colors[0]);
@@ -298,6 +366,10 @@ const char* ColorName(Rgba color) {
   return name;
 }
 
+/// @brief Gets character at specified screen coordinates
+/// @param [in] x X-coordinate on text screen
+/// @param [in] y Y-coordinate on text screen
+/// @return Character at specified position as string
 string Screen(Si32 x, Si32 y) {
   if (x < 0 || x >= g_text_overlay_size.x || y < 0 || y >= g_text_overlay_size.y) {
     return string("");
@@ -308,6 +380,10 @@ string Screen(Si32 x, Si32 y) {
   return Utf32ToUtf8(data);
 };
 
+/// @brief Gets the ink color index at specified screen coordinates
+/// @param [in] x X-coordinate on text screen
+/// @param [in] y Y-coordinate on text screen
+/// @return Ink color index at the specified position
 Si32 ScreenInk(Si32 x, Si32 y) {
   if (x < 0 || x >= g_text_overlay_size.x || y < 0 || y >= g_text_overlay_size.y) {
     return 0;
@@ -315,6 +391,10 @@ Si32 ScreenInk(Si32 x, Si32 y) {
   return g_text_overlay[y*g_text_overlay_size.x+x].ink;
 }
 
+/// @brief Gets the paper color index at specified screen coordinates
+/// @param [in] x X-coordinate on text screen
+/// @param [in] y Y-coordinate on text screen
+/// @return Paper color index at the specified position
 Si32 ScreenPaper(Si32 x, Si32 y) {
   if (x < 0 || x >= g_text_overlay_size.x || y < 0 || y >= g_text_overlay_size.y) {
     return 0;
@@ -322,6 +402,9 @@ Si32 ScreenPaper(Si32 x, Si32 y) {
   return g_text_overlay[y*g_text_overlay_size.x+x].paper;
 }
 
+/// @brief Sets the cursor position on the text screen
+/// @param [in] x X-coordinate for cursor
+/// @param [in] y Y-coordinate for cursor
 void At(Si32 x, Si32 y) {
   Si32 sx = x % g_text_overlay_size.x;
   Si32 ya = x / g_text_overlay_size.x;
@@ -337,6 +420,8 @@ void At(Si32 x, Si32 y) {
   g_cursor = Vec2Si32(sx, sy);
 }
 
+/// @brief Prints text at current cursor position
+/// @param [in] text Text to print
 void Print(string text) {
   Utf32Reader r;
   r.Reset(text.c_str());
@@ -369,18 +454,24 @@ void Print(string text) {
   }
 }
 
+/// @brief Prints an integer value at current cursor position
+/// @param [in] value Integer value to print
 void Print(Si32 value) {
   char buffer[1024];
   snprintf(buffer, 1024, "%d", value);
   Print(buffer);
 }
 
+/// @brief Prints a floating-point value at current cursor position
+/// @param [in] value Floating-point value to print
 void Print(double value) {
   char buffer[1024];
   snprintf(buffer, 1024, "%f", value);
   Print(buffer);
 }
 
+/// @brief Gets text input from user at specified coordinates
+/// @return User input as string
 string Input() {
   Sprite prev_backbuffer;
   prev_backbuffer.Clone(GetEngine()->GetBackbuffer());
@@ -423,6 +514,7 @@ string Input() {
   }
 }
 
+/// @brief Clears the screen with current paper color
 void Cls() {
   for (size_t i = 0; i < g_text_overlay.size(); ++i) {
     g_text_overlay[i].ink = g_ink;
@@ -432,6 +524,7 @@ void Cls() {
   Clear(PaperRgba());
 }
 
+/// @brief Updates the screen display
 void Show() {
   Vec2Si32 size = ScreenSize() + Vec2Si32(7, 7);
   g_text_overlay_size = Vec2Si32(size.x/8, size.y/8);
@@ -446,6 +539,9 @@ void Show() {
   ShowFrame();
 }
 
+/// @brief Sets a custom character in the 8x8 font
+/// @param [in] codepoint Unicode codepoint of the character
+/// @param [in] data_bits Bitmap data for the character (8x8 pixels)
 void SetCharacter(string codepoint, Ui64 data_bits) {
   Sprite sprite;
   sprite.Create(Vec2Si32(8, 8));
@@ -465,6 +561,7 @@ void SetCharacter(string codepoint, Ui64 data_bits) {
   g_font_8x8.AddGlyph(reader.ReadOne(), 0, sprite);
 }
 
+/// @brief Main entry point for the application
 void EasyMain() {
   ResizeScreen(256, 144);
   std::vector<Ui8> letters = ReadFile("data/font_8x8.txt");
