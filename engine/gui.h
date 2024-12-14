@@ -202,6 +202,7 @@ class Panel : public std::enable_shared_from_this<Panel> {
   Ui32 tab_order_;
   bool is_current_tab_;
   Sprite background_;
+  bool do_regenerate_background_;
   std::deque<std::shared_ptr<Panel>> children_;
   Panel *parent_ = nullptr;
   Si32 anchor_bottom_d_ = 0;

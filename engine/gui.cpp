@@ -52,6 +52,7 @@ Panel::Panel(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
 , size_(size)
 , tab_order_(tab_order)
 , is_current_tab_(0)
+, do_regenerate_background_(false)
 , background_(std::move(background))
 , is_clickable_(is_clickable)
 , is_visible_(true) {
@@ -64,6 +65,7 @@ Panel::Panel(Ui64 tag, std::shared_ptr<GuiTheme> theme)
 , size_(Vec2Si32(64, 64))
 , tab_order_((Ui32)tag)
 , is_current_tab_(0)
+, do_regenerate_background_(true)
 , is_clickable_(false)
 , is_visible_(true)
 , theme_(theme) {
@@ -175,10 +177,14 @@ void Panel::SetHeight(Si32 height) {
 }
 
 void Panel::RegenerateSprites() {
+  if (theme_ && do_regenerate_background_) {
+    background_ = theme_->panel_background_.DrawExternalSize(size_);
+  }
 }
 
 void Panel::SetBackground(const Sprite &background) {
   background_ = background;
+  do_regenerate_background_ = false;
 }
 
 Panel::~Panel() {
@@ -1517,8 +1523,8 @@ void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
   }
   Vec2Si32 inc_pos = absolute_pos +
   (dir_
-   ? size_.oy() - normal_button_inc_.Size().oy() + Vec2Si32(0, -1)
-   : size_.xo() - normal_button_inc_.Size().xo() + Vec2Si32(-1, 0));
+   ? size_.oy() - normal_button_inc_.Size().oy() + Vec2Si32(0, -2)
+   : size_.xo() - normal_button_inc_.Size().xo() + Vec2Si32(-2, 0));
   if (state_ == kIncDown) {
     down_button_inc_.Draw(inc_pos + button_offset);
   } else {
