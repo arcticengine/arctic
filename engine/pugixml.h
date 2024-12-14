@@ -697,14 +697,15 @@ namespace pugi
 		/// @param proto Attribute to copy
 		/// @return Added attribute
 		XmlAttribute prepend_copy(const XmlAttribute& proto);
-		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
-		/// @param name Name to search for
-		/// @param attr Attribute to insert
+
+    /// @brief Add a copy of the specified attribute after the attribute sepcified. Returns added attribute, or empty attribute on errors.
+		/// @param proto Attribute to copy
+		/// @param attr Attribute to insert to
 		/// @return Added attribute
 		XmlAttribute insert_copy_after(const XmlAttribute& proto, const XmlAttribute& attr);
-		/// @brief Add attribute with specified name. Returns added attribute, or empty attribute on errors.
+    /// @brief Add a copy of the specified attribute before the attribute sepcified. Returns added attribute, or empty attribute on errors.
 		/// @param proto Attribute to copy
-		/// @param attr Attribute to insert
+		/// @param attr Attribute to insert to
 		/// @return Added attribute
 		XmlAttribute insert_copy_before(const XmlAttribute& proto, const XmlAttribute& attr);
 
@@ -901,7 +902,6 @@ namespace pugi
 		/// @param os Stream to use
 		/// @param indent Indent to use
 		/// @param flags Formatting flags
-		/// @param encoding Encoding to use
 		/// @param depth Depth to use
 		void print(std::basic_ostream<wchar_t, std::char_traits<wchar_t> >& os, const char_t* indent = "\t", unsigned int flags = format_default, unsigned int depth = 0) const;
 
@@ -1427,7 +1427,6 @@ namespace pugi
 		/// @details This function loads a document from a stream. The stream is read until it is exhausted or a parse error occurs.
 		/// @param stream The stream to load the document from.
 		/// @param options Optional parsing options (see xml_parse_options).
-		/// @param encoding Optional encoding to use for the document (see xml_encoding).
 		/// @return The result of the parsing operation.  
 		XmlParseResult load(std::basic_istream<wchar_t, std::char_traits<wchar_t> >& stream, unsigned int options = parse_default);
 
@@ -1506,7 +1505,6 @@ namespace pugi
 		/// @param stream The stream to save the document to.
 		/// @param indent The indentation string to use.
 		/// @param flags Optional formatting flags (see xml_format_flags).
-		/// @param encoding Optional encoding to use for the document (see xml_encoding).
 		void save(std::basic_ostream<wchar_t, std::char_traits<wchar_t> >& stream, const char_t* indent = "\t", unsigned int flags = format_default) const;
 
 		/// @brief Save XML to file
