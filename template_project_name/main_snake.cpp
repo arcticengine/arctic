@@ -36,11 +36,11 @@ void ShowFailureMessage() {
 void Draw_scene(const std::deque<std::pair<int, int>>& snake, const std::list<std::pair<int, int>>& food) {
     Clear();
     for (auto snake_part : snake){
-        g_font.Draw(u8"o", snake_part.first, snake_part.second, kTextOriginBottom,
+        g_font.Draw(u8"o", snake_part.first, snake_part.second, kTextOriginBottom, kTextAlignmentLeft,
             kDrawBlendingModeColorize, kFilterNearest, Rgba(128, 255, 128));
     }
     for (auto food_part : food){
-        g_font.Draw(u8"o", food_part.first, food_part.second, kTextOriginBottom,
+        g_font.Draw(u8"o", food_part.first, food_part.second, kTextOriginBottom, kTextAlignmentLeft,
             kDrawBlendingModeColorize, kFilterNearest, Rgba(255, 128, 128));
     }
     ShowFrame();
