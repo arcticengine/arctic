@@ -1380,7 +1380,9 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
   Si32 s1 = 1 + normal_button_dec_.Size()[dir_];
   Si32 s4 = size_[dir_] - 1 - normal_button_inc_.Size()[dir_];
   Si32 w = s4 - s1 - normal_button_cur_.Size()[dir_];
-  Si32 s2 = Si32(Si64(s1) + Si64(w) * (Si64(value_) - Si64(min_value_)) / (Si64(max_value_) - Si64(min_value_)));
+  Si64 value_range = Si64(max_value_) - Si64(min_value_);
+  Si32 s2 = Si32(Si64(s1) +
+                 (value_range ? Si64(w) * (Si64(value_) - Si64(min_value_)) / value_range : 0));
   Si32 s3 = s2 + normal_button_cur_.Size()[dir_];
 
   ScrollState prev_state = state_;
