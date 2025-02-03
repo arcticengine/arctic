@@ -74,8 +74,7 @@ static const int kXEventMask = KeyPressMask | KeyReleaseMask | ButtonPressMask
   | ButtonReleaseMask | PointerMotionMask | ExposureMask
   | StructureNotifyMask;
 
-//static arctic::SoundPlayer g_sound_player;
-
+arctic::SoundPlayer g_sound_player;
 
 static EGLint const attribute_list[] = {
   EGL_RED_SIZE, 8,
@@ -317,7 +316,7 @@ void CreateMainWindow(SystemInfo *system_info) {
 }
 
 void ExitProgram(Si32 exit_code) {
-//  arctic::g_sound_player.Deinitialize();
+  arctic::g_sound_player.Deinitialize();
   arctic::StopLogger();
 
   exit(exit_code);
@@ -370,12 +369,15 @@ namespace arctic {
   void PrepareForTheEasyMainCall();
 }
 
+
+
 int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   std::string initial_path = arctic::PrepareInitialPath();
   arctic::StartLogger();
-//  arctic::g_sound_player.Initialize();
+
+  arctic::g_sound_player.Initialize();
   CreateMainWindow(&system_info);
   arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
@@ -397,7 +399,7 @@ int main(int argc, char **argv) {
   arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
-//  arctic::g_sound_player.Deinitialize();
+  arctic::g_sound_player.Deinitialize();
   arctic::StopLogger();
 
   return 0;
