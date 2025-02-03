@@ -26,7 +26,7 @@
 #include "engine/arctic_platform_def.h"
 #include "engine/arctic_platform.h"
 
-#ifdef ARCTIC_PLATFORM_PI
+#if defined(ARCTIC_PLATFORM_PI)
 
 #include <dirent.h>
 #include <cstring>
@@ -416,4 +416,4 @@ void PumpMessages() {
 
 }  // namespace arctic
 
-#endif  // ARCTIC_PLATFORM_PI
+#endif  // defined(ARCTIC_PLATFORM_PI) 

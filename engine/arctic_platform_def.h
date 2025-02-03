@@ -29,6 +29,8 @@
 #define ARCTIC_PLATFORM_WINDOWS
 #elif defined __APPLE__
 #define ARCTIC_PLATFORM_MACOSX
+#elif defined PLATFORM_WEB
+#define ARCTIC_PLATFORM_WEB
 #elif defined PLATFORM_RPI
 #define ARCTIC_PLATFORM_PI
 #define ARCTIC_PLATFORM_PI_ES_EGL

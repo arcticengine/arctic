@@ -26,7 +26,7 @@
 #include "engine/arctic_platform_def.h"
 #include "engine/arctic_platform.h"
 
-#ifdef ARCTIC_PLATFORM_PI_ES_EGL
+#if defined (ARCTIC_PLATFORM_PI_ES_EGL)
 
 #include <dirent.h>
 #include <cstring>
@@ -255,4 +255,4 @@ int main(int argc, char **argv) {
 }
 #endif  // ARCTIC_NO_MAIN
 
-#endif  // ARCTIC_PLATFORM_PI_ES_EGL
+#endif  // defined (ARCTIC_PLATFORM_PI_ES_EGL)

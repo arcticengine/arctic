@@ -26,7 +26,7 @@
 #include "engine/arctic_platform_def.h"
 #include "engine/arctic_platform.h"
 
-#ifdef ARCTIC_PLATFORM_PI
+#if defined(ARCTIC_PLATFORM_PI) || defined(ARCTIC_PLATFORM_WEB)
 
 #include <dirent.h>
 #include <cstring>
@@ -215,4 +215,4 @@ std::string GluePath(const char *first_part, const char *second_part) {
 
 }  // namespace arctic
 
-#endif  // ARCTIC_PLATFORM_PI
+#endif  // defined(ARCTIC_PLATFORM_PI) || defined(ARCTIC_PLATFORM_WEB)

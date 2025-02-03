@@ -25,7 +25,7 @@
 
 #include "engine/arctic_platform_def.h"
 
-#ifdef ARCTIC_PLATFORM_PI
+#if defined (ARCTIC_PLATFORM_PI) || defined(ARCTIC_PLATFORM_WEB)
 
 #include <cstring>
 #include <iostream>
@@ -68,4 +68,4 @@ void Check(bool condition, const char *error_message,
 
 }  // namespace arctic
 
-#endif  // ARCTIC_PLATFORM_PI
+#endif  // defined (ARCTIC_PLATFORM_PI) || defined(ARCTIC_PLATFORM_WEB)

@@ -27,7 +27,7 @@
 
 
 #include "engine/arctic_platform_def.h"
-#if defined(ARCTIC_PLATFORM_PI)|| defined(ARCTIC_PLATFORM_MACOSX)
+#if defined(ARCTIC_PLATFORM_PI)|| defined(ARCTIC_PLATFORM_MACOSX)|| defined(ARCTIC_PLATFORM_WEB)
 
 #include "engine/arctic_platform_tcpip.h"
 
@@ -382,5 +382,5 @@ ListenerSocket::ListenerSocket(ListenerSocket&& rhs) noexcept {
 
 }  // namespace arctic
 
-#endif  // defined(ARCTIC_PLATFORM_PI)|| defined(ARCTIC_PLATFORM_MACOSX)
+#endif  // defined(ARCTIC_PLATFORM_PI)|| defined(ARCTIC_PLATFORM_MACOSX) ||defined(ARCTIC_PLATFORM_WEB)
 

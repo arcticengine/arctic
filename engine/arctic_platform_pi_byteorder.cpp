@@ -25,7 +25,7 @@
 
 #include "engine/arctic_platform_def.h"
 
-#ifdef ARCTIC_PLATFORM_PI
+#if defined(ARCTIC_PLATFORM_PI) || defined(ARCTIC_PLATFORM_WEB) 
 
 #include <arpa/inet.h>
 
@@ -59,4 +59,4 @@ Si32 ToBe(Si32 x) {
 
 }  // namespace arctic
 
-#endif  // ARCTIC_PLATFORM_PI
+#endif  // defined(ARCTIC_PLATFORM_PI) || defined(ARCTIC_PLATFORM_WEB) 
