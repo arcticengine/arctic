@@ -56,7 +56,7 @@ bool Mesh::Init(int numVertexStreams, int nv,
     return false;
   }
 
-  memset(this, 0, sizeof(Mesh));
+  memset((char*)this, 0, sizeof(Mesh));
 
 
   mVertexData.mNumVertexArrays = 0;//numVertexStreams;

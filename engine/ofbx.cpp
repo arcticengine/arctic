@@ -1735,7 +1735,7 @@ template <typename T> static bool parseArrayRaw(const Property& property,
         return false;
       if (data + len > property.value.end)
         return false;
-      memcpy(out, data, len);
+      memcpy((char*)out, (char*)data, len);
       return true;
     } else if (enc == 1) {
       if (static_cast<int>(elem_size * count) > max_size)
@@ -1981,7 +1981,7 @@ static void splat(std::vector<T>* out,
   if (mapping == GeometryImpl::BY_POLYGON_VERTEX) {
     if (indices.empty()) {
       out->resize(data.size());
-      memcpy(&(*out)[0], &data[0], sizeof(data[0]) * data.size());
+      memcpy((char*)&(*out)[0], (char*)&data[0], sizeof(data[0]) * data.size());
     } else {
       out->resize(indices.size());
       int data_size = static_cast<int>(data.size());

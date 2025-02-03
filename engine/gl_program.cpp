@@ -205,7 +205,7 @@ UniformsTable::UniformData::UniformData() : type(UniformDataType::Int), value({ 
 
 UniformsTable::UniformData &UniformsTable::UniformData::operator=(const UniformData &other) {
     type = other.type;
-    memcpy(&value, &other.value, sizeof(value));
+    memcpy((char*)&value, (char*)&other.value, sizeof(value));
     return *this;
 }
 

@@ -646,7 +646,7 @@ bool Mesh_Separate(Mesh *mesh) {
   }
 
   mesh->DeInit();
-  memcpy(mesh, &tmp, sizeof(Mesh));
+  memcpy((char*)mesh, (char*)&tmp, sizeof(Mesh));
 
   return true;
 }
