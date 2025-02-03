@@ -163,7 +163,7 @@ void CreateMainWindow(SystemInfo *system_info) {
 
 void ExitProgram(Si32 exit_code) {
 //  arctic::g_sound_player.Deinitialize();
-//  arctic::StopLogger();
+  arctic::StopLogger();
 
   exit(exit_code);
 }
@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   std::string initial_path = arctic::PrepareInitialPath();
-//  arctic::StartLogger();
+  arctic::StartLogger();
 //  arctic::g_sound_player.Initialize();
   CreateMainWindow(&system_info);
   arctic::GetEngine()->SetArgcArgv(argc,
@@ -230,7 +230,7 @@ int main(int argc, char **argv) {
   EasyMain();
 
 //  arctic::g_sound_player.Deinitialize();
-//  arctic::StopLogger();
+  arctic::StopLogger();
 
   return 0;
 }

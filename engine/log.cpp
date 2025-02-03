@@ -92,7 +92,23 @@ static std::thread g_logger_thread;
 static std::string *g_quit_item = nullptr;
 static std::mutex g_quit_mutex;
 
-void LoggerThreadFunction() {
+#ifdef ARCTIC_PLATFORM_WEB
+  void LoggerThreadFunction() {
+    while (true) {
+      std::string *message = g_logger_queue.TryDequeue();
+      if (!message) {
+        message = g_logger_queue.SyncDequeue();
+      }
+      if (message == g_quit_item) {
+        delete message;
+        return;
+      }
+      std::cout << *message << std::endl;
+      delete message;
+    }
+  }
+#else  // ARCTIC_PLATFORM_WEB
+  void LoggerThreadFunction() {
     const char *file_name = "log.txt";
     const char *newline = "\r\n";
     std::ofstream out(file_name,
@@ -123,9 +139,9 @@ void LoggerThreadFunction() {
         return;
       }
       is_flush_needed = true;
-#ifdef ARCTIC_PLATFORM_MACOSX
+  #ifdef ARCTIC_PLATFORM_MACOSX
       os_log_info(OS_LOG_DEFAULT, "%{public}s", message->c_str());
-#endif
+  #endif
       out.write(message->data(), static_cast<std::streamsize>(message->size()));
       Check(!(out.rdstate() & std::ios_base::badbit),
         "Error in LoggerThreadFunction. Can't write the file, file_name: ",
@@ -134,8 +150,11 @@ void LoggerThreadFunction() {
       Check(!(out.rdstate() & std::ios_base::badbit),
         "Error in LoggerThreadFunction. Can't write the file, file_name: ",
         file_name);
+      delete message;
     }
   }
+#endif  // ARCTIC_PLATFORM_WEB
+
 
   void Log(const char *text) {
     if (g_is_log_enabled.load()) {
