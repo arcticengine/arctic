@@ -98,12 +98,12 @@ extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
 #include <GL/glu.h>  // NOLINT
 #endif  // ARCTIC_PLATFORM_PI_OPENGL_GLX
 
-#ifdef ARCTIC_PLATFORM_PI_ES_EGL
+#if defined(ARCTIC_PLATFORM_PI_ES_EGL) || defined(ARCTIC_PLATFORM_WEB)
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #define GL_STACK_OVERFLOW 0x0503
 #define GL_STACK_UNDERFLOW 0x0504
-#endif  // ARCTIC_PLATFORM_PI_ES_EGL
+#endif  // defined(ARCTIC_PLATFORM_PI_ES_EGL) || defined(ARCTIC_PLATFORM_WEB)
 
 inline const char *GlErrorToString(GLenum error_code) {
     switch (error_code) {

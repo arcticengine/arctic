@@ -306,29 +306,6 @@ void Engine::Draw2d() {
     GLsizei(ceilf((ty.y)*0.5f*window_height_)));
   glEnable(GL_SCISSOR_TEST);
 
-
-  /*GlBuffer::BindDefault();
-  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-    mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-    (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
-      mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
-  ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
-  ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
-    mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-    (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
-      mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
-  ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
-
-  copy_backbuffers_program_->Bind();
-  copy_backbuffers_program_->SetUniform("s_texture", 0);
-  copy_backbuffers_program_->CheckActiveUniforms(1);
-
-  GlState::SetBlending(kDrawBlendingModeCopyRgba);
-
-  gl_backbuffer_texture_.Bind(0);
-  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
-*/
-
   size_t first_idx = 0;
   size_t idx = 0;
   bool do_draw = false;
@@ -482,37 +459,52 @@ void Engine::Draw2d() {
     mesh_.mFaceData.mIndexArray[0].mNum = 2;
     mesh_.SetTriangle(0, 0, 0, 1, 2);
     mesh_.SetTriangle(0, 1, 2, 3, 0);
+    GLenum error;
 
-    GlBuffer::BindDefault();
+    // Create and bind VBO
+    GLuint vbo;
+    ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &vbo));
+    ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+    // 1. Create and bind vertex buffer, upload the data
+    ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ARRAY_BUFFER,
+                mesh_.mVertexData.mVertexArray[0].mNum * mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+                mesh_.mVertexData.mVertexArray[0].mBuffer,
+                GL_STATIC_DRAW));
+
+    // 2. Create and bind index buffer
+    GLuint ebo;
+    ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &ebo));
+    ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
+    ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                mesh_.mFaceData.mIndexArray[0].mNum * 3 * sizeof(GLuint),
+                mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex,
+                GL_STATIC_DRAW));
+
+    // 3. Set vertex attributes using offsets within VBO
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-                                                mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-                                                (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
-                                                mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
+        mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+        (const GLvoid*)(uintptr_t)mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
+
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
-                                                mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-                                                (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
-                                                mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
+        mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+        (const GLvoid*)(uintptr_t)mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
     ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
     copy_backbuffers_program_->Bind();
     copy_backbuffers_program_->SetUniform("s_texture", 0);
     copy_backbuffers_program_->CheckActiveUniforms(1);
 
-
     GlState::SetBlending(kDrawBlendingModePremultipliedAlphaBlend);
-
+  
     gl_backbuffer_texture_.Bind(0);
-    ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
+    // 4. Draw (with index buffer bound)
+    ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES,
+                  mesh_.mFaceData.mIndexArray[0].mNum * 3,
+                  GL_UNSIGNED_INT,
+                  0));  // Offset into the bound index buffer
   }
 
-  /*copy_backbuffers_program_->Bind();
-  copy_backbuffers_program_->SetUniform("s_texture", 0);
-  copy_backbuffers_program_->CheckActiveUniforms(1);
-  GlState::SetBlending(kDrawBlendingModeAlphaBlend);
-  hw_backbuffer_texture_.sprite_instance()->texture().Bind(0);
-  ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES, mesh_.mFaceData.mIndexArray[0].mNum * 3, GL_UNSIGNED_INT, mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
-*/
   Swap();
 }
 
