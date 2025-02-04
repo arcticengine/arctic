@@ -95,7 +95,7 @@ EGLSurface g_egl_surface;
 
 KeyCode TranslateKeyCode(const std::string& code) {
     // Define a mapping of code values to KeyCode enums
-    std::unordered_map<std::string, KeyCode> code_to_key_code = {
+    static std::unordered_map<std::string, KeyCode> code_to_key_code = {
         {"KeyA", kKeyA},
         {"KeyB", kKeyB},
         {"KeyC", kKeyC},
