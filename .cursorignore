@@ -1,0 +1,21 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+.vscode
+.idea
+.gitignore
+.gitlab-ci.yml
+*.plist
+*.sln
+*.vcxproj
+*.vcxproj*
+*.rc
+*.bat
+*.sh
+*.cmd
+*.rst
+*.yml
+*.yaml
+*.json
+*.app
+*.wav
+*.ogg
+*.tga

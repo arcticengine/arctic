@@ -33,6 +33,7 @@
 
 # Visual studio hidden stuff
 .vs
+.vscode
 
 # XCode
 xcuserdata
@@ -54,6 +55,14 @@ CMakeFiles
 Makefile
 cmake_install.cmake
 
-#final artefacts
+# final artefacts
 wizard/wizard
 log.txt
+
+# emscripten build artefacts
+*.aw.js
+*.data
+*.js
+*.wasm
+*.wasm.map
+*.ww.js
