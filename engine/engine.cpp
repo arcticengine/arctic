@@ -391,16 +391,32 @@ void Engine::Draw2d() {
     if (do_draw) {
       do_draw = false;
       if (mesh_.mFaceData.mIndexArray[0].mNum) {
-        GlBuffer::BindDefault();
+        GLuint vbo;
+        ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &vbo));
+        ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vbo));
+        // 1. Create and bind vertex buffer, upload the data
+        ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ARRAY_BUFFER,
+                    mesh_.mVertexData.mVertexArray[0].mNum * mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+                    mesh_.mVertexData.mVertexArray[0].mBuffer,
+                    GL_STATIC_DRAW));
+
+        // 2. Create and bind index buffer
+        GLuint ebo;
+        ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &ebo));
+        ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
+        ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                    mesh_.mFaceData.mIndexArray[0].mNum * 3 * sizeof(GLuint),
+                    mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex,
+                    GL_STATIC_DRAW));
+
+        // 3. Set vertex attributes using offsets within VBO
         ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-              mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-              (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
-              mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
+            mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+            (const GLvoid*)(uintptr_t)mesh_.mVertexData.mVertexArray[0].mFormat.mElems[0].mOffset));
         ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(0));
         ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
-              mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-              (char*)mesh_.mVertexData.mVertexArray[0].mBuffer +
-              mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
+            mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
+            (const GLvoid*)(uintptr_t)mesh_.mVertexData.mVertexArray[0].mFormat.mElems[2].mOffset));
         ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray(1));
 
         GlProgram *program = copy_backbuffers_program_.get();
@@ -433,10 +449,11 @@ void Engine::Draw2d() {
         GlState::SetBlending(first_blending_mode);
         first_texture->Bind(0);
 
+        // 4. Draw (with index buffer bound)
         ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES,
               mesh_.mFaceData.mIndexArray[0].mNum * 3,
               GL_UNSIGNED_INT,
-              mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex));
+              0));  // Offset into the bound index buffer
         first_idx = idx;
         mesh_.ClearGeometry();
       }
@@ -459,7 +476,6 @@ void Engine::Draw2d() {
     mesh_.mFaceData.mIndexArray[0].mNum = 2;
     mesh_.SetTriangle(0, 0, 0, 1, 2);
     mesh_.SetTriangle(0, 1, 2, 3, 0);
-    GLenum error;
 
     // Create and bind VBO
     GLuint vbo;
