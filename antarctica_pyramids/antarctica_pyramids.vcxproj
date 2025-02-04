@@ -336,7 +336,6 @@
     <ClCompile Include="..\engine\arctic_platform_pi_opengl_glx.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_sound.cpp" />
     <ClCompile Include="..\engine\arctic_mixer.cpp" />
-    <ClCompile Include="..\engine\arctic_platform_pi.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows_sound.cpp" />
     <ClCompile Include="..\engine\csv.cpp" />
     <ClCompile Include="..\engine\gui.cpp" />

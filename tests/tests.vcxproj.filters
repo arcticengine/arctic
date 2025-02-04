@@ -146,9 +146,6 @@
     <ClCompile Include="..\engine\log.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\arctic_platform_pi.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\byte_array.cpp">
       <Filter>engine</Filter>
     </ClCompile>

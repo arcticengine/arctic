@@ -113,9 +113,6 @@
     <ClCompile Include="..\engine\unicode.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\arctic_platform_pi.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\miniz.c">
       <Filter>engine</Filter>
     </ClCompile>
