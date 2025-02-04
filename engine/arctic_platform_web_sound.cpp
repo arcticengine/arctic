@@ -53,7 +53,7 @@ namespace arctic {
 
 extern SoundMixerState g_sound_mixer_state;
 static SoundPlayerImpl *g_sound_player_impl = nullptr;
-static uint8_t audioThreadStack[4096];
+static uint8_t audioThreadStack[262144];
 
 class SoundPlayerImpl {
 public:
@@ -97,6 +97,7 @@ bool OnCanvasClick(int eventType, const EmscriptenMouseEvent *mouseEvent, void *
   }
   return false;
 }
+
 
 bool GenerateNoise(int numInputs, const AudioSampleFrame *inputs,
                       int numOutputs, AudioSampleFrame *outputs,
@@ -152,7 +153,10 @@ void SoundPlayerImpl::Initialize() {
   tmp.resize(2 << 20);
   g_sound_mixer_state.InputTasksToMixerThread();
 
-  EMSCRIPTEN_WEBAUDIO_T context = emscripten_create_audio_context(0);
+  EmscriptenWebAudioCreateAttributes attributes;
+  attributes.latencyHint = "interactive";
+  attributes.sampleRate = 44100;
+  EMSCRIPTEN_WEBAUDIO_T context = emscripten_create_audio_context(&attributes);
   emscripten_start_wasm_audio_worklet_thread_async(context, arctic::audioThreadStack, sizeof(arctic::audioThreadStack),
     &arctic::AudioThreadInitialized, 0);
 
