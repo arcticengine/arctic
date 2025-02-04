@@ -433,6 +433,7 @@ void PlayIntro() {
 
     ShowFrame();
   }
+  ShowFrame();
   ResizeScreen(320, 200);
   sp0.Create(320, 200);
 
