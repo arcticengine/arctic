@@ -93,6 +93,28 @@ const EGLint context_attributes[] = {
 EGLDisplay g_egl_display;
 EGLSurface g_egl_surface;
 
+
+void Fatal(const char *message, const char *message_postfix) {
+  size_t size = 1 +
+    strlen(message) +
+    (message_postfix ? strlen(message_postfix) : 0);
+  char *full_message = static_cast<char *>(malloc(size));
+  memset(full_message, 0, size);
+  snprintf(full_message, size, "%s%s", message,
+      (message_postfix ? message_postfix : ""));
+
+  std::cerr << "Arctic Engine ERROR: " << full_message << std::endl;
+  emscripten_force_exit(1);
+}
+
+void Check(bool condition, const char *error_message,
+    const char *error_message_postfix) {
+  if (condition) {
+    return;
+  }
+  Fatal(error_message, error_message_postfix);
+}
+
 KeyCode TranslateKeyCode(const std::string& code) {
     // Define a mapping of code values to KeyCode enums
     static std::unordered_map<std::string, KeyCode> code_to_key_code = {

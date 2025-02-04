@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
 ################### Variables. ####################
 # Change if you want modify path or other values. #
@@ -32,9 +31,14 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 ############## Define Project. ###############
 # ---- This the main options of project ---- #
 ##############################################
+IF (EMSCRIPTEN)
+  unset(APPLE)
+ELSE (EMSCRIPTEN)
+ENDIF (EMSCRIPTEN)
 
 project(${PROJECT_NAME} CXX)
 ENABLE_LANGUAGE(C)
+
 
 IF (APPLE)
   FIND_LIBRARY(AUDIOTOOLBOX AudioToolbox)
@@ -44,13 +48,18 @@ IF (APPLE)
   FIND_LIBRARY(GAMECONTROLLER GameController)
   FIND_LIBRARY(OPENGL OpenGL)
 ELSE (APPLE)
-  find_package(ALSA REQUIRED)
+
+  IF (EMSCRIPTEN)
+  ELSE (EMSCRIPTEN)
+    find_package(ALSA REQUIRED)
+    find_package(X11 REQUIRED)
+  ENDIF (EMSCRIPTEN)
 
   find_library(EGL_LIBRARY NAMES EGL)
   find_path(EGL_INCLUDE_DIR EGL/egl.h)
   find_library(GLES_LIBRARY NAMES GLESv2)
   find_path(GLES_INCLUDE_DIR GLES/gl.h)
-  IF (EGL_LIBRARY AND EGL_INCLUDE_DIR AND GLES_LIBRARY AND GLES_INCLUDE_DIR)
+  IF (EMSCRIPTEN OR (EGL_LIBRARY AND EGL_INCLUDE_DIR AND GLES_LIBRARY AND GLES_INCLUDE_DIR))
     message(STATUS "GLES EGL mode")
     set(EGL_MODE "EGL")
   ELSE ()
@@ -63,9 +72,9 @@ ELSE (APPLE)
     find_package(OpenGL REQUIRED)
   ENDIF (NOT EGL_MODE)
 
-  find_package(X11 REQUIRED)
   find_package(Threads REQUIRED)
 ENDIF (APPLE)
+
 
 
 # Definition of Macros
@@ -76,17 +85,24 @@ IF (APPLE)
     -DGL_SILENCE_DEPRECATION
   )
 ELSE (APPLE)
-	IF (EGL_MODE)
-    #only for es egl
+  IF (EMSCRIPTEN)
     add_definitions(
-       -DPLATFORM_RPI 
+      -DPLATFORM_WEB 
     )
-  ELSE (EGL_MODE)
-    #only for opengl glx
-    add_definitions(
-       -DPLATFORM_LINUX
-    )
-  ENDIF (EGL_MODE)
+  ELSE (EMSCRIPTEN)
+    IF (EGL_MODE)
+      #only for es egl
+      add_definitions(
+         -DPLATFORM_RPI 
+      )
+    ELSE (EGL_MODE)
+      #only for opengl glx
+      add_definitions(
+         -DPLATFORM_LINUX
+      )
+    ENDIF (EGL_MODE)
+  ENDIF (EMSCRIPTEN)
+  
   add_definitions(
    -DGLX
    -DGL_GLEXT_PROTOTYPES
@@ -104,7 +120,8 @@ ELSE (APPLE)
 ENDIF (APPLE)
 
 message(STATUS "CompilerId: ${CMAKE_CXX_COMPILER_ID}.")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
@@ -115,6 +132,25 @@ IF (EGL_MODE)
   #only for  es egl
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGLESv2 -lEGL")
 ENDIF (EGL_MODE)
+
+IF (EMSCRIPTEN)
+    # Set memory flags in linker flags, not compiler flags
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s INITIAL_MEMORY=1GB -sASSERTIONS -sASYNCIFY")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXIT_RUNTIME=1")
+
+    
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -sPTHREAD_POOL_SIZE=4")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s AUDIO_WORKLET=1 -sWASM_WORKERS=1")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sSTACK_SIZE=262144")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sASYNCIFY_STACK_SIZE=262144")
+
+    # Debug flags for source maps and C++ filenames/line numbers
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3 -gsource-map")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -O0 -g3 -gsource-map --source-map-base http://127.0.0.1:8000/")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -s WASM=1")
+ELSE (EMSCRIPTEN)
+ENDIF (EMSCRIPTEN)
 
 ################ Files ################
 #   --   Add files to project.   --   #
@@ -152,6 +188,7 @@ file(GLOB SRC_FILES_TO_REMOVE
 )
 list(REMOVE_ITEM SRC_FILES ${SRC_FILES_TO_REMOVE})
 
+
 # Add executable to build.
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE
    ${SRC_FILES}
@@ -176,13 +213,25 @@ target_link_libraries(
   ${OPENGL}
 )
 ELSE (APPLE)
-target_link_libraries(
-  ${PROJECT_NAME}
-  ${OPENGL_gl_LIBRARY}
-  ${X11_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${ALSA_LIBRARY}
-  #  ${EGL_LIBRARY}
-  #  ${GLES_LIBRARY}
-)
+  IF (EMSCRIPTEN)
+    target_link_libraries(
+      ${PROJECT_NAME}
+      ${OPENGL_gl_LIBRARY}
+      ${CMAKE_THREAD_LIBS_INIT}
+    )
+  ELSE (EMSCRIPTEN)
+    target_link_libraries(
+      ${PROJECT_NAME}
+      ${OPENGL_gl_LIBRARY}
+      ${X11_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      ${ALSA_LIBRARY}
+      #  ${EGL_LIBRARY}
+      #  ${GLES_LIBRARY}
+    )
+  ENDIF (EMSCRIPTEN)
 ENDIF (APPLE)
+
+IF (EMSCRIPTEN)
+  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "--preload-file data")
+ENDIF (EMSCRIPTEN)

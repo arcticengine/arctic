@@ -732,6 +732,8 @@ bool ShowProgress() {
           , "resource.h"
           , "resource.rc"
           , "targetver.h"
+          , "webserver.py"
+          , "index.html"
           , "template_project_name.sln"
           , "template_project_name.vcxproj"
           , "template_project_name.vcxproj.filters"
