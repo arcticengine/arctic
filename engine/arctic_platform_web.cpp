@@ -234,7 +234,7 @@ EM_BOOL MouseCallback(int eventType, const EmscriptenMouseEvent* e, void* userDa
       default: break;
     }
     InputMessage msg;
-    msg.kind = InputMessage::kKeyboard;
+    msg.kind = InputMessage::kMouse;
     msg.keyboard.key = key_code;
     msg.keyboard.key_state = (is_down ? 1 : 2);
     msg.keyboard.characters[0] = '\0';
