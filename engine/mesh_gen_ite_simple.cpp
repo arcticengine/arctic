@@ -130,13 +130,13 @@ bool Mesh_Surface(Mesh *me, const float density, int supersample, int /*mseed*/,
 
     for (int j=0; j<numpoints; j++) {
       if (supersample>1) {
-        if (GetEngine()->GetRandomFloat23(/*seed*/) > isupersample) {
+        if (GetEngine()->GetRandomF(/*seed*/) > isupersample) {
           continue;
         }
       }
 
-      const float u = GetEngine()->GetRandomFloat23(/*seed*/);
-      const float v = GetEngine()->GetRandomFloat23(/*seed*/);
+      const float u = GetEngine()->GetRandomF();
+      const float v = GetEngine()->GetRandomF();
 
       float data[16];
       int off = 0;

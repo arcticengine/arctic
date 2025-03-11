@@ -584,7 +584,7 @@ Ui8 Engine::GetRandom8() {
   return static_cast<Ui32>(rnd_8_());
 }
 
-float Engine::GetRandomFloat23() {
+float Engine::GetRandomF() {
   Ui32 a = static_cast<Ui32>(rnd_32_());
   a = (a>>9) | 0x3f800000;
   float res;
@@ -593,7 +593,7 @@ float Engine::GetRandomFloat23() {
   return res;
 }
 
-float Engine::GetRandomSFloat23() {
+float Engine::GetRandomSF() {
   Ui32 a = static_cast<Ui32>(rnd_32_());
   a = (a>>9) | 0x40000000;
   float res;
@@ -602,6 +602,22 @@ float Engine::GetRandomSFloat23() {
   return res;
 }
 
+double Engine::GetRandomD() {
+  Ui64 a = static_cast<Ui64>(rnd_64_());
+  a = (a>>12) | 0x3ff0000000000000;
+  double res;
+  memcpy(&res, &a, sizeof(double));
+  return res;
+}
+
+double Engine::GetRandomSD() {
+  Ui64 a = static_cast<Ui64>(rnd_64_());
+  a = (a>>12) | 0x4000000000000000;
+  double res;
+  memcpy(&res, &a, sizeof(double));
+  res -= 3.0;
+  return res;
+}
 
 Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
   Vec2F rel_pos = pos - Vec2F(0.5f, 0.5f);

@@ -177,13 +177,21 @@ class Engine {
   /// @return A random 8-bit unsigned integer.
   Ui8 GetRandom8();
 
-  /// @brief Generates a random float in the range [0, 1) with 23-bit precision.
+  /// @brief Generates a random float in the range [0, 1) with 32-bit precision.
   /// @return A random float in the range [0, 1).
-  float GetRandomFloat23();
+  float GetRandomF();
 
-  /// @brief Generates a random signed float in the range [-1, 1) with 23-bit precision.
+  /// @brief Generates a random signed float in the range [-1, 1) with 32-bit precision.
   /// @return A random signed float in the range [-1, 1).
-  float GetRandomSFloat23();
+  float GetRandomSF();
+
+  /// @brief Generates a random double in the range [0, 1) with 64-bit precision.
+  /// @return A random double in the range [0, 1).
+  double GetRandomD();
+
+  /// @brief Generates a random signed double in the range [-1, 1) with 64-bit precision.
+  /// @return A random signed double in the range [-1, 1).
+  double GetRandomSD();
 
   /// @brief Converts mouse coordinates to backbuffer coordinates.
   /// @param pos The mouse position as a Vec2F.

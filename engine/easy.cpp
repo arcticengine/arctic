@@ -1368,6 +1368,23 @@ Ui8 Random8() {
   return GetEngine()->GetRandom8();
 }
 
+float RandomF() {
+  return GetEngine()->GetRandomF();
+}
+
+float RandomSF() {
+  return GetEngine()->GetRandomSF();
+}
+
+double RandomD() {
+  return GetEngine()->GetRandomD();
+}
+
+double RandomSD() {
+  return GetEngine()->GetRandomSD();
+}
+
+
 Si32 InputMessageCount() {
   return static_cast<Si32>(g_input_messages.size());
 }

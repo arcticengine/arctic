@@ -33,6 +33,14 @@ namespace arctic {
 /// @addtogroup global_log
 /// @{
 
+/// @brief Provides a streaming interface to write log
+/// @return A unique pointer to an ostringstream with a custom deleter
+/// Usage example:
+/// @code
+///   *Log() << "Hello World!";
+/// @endcode
+std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
+
 /// @brief Writes message text to log
 /// @param text The text message to be logged
 void Log(const char *text);
@@ -47,14 +55,6 @@ void Log(const char *text1, const char *text2);
 /// @param text2 The second text message to be logged
 /// @param text3 The third text message to be logged
 void Log(const char *text1, const char *text2, const char *text3);
-
-/// @brief Provides a streaming interface to write log
-/// @return A unique pointer to an ostringstream with a custom deleter
-/// Usage example:
-/// @code
-///   *Log() << "Hello World!";
-/// @endcode
-std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
 
 /// @brief Starts the logger
 void StartLogger();

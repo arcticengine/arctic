@@ -82,6 +82,22 @@ Ui16 Random16();
 /// @return A random Ui8 number
 Ui8 Random8();
 
+/// @brief Returns a random float
+/// @return A random float number in range [0.f, 1.f)
+float RandomF();
+
+/// @brief Returns a random signed float
+/// @return A random signed float number in range [-1.f, 1.f)
+float RandomSF();
+
+/// @brief Returns a random double
+/// @return A random double number in range [0.0, 1.0)
+double RandomD();
+
+/// @brief Returns a random signed double
+/// @return A random signed double number in range [-1.0, 1.0)
+double RandomSD();
+
 /// @brief Waits for the time specified before returning
 /// @param duration_seconds The duration to wait in seconds
 void Sleep(double duration_seconds);
