@@ -1,45 +1,146 @@
 /** 
-@defgroup global_functions API reference
+@mainpage Arctic Engine Documentation
+@brief A lightweight, cross-platform 2D game development framework
+
+Arctic Engine is designed to provide a simple yet powerful API for 2D game development,
+with a focus on performance, ease of use, and cross-platform compatibility.
+
+@section overview Overview
+The engine is organized into several functional modules, each handling specific aspects
+of game development. The API is designed to be intuitive and straightforward, allowing
+developers to focus on game logic rather than engine internals.
+
+@section getting_started Getting Started
+To begin using Arctic Engine, create a new project using the Wizard located in the /wizard direcotry. 
+
+@defgroup global_functions API Reference
+@brief Complete reference of all Arctic Engine functionality
 @{
 
  @defgroup global_input Input
+ @brief Functions for handling keyboard, mouse, and controller input
+ 
+ This module provides functions for detecting key presses, mouse movements,
+ and controller inputs. It supports various input detection methods including:
+ - Keyboard and mouse key state transitions (pressed, released, held)
+ - Mouse position and movement tracking
+ - Controller axis and button handling
+ - Raw input message processing
+ 
+ Key functions include IsKeyDown(), IsKeyDownward(), MousePos(), and ControllerAxis().
  @{
  @}
 
  @defgroup global_drawing Drawing
+ @brief Functions for rendering graphics to the screen
+ 
+ This module contains all drawing-related functionality, including:
+ - Sprite loading and rendering
+ - Primitive shape drawing (lines, rectangles, circles)
+ - Text rendering
+ - Screen management
+ 
+ The drawing system uses a simple coordinate system with (0,0) at the bottome-left corner.
  @{
  @}
 
  @defgroup global_sound Sound
+ @brief Audio playback and management functions
+ 
+ This module handles all audio-related functionality:
+ - Sound loading and playback
+ - Music streaming
+ - Volume and pan controls
+ - Audio mixing and effects
+ - 3D sound source and listener positioning
+ 
+ The sound system supports various audio formats and provides both one-shot sound
+ effects and continuous music playback.
  @{
  @}
 
  @defgroup global_color Color processing
+ @brief Color manipulation and conversion utilities
+ 
+ This module provides tools for working with colors:
+ - Color creation
+ - Color interpolation
+ 
+ Colors in Arctic Engine are represented using the Rgba class, which supports 8-bit per channel format.
  @{
  @}
 
  @defgroup global_gui GUI
+ @brief User interface components and systems
+ 
+ This module provides basic UI elements and systems:
+ - Buttons, checkboxes, and other controls
+ - Text input handling
+ - UI event system
+ 
+ The GUI system is designed to be lightweight and easily customizable.
  @{
  @}
 
  @defgroup global_math Math
+ @brief Mathematical utilities and data structures
+ 
+ This module contains various mathematical tools:
+ - Vector and matrix operations
+ - Easing and interpolation functions
+ 
+ The math library provides both 2D and 3D vector types, along with
+ common mathematical operations needed for game development.
  @{
  @}
 
  @defgroup global_files File system 
+ @brief File and resource management
+ 
+ This module handles file operations and resource management:
+ - File reading and writing
+ - Directory operations, path manipulation
+ 
+ The file system is designed to work consistently across all supported platforms.
  @{
  @}
 
  @defgroup global_log Log
+ @brief Debugging and logging utilities
+ 
+ This module provides tools for debugging and logging:
+ - File logging
+ - Error reporting
+ 
+ Logging functions help track application state and diagnose issues during development.
  @{
  @}
 
  @defgroup global_utility Utility
+ @brief General-purpose utility functions
+ 
+ This module contains various helper functions and utilities:
+ - Error signaling
+ - Time handling
+ - Random number generation
+ - Screen properties
+ - Unicode string conversion
+ - Data endianness conversion
+ - Binary serialization, CSV format
+ 
+ These utilities simplify common programming tasks and provide platform-independent
+ implementations of frequently needed functionality.
  @{
  @}
 
-
  @defgroup global_advanced Advanced
+ @brief Advanced and low-level engine features
+ 
+ This module contains more advanced or specialized functionality:
+ - Engine internals and customization
+ - Hardware-accelerated sprites
+ 
+ These features are typically used for optimization or when extending the engine.
  @{
  @}
 

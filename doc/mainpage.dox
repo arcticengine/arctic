@@ -52,6 +52,21 @@ Install some dependencies, clone the source code, make and run the wizard:
 
 Install XCode. Run XCode and select 'Souce Control -> Clone' menu option. Enter 'https://gitlab.com/seaice/arctic.git' in the 'Enter repository URL' field and click 'Clone' buttons. Select 'File -> Open' menu option, open the 'arctic/wizard' directory (by default located in your Documents directory). Click the 'Product -> Run' menu option.
 
+### Building for the web browser
+
+Instructions for Linux and MacOS users on how to run an Arctic Engine game in a web browser:
+
+1) Install Emscripten following the instructions at:
+https://emscripten.org/docs/getting_started/downloads.html
+2) Navigate to your game directory.
+3) Remove the CMake cache:
+rm -f ./CMakeCache.txt
+4) Build the project:
+emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8
+5) Start the web server:
+python3 ./server.py
+6) Open the address http://127.0.0.1:8000/index.html in your browser
+
 Sample project types
 --------------------
 
@@ -99,6 +114,116 @@ Key Features:
 - Managing simulation time and events.
 - GUI for managing simulation parameters.
 - Displaying the current state and progress information.
+
+Quick Tutorials
+--------------
+
+### Drawing Text
+
+Text rendering in Arctic Engine is handled by the `Font` class. Here's a simple example of how to load a font and draw text:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+    
+    Ui32 EasyMain() {
+      // Create and load a font
+      Font gameFont;
+      gameFont.Load("data/arctic_one_bmf.fnt");
+      
+      while (!IsKeyDownward(kKeyEscape)) {
+        Clear();
+        
+        // Draw text with different alignments and colors
+        // White text at the top-left
+        gameFont.Draw("Hello Arctic Engine!", 20, ScreenSize().y - 20, 
+                     kTextOriginTop, kTextAlignmentLeft, 
+                     kDrawBlendingModeColorize, kFilterNearest, 
+                     Rgba(255, 255, 255));
+        
+        // Yellow text centered on screen
+        gameFont.Draw("Centered Text", ScreenSize().x / 2, ScreenSize().y / 2, 
+                     kTextOriginCenter, kTextAlignmentCenter, 
+                     kDrawBlendingModeColorize, kFilterNearest, 
+                     Rgba(255, 255, 0));
+        
+        ShowFrame();
+      }
+      
+      return 0;
+    }
+~~~~~
+
+Key points for text rendering:
+- Use `kDrawBlendingModeColorize` for best results with colored text
+- Text origin options: `kTextOriginTop`, `kTextOriginBottom`, `kTextOriginCenter`, `kTextOriginFirstBase`
+- Text alignment options: `kTextAlignmentLeft`, `kTextAlignmentCenter`, `kTextAlignmentRight`
+
+### Processing Mouse Input
+
+Arctic Engine makes it easy to handle mouse input. Here's how to track mouse position and detect clicks:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+    
+    Ui32 EasyMain() {
+      Font gameFont;
+      gameFont.Load("data/arctic_one_bmf.fnt");
+      
+      // Create a circle parameters
+      Vec2Si32 circleCenter(300, 300);
+      Si32 circleRadius = 40;
+      bool isCirclePressed = false;
+      
+      while (!IsKeyDownward(kKeyEscape)) {
+        Clear();
+        
+        // Get current mouse position
+        Vec2Si32 mousePos = MousePos();
+        
+        // Check if mouse is over the circle using distance calculation
+        Vec2F diff = Vec2F(mousePos - circleCenter);
+        bool isMouseOverCircle = Length(diff) <= circleRadius;
+        
+        // Check for mouse click on circle
+        if (isMouseOverCircle && IsKeyDownward(kKeyMouseLeft)) {
+            isCirclePressed = true;
+        }
+        
+        // Draw circle (green if pressed, blue if mouse over, gray otherwise)
+        Rgba circleColor = isCirclePressed ?
+                          (isMouseOverCircle ? Rgba(0, 255, 128) : Rgba(128, 255, 128)) : 
+                          (isMouseOverCircle ? Rgba(0, 0, 255) : Rgba(128, 128, 128));
+        
+        DrawCircle(circleCenter, circleRadius, circleColor);
+        
+        // Draw text
+        gameFont.Draw("Click Me!", circleCenter.x, circleCenter.y,
+                     kTextOriginCenter, kTextAlignmentCenter, 
+                     kDrawBlendingModeColorize, kFilterNearest, 
+                     Rgba(255, 255, 255));
+        
+        // Display mouse coordinates
+        std::string mouseText = "Mouse: (" + std::to_string(mousePos.x) + 
+                               ", " + std::to_string(mousePos.y) + ")";
+        gameFont.Draw(mouseText.c_str(), 20, 20, kTextOriginBottom, 
+                     kTextAlignmentLeft, kDrawBlendingModeColorize, 
+                     kFilterNearest, Rgba(255, 255, 255));
+        ShowFrame();
+      }
+      
+      return 0;
+    }
+~~~~~
+
+Key mouse input functions:
+- `MousePos()`: Returns the current mouse position as Vec2Si32
+- `MouseMove()`: Returns the mouse movement since last frame
+- `MouseWheelDelta()`: Returns the mouse wheel movement
+- `IsKeyDownward(kKeyMouseLeft)`: Detects left mouse button press
+- `IsKeyDown(kKeyMouseLeft)`: Checks if left mouse button is held down
+- `IsKeyUpward(kKeyMouseLeft)`: Detects left mouse button release
 
 Contribute
 ----------

@@ -34,161 +34,213 @@ namespace arctic {
 /// @addtogroup global_input
 /// @{
 
-// true if key transitioned from up to down state last frame
-/// @brief Returns true if the key with the specified key_code travelled downwards during the last frame
-/// @param key_code The key code
-/// @return True if the key with the specified key_code travelled downwards during the last frame, false otherwise.
+/// @name Key State Transition Functions
+/// @{
+
+/// Checks if a key was pressed down during the last frame
+/// @param key_code The key code to check
+/// @return True if the key transitioned from up to down state during the last frame
 bool IsKeyDownward(const KeyCode key_code);
-/// @brief Returns true if any of the specified keys travelled downwards during the last frame
-/// @param keys A c-string specifying one or more key character codes to check
-/// @return True if any of the specified keys travelled downwards during the last frame, false otherwise.
+
+/// Checks if any of the specified keys was pressed down during the last frame
+/// @param keys A C-string containing one or more key character codes to check
+/// @return True if any of the specified keys transitioned from up to down state during the last frame
 bool IsKeyDownward(const char *keys);
-/// @brief Returns true if the key specified travelled downwards during the last frame
-/// @param key The key character code
-/// @return True if the key specified travelled downwards during the last frame, false otherwise.
+
+/// Checks if a specific key was pressed down during the last frame
+/// @param key The key character code to check
+/// @return True if the key transitioned from up to down state during the last frame
 bool IsKeyDownward(const char key);
-/// @brief Returns true if the key with the specified key_code travelled downwards during the last frame
-/// @param key_code The key code
-/// @return True if the key with the specified key_code travelled downwards during the last frame, false otherwise.
+
+/// Checks if a key was pressed down during the last frame
+/// @param key_code The integer key code to check
+/// @return True if the key transitioned from up to down state during the last frame
 bool IsKeyDownward(const Si32 key_code);
-/// @brief Returns true if any of the specified keys travelled downwards during the last frame
-/// @param keys A std::string specifying one or more key character codes to check
-/// @return True if any of the specified keys travelled downwards during the last frame, false otherwise.
+
+/// Checks if any of the specified keys was pressed down during the last frame
+/// @param keys A string containing one or more key character codes to check
+/// @return True if any of the specified keys transitioned from up to down state during the last frame
 bool IsKeyDownward(const std::string &keys);
 
-// true is key is currently down
-/// @brief Returns true if the key with the specified key_code was pressed during the last frame
-/// @param key_code The key code
-/// @return True if the key with the specified key_code was pressed during the last frame, false otherwise.
+/// Checks if a key is currently being held down
+/// @param key_code The key code to check
+/// @return True if the key is currently in the down state
 bool IsKeyDown(const KeyCode key_code);
-/// @brief Returns true if any of the specified keys was pressed during the last frame
-/// @param keys A c-string specifying one or more key character codes to check
-/// @return True if any of the specified keys was pressed during the last frame, false otherwise.
+
+/// Checks if any of the specified keys is currently being held down
+/// @param keys A C-string containing one or more key character codes to check
+/// @return True if any of the specified keys is currently in the down state
 bool IsKeyDown(const char *keys);
-/// @brief Returns true if the key specified was pressed during the last frame
-/// @param key The key character code
-/// @return True if the key specified was pressed during the last frame, false otherwise.
+
+/// Checks if a specific key is currently being held down
+/// @param key The key character code to check
+/// @return True if the key is currently in the down state
 bool IsKeyDown(const char key);
-/// @brief Returns true if the key with the specified key_code was pressed during the last frame
-/// @param key_code The key code
-/// @return True if the key with the specified key_code was pressed during the last frame, false otherwise.
+
+/// Checks if a key is currently being held down
+/// @param key_code The integer key code to check
+/// @return True if the key is currently in the down state
 bool IsKeyDown(const Si32 key_code);
-/// @brief Returns true if any of the specified keys was pressed during the last frame
-/// @param keys A std::string specifying one or more key character codes to check
-/// @return True if any of the specified keys was pressed during the last frame, false otherwise.
+
+/// Checks if any of the specified keys is currently being held down
+/// @param keys A string containing one or more key character codes to check
+/// @return True if any of the specified keys is currently in the down state
 bool IsKeyDown(const std::string &keys);
 
-// true if key transitioned from down to up since last frame
-/// @brief Returns true if the key with the specified key_code was released during the last frame
-/// @param key_code The key code
-/// @return True if the key with the specified key_code was released during the last frame, false otherwise.
+/// Checks if a key was released during the last frame
+/// @param key_code The key code to check
+/// @return True if the key transitioned from down to up state during the last frame
 bool IsKeyUpward(const KeyCode key_code);
-/// @brief Returns true if any of the specified keys was released during the last frame
-/// @param keys A c-string specifying one or more key character codes to check
-/// @return True if any of the specified keys was released during the last frame, false otherwise.
+
+/// Checks if any of the specified keys was released during the last frame
+/// @param keys A C-string containing one or more key character codes to check
+/// @return True if any of the specified keys transitioned from down to up state during the last frame
 bool IsKeyUpward(const char *keys);
-/// @brief Returns true if the key specified was released during the last frame
-/// @param key The key character code
-/// @return True if the key specified was released during the last frame, false otherwise.
+
+/// Checks if a specific key was released during the last frame
+/// @param key The key character code to check
+/// @return True if the key transitioned from down to up state during the last frame
 bool IsKeyUpward(const char key);
-/// @brief Returns true if the key with the specified key_code was released during the last frame
-/// @param key_code The key code
-/// @return True if the key with the specified key_code was released during the last frame, false otherwise.
+
+/// Checks if a key was released during the last frame
+/// @param key_code The integer key code to check
+/// @return True if the key transitioned from down to up state during the last frame
 bool IsKeyUpward(const Si32 key_code);
-/// @brief Returns true if any of the specified keys was released during the last frame
-/// @param keys A std::string specifying one or more key character codes to check
-/// @return True if any of the specified keys was released during the last frame, false otherwise.
+
+/// Checks if any of the specified keys was released during the last frame
+/// @param keys A string containing one or more key character codes to check
+/// @return True if any of the specified keys transitioned from down to up state during the last frame
 bool IsKeyUpward(const std::string &keys);
 
+/// @}
 
-/// @brief Returns true if key transitioned from up to down state last frame
-/// @return True if key transitioned from up to down state last frame, false otherwise.
+/// @name Global Key State Functions
+/// @{
+
+/// Checks if any key was pressed down during the last frame
+/// @return True if any key transitioned from up to down state during the last frame
 bool IsAnyKeyDownward();
-/// @brief Returns true if key is currently down
-/// @return True if key is currently down, false otherwise.
+
+/// Checks if any key is currently being held down
+/// @return True if any key is currently in the down state
 bool IsAnyKeyDown();
-/// @brief Returns true if key transitioned from down to up since last frame
-/// @return True if key transitioned from down to up since last frame, false otherwise.
+
+/// Checks if any key was released during the last frame
+/// @return True if any key transitioned from down to up state during the last frame
 bool IsAnyKeyUpward();
 
-/// @brief Changes the stored key state
-/// @param key_code The key code
-/// @param is_set_down Key state to set as if it was the last seen state of the key
-/// @details The state is set just like it would be if the key actually transitioned
-/// up or down at the end of the last frame. It may affect resuts of
-/// IsKeyDownward() IsKeyDown() IsKeyUpward() IsAnyKeyDownward() IsAnyKeyDown() and
-/// IsAnyKeyUpward() calls.
+/// @}
+
+/// @name Key State Manipulation Functions
+/// @{
+
+/// Sets the state of a key as if it was pressed or released at the end of the last frame
+/// @param key_code The key code to modify
+/// @param is_set_down True to set the key as pressed, false to set it as released
+/// @note The state is set just like it would be if the key actually transitioned
+///       up or down at the end of the last frame.
+///       This affects the results of IsKeyDownward(), IsKeyDown(), IsKeyUpward(),
+///       IsAnyKeyDownward(), IsAnyKeyDown(), and IsAnyKeyUpward() calls
 void SetKey(const KeyCode key_code, bool is_set_down);
 
-/// @brief Changes the stored key state
-/// @param key The key character code
-/// @param is_set_down Key state to set as if it was the last seen state of the key
-/// @details The state is set just like it would be if the key actually
-/// transitioned up or down at the end of the last frame. It may affect
-/// resuts of IsKeyDownward() IsKeyDown() IsKeyUpward() IsAnyKeyDownward()
-/// IsAnyKeyDown() and IsAnyKeyUpward() calls.
+/// Sets the state of a key as if it was pressed or released at the end of the last frame
+/// @param key The key character code to modify
+/// @param is_set_down True to set the key as pressed, false to set it as released
+/// @note The state is set just like it would be if the key actually
+///       transitioned up or down at the end of the last frame.
+///   This affects the results of IsKeyDownward(), IsKeyDown(), IsKeyUpward(),
+///       IsAnyKeyDownward(), IsAnyKeyDown(), and IsAnyKeyUpward() calls
 void SetKey(const char key, bool is_set_down);
 
-/// @brief Clears key state transition information
-/// @details IsKeyDownward() IsKeyUpward() IsAnyKeyDownward() and IsAnyKeyUpward()
-/// calls will return false after a ClearKeyStateTransitions() call
-/// untill the ShowFrame() call fills the key state transition infromation with
-/// the information on new transitions.
-/// IsKeyDown() IsAnyKeyDown() calls are not affected and return the actual state.
+/// Clears all key state transition information
+/// @note After calling this function, IsKeyDownward(), IsKeyUpward(), IsAnyKeyDownward(),
+///       and IsAnyKeyUpward() will return false until the next ShowFrame() call updates
+///       the transition information. IsKeyDown() and IsAnyKeyDown() are not affected.
 void ClearKeyStateTransitions();
 
-/// @brief Returns controller axis position
-/// @param [in] controller_idx Index of the controller.
-/// @param [in] axis_idx Index of the axis.
-/// @return The controller axis position
+/// @}
+
+/// @name Controller and Mouse Input Functions
+/// @{
+
+/// Gets the position of a controller axis
+/// @param controller_idx Index of the controller (0 for the first controller)
+/// @param axis_idx Index of the axis on the controller
+/// @return The position of the axis as a float value between -1.0 and 1.0
 float ControllerAxis(Si32 controller_idx, Si32 axis_idx);
-/// @brief Returns mouse cursor position
-/// @return The mouse cursor position
+
+/// Gets the current mouse cursor position
+/// @return The mouse cursor position as a 2D vector (x, y)
 Vec2Si32 MousePos();
-/// @brief Returns mouse cursor position x coordinate
-/// @return The mouse cursor position x coordinate
+
+/// Gets the current mouse cursor X coordinate
+/// @return The mouse cursor X coordinate
 Si32 MouseX();
-/// @brief Returns mouse cursor position y coordinate
-/// @return The mouse cursor position y coordinate
+
+/// Gets the current mouse cursor Y coordinate
+/// @return The mouse cursor Y coordinate
 Si32 MouseY();
-/// @brief Returns mouse movement vector
-/// @return The mouse movement vector
+
+/// Gets the mouse movement vector since the last frame
+/// @return The mouse movement as a 2D vector (delta_x, delta_y)
 Vec2Si32 MouseMove();
-/// @brief Returns mouse wheel rotation delta
-/// @return The mouse wheel rotation delta
+
+/// Gets the mouse wheel rotation since the last frame
+/// @return The mouse wheel delta (positive for scrolling up, negative for scrolling down)
 Si32 MouseWheelDelta();
 
-/// @brief Returns the number of user input messages obtained by the last Swap() call
-/// @return The number of user input messages obtained by the last Swap() call
+/// @}
+
+/// @name Input Message Functions
+/// @{
+
+/// Gets the number of input messages received during the last frame
+/// @return The number of input messages
 Si32 InputMessageCount();
 
-/// @brief Returns the user input message with the index specified
-/// @param idx Index of the message to return.
-/// @return The user input message with the index specified.
+/// Gets a specific input message from the last frame
+/// @param idx Index of the message to retrieve (0 to InputMessageCount()-1)
+/// @return The input message at the specified index
 const InputMessage& GetInputMessage(Si32 idx);
 
 /// @}
 
-/// @brief Returns true if the key with the specified key_code is pressed
-/// @param key_code The key code
-/// @return True if the key with the specified key_code is pressed, false otherwise.
+/// @} // End of global_input group
+
+/// @name Legacy Key State Functions
+/// @{
+
+/// Legacy function to check if a key is currently being held down
+/// @param key_code The key code to check
+/// @return True if the key is currently in the down state
+/// @deprecated Use IsKeyDown() instead
 bool IsKey(const KeyCode key_code);
-/// @brief Returns true if any of the specified keys is pressed
-/// @param keys A c-string specifying one or more key character codes to check
-/// @return True if any of the specified keys is pressed, false otherwise.
+
+/// Legacy function to check if any of the specified keys is currently being held down
+/// @param keys A C-string containing one or more key character codes to check
+/// @return True if any of the specified keys is currently in the down state
+/// @deprecated Use IsKeyDown() instead
 bool IsKey(const char *keys);
-/// @brief Returns true if the key specified is pressed
-/// @param key The key character code
-/// @return True if the key specified is pressed, false otherwise.
+
+/// Legacy function to check if a specific key is currently being held down
+/// @param key The key character code to check
+/// @return True if the key is currently in the down state
+/// @deprecated Use IsKeyDown() instead
 bool IsKey(const char key);
-/// @brief Returns true if the key with the specified key_code is pressed
-/// @param key_code The key code
-/// @return True if the key with the specified key_code is pressed, false otherwise.
+
+/// Legacy function to check if a key is currently being held down
+/// @param key_code The integer key code to check
+/// @return True if the key is currently in the down state
+/// @deprecated Use IsKeyDown() instead
 bool IsKey(const Si32 key_code);
-/// @brief Returns true if any of the specified keys is pressed
-/// @param keys A std::string specifying one or more key character codes to check
-/// @return True if any of the specified keys is pressed, false otherwise.
+
+/// Legacy function to check if any of the specified keys is currently being held down
+/// @param keys A string containing one or more key character codes to check
+/// @return True if any of the specified keys is currently in the down state
+/// @deprecated Use IsKeyDown() instead
 bool IsKey(const std::string &keys);
+
+/// @}
 
 }  // namespace arctic
 

@@ -165,38 +165,38 @@ class Sprite {
   /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
     DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
     Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer
   /// @param to_x X coordinate of the bottom-left corner of the destination area
   /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Si32 to_x, const Si32 to_y,
     DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
     Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer
   /// @param to_x X coordinate of the bottom-left corner of the destination area
   /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer
   /// @param to_x X coordinate of the bottom-left corner of the destination area
   /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
@@ -207,7 +207,7 @@ class Sprite {
   /// @param from_height Height of the source area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
@@ -228,7 +228,7 @@ class Sprite {
   /// @param from_height Height of the source area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(Sprite to_sprite, const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
@@ -240,7 +240,7 @@ class Sprite {
   /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(Sprite to_sprite, const Vec2Si32 to_pos,
     DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
     DrawFilterMode filter_mode = kFilterNearest,
@@ -252,40 +252,40 @@ class Sprite {
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(Sprite to_sprite, const Vec2Si32 to_pos, const Vec2Si32 to_size,
     DrawBlendingMode blending_mode, DrawFilterMode filter_mode,
     Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer
   /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Vec2Si32 to_pos,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer
   /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer
   /// @param to_pos Position of the bottom-left corner of the destination area
   /// @param to_size Size of the destination area
   /// @param from_pos Position of the bottom-left corner of the source area
   /// @param from_size Size of the source area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Vec2Si32 to_pos, const Vec2Si32 to_size,
     const Vec2Si32 from_pos, const Vec2Si32 from_size,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
@@ -301,6 +301,10 @@ class Sprite {
   /// @param from_y Y coordinate of the bottom-left corner of the source area
   /// @param from_width Width of the source area
   /// @param from_height Height of the source area
+  /// @param to_sprite Sprite to draw
+  /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
+  /// @param filter_mode Filter mode to use (kFilterNearest by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Si32 to_x, const Si32 to_y,
     const Si32 to_width, const Si32 to_height,
     const Si32 from_x, const Si32 from_y,
@@ -309,41 +313,41 @@ class Sprite {
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff)) const;
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer at a specific position with rotation
   /// @param to Position of the bottom-left corner of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Vec2F to, float angle_radians,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer at a specific position with rotation
   /// @param to_x X coordinate of the bottom-left corner of the destination area
   /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const float to_x, const float to_y, float angle_radians,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
   /// @param to Position of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
-  /// @param in_color Color to use for drawing (0xffffffff by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(const Vec2F to, float to_width, float to_height,float angle_radians,
             DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
   /// @param to_x X coordinate of the bottom-left corner of the destination area
   /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area
@@ -351,6 +355,7 @@ class Sprite {
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
+  /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
   void Draw(Rgba in_color, const float to_x, const float to_y, float to_width, float to_height, float angle_radians,
       DrawBlendingMode blending_mode = kDrawBlendingModeAlphaBlend,
       DrawFilterMode filter_mode = kFilterNearest);
@@ -361,7 +366,7 @@ class Sprite {
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
 
-  /// @brief Draw the sprite to another sprite
+  /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
   /// @param to_x X coordinate of the bottom-left corner of the destination area
   /// @param to_y Y coordinate of the bottom-left corner of the destination area
   /// @param to_width Width of the destination area

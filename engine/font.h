@@ -381,21 +381,78 @@ public:
   void GenerateCodepointVector();
 };
 
-/// @brief Class representing a font
+/// @brief Class representing a font for text rendering
+///
+/// The Font class provides functionality for loading and rendering text in your game.
+/// It supports various text origins, alignments, blending modes, and colors.
+///
+/// @section font_usage Basic Usage
+/// 
+/// 1. Create a Font instance:
+///    @code
+///    Font gameFont;
+///    @endcode
+///
+/// 2. Load a font file (BMFont format):
+///    @code
+///    gameFont.Load("data/arctic_one_bmf.fnt");
+///    @endcode
+///
+/// 3. Draw text to the screen:
+///    @code
+///    // Simple white text
+///    gameFont.Draw("Hello World", 100, 100, kTextOriginTop, kTextAlignmentLeft);
+///    
+///    // Colored text
+///    gameFont.Draw("Score: 100", 20, 20, kTextOriginTop, kTextAlignmentLeft, 
+///                  kDrawBlendingModeColorize, kFilterNearest, Rgba(255, 255, 0));
+///    @endcode
+///
+/// @section font_blending Blending Modes
+/// 
+/// The Font class supports several blending modes for text rendering, but it's :
+///
+/// - kDrawBlendingModeColorize: Applies the specified color to the text while preserving
+///   its shape and transparency. Works best with black and white fornts.
+///   This is the recommended mode for text output.
+/// - kDrawBlendingModeSolidColor: Replaces all colors of the font with the specified color.
+///   This may work with a pre-colored font file.
+///
+/// @section font_origins Text Origins
+///
+/// The origin determines the reference point for positioning text:
+///
+/// - kTextOriginTop: The top of the text is at the specified y-coordinate
+/// - kTextOriginFirstBase: The baseline of the first line is at the specified y-coordinate
+/// - kTextOriginBottom: The bottom of the text is at the specified y-coordinate
+/// - kTextOriginCenter: The center of the text is at the specified y-coordinate
+///
+/// @section font_alignment Text Alignment
+///
+/// The alignment determines how text is positioned horizontally:
+///
+/// - kTextAlignmentLeft: Text is aligned to the left of the specified x-coordinate
+/// - kTextAlignmentCenter: Text is centered at the specified x-coordinate
+/// - kTextAlignmentRight: Text is aligned to the right of the specified x-coordinate
 class Font {
  private:
   std::shared_ptr<arctic::FontInstance> font_instance_;
  public:
 
+  /// @brief Default constructor
+  /// Creates an empty font instance
   Font() {
     font_instance_ = std::make_shared<arctic::FontInstance>();
   }
 
+  /// @brief Copy constructor
+  /// @param font The font to copy
   Font(const Font &font) {
     font_instance_ = font.font_instance_;
   }
 
-  /// @brief Returns true for fonts with no codepoints. False for fonts with codepoints.
+  /// @brief Checks if the font is empty (has no codepoints)
+  /// @return True if the font has no codepoints, false otherwise
   inline bool IsEmpty() const {
     return font_instance_->codepoint_.empty();
   }
@@ -498,9 +555,24 @@ class Font {
   ///   coordinates.
   /// @param [in] alignment The alignment that will be used for the text.
   /// @param [in] blending_mode The blending mode to use when drawing the text.
+  ///   - kDrawBlendingModeColorize: Best for colored text (applies the color parameter)
+  ///   - kDrawBlendingModeSolidColor: Replaces all colors of the font with the specified color.
+  ///   - kDrawBlendingModeAlphaBlend: Standard alpha blending
   /// @param [in] filter_mode The filtering mode to use when drawing the text.
+  ///   - kFilterNearest: Pixel-perfect rendering (recommended for pixel art)
+  ///   - kFilterBilinear: Smooth rendering (better for high-resolution text)
   /// @param [in] color The color used by some blending modes (for example,
   ///   the kDrawBlendingModeColorize blending mode).
+  ///
+  /// Example:
+  /// @code
+  /// // Draw red text on a sprite
+  /// Sprite mySprite;
+  /// mySprite.Create(Vec2Si32(200, 100));
+  /// gameFont.Draw(mySprite, "Hello World", 10, 50, kTextOriginCenter, 
+  ///               kTextAlignmentLeft, kDrawBlendingModeColorize, kFilterNearest, 
+  ///               Rgba(255, 0, 0));
+  /// @endcode
   void Draw(Sprite to_sprite, const char *text,
       const Si32 x, const Si32 y,
       const TextOrigin origin = kTextOriginBottom,
@@ -528,7 +600,7 @@ class Font {
   /// @param [in] palete The vector of Rgba colors used to colorize the text
   ///   by some blending modes (for example, the kDrawBlendingModeColorize
   ///   blending mode). Characters with codepoints <= 8 are considered the
-  ///   color-control characters and select the color from the palatte for the
+  ///   color-control characters and select the color from the palette for the
   ///   following text.
   void Draw(Sprite to_sprite, const char *text,
       const Si32 x, const Si32 y,
@@ -543,18 +615,43 @@ class Font {
   }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
-  ///   backbuffer
+  ///   backbuffer (directly to the screen)
   /// @param [in] text UTF-8 c-string with one or more lines of text
   ///   (separated either with `/n`, `/r` or both)
   /// @param [in] x X screen coordinate to draw text at.
   /// @param [in] y Y screen coordinate to draw text at.
   /// @param [in] origin The origin that will be located at the specified screen
   ///   coordinates.
+  ///   - kTextOriginTop: The top of the text is at the specified y-coordinate
+  ///   - kTextOriginFirstBase: The baseline of the first line is at the specified y-coordinate
+  ///   - kTextOriginBottom: The bottom of the text is at the specified y-coordinate
+  ///   - kTextOriginCenter: The center of the text is at the specified y-coordinate
   /// @param [in] alignment The alignment that will be used for the text.
+  ///   - kTextAlignmentLeft: Text is aligned to the left of the specified x-coordinate
+  ///   - kTextAlignmentCenter: Text is centered at the specified x-coordinate
+  ///   - kTextAlignmentRight: Text is aligned to the right of the specified x-coordinate
   /// @param [in] blending_mode The blending mode to use when drawing the text.
+  ///   - kDrawBlendingModeColorize: Best for colored text (applies the color parameter)
+  ///   - kDrawBlendingModeSolidColor: Replaces all colors of the font with the specified color.
+  ///   - kDrawBlendingModeAlphaBlend: Standard alpha blending
   /// @param [in] filter_mode The filtering mode to use when drawing the text.
+  ///   - kFilterNearest: Pixel-perfect rendering (recommended for pixel art)
+  ///   - kFilterBilinear: Smooth rendering (better for high-resolution text)
   /// @param [in] color The color used by some blending modes (for example,
   ///   the kDrawBlendingModeColorize blending mode).
+  ///
+  /// Example:
+  /// @code
+  /// // Draw score text at the top of the screen in white
+  /// gameFont.Draw("Score: 100", 20, screenHeight - 20, kTextOriginTop, 
+  ///               kTextAlignmentLeft, kDrawBlendingModeColorize, kFilterNearest, 
+  ///               Rgba(255, 255, 255));
+  ///
+  /// // Draw centered game over text in yellow
+  /// gameFont.Draw("Game Over", screenWidth/2, screenHeight/2, kTextOriginCenter, 
+  ///               kTextAlignmentCenter, kDrawBlendingModeColorize, kFilterNearest, 
+  ///               Rgba(255, 255, 0));
+  /// @endcode
   void Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin = kTextOriginBottom,
       const TextAlignment alignment = kTextAlignmentLeft,
@@ -562,9 +659,8 @@ class Font {
       const DrawFilterMode filter_mode = kFilterNearest,
       const Rgba color = Rgba(0xffffffff));
 
-
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
-  ///   backbuffer
+  ///   backbuffer (directly to the screen) using a color palette
   /// @param [in] text UTF-8 c-string with one or more lines of text
   ///   (separated either with `/n`, `/r` or both)
   /// @param [in] x X screen coordinate to draw text at.
@@ -577,8 +673,23 @@ class Font {
   /// @param [in] palete The vector of Rgba colors used to colorize the text
   ///   by some blending modes (for example, the kDrawBlendingModeColorize
   ///   blending mode). Characters with codepoints <= 8 are considered the
-  ///   color-control characters and select the color from the palatte for the
+  ///   color-control characters and select the color from the palette for the
   ///   following text.
+  ///
+  /// Example:
+  /// @code
+  /// // Create a color palette with 3 colors
+  /// std::vector<Rgba> palette;
+  /// palette.push_back(Rgba(255, 255, 255)); // White (index 0)
+  /// palette.push_back(Rgba(255, 0, 0));     // Red (index 1)
+  /// palette.push_back(Rgba(0, 255, 0));     // Green (index 2)
+  ///
+  /// // Draw text with color control characters
+  /// // \1 switches to red, \2 switches to green
+  /// gameFont.Draw("Normal \1Red \2Green", 20, 100, kTextOriginTop, 
+  ///               kTextAlignmentLeft, kDrawBlendingModeColorize, kFilterNearest, 
+  ///               palette);
+  /// @endcode
   void Draw(const char *text, const Si32 x, const Si32 y,
       const TextOrigin origin,
       const TextAlignment alignment,
@@ -586,7 +697,9 @@ class Font {
       const DrawFilterMode filter_mode,
       const std::vector<Rgba> &palete);
 
-  const std::shared_ptr<FontInstance> &FontInstance() const {
+  /// @brief Gets the internal font instance
+  /// @return Pointer to the internal font instance
+  inline const std::shared_ptr<FontInstance> &FontInstance() const {
     return font_instance_;
   }
 };
