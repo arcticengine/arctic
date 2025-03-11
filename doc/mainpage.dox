@@ -225,6 +225,182 @@ Key mouse input functions:
 - `IsKeyDown(kKeyMouseLeft)`: Checks if left mouse button is held down
 - `IsKeyUpward(kKeyMouseLeft)`: Detects left mouse button release
 
+### Logging
+
+Arctic Engine provides a convenient streaming interface for logging. Here's how to use it:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+    
+    Ui32 EasyMain() {
+      // Simple message logging
+      *Log() << "Game started!";
+      
+      // Logging variable value
+      float score = 42.5f;
+      *Log() << "New high score achieved: " << score;
+      
+      return 0;
+    }
+~~~~~
+
+Key logging features:
+- Uses convenient streaming syntax similar to std::cout
+- Thread-safe non-blocking lightning-fast logging
+- Automatically adds newline at the end of each log message
+
+### Random Number Generation
+
+Arctic Engine provides simple functions for generating random numbers. Here's how to use them:
+
+~~~~~{.cpp}
+      // Random integers
+      Si32 randomInt = Random32(1, 100);  // Random integer between 1 and 100 (inclusive)
+      
+      // Random floating point numbers
+      float randomFloat = RandomF();      // Random float in range [0.0, 1.0)
+      float randomValue = RandomF() * 10.0f;  // Random float in range [0.0, 10.0)
+      
+      // Random signed float in range [-1.0, 1.0)
+      float randomSignedFloat = RandomSF();
+      
+      // Random direction vector
+      float angle = RandomF() * 2.0f * 3.14159f;  // Random angle in radians
+      Vec2F direction(cos(angle), sin(angle));    // Random direction vector
+      
+      // Random color
+      Rgba randomColor(Random8(), Random8(), Random8());
+      
+      // Random position on screen
+      Vec2Si32 screenSize = ScreenSize();
+      Vec2Si32 randomPosition(
+          Random32(0, screenSize.x - 1),
+          Random32(0, screenSize.y - 1));
+~~~~~
+
+Key random number generation features:
+- `Random(min, max)`: Returns a random Si64 in range [min, max]
+- `Random32(min, max)`: Returns a random Si32 in range [min, max]
+- `RandomF()`: Returns a random float in range [0.0, 1.0)
+- `RandomSF()`: Returns a random float in range [-1.0, 1.0)
+- `RandomD()`: Returns a random double in range [0.0, 1.0)
+- `RandomSD()`: Returns a random double in range [-1.0, 1.0)
+
+### Playing Sounds
+
+Arctic Engine makes it easy to load and play sound effects and music. Here's how to use the sound system:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+    
+    Ui32 EasyMain() {
+      // Load sound effects
+      Sound explosionSound;
+      explosionSound.Load("data/explosion.wav");
+      
+      Sound backgroundMusic;
+      backgroundMusic.Load("data/music.ogg");
+      
+      // Play background music
+      backgroundMusic.Play(0.5f);  // Play at 50% volume
+      
+      // Game loop
+      while (!IsKeyDownward(kKeyEscape)) {
+        Clear();
+        
+        // Play explosion sound on space key press
+        if (IsKeyDownward(kKeySpace)) {
+          explosionSound.Play(0.8f);  // Play at 80% volume
+        }
+        
+        // Restart background music if it stopped playing
+        if (!backgroundMusic.IsPlaying()) {
+          backgroundMusic.Play(0.5f);
+        }
+        
+        ShowFrame();
+      }
+      
+      return 0;
+    }
+~~~~~
+
+Key sound features:
+- Load WAV and OGG files with `Sound::Load()`
+- Play sounds with `Sound::Play()`
+- Control volume by passing a parameter to `Play(float volume)`
+- Check if a sound is playing with `SoundHandle::IsPlaying()`
+
+### Creating GUI Buttons
+
+Arctic Engine provides a simple yet powerful GUI system for creating interactive interfaces. Here's how to create and use buttons in your game:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    #include "engine/gui.h"
+    using namespace arctic;
+    
+    Ui32 EasyMain() {
+      ResizeScreen(1280, 720);
+      
+      // Create GUI factory
+      GuiFactory guiFactory;
+      
+      // Load a theme
+      guiFactory.theme_ = std::make_shared<GuiTheme>();
+      guiFactory.theme_->Load("data/gui_theme.xml");
+      
+      // Create a root panel to hold GUI elements
+      std::shared_ptr<Panel> gui = std::make_shared<Panel>(-1, Vec2Si32(0, 0), Vec2Si32(0, 0));
+      
+      // Create a button
+      std::shared_ptr<Button> button = guiFactory.MakeButton();
+      button->SetPos(Vec2Si32(100, 100));
+      button->SetSize(Vec2Si32(200, 50));
+      button->SetText("Click Me!");
+      
+      // Add the button to the root panel
+      gui->AddChild(button);
+      
+      // Declare a variable to use in the button click callback
+      Rgba someVariable = Rgba(0, 0, 50);
+
+      // Set button click callback
+      button->OnButtonClick = [&someVariable]() {
+        *Log() << "Button was clicked!";
+        someVariable = Rgba(Random8(), Random8(), Random8());
+      };
+      
+      // Game loop
+      while (!IsKeyDown(kKeyEscape)) {
+        Clear(someVariable);
+        
+        // Process input for GUI
+        bool isInputHandled = false;
+        for (Si32 i = 0; i < InputMessageCount(); ++i) {
+          isInputHandled = gui->ApplyInput(GetInputMessage(i), nullptr) || isInputHandled;
+        }
+        
+        // Draw GUI
+        gui->Draw(Vec2Si32(0, 0));
+        
+        ShowFrame();
+      }
+      
+      return 0;
+    }
+~~~~~
+
+Key GUI features:
+- Use `GuiFactory` to create GUI elements like buttons, panels, and text fields
+- Customize appearance with themes loaded from XML files and image atlases
+- Organize GUI elements in a hierarchy
+- Handle user interactions with callbacks
+- Process input with `ApplyInput()` method
+- Draw GUI elements with `Draw()` method
+
 Contribute
 ----------
 
