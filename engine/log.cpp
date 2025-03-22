@@ -46,6 +46,7 @@ namespace arctic {
 template <class TQueue, class TItem>
 class SyncQueue{
   std::atomic<bool> is_going_to_sleep = ATOMIC_VAR_INIT(false);
+  std::atomic<Ui64> wakeup_call_idx = ATOMIC_VAR_INIT(0);
   std::mutex sleep_mutex;
   std::condition_variable sleep_condvar;
   TQueue queue;
@@ -54,6 +55,10 @@ class SyncQueue{
   void Enqueue(TItem *item) {
     queue.enqueue(item);
     if (is_going_to_sleep.load()) {
+      {
+        std::unique_lock<std::mutex> lock(sleep_mutex);
+        wakeup_call_idx.fetch_add(1);
+      }
       sleep_condvar.notify_one();
     }
   }
@@ -70,6 +75,7 @@ class SyncQueue{
     is_going_to_sleep.store(true);
     {
       while (true) {
+        Ui64 last_wakeup_call = wakeup_call_idx;
         item = queue.dequeue();
         if (item) {
           is_going_to_sleep.store(false);
@@ -77,7 +83,9 @@ class SyncQueue{
         }
         {
           std::unique_lock<std::mutex> lock(sleep_mutex);
-          sleep_condvar.wait(lock);
+          if (last_wakeup_call == wakeup_call_idx) {
+            sleep_condvar.wait(lock);
+          }
         }
       }
     }
@@ -86,7 +94,7 @@ class SyncQueue{
 
 static std::atomic<bool> g_is_log_enabled = ATOMIC_VAR_INIT(false);
 static SyncQueue<
-  MpscVirtInfArray<std::string*, TuneDeletePayloadFlag<true>>,
+  MpscVirtInfArray<std::string*, TuneDeletePayloadFlag<true>, TuneChunkSize<4000>>,
   std::string> g_logger_queue;
 static std::thread g_logger_thread;
 static std::string *g_quit_item = nullptr;
