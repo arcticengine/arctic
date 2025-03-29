@@ -41,6 +41,7 @@ class GlBuffer {
 
   GLuint buffer_id_;
   size_t size_;
+  GLenum target_;
 
   static GLuint current_buffer_id_;
 
@@ -48,8 +49,8 @@ class GlBuffer {
   GlBuffer();
   ~GlBuffer();
 
-  void Create(const void *data, size_t size);
-  void Bind() const;
+  void Create();
+  void Bind(GLenum target);
   void SetData(const void *data, size_t size);
   void UpdateData(const void *data);
 
@@ -61,7 +62,7 @@ class GlBuffer {
     return buffer_id_;
   }
 
-  static void BindDefault();
+  static void BindDefault(GLenum target);
 };
 
 /// @}

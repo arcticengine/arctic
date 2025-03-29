@@ -693,8 +693,8 @@ void Init() {
   InitCreatures();
   InitHero();
 
-  // GenerateMaze();
-  GenerateLineMaze();
+  GenerateMaze();
+  //GenerateLineMaze();
 }
 
 void LookAround() {

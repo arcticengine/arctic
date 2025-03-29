@@ -69,7 +69,8 @@ void HwSprite::DrawSprite(const HwSprite &to_sprite,
 void HwSprite::UpdateVertexBuffer(float angle) const {
     if (!gl_buffer_) {
         gl_buffer_ = std::make_unique<GlBuffer>();
-        gl_buffer_->Create(nullptr, sizeof(float)*4*6);
+        gl_buffer_->Create();
+        gl_buffer_->SetData(nullptr, sizeof(float)*4*6);
     }
 
     if (!gl_buffer_->IsValid()

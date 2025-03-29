@@ -65,15 +65,18 @@ class Engine {
   Mesh mesh_;
   std::vector<HwSpriteDrawing> hw_sprite_drawing_;
 
+  GlBuffer vbo_;
+  GlBuffer ebo_;
+
   std::chrono::high_resolution_clock::time_point start_time_;
   double time_correction_ = 0.0;
   double last_time_ = 0.0;
 
-  std::independent_bits_engine<std::mt19937_64, 64, Ui64> rnd_64_;
-  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_32_;
-  std::independent_bits_engine<std::mt19937_64, 16, Ui64> rnd_16_;
-  std::independent_bits_engine<std::mt19937_64, 8, Ui64> rnd_8_;
-
+  static thread_local std::independent_bits_engine<std::mt19937_64, 64, Ui64> rnd_64_;
+  static thread_local std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_32_;
+  static thread_local std::independent_bits_engine<std::mt19937_64, 16, Ui64> rnd_16_;
+  static thread_local std::independent_bits_engine<std::mt19937_64, 8, Ui64> rnd_8_;
+  static thread_local bool is_rng_initialized_;
 
   bool is_inverse_y_ = false;
   bool is_sw_renderer_enabled_ = true;
@@ -88,6 +91,9 @@ class Engine {
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
   std::string initial_path_;
+
+  /// @brief Initializes thread-local random number generators for the current thread
+  void InitThreadLocalRng();
 
  public:
   /// @brief Adds a new HwSpriteDrawing to the engine.

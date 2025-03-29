@@ -37,6 +37,13 @@
 
 namespace arctic {
 
+// Define static thread-local variables
+thread_local std::independent_bits_engine<std::mt19937_64, 64, Ui64> Engine::rnd_64_;
+thread_local std::independent_bits_engine<std::mt19937_64, 32, Ui64> Engine::rnd_32_;
+thread_local std::independent_bits_engine<std::mt19937_64, 16, Ui64> Engine::rnd_16_;
+thread_local std::independent_bits_engine<std::mt19937_64, 8, Ui64> Engine::rnd_8_;
+thread_local bool Engine::is_rng_initialized_ = false;
+
 void MathTables::Init() {
   cicrle_16_16_size = 4097;
   cicrle_16_16_one = cicrle_16_16_size - 1;
@@ -82,16 +89,25 @@ std::string Engine::GetInitialPath() const {
   return initial_path_;
 }
 
+void Engine::InitThreadLocalRng() {
+  // Get a unique seed for this thread
+  Si64 ms = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+  
+  // Initialize thread-local random number generators with time-based seed
+  rnd_8_.seed(static_cast<Ui64>(ms));
+  rnd_16_.seed(static_cast<Ui64>(ms + 1));
+  rnd_32_.seed(static_cast<Ui64>(ms + 2));
+  rnd_64_.seed(static_cast<Ui64>(ms + 3));
+  is_rng_initialized_ = true;
+}
+
 void Engine::HeadlessInit() {
   start_time_ = std::chrono::high_resolution_clock::now();
   time_correction_ = 0.0;
   last_time_ = 0.0;
 
-  Si64 ms = start_time_.time_since_epoch().count();
-  rnd_8_.seed(static_cast<Ui64>(ms));
-  rnd_16_.seed(static_cast<Ui64>(ms + 1));
-  rnd_32_.seed(static_cast<Ui64>(ms + 2));
-  rnd_64_.seed(static_cast<Ui64>(ms + 3));
+  // Initialize random number generators for the main thread
+  InitThreadLocalRng();
 
   math_tables_.Init();
 }
@@ -106,7 +122,7 @@ void Engine::Init(Si32 window_width, Si32 window_height) {
 
   HeadlessInit();
 
-    const char copy_backbuffers_vShaderStr[] = R"SHADER(
+  const char copy_backbuffers_vShaderStr[] = R"SHADER(
 #ifdef GL_ES
 #endif
 attribute vec3 vPosition;
@@ -231,6 +247,9 @@ void main() {
 
   default_sprite_program_ = std::make_shared<GlProgram>();
   default_sprite_program_->Create(default_sprite_vShaderStr, default_sprite_fShaderStr);
+
+  vbo_.Create();
+  ebo_.Create();
 }
 
 struct Vertex {
@@ -391,23 +410,16 @@ void Engine::Draw2d() {
     if (do_draw) {
       do_draw = false;
       if (mesh_.mFaceData.mIndexArray[0].mNum) {
-        GLuint vbo;
-        ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &vbo));
-        ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-        // 1. Create and bind vertex buffer, upload the data
-        ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ARRAY_BUFFER,
-                    mesh_.mVertexData.mVertexArray[0].mNum * mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-                    mesh_.mVertexData.mVertexArray[0].mBuffer,
-                    GL_STATIC_DRAW));
+        vbo_.Bind(GL_ARRAY_BUFFER);
 
-        // 2. Create and bind index buffer
-        GLuint ebo;
-        ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &ebo));
-        ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
-        ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                    mesh_.mFaceData.mIndexArray[0].mNum * 3 * sizeof(GLuint),
-                    mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex,
-                    GL_STATIC_DRAW));
+        // 1. Bind vertex buffer, upload the data
+        vbo_.SetData(mesh_.mVertexData.mVertexArray[0].mBuffer,
+                    mesh_.mVertexData.mVertexArray[0].mNum * mesh_.mVertexData.mVertexArray[0].mFormat.mStride);
+
+        // 2. Bind index buffer
+        ebo_.Bind(GL_ELEMENT_ARRAY_BUFFER);
+        ebo_.SetData(mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex,
+                    mesh_.mFaceData.mIndexArray[0].mNum * 3 * sizeof(GLuint));
 
         // 3. Set vertex attributes using offsets within VBO
         ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
@@ -478,23 +490,17 @@ void Engine::Draw2d() {
     mesh_.SetTriangle(0, 1, 2, 3, 0);
 
     // Create and bind VBO
-    GLuint vbo;
-    ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &vbo));
-    ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vbo));
-    // 1. Create and bind vertex buffer, upload the data
-    ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ARRAY_BUFFER,
-                mesh_.mVertexData.mVertexArray[0].mNum * mesh_.mVertexData.mVertexArray[0].mFormat.mStride,
-                mesh_.mVertexData.mVertexArray[0].mBuffer,
-                GL_STATIC_DRAW));
 
-    // 2. Create and bind index buffer
-    GLuint ebo;
-    ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &ebo));
-    ARCTIC_GL_CHECK_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
-    ARCTIC_GL_CHECK_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                mesh_.mFaceData.mIndexArray[0].mNum * 3 * sizeof(GLuint),
-                mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex,
-                GL_STATIC_DRAW));
+    vbo_.Bind(GL_ARRAY_BUFFER);
+
+    // 1. Bind vertex buffer, upload the data
+    vbo_.SetData(mesh_.mVertexData.mVertexArray[0].mBuffer,
+                mesh_.mVertexData.mVertexArray[0].mNum * mesh_.mVertexData.mVertexArray[0].mFormat.mStride);
+
+    // 2. Bind index buffer
+    ebo_.Bind(GL_ELEMENT_ARRAY_BUFFER);
+    ebo_.SetData(mesh_.mFaceData.mIndexArray[0].mBuffer[0].mIndex,
+                mesh_.mFaceData.mIndexArray[0].mNum * 3 * sizeof(GLuint));
 
     // 3. Set vertex attributes using offsets within VBO
     ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
@@ -550,6 +556,9 @@ double Engine::GetTime() {
 }
 
 Si64 Engine::GetRandom(Si64 min, Si64 max) {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   Check(min <= max, "GetRandom min should be <= max");
   Ui64 range = static_cast<Ui64>(max - min) + 1ull;
   if (range < 0x1000) {
@@ -569,22 +578,37 @@ Si64 Engine::GetRandom(Si64 min, Si64 max) {
 
 
 Ui64 Engine::GetRandom64() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   return rnd_64_();
 }
 
 Ui32 Engine::GetRandom32() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   return static_cast<Ui32>(rnd_32_());
 }
 
 Ui16 Engine::GetRandom16() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   return static_cast<Ui32>(rnd_16_());
 }
 
 Ui8 Engine::GetRandom8() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   return static_cast<Ui32>(rnd_8_());
 }
 
 float Engine::GetRandomF() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   Ui32 a = static_cast<Ui32>(rnd_32_());
   a = (a>>9) | 0x3f800000;
   float res;
@@ -594,6 +618,9 @@ float Engine::GetRandomF() {
 }
 
 float Engine::GetRandomSF() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   Ui32 a = static_cast<Ui32>(rnd_32_());
   a = (a>>9) | 0x40000000;
   float res;
@@ -603,6 +630,9 @@ float Engine::GetRandomSF() {
 }
 
 double Engine::GetRandomD() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   Ui64 a = static_cast<Ui64>(rnd_64_());
   a = (a>>12) | 0x3ff0000000000000;
   double res;
@@ -611,6 +641,9 @@ double Engine::GetRandomD() {
 }
 
 double Engine::GetRandomSD() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
   Ui64 a = static_cast<Ui64>(rnd_64_());
   a = (a>>12) | 0x4000000000000000;
   double res;
