@@ -44,6 +44,7 @@ Mesh::Mesh() {
 }
 
 Mesh::~Mesh() {
+  DeInit();
 }
 
 bool Mesh::Init(int numVertexStreams, int nv,
@@ -133,11 +134,13 @@ void Mesh::DeInit() {
   for (int i=0; i<mVertexData.mNumVertexArrays; i++) {
     if (mVertexData.mVertexArray[i].mMax) {
       free(mVertexData.mVertexArray[i].mBuffer);
+      mVertexData.mVertexArray[i].mMax = 0;
     }
   }
   for (int i=0; i<mFaceData.mNumIndexArrays; i++) {
     if (mFaceData.mIndexArray[i].mMax) { 
       free(mFaceData.mIndexArray[i].mBuffer);
+      mFaceData.mIndexArray[i].mMax = 0;
     }
   }
 }
