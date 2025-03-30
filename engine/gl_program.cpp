@@ -185,6 +185,14 @@ void GlProgram::SetUniform(const char *name, const Vec4F &value) {
     ARCTIC_GL_CHECK_ERROR(glUniform4f(GetUniformLocation(name), value.x, value.y, value.z, value.w));
 }
 
+void GlProgram::SetUniform(const char *name, const Mat44F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, value.m));
+}
+
+void GlProgram::SetUniformTransposed(const char *name, const Mat44F &value) {
+    ARCTIC_GL_CHECK_ERROR(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_TRUE, value.m));
+}
+
 void GlProgram::CheckActiveUniforms(int required_count) {
     GLint ufs;
     ARCTIC_GL_CHECK_ERROR(glGetProgramiv(program_id_, GL_ACTIVE_UNIFORMS, &ufs));

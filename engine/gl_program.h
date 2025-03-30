@@ -68,6 +68,8 @@ private:
   void SetUniform(const char *name, const Vec2F &value);
   void SetUniform(const char *name, const Vec3F &value);
   void SetUniform(const char *name, const Vec4F &value);
+  void SetUniform(const char *name, const Mat44F &value);
+  void SetUniformTransposed(const char *name, const Mat44F &value);
   void CheckActiveUniforms(int required_count);
   int GetUniformLocation(const char *name) const;
 };
