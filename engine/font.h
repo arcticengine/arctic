@@ -238,7 +238,20 @@ public:
   void AddGlyph(Ui32 codepoint, Si32 xadvance, Sprite sprite);
 
   /// @brief Loads a font from a file
-  /// @param [in] file_name Path to the font file
+  /// @param [in] file_name Path to the font file to load.
+  ///
+  /// This method loads a font from a file. The file must be in one of the following formats:
+  /// - BMFont binary format (.fnt) - Most common format, created by BMFont tool
+  /// - BMFont XML format (.xml) - Alternative format for BMFont
+  ///
+  /// The font file must be accompanied by its corresponding texture file(s) in the same directory.
+  /// For example, if you have "font.fnt", you should also have "font_0.png" (and "font_1.png", "font_2.png", etc.
+  /// if the font uses multiple texture pages).
+  ///
+  /// @note TTF (TrueType Font) files are NOT supported. You must convert your TTF fonts to BMFont format
+  /// using tools like BMFont (https://www.angelcode.com/products/bmfont/) before using them.
+  ///
+  /// @throws Fatal error if the file extension is not recognized or the file cannot be loaded
   void Load(const char *file_name);
 
   /// @brief Loads a font from an XML file
@@ -408,12 +421,24 @@ public:
 ///                  kDrawBlendingModeColorize, kFilterNearest, Rgba(255, 255, 0));
 ///    @endcode
 ///
+/// @section font_format Font Format Requirements
+///
+/// The Arctic Engine font system ONLY supports bitmap fonts in the following formats:
+/// - BMFont binary format (.fnt)
+/// - BMFont XML format (.xml)
+/// - ASCII square font format (16x16 grid)
+/// - Horizontal stripe font format
+/// - Table font format
+///
+/// TTF (TrueType Font) files are NOT supported. You must convert your TTF fonts to one of the supported bitmap formats
+/// using tools like BMFont (https://www.angelcode.com/products/bmfont/) before using them with the Arctic Engine.
+///
 /// @section font_blending Blending Modes
 /// 
-/// The Font class supports several blending modes for text rendering, but it's :
+/// The Font class supports several blending modes for text rendering:
 ///
 /// - kDrawBlendingModeColorize: Applies the specified color to the text while preserving
-///   its shape and transparency. Works best with black and white fornts.
+///   its shape and transparency. Works best with black and white fonts.
 ///   This is the recommended mode for text output.
 /// - kDrawBlendingModeSolidColor: Replaces all colors of the font with the specified color.
 ///   This may work with a pre-colored font file.
@@ -495,33 +520,62 @@ class Font {
   }
 
   /// @brief Loads the font from file
-  /// @param [in] file_name Path to the font file to load.
+  /// @param [in] file_name Path to the *.fnt or *.xml font file to load.
+  ///
+  /// This method loads a font from a file. The file must be in one of the following formats:
+  /// - BMFont binary format (.fnt) - Most common format, created by BMFont tool
+  /// - BMFont XML format (.xml) - Alternative format for BMFont
+  ///
+  /// The font file must be accompanied by its corresponding texture file(s) in the same directory.
+  /// For example, if you have "font.fnt", you should also have "font_0.tga"
+  ///
+  /// @note TTF (TrueType Font) files are NOT supported. You must convert your TTF fonts to BMFont format
+  /// using tools like BMFont (https://www.angelcode.com/products/bmfont/) before using them.
+  ///
+  /// @throws Fatal error if the file extension is not recognized or the file cannot be loaded
   void Load(const char *file_name) {
     font_instance_->Load(file_name);
   }
 
-  /// @brief Loads the font from a sprite containing a stripe of letters
-  /// @param [in] sprite Sprite containing 1 pixel divided glyphs in a horizontal stripe.
-  /// @param [in] utf8_letters A zero-terminated UTF8 string containing codepoints that
-  ///   correspond to the glyphs of the sprite.
-  /// @param [in] base_to_top Glyph height from base to top.
-  /// @param [in] line_height Line height for the font.
-  /// @param [in] space_width Space glyph widht.
+  /// @brief Loads a font from an XML file
+  /// @param [in] file_name Path to the XML font file
+  void LoadXml(const char *file_name) {
+    font_instance_->LoadXml(file_name);
+  }
+
+  /// @brief Loads an ASCII square font from a file
+  /// @param [in] file_name Path to the font file
+  /// @param [in] is_dense Whether the font is densely packed
+  void LoadAsciiSquare(const char *file_name, bool is_dense) {
+    font_instance_->LoadAsciiSquare(file_name, is_dense);
+  }
+
+  /// @brief Loads a binary BMFont file
+  /// @param [in] file_name Path to the binary BMFont file
+  void LoadBinaryFnt(const char *file_name) {
+    font_instance_->LoadBinaryFnt(file_name);
+  }
+
+  /// @brief Loads a font from a horizontal stripe of glyphs
+  /// @param [in] sprite Sprite containing the glyph stripe
+  /// @param [in] utf8_letters UTF-8 encoded string of letters in the sprite
+  /// @param [in] base_to_top Distance from baseline to top of the font
+  /// @param [in] line_height Height of a line of text
+  /// @param [in] space_width Width of the space character
   void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
       Si32 base_to_top, Si32 line_height, Si32 space_width) {
     font_instance_->LoadHorizontalStripe(sprite, utf8_letters, base_to_top, line_height, space_width);
   }
 
-  /// @brief Loads the font from a sprite containing a table of letters
-  /// @param [in] sprite Sprite containing glyphs in a table.
-  /// @param [in] utf8_letters A zero-terminated UTF8 string containing codepoints that
-  ///   correspond to the glyphs of the sprite (in left to right bottom to top order).
-  /// @param [in] cell_width Table cell width.
-  /// @param [in] cell_height Table cell height.
-  /// @param [in] base_to_top Glyph height from base to top.
-  /// @param [in] line_height Line height for the font.
-  /// @param [in] space_width Space glyph widht.
-  /// @param [in] left_offset Glyph offset from the left edge of the cell.
+  /// @brief Loads a font from a table of glyphs
+  /// @param [in] sprite Sprite containing the glyph table
+  /// @param [in] utf8_letters UTF-8 encoded string of letters in the sprite
+  /// @param [in] cell_width Width of each cell in the table
+  /// @param [in] cell_height Height of each cell in the table
+  /// @param [in] base_to_top Distance from baseline to top of the font
+  /// @param [in] line_height Height of a line of text
+  /// @param [in] space_width Width of the space character
+  /// @param [in] left_offset Left offset of glyphs within cells
   void LoadTable(Sprite sprite, const char* utf8_letters,
       Si32 cell_width, Si32 cell_height,
       Si32 base_to_top, Si32 line_height, Si32 space_width,

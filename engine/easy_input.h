@@ -40,51 +40,86 @@ namespace arctic {
 /// Checks if a key was pressed down during the last frame
 /// @param key_code The key code to check
 /// @return True if the key transitioned from up to down state during the last frame
+/// @note This function returns true ONLY on the first frame when a key is pressed.
+///       It does NOT return true while the key is being held down.
+///       Use IsKeyDown() for continuous key press detection (e.g., character movement).
+///       Use IsKeyDownward() for one-time actions (e.g., menu selection, jumping).
 bool IsKeyDownward(const KeyCode key_code);
 
 /// Checks if any of the specified keys was pressed down during the last frame
 /// @param keys A C-string containing one or more key character codes to check
 /// @return True if any of the specified keys transitioned from up to down state during the last frame
+/// @note This function returns true ONLY on the first frame when any of the keys are pressed.
+///       It does NOT return true while the keys are being held down.
+///       Use IsKeyDown() for continuous key press detection (e.g., character movement).
+///       Use IsKeyDownward() for one-time actions (e.g., menu selection, jumping).
 bool IsKeyDownward(const char *keys);
 
 /// Checks if a specific key was pressed down during the last frame
 /// @param key The key character code to check
 /// @return True if the key transitioned from up to down state during the last frame
+/// @note This function returns true ONLY on the first frame when the key is pressed.
+///       It does NOT return true while the key is being held down.
+///       Use IsKeyDown() for continuous key press detection (e.g., character movement).
+///       Use IsKeyDownward() for one-time actions (e.g., menu selection, jumping).
 bool IsKeyDownward(const char key);
 
 /// Checks if a key was pressed down during the last frame
 /// @param key_code The integer key code to check
 /// @return True if the key transitioned from up to down state during the last frame
+/// @note This function returns true ONLY on the first frame when the key is pressed.
+///       It does NOT return true while the key is being held down.
+///       Use IsKeyDown() for continuous key press detection (e.g., character movement).
+///       Use IsKeyDownward() for one-time actions (e.g., menu selection, jumping).
 bool IsKeyDownward(const Si32 key_code);
 
 /// Checks if any of the specified keys was pressed down during the last frame
 /// @param keys A string containing one or more key character codes to check
 /// @return True if any of the specified keys transitioned from up to down state during the last frame
+/// @note This function returns true ONLY on the first frame when any of the keys are pressed.
+///       It does NOT return true while the keys are being held down.
+///       Use IsKeyDown() for continuous key press detection (e.g., character movement).
+///       Use IsKeyDownward() for one-time actions (e.g., menu selection, jumping).
 bool IsKeyDownward(const std::string &keys);
 
 /// Checks if a key is currently being held down
 /// @param key_code The key code to check
 /// @return True if the key is currently in the down state
+/// @note This function returns true as long as the key is being held down.
+///       Use this for continuous actions like character movement or camera control.
+///       For one-time actions (e.g., menu selection, jumping), use IsKeyDownward() instead.
 bool IsKeyDown(const KeyCode key_code);
 
 /// Checks if any of the specified keys is currently being held down
 /// @param keys A C-string containing one or more key character codes to check
 /// @return True if any of the specified keys is currently in the down state
+/// @note This function returns true as long as any of the keys are being held down.
+///       Use this for continuous actions like character movement or camera control.
+///       For one-time actions (e.g., menu selection, jumping), use IsKeyDownward() instead.
 bool IsKeyDown(const char *keys);
 
 /// Checks if a specific key is currently being held down
 /// @param key The key character code to check
 /// @return True if the key is currently in the down state
+/// @note This function returns true as long as the key is being held down.
+///       Use this for continuous actions like character movement or camera control.
+///       For one-time actions (e.g., menu selection, jumping), use IsKeyDownward() instead.
 bool IsKeyDown(const char key);
 
 /// Checks if a key is currently being held down
 /// @param key_code The integer key code to check
 /// @return True if the key is currently in the down state
+/// @note This function returns true as long as the key is being held down.
+///       Use this for continuous actions like character movement or camera control.
+///       For one-time actions (e.g., menu selection, jumping), use IsKeyDownward() instead.
 bool IsKeyDown(const Si32 key_code);
 
 /// Checks if any of the specified keys is currently being held down
 /// @param keys A string containing one or more key character codes to check
 /// @return True if any of the specified keys is currently in the down state
+/// @note This function returns true as long as any of the keys are being held down.
+///       Use this for continuous actions like character movement or camera control.
+///       For one-time actions (e.g., menu selection, jumping), use IsKeyDownward() instead.
 bool IsKeyDown(const std::string &keys);
 
 /// Checks if a key was released during the last frame

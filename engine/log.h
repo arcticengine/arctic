@@ -35,9 +35,15 @@ namespace arctic {
 
 /// @brief Provides a streaming interface to write log
 /// @return A unique pointer to an ostringstream with a custom deleter
+/// 
+/// The logger is automatically started by the engine before EasyMain is called,
+/// so users only need to use this function to write log messages.
+/// 
 /// Usage example:
 /// @code
 ///   *Log() << "Hello World!";
+///   *Log() << "Value: " << 42;
+///   *Log() << "Position: " << x << ", " << y;
 /// @endcode
 std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
 
@@ -57,9 +63,15 @@ void Log(const char *text1, const char *text2);
 void Log(const char *text1, const char *text2, const char *text3);
 
 /// @brief Starts the logger
+/// 
+/// @note This function is called automatically by the engine before EasyMain is called.
+/// Users do not need to call this function manually.
 void StartLogger();
 
 /// @brief Stops the logger
+/// 
+/// @note This function is called automatically by the engine when the program exits.
+/// Users do not need to call this function manually.
 void StopLogger();
 
 /// @}
