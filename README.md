@@ -122,3 +122,35 @@ If you experience low sound quality on built-in audio output, in /boot/config.tx
 audio_pwm_mode=2
 ```
 You might need to update your firmware in order for this to work.
+
+### Visual Studio Express and Cursor notes
+
+To set up the project in Visual Studio Express or Cursor:
+1. Open the project:
+   - In Visual Studio Express: Open the generated `.sln` file in the `dungeon` directory
+   - In Cursor: Open the `dungeon` directory as your workspace
+
+2. Configure include paths with correct path to the arctic engine directory:
+   - Create `.vscode/c_cpp_properties.json` with:
+   ```json
+   {
+       "configurations": [
+           {
+               "name": "Win32",
+               "includePath": [
+                   "${workspaceFolder}/..",
+                   "${workspaceFolder}/../arctic",
+                   "${workspaceFolder}/your_project_dir"
+               ],
+               "defines": [],
+               "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.xx.xxxxx/bin/Hostx64/x64/cl.exe",
+               "cStandard": "c14",
+               "cppStandard": "c++14",
+               "intelliSenseMode": "windows-msvc-x64"
+           }
+       ],
+       "version": 4
+   }
+   ```
+   Adjust the `compilerPath` to match your Visual Studio installation and `your_project_dir` to match your project location.
+
