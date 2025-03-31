@@ -30,6 +30,7 @@
 #include "engine/data_writer.h"
 #include "engine/easy_files.h"
 #include "engine/mesh.h"
+#include "engine/arctic_platform_fatal.h"
 
 namespace arctic {
 
@@ -39,6 +40,36 @@ static const unsigned int typeSizeof[] = {
   4,  // piRMVEDT_Int   = 2,
   8,  // piRMVEDT_Double= 3,
 };
+
+unsigned int MeshVertexElemInfo::GetElementSize() const {
+    return mNumComponents * typeSizeof[mType];
+}
+
+int MeshVertexFormat::AddElement(unsigned int numComponents, MeshVertexElemDataType type, bool normalize) {
+    if (mNumElems >= Mesh_MAXELEMS) {
+      return -1;  // Format is already full
+    }
+    
+    // Set up the new element
+    MeshVertexElemInfo& elem = mElems[mNumElems];
+    elem.mNumComponents = numComponents;
+    elem.mType = type;
+    elem.mNormalize = normalize;
+    
+    // Calculate the offset based on existing elements
+    if (mNumElems > 0) {
+      const MeshVertexElemInfo& prevElem = mElems[mNumElems - 1];
+      elem.mOffset = prevElem.mOffset + prevElem.GetElementSize();
+    } else {
+      elem.mOffset = 0;
+    }
+    
+    // Update the stride
+    mStride += elem.GetElementSize();
+    
+    // Return the index of the newly added element
+    return mNumElems++;
+}
 
 Mesh::Mesh() {
 }
@@ -72,7 +103,7 @@ bool Mesh::Init(int numVertexStreams, int nv,
   mFaceData.mType = type;
   for (int i=0; i<numElementsArrays; i++) {
     mFaceData.mIndexArray[i].mMax  = numElements;
-    mFaceData.mIndexArray[i].mNum  = numElements;
+    mFaceData.mIndexArray[i].mNum  = 0;
     if (numElements>0) {
       const int bufferSize = numElements * ((mFaceData.mType==kRMVEDT_Polys) ? sizeof(MeshFace) : sizeof(unsigned int));
       mFaceData.mIndexArray[i].mBuffer = (MeshFace*)malloc(bufferSize);
@@ -89,7 +120,7 @@ bool Mesh::AddVertexStream(const int nv, const MeshVertexFormat *vf) {
   const int id = mVertexData.mNumVertexArrays;
 
   mVertexData.mVertexArray[id].mMax = nv;
-  mVertexData.mVertexArray[id].mNum = nv;
+  mVertexData.mVertexArray[id].mNum = 0;
   mVertexData.mVertexArray[id].mFormat = *vf;
 
   mVertexData.mVertexArray[id].mBuffer = malloc(nv*vf->mStride);
@@ -101,7 +132,7 @@ bool Mesh::AddVertexStream(const int nv, const MeshVertexFormat *vf) {
   int off = 0;
   for (int i=0; i<vf->mNumElems; i++) {
     mVertexData.mVertexArray[id].mFormat.mElems[i].mOffset = off;
-    off  += vf->mElems[i].mNumComponents*typeSizeof[ vf->mElems[i].mType ];
+    off += vf->mElems[i].mNumComponents*typeSizeof[vf->mElems[i].mType];
   }
 
   mVertexData.mNumVertexArrays = id + 1;
@@ -152,22 +183,6 @@ void Mesh::ClearGeometry() {
   for (int i=0; i<mFaceData.mNumIndexArrays; i++) {
     mFaceData.mIndexArray[i].mNum = 0;
   }
-}
-
-int MeshVertexElemDataType2Num(MeshVertexElemDataType x) {
-  if (x==kRMVEDT_UByte) {
-    return 0;
-  };
-  if (x==kRMVEDT_Float) {
-    return 1;
-  }
-  if (x==kRMVEDT_Int) {
-    return 2;
-  }
-  if (x==kRMVEDT_Double) {
-    return 3;
-  }
-  return 0;
 }
 
 int Mesh::Save(const char *name) {
@@ -1003,5 +1018,88 @@ void *Mesh::GetVertexData(int streamID, int vertexID, int elementID) const {
       + mVertexData.mVertexArray[streamID].mFormat.mElems[elementID].mOffset);
 }
 
+int Mesh::AddVertex(int streamID, ...) {
+    MeshVertexArray* va = &mVertexData.mVertexArray[streamID];
+    int vertexIndex = va->mNum;
+    if (vertexIndex >= va->mMax) {
+      return -1;
+    }
+    
+    // Get the base pointer for the vertex data
+    float* vertexData = (float*)((char*)va->mBuffer + vertexIndex * va->mFormat.mStride);
+    
+    va_list args;
+    va_start(args, streamID);
+
+    // Process each element based on the vertex format
+    for (int i = 0; i < va->mFormat.mNumElems; i++) {
+      MeshVertexElemInfo &elem = va->mFormat.mElems[i];
+      char *elemAddr = (char *)vertexData + elem.mOffset;
+
+      // Handle each element type
+      switch (elem.mType) {
+        case kRMVEDT_UByte:
+        {
+          unsigned char *elemPtr = (unsigned char *)elemAddr;
+          for (unsigned int j = 0; j < elem.mNumComponents; j++) {
+            elemPtr[j] = va_arg(args, int);
+          }
+        }
+          break;
+        case kRMVEDT_Float:
+        {
+          float *elemPtr = (float *)elemAddr;
+          for (unsigned int j = 0; j < elem.mNumComponents; j++) {
+            elemPtr[j] = va_arg(args, double);  // float is promoted to double in varargs
+          }
+        }
+          break;
+        case kRMVEDT_Int:
+        {
+          int *elemPtr = (int *)elemAddr;
+          for (unsigned int j = 0; j < elem.mNumComponents; j++) {
+            elemPtr[j] = va_arg(args, int);
+          }
+        }
+          break;
+        case kRMVEDT_Double:
+        {
+          double *elemPtr = (double *)elemAddr;
+          for (unsigned int j = 0; j < elem.mNumComponents; j++) {
+            elemPtr[j] = va_arg(args, double);
+          }
+        }
+          break;
+        default:
+          Fatal("Unsupported element type");
+      }
+    }
+
+    va_end(args);
+    // Increment vertex count
+    va->mNum++;
+    return vertexIndex;
+}
+
+int Mesh::AddFace(int streamID, int v1, int v2, int v3) {
+    MeshIndexArray* ia = &mFaceData.mIndexArray[streamID];
+    int faceIndex = ia->mNum;
+    
+    MeshFace* face = &ia->mBuffer[faceIndex];
+    face->mIndex[0] = v1;
+    face->mIndex[1] = v2;
+    face->mIndex[2] = v3;
+    
+    ia->mNum++;
+    return faceIndex;
+}
+
+int Mesh::GetCurrentVertexCount(int streamID) const {
+    return mVertexData.mVertexArray[streamID].mNum;
+}
+
+int Mesh::GetCurrentFaceCount(int streamID) const {
+    return mFaceData.mIndexArray[streamID].mNum;
+}
 
 }

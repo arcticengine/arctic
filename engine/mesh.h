@@ -51,6 +51,9 @@ struct MeshVertexElemInfo {
   MeshVertexElemDataType mType = kRMVEDT_UByte;
   bool mNormalize = false;
   unsigned int mOffset = 0;
+
+  // Calculate the size of an element in bytes
+  unsigned int GetElementSize() const;
 };
 
 struct MeshVertexFormat {
@@ -58,6 +61,10 @@ struct MeshVertexFormat {
   int mNumElems = 0;
   int mDivisor = 0;
   MeshVertexElemInfo mElems[Mesh_MAXELEMS];
+
+  // Adds a new element to the vertex format
+  // Returns the index of the added element or -1 if the format is full
+  int AddElement(unsigned int numComponents, MeshVertexElemDataType type, bool normalize = false);
 };
 
 struct MeshVertexArray {
@@ -118,6 +125,12 @@ class Mesh {
     void GetVertex(int streamID, int vertexID, void *data);
     void SetVertex(int streamID, int vertexID, void *data);
     bool SetTriangle(int streamID, int triangleID, int a, int b, int c);
+
+    // New methods for direct vertex and face manipulation
+    int AddVertex(int streamID, ...);
+    int AddFace(int streamID, int v1, int v2, int v3);
+    int GetCurrentVertexCount(int streamID) const;
+    int GetCurrentFaceCount(int streamID) const;
 
   public:
     Bound3F mBBox;
