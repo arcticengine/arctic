@@ -1021,7 +1021,7 @@ void *Mesh::GetVertexData(int streamID, int vertexID, int elementID) const {
 
 int Mesh::AddVertex(int streamID, ...) {
     MeshVertexArray* va = &mVertexData.mVertexArray[streamID];
-    int vertexIndex = va->mNum;
+    unsigned int vertexIndex = va->mNum;
     if (vertexIndex >= va->mMax) {
       return -1;
     }
@@ -1051,7 +1051,7 @@ int Mesh::AddVertex(int streamID, ...) {
         {
           float *elemPtr = (float *)elemAddr;
           for (unsigned int j = 0; j < elem.mNumComponents; j++) {
-            elemPtr[j] = va_arg(args, double);  // float is promoted to double in varargs
+            elemPtr[j] = (float)va_arg(args, double);  // float is promoted to double in varargs
           }
         }
           break;
@@ -1079,7 +1079,7 @@ int Mesh::AddVertex(int streamID, ...) {
     va_end(args);
     // Increment vertex count
     va->mNum++;
-    return vertexIndex;
+    return (int)vertexIndex;
 }
 
 int Mesh::AddFace(int streamID, int v1, int v2, int v3) {
