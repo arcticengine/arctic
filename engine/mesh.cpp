@@ -25,6 +25,7 @@
 // IN THE SOFTWARE.
 
 #include <cstring>
+#include <stdarg.h>
 
 #include "engine/data_reader.h"
 #include "engine/data_writer.h"
