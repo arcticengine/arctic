@@ -127,13 +127,7 @@ PFNGLUNIFORMMATRIX2FVPROC glUniformMatrix2fv = nullptr;
 PFNGLUNIFORMMATRIX3FVPROC glUniformMatrix3fv = nullptr;
 PFNGLCOMPRESSEDTEXIMAGE2DPROC glCompressedTexImage2D = nullptr;
 PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC glCompressedTexSubImage2D = nullptr;
-PFNGLCOPYTEXIMAGE2DPROC glCopyTexImage2D = nullptr;
-PFNGLCOPYTEXSUBIMAGE2DPROC glCopyTexSubImage2D = nullptr;
 PFNGLGENERATEMIPMAPPROC glGenerateMipmap = nullptr;
-PFNGLTEXPARAMETERFPROC glTexParameterf = nullptr;
-PFNGLTEXPARAMETERFVPROC glTexParameterfv = nullptr;
-PFNGLTEXPARAMETERIPROC glTexParameteri = nullptr;
-PFNGLTEXPARAMETERIVPROC glTexParameteriv = nullptr;
 PFNGLFRAMEBUFFERRENDERBUFFERPROC glFramebufferRenderbuffer = nullptr;
 PFNGLGENRENDERBUFFERSPROC glGenRenderbuffers = nullptr;
 PFNGLDELETERENDERBUFFERSPROC glDeleteRenderbuffers = nullptr;
@@ -141,10 +135,6 @@ PFNGLBINDRENDERBUFFERPROC glBindRenderbuffer = nullptr;
 PFNGLRENDERBUFFERSTORAGEPROC glRenderbufferStorage = nullptr;
 PFNGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC glGetFramebufferAttachmentParameteriv = nullptr;
 PFNGLGETRENDERBUFFERPARAMETERIVPROC glGetRenderbufferParameteriv = nullptr;
-PFNGLFRONTFACEPROC glFrontFace = nullptr;
-PFNGLCULLFACEPROC glCullFace = nullptr;
-PFNGLLINEWIDTHPROC glLineWidth = nullptr;
-PFNGLPOLYGONOFFSETPROC glPolygonOffset = nullptr;
 
 namespace arctic {
 
@@ -654,13 +644,7 @@ void LoadGl() {
   LoadGlFunction("glUniformMatrix3fv", &glUniformMatrix3fv);
   LoadGlFunction("glCompressedTexImage2D", &glCompressedTexImage2D);
   LoadGlFunction("glCompressedTexSubImage2D", &glCompressedTexSubImage2D);
-  LoadGlFunction("glCopyTexImage2D", &glCopyTexImage2D);
-  LoadGlFunction("glCopyTexSubImage2D", &glCopyTexSubImage2D);
   LoadGlFunction("glGenerateMipmap", &glGenerateMipmap);
-  LoadGlFunction("glTexParameterf", &glTexParameterf);
-  LoadGlFunction("glTexParameterfv", &glTexParameterfv);
-  LoadGlFunction("glTexParameteri", &glTexParameteri);
-  LoadGlFunction("glTexParameteriv", &glTexParameteriv);
   LoadGlFunction("glFramebufferRenderbuffer", &glFramebufferRenderbuffer);
   LoadGlFunction("glGenRenderbuffers", &glGenRenderbuffers);
   LoadGlFunction("glDeleteRenderbuffers", &glDeleteRenderbuffers);
@@ -668,10 +652,6 @@ void LoadGl() {
   LoadGlFunction("glRenderbufferStorage", &glRenderbufferStorage);
   LoadGlFunction("glGetFramebufferAttachmentParameteriv", &glGetFramebufferAttachmentParameteriv);
   LoadGlFunction("glGetRenderbufferParameteriv", &glGetRenderbufferParameteriv);
-  LoadGlFunction("glFrontFace", &glFrontFace);
-  LoadGlFunction("glCullFace", &glCullFace);
-  LoadGlFunction("glLineWidth", &glLineWidth);
-  LoadGlFunction("glPolygonOffset", &glPolygonOffset);
 }
 
 void HeadlessPlatformInit() {
