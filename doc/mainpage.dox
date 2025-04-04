@@ -56,29 +56,26 @@ Install XCode. Run XCode and select 'Souce Control -> Clone' menu option. Enter 
 
 Instructions for Linux and MacOS users on how to run an Arctic Engine game in a web browser:
 
-1) Install Emscripten following the instructions at:
+1. Install Emscripten following the instructions at https://emscripten.org/docs/getting_started/downloads.html
 
-https://emscripten.org/docs/getting_started/downloads.html
-
-Don't forget to set the environment variables:
-
-source ./emsdk_env.sh
-
-2) Navigate to your game directory.
-
-3) Remove the CMake cache:
-
-rm -f ./CMakeCache.txt
-
-4) Build the project:
-
-emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8
-
-5) Start the web server:
-
-python3 ./server.py
-
-6) Open the address http://127.0.0.1:8000/index.html in your browser
+  Don't forget to set the environment variables:
+  ~~~~~{.bash}
+  source ./emsdk_env.sh
+  ~~~~~
+2. Navigate to your game directory.
+3. Remove the CMake cache:
+  ~~~~~{.bash}
+  rm -f ./CMakeCache.txt
+  ~~~~~
+4. Build the project:
+  ~~~~~{.bash}
+  emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8
+  ~~~~~
+5. Start the web server:
+  ~~~~~{.bash}
+  python3 ./server.py
+  ~~~~~
+6. Open the address http://127.0.0.1:8000/index.html in your browser
 
 Sample project types
 --------------------
@@ -86,47 +83,59 @@ Sample project types
 Project examples cover a wide range of functionalities, including basic graphic operations, game development, programming education, and event modeling. These examples serve as an excellent starting point for exploring the project's capabilities and inspire the creation of your own applications.
 
 1. Hello World
-This example demonstrates basic text display on the screen. The program loads a font and displays the message "Hello world!" on the screen in a loop until the Escape key is pressed.
-Key Features:
-- Loading and using a font.
-- Main game loop with input handling.
-- Rendering text on the screen.
+
+  This example demonstrates basic text display on the screen. The program loads a font and displays the message "Hello world!" on the screen in a loop until the Escape key is pressed.
+  
+  Key Features:
+  - Loading and using a font.
+  - Main game loop with input handling.
+  - Rendering text on the screen.
 
 2. Tetramino game
-This example implements a classic falling blocks game where players control various shaped blocks. The program manages falling pieces, processes user input to control blocks, and checks for line completion.
-Key Features:
-- Managing block positioning and rotation.
-- Handling collisions and filled lines.
-- Rendering the game field and the current block.
+
+  This example implements a classic falling blocks game where players control various shaped blocks. The program manages falling pieces, processes user input to control blocks, and checks for line completion.
+
+  Key Features:
+  - Managing block positioning and rotation.
+  - Handling collisions and filled lines.
+  - Rendering the game field and the current block.
 
 3. Snake
-This example implements the classic Snake game. The program manages snake movement, food collection, and collision detection.
-Key Features:
-- Snake movement and growth mechanics.
-- Collision detection.
-- Score tracking.
+  
+  This example implements the classic Snake game. The program manages snake movement, food collection, and collision detection.
+
+  Key Features:
+  - Snake movement and growth mechanics.
+  - Collision detection.
+  - Score tracking.
 
 4. Coding for Kids
-This example is designed to teach the basics of programming. The program provides functions for graphic display of elements, text input, and user interaction.
-Key Features:
-- Rendering basic graphic primitives (points, lines, circles).
-- Sound output.
-- Handling user input and displaying text.
-- Simple command input structure for interacting with the program.
+  
+  This example is designed to teach the basics of programming. The program provides functions for graphic display of elements, text input, and user interaction.
+
+  Key Features:
+  - Rendering basic graphic primitives (points, lines, circles).
+  - Sound output.
+  - Handling user input and displaying text.
+  - Simple command input structure for interacting with the program.
 
 5. Turn-based strategy
-This example implements a simple strategy game where players control various types of units. The game includes territory capture mechanics, player turns, and win condition checks.
-Key Features:
-- Defining types of units and their properties.
-- Main game loop with turn processing and win condition checks.
-- Rendering game elements on the screen.
+
+  This example implements a simple strategy game where players control various types of units. The game includes territory capture mechanics, player turns, and win condition checks.
+
+  Key Features:
+  - Defining types of units and their properties.
+  - Main game loop with turn processing and win condition checks.
+  - Rendering game elements on the screen.
 
 6. Discrete-event simulator
-This example demonstrates the basics of discrete event simulation. The program manages time-based events, updates the model, and displays results on the screen.
-Key Features:
-- Managing simulation time and events.
-- GUI for managing simulation parameters.
-- Displaying the current state and progress information.
+
+  This example demonstrates the basics of discrete event simulation. The program manages time-based events, updates the model, and displays results on the screen.
+
+  Key Features:
+  - Managing simulation time and events.
+  - GUI for managing simulation parameters.
+  - Displaying the current state and progress information.
 
 Quick Tutorials
 --------------
