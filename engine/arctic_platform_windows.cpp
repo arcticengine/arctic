@@ -98,6 +98,7 @@ PFNGLUNIFORM1FPROC glUniform1f = nullptr;
 PFNGLUNIFORM2FPROC glUniform2f = nullptr;
 PFNGLUNIFORM3FPROC glUniform3f = nullptr;
 PFNGLUNIFORM4FPROC glUniform4f = nullptr;
+PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv = nullptr;
 PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer = nullptr;
 PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers = nullptr;
 PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers = nullptr;
@@ -590,6 +591,7 @@ void LoadGl() {
   LoadGlFunction("glUniform2f", &glUniform2f);
   LoadGlFunction("glUniform3f", &glUniform3f);
   LoadGlFunction("glUniform4f", &glUniform4f);
+  LoadGlFunction("glUniformMatrix4fv", &glUniformMatrix4fv);
   LoadGlFunction("glVertexAttribPointer", &glVertexAttribPointer);
   LoadGlFunction("glGenFramebuffers", &glGenFramebuffers);
   LoadGlFunction("glDeleteFramebuffers", &glDeleteFramebuffers);
