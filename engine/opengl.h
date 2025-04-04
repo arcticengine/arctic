@@ -46,7 +46,6 @@
 #include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/glew.h>
 #include "engine/glext.h"
 
 extern PFNGLACTIVETEXTUREPROC glActiveTexture;
