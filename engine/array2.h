@@ -23,9 +23,10 @@
 #ifndef ENGINE_ARRAY2_H_
 #define ENGINE_ARRAY2_H_
 
-#include <vector>
-#include "engine/arctic_types.h"
 #include "engine/vec2si32.h"
+#include "engine/arctic_types.h"
+#define _USE_MATH_DEFINES
+#include <vector>
 
 namespace arctic {
 

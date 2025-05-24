@@ -65,8 +65,18 @@ inline double Clamp(const double v, const double mi, const double ma) {
 /// @param b The ending value.
 /// @param alpha The interpolation factor (0.0 to 1.0).
 /// @return The interpolated value.
-inline float Lerp(float a, float b, float alpha) {
-  float d = a + ((b - a) * alpha);
+inline double Lerp(const double a, const double b, const double alpha) {
+  const double d = a + ((b - a) * alpha);
+  return d;
+}
+
+/// @brief Performs linear interpolation between two float values.
+/// @param a The starting value.
+/// @param b The ending value.
+/// @param alpha The interpolation factor (0.0 to 1.0).
+/// @return The interpolated value.
+inline float Lerp(const float a, const float b, const float alpha) {
+  const float d = a + ((b - a) * alpha);
   return d;
 }
 

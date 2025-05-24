@@ -23,6 +23,7 @@
 #ifndef ENGINE_GUI_H_
 #define ENGINE_GUI_H_
 
+#define _USE_MATH_DEFINES
 #include <deque>
 #include <functional>
 #include <memory>
