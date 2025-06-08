@@ -44,7 +44,7 @@ enum SoundDataFormat {
 class SoundInstance {
   SoundDataFormat format_;
   std::vector<Ui8> data_;
-  std::atomic<Si32> playing_count_;
+  std::atomic<Si32> playing_count_ = ATOMIC_VAR_INIT(0);
  public:
   /// @brief Constructor for WAV sound instance
   /// @param wav_samples Number of WAV samples

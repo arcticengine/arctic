@@ -166,8 +166,10 @@ Sound BeepAsync(float duration_seconds, Si32 note) {
 void Beep(float duration_seconds, Si32 note) {
   ShowFrame();
   Sound s = BeepAsync(duration_seconds, note);
-  while (s.IsPlaying()) {
-    ;
+  double t = Time();
+  Ui32 v = 0;
+  while (s.IsPlaying() && Time() - t < duration_seconds) {
+    v++;
   }
 }
 
