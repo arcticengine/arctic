@@ -93,42 +93,42 @@ void Panel::SetSize(Vec2Si32 size) {
 void Panel::ParentSizeChanged(Vec2Si32 prev_size, Vec2Si32 cur_size) {
   if (anchor_) {
     Vec2Si32 new_size = size_;
-    if ((anchor_ | kAnchorBottom) && (anchor_ | kAnchorTop)) {
+    if ((anchor_ & kAnchorBottom) && (anchor_ & kAnchorTop)) {
       pos_.y = anchor_bottom_d_;
       new_size.y = cur_size.y - pos_.y - anchor_top_d_;
-    } else if (anchor_ | kAnchorBottom) {
+    } else if (anchor_ & kAnchorBottom) {
       pos_.y = anchor_bottom_d_;
-    } else if (anchor_ | kAnchorTop) {
+    } else if (anchor_ & kAnchorTop) {
       pos_.y = cur_size.y - anchor_top_d_ - size_.y;
     }
 
-    if ((anchor_ | kAnchorLeft) && (anchor_ | kAnchorRight)) {
+    if ((anchor_ & kAnchorLeft) && (anchor_ & kAnchorRight)) {
       pos_.x = anchor_left_d_;
       new_size.x = cur_size.x - pos_.x - anchor_right_d_;
-    } else if (anchor_ | kAnchorLeft) {
+    } else if (anchor_ & kAnchorLeft) {
       pos_.x = anchor_left_d_;
-    } else if (anchor_ | kAnchorRight) {
+    } else if (anchor_ & kAnchorRight) {
       pos_.x = cur_size.x - anchor_right_d_ - size_.x;
     }
 
     SetSize(new_size);
   } else if (dock_) {
     Vec2Si32 new_size = size_;
-    if ((dock_ | kDockTop) && (dock_ | kDockBottom)) {
+    if ((dock_ & kDockTop) && (dock_ & kDockBottom)) {
       pos_.y = 0;
       new_size.y = cur_size.y;
-    } else if (dock_ | kDockTop) {
+    } else if (dock_ & kDockTop) {
       pos_.y = cur_size.y - size_.y;
-    } else if (dock_ | kDockBottom) {
+    } else if (dock_ & kDockBottom) {
       pos_.y = 0;
     }
 
-    if ((dock_ | kDockRight) && (dock_ | kDockLeft)) {
+    if ((dock_ & kDockRight) && (dock_ & kDockLeft)) {
       pos_.x = 0;
       new_size.x = cur_size.x;
-    } else if (dock_ | kDockRight) {
+    } else if (dock_ & kDockRight) {
       pos_.x = cur_size.x - size_.x;
-    } else if (dock_ | kDockLeft) {
+    } else if (dock_ & kDockLeft) {
       pos_.x = 0;
     }
 
@@ -1929,7 +1929,6 @@ void GuiTheme::Load(const char *xml_file_path) {
   text_->font_.Load(GluePath(ctx.parent_path.c_str(),
     ctx.doc.child("text_font").attribute("path").as_string("text_font")).c_str());
   text_->origin_ = kTextOriginBottom;
-  text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
   text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
   text_->alignment_ = kTextAlignmentLeft;
   text_->selection_mode_ = kTextSelectionModeInvert;
@@ -1954,7 +1953,9 @@ void GuiTheme::Load(const char *xml_file_path) {
       it->attribute("b").as_uint(255));
     button_->text_->palete_.push_back(rgb);
   }
-  //{Rgba(255, 255, 255), Rgba(128, 255, 128)};
+  if (button_->text_->palete_.empty()) {
+    button_->text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
+  }
   button_->text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
   button_->text_->alignment_ = kTextAlignmentCenter;
   button_->text_->selection_mode_ = kTextSelectionModeInvert;
@@ -1968,7 +1969,15 @@ void GuiTheme::Load(const char *xml_file_path) {
   editbox_text_->font_.Load(GluePath(ctx.parent_path.c_str(),
     ctx.doc.child("editbox_font").attribute("path").as_string("")).c_str());
   editbox_text_->origin_ = kTextOriginBottom;
-  editbox_text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
+  for (auto it = ctx.doc.child("text_palete").children().begin(); it != ctx.doc.child("text_palete").children().end(); ++it) {
+    Rgba rgb(it->attribute("r").as_uint(255),
+      it->attribute("g").as_uint(255),
+      it->attribute("b").as_uint(255));
+    editbox_text_->palete_.push_back(rgb);
+  }
+  if (editbox_text_->palete_.empty()) {
+    editbox_text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
+  }
   editbox_text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
   editbox_text_->alignment_ = kTextAlignmentLeft;
   editbox_text_->selection_mode_ = kTextSelectionModeInvert;
@@ -1982,8 +1991,24 @@ void GuiTheme::Load(const char *xml_file_path) {
   text_->font_.Load(GluePath(ctx.parent_path.c_str(),
     ctx.doc.child("text_font").attribute("path").as_string("text_font")).c_str());
   text_->origin_ = kTextOriginBottom;
-  text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 255, 128)};
-  text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
+  for (auto it = ctx.doc.child("text_palete").children().begin(); it != ctx.doc.child("text_palete").children().end(); ++it) {
+    Rgba rgb(it->attribute("r").as_uint(255),
+      it->attribute("g").as_uint(255),
+      it->attribute("b").as_uint(255));
+    text_->palete_.push_back(rgb);
+  }
+  if (text_->palete_.empty()) {
+    text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 128, 128)};
+  }
+  for (auto it = ctx.doc.child("disabled_palete").children().begin(); it != ctx.doc.child("disabled_palete").children().end(); ++it) {
+    Rgba rgb(it->attribute("r").as_uint(255),
+      it->attribute("g").as_uint(255),
+      it->attribute("b").as_uint(255));
+    text_->disabled_palete_.push_back(rgb);
+  }
+  if (text_->disabled_palete_.empty()) {
+    text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
+  }
   text_->alignment_ = kTextAlignmentLeft;
   text_->selection_mode_ = kTextSelectionModeInvert;
   text_->selection_color_1_ = Rgba(0, 0, 0);
