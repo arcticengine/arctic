@@ -73,7 +73,7 @@ Instructions for Linux and MacOS users on how to run an Arctic Engine game in a 
   ~~~~~
 5. Start the web server:
   ~~~~~{.bash}
-  python3 ./server.py
+  python3 ./webserver.py
   ~~~~~
 6. Open the address http://127.0.0.1:8000/index.html in your browser
 
