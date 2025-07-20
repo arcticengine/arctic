@@ -180,11 +180,11 @@ template <typename Value>
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoSendBufferSize(int size) {
-  return setsockopt(handle_, SOL_SOCKET, SO_RCVBUF, size, &last_error_);
+  return setsockopt(handle_, SOL_SOCKET, SO_SNDBUF, size, &last_error_);
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoReceiveBufferSize(int size) {
-  return setsockopt(handle_, SOL_SOCKET, SO_SNDBUF, size, &last_error_);
+  return setsockopt(handle_, SOL_SOCKET, SO_RCVBUF, size, &last_error_);
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoKeepAlive(bool flag) {

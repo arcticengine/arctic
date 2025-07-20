@@ -103,12 +103,12 @@ ConnectionSocket::~ConnectionSocket() {
 [[nodiscard]] SocketResult ConnectionSocket::Read(char* buffer, size_t length,
     size_t *out_size) {
   if (!out_size) {
-    last_error_ = "Error: out_size argument of Write is nullptr.";
+    last_error_ = "Error: out_size argument of Read is nullptr.";
     return kSocketError;
   }
   auto result = recv(handle_.nix, buffer, length, 0);
   if (result == -1) {
-    if (errno == EAGAIN) {
+    if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
       *out_size = 0;
       return kSocketOk;
     }
@@ -121,9 +121,18 @@ ConnectionSocket::~ConnectionSocket() {
       SocketHandle tmp;
       tmp.nix = handle_.nix;
       handle_.nix = -1;
+      close(tmp.nix);
       return kSocketConnectionReset;
     }
     return kSocketError;
+  }
+  if (result == 0) {
+    last_error_ = "Recv returned with code 0, the connection is gracefully closed.";
+    SocketHandle tmp;
+    tmp.nix = handle_.nix;
+    handle_.nix = -1;
+    close(tmp.nix);
+    return kSocketConnectionReset;
   }
 
   *out_size = result;
@@ -141,7 +150,9 @@ ConnectionSocket::~ConnectionSocket() {
   }
   auto result = send(handle_.nix, buffer, length, MSG_NOSIGNAL);
   if (result == -1) {
-    if (errno == EAGAIN) {
+    if (errno == EAGAIN ||
+        errno == EINTR ||
+        errno == EWOULDBLOCK) {
       *out_size = 0;
       return kSocketOk;
     }
@@ -154,12 +165,16 @@ ConnectionSocket::~ConnectionSocket() {
       SocketHandle tmp;
       tmp.nix = handle_.nix;
       handle_.nix = -1;
+      close(tmp.nix);
       return kSocketConnectionReset;
     }
     {
       SocketHandle tmp;
       tmp.nix = handle_.nix;
       handle_.nix = -1;
+      if (errno == ENOMEM || errno == ENOTCONN || errno == EPIPE) {
+        close(tmp.nix);
+      }
     }
     return kSocketError;
   }
@@ -217,11 +232,11 @@ template <typename Value>
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoSendBufferSize(int size) {
-  return setsockopt(handle_, SOL_SOCKET, SO_RCVBUF, size, &last_error_);
+  return setsockopt(handle_, SOL_SOCKET, SO_SNDBUF, size, &last_error_);
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoReceiveBufferSize(int size) {
-  return setsockopt(handle_, SOL_SOCKET, SO_SNDBUF, size, &last_error_);
+  return setsockopt(handle_, SOL_SOCKET, SO_RCVBUF, size, &last_error_);
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetSoKeepAlive(bool flag) {
@@ -239,7 +254,7 @@ template <typename Value>
   auto result = fcntl(handle_.nix, F_SETFL,
       flag ? (flags | O_NONBLOCK) : (flags & ~O_NONBLOCK));
   if (result == -1) {
-    last_error_ = "Os failed to set O_NONBLOCK socket ";
+    last_error_ = "OS failed to set O_NONBLOCK socket ";
     last_error_.append(std::strerror(errno));
     return kSocketError;
   }
@@ -336,7 +351,7 @@ ConnectionSocket ListenerSocket::Accept() const {
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoReuseAddress(bool flag) {
   int int_flag = flag;
-  return setsockopt(handle_, SOL_SOCKET, SO_LINGER, int_flag, &last_error_);
+  return setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR, int_flag, &last_error_);
 }
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoLinger(bool flag,
