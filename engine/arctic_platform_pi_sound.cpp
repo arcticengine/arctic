@@ -220,6 +220,7 @@ void SoundMixerThreadFunction() {
   }
 }
 
+bool is_sound_thread = false;
 std::thread sound_thread;
 
 void StartSoundMixer(const char* output_device_name) {
@@ -373,8 +374,8 @@ void StartSoundMixer(const char* output_device_name) {
   err = snd_async_add_pcm_handler(&g_data.ahandler, g_data.handle,
       SoundMixerCallback, &g_data);
   if (err == -ENOSYS) {
+    is_sound_thread = true;
     sound_thread = std::thread(arctic::SoundMixerThreadFunction);
-    sound_thread.detach();
   } else {
     is_ok = is_ok && SoundCheck(err >= 0,
         "Can't register async pcm handler for sound:",
@@ -407,6 +408,10 @@ void StartSoundMixer(const char* output_device_name) {
 void StopSoundMixer() {
   if (!g_sound_mixer_state.do_quit) {
     g_sound_mixer_state.do_quit.store(true);
+    if (is_sound_thread) {
+      sound_thread.join();
+      is_sound_thread = false;
+    }
 
     if (g_data.ahandler) {
       int err = snd_async_del_handler(g_data.ahandler);
