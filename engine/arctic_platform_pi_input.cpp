@@ -52,7 +52,6 @@ static Si32 g_last_mouse_y = 0;
 extern Display *g_x_display;
 extern Si32 g_window_width;
 extern Si32 g_window_height;
-extern Display *g_x_display;
 extern Window g_x_window;
 extern XIM g_x_im;
 extern XIC g_x_ic;
@@ -285,8 +284,13 @@ void OnMouse(KeyCode key, Si32 mouse_x, Si32 mouse_y, bool is_down) {
   g_last_mouse_y = mouse_y;
   Si32 x = mouse_x;
   Si32 y = g_window_height - mouse_y;
-  Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
-      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
+  Vec2F pos(0.f, 0.f);
+  if (g_window_width > 1) {
+    pos.x = static_cast<float>(x) / static_cast<float>(g_window_width - 1);
+  }
+  if (g_window_height > 1) {
+    pos.y = static_cast<float>(y) / static_cast<float>(g_window_height - 1);
+  }
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = key;
@@ -306,8 +310,13 @@ void OnMouseWheel(bool is_down) {
   Si32 x = g_last_mouse_x;
   Si32 y = g_window_height - g_last_mouse_y;
 
-  Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
-      static_cast<float>(y) / static_cast<float>(g_window_height - 1));
+  Vec2F pos(0.f, 0.f);
+  if (g_window_width > 1) {
+    pos.x = static_cast<float>(x) / static_cast<float>(g_window_width - 1);
+  }
+  if (g_window_height > 1) {
+    pos.y = static_cast<float>(y) / static_cast<float>(g_window_height - 1);
+  }
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
   msg.keyboard.key = kKeyCount;
