@@ -62,6 +62,11 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
         Ui8(original_file_[0][1]) == 0xBB &&
         Ui8(original_file_[0][2]) == 0xBF) {
       original_file_[0] = original_file_[0].erase(0, 3);
+      // Check if header becomes empty after BOM removal
+      if (original_file_[0].empty()) {
+        error_description = "Header line is empty after BOM removal";
+        return false;
+      }
     }
     bool is_ok = true;
     is_ok = is_ok && ParseHeader();
@@ -79,7 +84,7 @@ bool CsvTable::LoadString(const std::string &data, char sep) {
   std::string line;
   std::istringstream stream(data);
   while (std::getline(stream, line)) {
-    if (line.empty()) {
+    if (!line.empty()) {
       original_file_.push_back(line);
     }
   }
@@ -102,14 +107,49 @@ CsvTable::~CsvTable() {
 }
 
 bool CsvTable::ParseHeader() {
-  std::stringstream ss(original_file_[0]);
-  std::string item;
-  while (std::getline(ss, item, sep_)) {
-    while (!item.empty() && item[item.size()-1] == '\r') {
-      item = item.substr(0, item.size() - 1);
+  const std::string& header_line = original_file_[0];
+  bool quoted = false;
+  std::string current_field;
+  current_field.reserve(header_line.length()); // Reserve memory to avoid reallocations
+  
+  for (size_t i = 0; i < header_line.length(); ++i) {
+    char c = header_line.at(i);
+    
+    if (c == '"') {
+      // Check for escaped quote ("")
+      if (i + 1 < header_line.length() && header_line.at(i + 1) == '"' && quoted) {
+        // Escaped quote - add one quote to field and skip the second
+        current_field += '"';
+        ++i; // Skip the second quote
+      } else {
+        // Toggle quoted state, but don't add the quote to the field
+        quoted = !quoted;
+      }
+    } else if (c == sep_ && !quoted) {
+      // End of field - remove any trailing \r and add to header
+      while (!current_field.empty() && current_field.back() == '\r') {
+        current_field.pop_back();
+      }
+      header_.push_back(current_field);
+      current_field.clear();
+    } else {
+      // Regular character - add to current field
+      current_field += c;
     }
-    header_.push_back(item);
   }
+  
+  // Handle the last field
+  while (!current_field.empty() && current_field.back() == '\r') {
+    current_field.pop_back();
+  }
+  header_.push_back(current_field);
+  
+  // Check for unmatched quotes in header
+  if (quoted) {
+    error_description = "Unmatched quote in CSV header";
+    return false;
+  }
+  
   return true;
 }
 
@@ -119,25 +159,51 @@ bool CsvTable::ParseContent() {
   Ui64 line_idx = 1;
   for (; it != original_file_.end(); ++it) {
     bool quoted = false;
-    size_t token_start = 0;
-    size_t i = 0;
-
+    std::string current_field;
+    current_field.reserve(it->length()); // Reserve memory to avoid reallocations
     CsvRow *row = new CsvRow(header_);
 
-    for (; i != it->length(); ++i) {
-      if (it->at(i) == '"') {
-        quoted = !quoted;
-      } else if (it->at(i) == ',' && !quoted) {
-        row->Push(it->substr(token_start, i - token_start));
-        token_start = i + 1;
+    for (size_t i = 0; i < it->length(); ++i) {
+      char c = it->at(i);
+      
+      if (c == '"') {
+        // Check for escaped quote ("")
+        if (i + 1 < it->length() && it->at(i + 1) == '"' && quoted) {
+          // Escaped quote - add one quote to field and skip the second
+          current_field += '"';
+          ++i; // Skip the second quote
+        } else {
+          // Toggle quoted state, but don't add the quote to the field
+          quoted = !quoted;
+        }
+      } else if (c == sep_ && !quoted) {
+        // End of field - remove any trailing \r and add to row
+        while (!current_field.empty() && current_field.back() == '\r') {
+          current_field.pop_back();
+        }
+        row->Push(current_field);
+        current_field.clear();
+      } else {
+        // Regular character - add to current field
+        current_field += c;
       }
     }
-    // end
-    std::string item = it->substr(token_start, it->length() - token_start);
-    while (!item.empty() && item[item.size()-1] == '\r') {
-      item = item.substr(0, item.size() - 1);
+    
+    // Handle the last field
+    while (!current_field.empty() && current_field.back() == '\r') {
+      current_field.pop_back();
     }
-    row->Push(item);
+    row->Push(current_field);
+
+    // Check for unmatched quotes in this row
+    if (quoted) {
+      std::stringstream str;
+      str << "Unmatched quote at line " << line_idx
+        << " of file \"" << file_ << "\"";
+      error_description = str.str();
+      delete row;
+      return false;
+    }
 
     // if value(s) missing
     if (row->Size() != header_.size()) {
