@@ -120,7 +120,7 @@ void DrawLine(Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b) {
 void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color_a, Rgba color_b) {
   Si64 ab_x = Si64(b.x) - Si64(a.x);
   Si64 ab_y = Si64(b.y) - Si64(a.y);
-  if (abs(ab_x) >= abs(ab_y)) {
+  if (std::abs(ab_x) >= std::abs(ab_y)) {
     // The line is closer to horizontal
     if (ab_x == 0) {
       // Ths line is single pixel
