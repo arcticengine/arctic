@@ -39,12 +39,7 @@
 #include <GLES/glext.h>
 #include <EGL/egl.h>
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <X11/XKBlib.h>
-#include <X11/keysym.h>
-#include <X11/keysymdef.h>
-#include <X11/Xatom.h>
 
 #include <iostream>
 
