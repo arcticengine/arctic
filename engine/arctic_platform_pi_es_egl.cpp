@@ -247,6 +247,10 @@ int main(int argc, char **argv) {
   arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
+  XDestroyIC(g_x_ic);  
+  XCloseIM(g_x_im);
+  eglDestroySurface(g_egl_display, g_egl_surface);
+  eglTerminate(g_egl_display);
   XCloseDisplay(arctic::g_x_display);
   arctic::g_sound_player.Deinitialize();
   arctic::StopLogger();
