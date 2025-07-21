@@ -9,6 +9,8 @@
 
 #include <setjmp.h>
 
+#include <iostream>
+
 jmp_buf arctic_jmp_env;
 using namespace arctic;
 
@@ -19,6 +21,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     return 0;
   }
   arctic::CsvTable table;
+  std::cout << "fake_csv: " << fake_csv << std::endl;
   bool isOk = table.LoadString(fake_csv, ',');
   if (isOk) {
     table.GetFileName();
