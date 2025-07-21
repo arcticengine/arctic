@@ -36,7 +36,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         Ui64 value1 = row->GetValue<Ui64>(j, 0);
         float value2 = row->GetValue<float>(j, 0);
         bool value3 = row->GetValue<bool>(j, 0);
-        std::string value4 = row->GetValue<std::string>(j, 0);
+        std::string value4 = row->GetValue<std::string>(j, "");
       }
     }
   } else {
