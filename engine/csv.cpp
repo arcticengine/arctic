@@ -154,6 +154,11 @@ bool CsvTable::ParseHeader() {
 }
 
 bool CsvTable::ParseContent() {
+  if (original_file_.size() <= 1) {
+    // No content rows to process, only header
+    return true;
+  }
+  
   std::deque<std::string>::iterator it = original_file_.begin();
   ++it;  // skip header
   Ui64 line_idx = 1;
