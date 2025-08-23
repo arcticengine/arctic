@@ -45,10 +45,10 @@ thread_local std::independent_bits_engine<std::mt19937_64, 8, Ui64> Engine::rnd_
 thread_local bool Engine::is_rng_initialized_ = false;
 
 void MathTables::Init() {
-  cicrle_16_16_size = 4097;
-  cicrle_16_16_one = cicrle_16_16_size - 1;
-  cicrle_16_16_half = cicrle_16_16_one / 2;
-  circle_16_16.resize(cicrle_16_16_size);
+  circle_16_16_size = 4097;
+  circle_16_16_one = circle_16_16_size - 1;
+  circle_16_16_half = circle_16_16_one / 2;
+  circle_16_16.resize(circle_16_16_size);
   for (Si32 y = 0; y < (Si32)circle_16_16.size(); ++y) {
     double yy = static_cast<double>(y) / static_cast<double>(cicrle_16_16_one);
     double xx = std::sqrt(1.0 - yy * yy);
@@ -595,14 +595,14 @@ Ui16 Engine::GetRandom16() {
   if (!is_rng_initialized_) {
     InitThreadLocalRng();
   }
-  return static_cast<Ui32>(rnd_16_());
+  return static_cast<Ui16>(rnd_16_());
 }
 
 Ui8 Engine::GetRandom8() {
   if (!is_rng_initialized_) {
     InitThreadLocalRng();
   }
-  return static_cast<Ui32>(rnd_8_());
+  return static_cast<Ui8>(rnd_8_());
 }
 
 float Engine::GetRandomF() {
