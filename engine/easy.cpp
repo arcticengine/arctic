@@ -753,7 +753,7 @@ void DrawOval(Sprite to_sprite, Rgba color, Vec2Si32 ll, Vec2Si32 ur) {
     // from c to top
     for (Si32 y_off_31_1 = y_off_31_1_min; y_off_31_1 <= y_off_31_1_max; y_off_31_1 += 2) {
       Si32 y = (c_31_1.y + y_off_31_1) / 2;
-      Si32 table_y = y_off_31_1 * tables.cicrle_16_16_one / (half_axis_31_1.y);
+      Si32 table_y = y_off_31_1 * tables.circle_16_16_one / (half_axis_31_1.y);
       Si32 table_x = tables.circle_16_16[static_cast<size_t>(table_y)];
       Si32 x_off_31_1 = (table_x * half_axis_31_1.x) >> 16;
       Si32 x1 = std::max((c_31_1.x - x_off_31_1) / 2 , 0);
@@ -769,7 +769,7 @@ void DrawOval(Sprite to_sprite, Rgba color, Vec2Si32 ll, Vec2Si32 ur) {
     // from c to bottom
     for (Si32 y_off_31_1 = y_dwn_31_1_min; y_off_31_1 <= y_dwn_31_1_max; y_off_31_1 += 2) {
       Si32 y = (c_31_1.y - y_off_31_1) / 2;
-      Si32 table_y = y_off_31_1 * tables.cicrle_16_16_one / (half_axis_31_1.y);
+      Si32 table_y = y_off_31_1 * tables.circle_16_16_one / (half_axis_31_1.y);
       Si32 table_x = tables.circle_16_16[static_cast<size_t>(table_y)];
       Si32 x_off_31_1 = (table_x * half_axis_31_1.x) >> 16;
       Si32 x1 = std::max((c_31_1.x - x_off_31_1) / 2 , 0);

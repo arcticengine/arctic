@@ -50,7 +50,7 @@ void MathTables::Init() {
   circle_16_16_half = circle_16_16_one / 2;
   circle_16_16.resize(circle_16_16_size);
   for (Si32 y = 0; y < (Si32)circle_16_16.size(); ++y) {
-    double yy = static_cast<double>(y) / static_cast<double>(cicrle_16_16_one);
+    double yy = static_cast<double>(y) / static_cast<double>(circle_16_16_one);
     double xx = std::sqrt(1.0 - yy * yy);
     Si32 x = Si32(xx * 65536.0 );
     circle_16_16[static_cast<size_t>(y)] = x;
@@ -637,6 +637,7 @@ double Engine::GetRandomD() {
   a = (a>>12) | 0x3ff0000000000000;
   double res;
   memcpy(&res, &a, sizeof(double));
+  res -= 1.0;
   return res;
 }
 

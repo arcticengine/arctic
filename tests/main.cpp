@@ -437,6 +437,53 @@ void test_rgba() {
   }
 }
 
+void test_random() {
+  {
+    float mi = 1.f;
+    float ma = -1.f;
+    for (Si32 i = 0; i < 1000; ++i) {
+      float f = GetEngine()->GetRandomF();
+      TEST_CHECK_(f >= 0.0f && f < 1.0f, "f=%.16f", f);
+      mi = std::min(mi, f);
+      ma = std::max(ma, f);
+    }
+    TEST_CHECK_(ma - mi > 0.9f, "mi=%.16f ma=%.16f", mi, ma);
+  }
+  {
+    double mi = 1.f;
+    double ma = -1.f;
+    for (Si32 i = 0; i < 1000; ++i) {
+      double d = GetEngine()->GetRandomD();
+      TEST_CHECK_(d >= 0.0 && d < 1.0, "d=%.16f", d);
+      mi = std::min(mi, d);
+      ma = std::max(ma, d);
+    }
+    TEST_CHECK_(ma - mi > 0.9, "mi=%.16f ma=%.16f", mi, ma);
+  }
+  {
+    float mi = 1.f;
+    float ma = -1.f;
+    for (Si32 i = 0; i < 1000; ++i) {
+      float sf = GetEngine()->GetRandomSF();
+      TEST_CHECK_(sf >= -1.0f && sf < 1.0f, "sf=%.16f", sf);
+      mi = std::min(mi, sf);
+      ma = std::max(ma, sf);
+    }
+    TEST_CHECK_(ma - mi > 1.9f, "mi=%.16f ma=%.16f", mi, ma);
+  }
+  {
+    double mi = 1.f;
+    double ma = -1.f;
+    for (Si32 i = 0; i < 1000; ++i) {
+      double sd = GetEngine()->GetRandomSD();
+      TEST_CHECK_(sd >= -1.0 && sd < 1.0, "sd=%.16f", sd);
+      mi = std::min(mi, sd);
+      ma = std::max(ma, sd);
+    }
+    TEST_CHECK_(ma - mi > 1.9, "mi=%.16f ma=%.16f", mi, ma);
+  }
+}
+
 
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
@@ -445,6 +492,7 @@ TEST_LIST = {
   {"Radix sort correctness", test_radix_sort_correctness},
   {"Rgb", test_rgb},
   {"File operations", test_file_operations},
+  {"Random generation", test_random},
   {0}
 };
 
