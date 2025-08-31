@@ -543,14 +543,14 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
     DrawBlendingMode blending_mode,
     DrawFilterMode filter_mode,
     Rgba color, const std::vector<Rgba> &palete, bool do_draw,
-    Vec2Si32 *out_size, bool is_one_line) {
+    Vec2Si32 *out_size, bool is_one_line, const char *character, Vec2Si32 *out_position) {
 
   Si32 next_y = y;
   Vec2Si32 total_size(0, 0);
-  if (do_draw) {
+  if (do_draw || character) {
     DrawEvaluateSizeImpl(to_sprite, text, do_keep_xadvance,
       x, y, origin, alignment, blending_mode, filter_mode, color, palete, false,
-      &total_size, false);
+      &total_size, false, nullptr, nullptr);
     if (origin == kTextOriginTop) {
       next_y = y - base_to_top_ + line_height_ - outline_;
     } else if (origin == kTextOriginFirstBase) {
@@ -577,10 +577,14 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
   Utf32Reader reader;
   reader.Reset(reinterpret_cast<const Ui8*>(text));
   Glyph *glyph = nullptr;
-  Si32 next_x = x + outline_;
+  Si32 next_x = x;
+  bool do_store_character = false;
 
   while (true) {
     const char *p = (const char*)reader.p;
+    if (p == character) {
+      do_store_character = true;
+    }
     Ui32 code = reader.ReadOne();
     if (code && (code == '\r' || code == '\n')) {
       is_first_line = false;
@@ -601,9 +605,9 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
           width += glyph->sprite.Width() - glyph->xadvance;
         }
         max_width = std::max(max_width, width);
-        if (out_size) {
+        if (out_size && !character) {
           *out_size = Vec2Si32(max_width + outline_*2,
-                               lines * line_height_+outline_*2);
+                               lines * line_height_ + outline_*2);
         }
         return;
       }
@@ -621,17 +625,20 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
           }
           max_width = std::max(max_width, width);
           width = 0;
-          next_x = x + outline_;
-          if (do_draw) {
-            if (alignment != kTextAlignmentLeft) {
+
+          next_x = x;
+          if (do_draw || character) {
+            if (alignment == kTextAlignmentLeft) {
+              ;
+            } else {
               Vec2Si32 size;
               DrawEvaluateSizeImpl(to_sprite, p, do_keep_xadvance,
                 x, y, origin, alignment, blending_mode, filter_mode, color, palete, false,
-                &size, true);
+                &size, true, nullptr, nullptr);
               if (alignment == kTextAlignmentRight) {
-                next_x += total_size.x - size.x;
+                next_x -= size.x;
               } else if (alignment == kTextAlignmentCenter) {
-                next_x += (total_size.x - size.x) / 2;
+                next_x -= size.x / 2;
               }
             }
           }
@@ -651,6 +658,18 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
                blending_mode, filter_mode, color);
           }
           next_x += glyph->xadvance;
+        } else if (character) {
+          if (do_store_character) {
+            if (out_position) {
+              out_position->x = next_x;
+              out_position->y = next_y;
+            }
+            if (out_size) {
+              *out_size = glyph->sprite.Size() - glyph->sprite.Pivot();
+            }
+            return;
+          }
+          next_x += glyph->xadvance;
         }
       }
     }
@@ -666,7 +685,7 @@ void Font::Draw(const char *text, const Si32 x, const Si32 y,
   font_instance_->DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
       text, false, x, y, origin, alignment,
       blending_mode, filter_mode, color,
-      std::vector<Rgba>(), true, nullptr, false);
+      std::vector<Rgba>(), true, nullptr, false, nullptr, nullptr);
 }
 
 void Font::Draw(const char *text, const Si32 x, const Si32 y,
@@ -678,7 +697,7 @@ void Font::Draw(const char *text, const Si32 x, const Si32 y,
   font_instance_->DrawEvaluateSizeImpl(GetEngine()->GetBackbuffer(),
       text, false, x, y, origin, alignment,
       blending_mode, filter_mode, palete[0],
-      palete, true, nullptr, false);
+      palete, true, nullptr, false, nullptr, nullptr);
 }
 
 

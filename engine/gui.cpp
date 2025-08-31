@@ -850,10 +850,10 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
       offset.x = 0;
       break;
     case kTextAlignmentRight:
-      offset.x = (size_.x - size.x);
+      offset.x = size_.x;
       break;
     case kTextAlignmentCenter:
-      offset.x = (size_.x - size.x) / 2;
+      offset.x = size_.x / 2;
       break;
   }
 
@@ -868,18 +868,22 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   }
 
   if (selection_begin_ != selection_end_) {
-    Si32 x1 = absolute_pos.x + font_.EvaluateSize(
-                                                  text_.substr(0, static_cast<size_t>(selection_begin_)).c_str(),
-                                                  false).x;
-    Si32 x2 = absolute_pos.x  + font_.EvaluateSize(
-                                                   text_.substr(0, static_cast<size_t>(selection_end_)).c_str(),
-                                                   true).x;
+    Vec2Si32 size1;
+    Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
+    Vec2Si32 size2;
+    const char *plast = text_.c_str()+selection_end_-1;
+    while (plast > text_.c_str()+selection_begin_) {
+      if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
+        break;
+      }
+    }
+    Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
+
+    Si32 x1 = absolute_pos.x + pos1.x;
+    Si32 x2 = absolute_pos.x + pos2.x + size2.x;
     Si32 y1 = absolute_pos.y;
     Si32 y2 = absolute_pos.y + font_.FontInstance()->line_height_;
     Sprite backbuffer = GetEngine()->GetBackbuffer();
-
-    x1 = std::max(absolute_pos.x, x1);
-    x2 = std::max(absolute_pos.x, x2);
 
     DrawSelection(x1, y1, x2, y2, selection_mode_,
                   selection_color_1_, selection_color_2_, backbuffer);
@@ -1263,10 +1267,20 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   }
 
   if (selection_begin_ != selection_end_ && is_current_tab_) {
-    Si32 x1 = pos.x + border + font_.EvaluateSize(
-                                                  text_.substr(0, static_cast<size_t>(selection_begin_)).c_str(), false).x;
-    Si32 x2 = pos.x + border + font_.EvaluateSize(
-                                                  text_.substr(0, static_cast<size_t>(selection_end_)).c_str(), true).x;
+
+    Vec2Si32 size1;
+    Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
+    Vec2Si32 size2;
+    const char *plast = text_.c_str()+selection_end_-1;
+    while (plast > text_.c_str()+selection_begin_) {
+      if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
+        break;
+      }
+    }
+    Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
+
+    Si32 x1 = pos.x + border + pos1.x;
+    Si32 x2 = pos.x + border + pos2.x + size2.x;
     Si32 y1 = pos.y + border;
     Si32 y2 = pos.y + border + font_.FontInstance()->line_height_;
     Sprite backbuffer = GetEngine()->GetBackbuffer();

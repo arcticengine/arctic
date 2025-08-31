@@ -309,8 +309,10 @@ public:
   /// @param [in] color Color for drawing
   /// @param [in] palete Color palette for drawing
   /// @param [in] do_draw Whether to actually draw or just evaluate size
-  /// @param [out] out_size Output size of the text
+  /// @param [out] out_size Output size of the text or character
   /// @param [in] is_one_line Whether the text is single-line
+  /// @param [in] character Pointer to the character to get position of
+  /// @param [out] out_position Output position of the character
   void DrawEvaluateSizeImpl(Sprite to_sprite,
                             const char *text, bool do_keep_xadvance,
                             Si32 x, Si32 y, TextOrigin origin,
@@ -318,7 +320,7 @@ public:
                             DrawBlendingMode blending_mode,
                             DrawFilterMode filter_mode,
                             Rgba color, const std::vector<Rgba> &palete, bool do_draw,
-                            Vec2Si32 *out_size, bool is_one_line);
+                            Vec2Si32 *out_size, bool is_one_line, const char *character, Vec2Si32 *out_position);
 
   /// @brief Evaluates the size of text
   /// @param [in] text Text to evaluate
@@ -594,8 +596,35 @@ class Font {
     font_instance_->DrawEvaluateSizeImpl(empty, text, do_keep_xadvance,
                                          0, 0, kTextOriginFirstBase, kTextAlignmentLeft, kDrawBlendingModeCopyRgba, kFilterNearest,
                                          Rgba(255, 255, 255), std::vector<Rgba>(), false,
-                                         &size, false);
+                                         &size, false, nullptr, nullptr);
     return size;
+  }
+
+
+  /// @brief Evaluates the relative position of a character in UTF-8 string
+  ///   containing one or more lines of text
+  /// @param [in] text UTF-8 c-string with one or more lines of text
+  ///   (separated either with `/n`, `/r` or both)
+  /// @param [in] character a pointer to a character of the UTF-8 c-string.
+  /// @param [in] origin The origin that will be used for the evaluation.
+  /// @param [in] alignment The alignment that will be used for the evaluation.
+  /// @param [out] out_size Pointer to the variable to store the size of the character.
+  Vec2Si32 EvaluateCharacterPos(const char *text,
+      const char *character,
+      const TextOrigin origin = kTextOriginBottom,
+      const TextAlignment alignment = kTextAlignmentLeft,
+      Vec2Si32 *out_size = nullptr) {
+    Vec2Si32 size;
+    Vec2Si32 character_position;
+    Sprite empty;
+    font_instance_->DrawEvaluateSizeImpl(empty,
+                                         text, false, 0, 0, origin, alignment, kDrawBlendingModeCopyRgba, kFilterNearest,
+                                         Rgba(255, 255, 255), std::vector<Rgba>(), false,
+                                         &size, false, character, &character_position);
+    if (out_size) {
+      *out_size = size;
+    }
+    return character_position;
   }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
@@ -636,7 +665,7 @@ class Font {
       const Rgba color = Rgba(0xffffffff)) {
     font_instance_->DrawEvaluateSizeImpl(to_sprite,
                                          text, false, x, y, origin, alignment, blending_mode, filter_mode, color,
-                                         std::vector<Rgba>(), true, nullptr, false);
+                                         std::vector<Rgba>(), true, nullptr, false, nullptr, nullptr);
   }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
@@ -665,7 +694,7 @@ class Font {
       const std::vector<Rgba> &palete) {
     font_instance_->DrawEvaluateSizeImpl(to_sprite,
                                          text, false, x, y, origin, alignment, blending_mode, filter_mode, palete[0],
-                                         palete, true, nullptr, false);
+                                         palete, true, nullptr, false, nullptr, nullptr);
   }
 
   /// @brief Draws a UTF-8 string containing one or more lines of text to the
