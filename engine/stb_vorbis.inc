@@ -1571,10 +1571,10 @@ static int get8_packet(vorb *f)
 static int get32_packet(vorb *f)
 {
    uint32 x;
-   x = get8_packet(f);
-   x += get8_packet(f) << 8;
-   x += get8_packet(f) << 16;
-   x += (uint32) get8_packet(f) << 24;
+   x = uint32(get8_packet(f));
+   x += uint32(get8_packet(f)) << 8;
+   x += uint32(get8_packet(f)) << 16;
+   x += uint32(get8_packet(f)) << 24;
    return x;
 }
 
