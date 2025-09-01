@@ -222,6 +222,16 @@ public:
     GenerateCodepointVector();
   }
 
+  FontInstance& operator=(const FontInstance& font) {
+    glyph_ = font.glyph_;
+    base_to_top_ = font.base_to_top_;
+    base_to_bottom_ = font.base_to_bottom_;
+    line_height_ = font.line_height_;
+    outline_ = font.outline_;
+    GenerateCodepointVector();
+    return *this;
+  }
+
   /// @brief Creates an empty font instance
   /// @param [in] base_to_top Distance from baseline to top of the font
   /// @param [in] line_height Height of a line of text
@@ -476,6 +486,11 @@ class Font {
   /// @param font The font to copy
   Font(const Font &font) {
     font_instance_ = font.font_instance_;
+  }
+
+  Font& operator=(const Font& font) {
+    font_instance_ = font.font_instance_;
+    return *this;
   }
 
   /// @brief Checks if the font is empty (has no codepoints)

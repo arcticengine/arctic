@@ -367,8 +367,10 @@ void Panel::RemoveChild(std::shared_ptr<Panel> child) {
   size_t size = children_.size();
   for (size_t to = 0; to < size; ++to) {
     if (children_[to] == child) {
-      for (size_t from = to + 1; from < size; ++to) {
-        children_[to] = children_[from];
+      size_t moving_to = to;
+      for (size_t from = moving_to + 1; from < size; ++from) {
+        children_[moving_to] = children_[from];
+        ++moving_to;
       }
       children_.pop_back();
       return;
@@ -473,7 +475,7 @@ Button::Button(Ui64 tag, std::shared_ptr<GuiThemeButton> theme)
   text_->SetPos(theme->normal_.BorderSize());
   text_->SetSize(size_ - theme->normal_.BorderSize()*2);
   text_->SetOrigin(kTextOriginCenter);
-  AddChild(text_);
+  Panel::AddChild(text_);
   RegenerateSprites();
 }
 
@@ -1654,7 +1656,7 @@ Checkbox::Checkbox(Ui64 tag, std::shared_ptr<GuiTheme> theme)
   text_ = std::make_shared<Text>(0, theme->text_);
   text_->SetPos(Vec2Si32(normal_[0].Size().x, 0));
   text_->SetText("");
-  AddChild(text_);
+  Panel::AddChild(text_);
 }
 
 void Checkbox::Draw(Vec2Si32 parent_absolute_pos) {
@@ -1861,10 +1863,10 @@ bool Checkbox::IsChecked() {
 void Checkbox::SetText(std::string text) {
   if (text_) {
     text_->SetText(text);
+    Vec2Si32 new_size = normal_[0].Size();
+    new_size.x += text_->EvaluateSize().x;
+    SetSize(new_size);
   }
-  Vec2Si32 new_size = normal_[0].Size();
-  new_size.x += text_->EvaluateSize().x;
-  SetSize(new_size);
 }
 
 void Checkbox::SetHotkey(KeyCode hotkey) {

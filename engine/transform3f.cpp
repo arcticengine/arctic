@@ -28,6 +28,7 @@
 namespace arctic {
 
 Transform3F::Transform3F() {
+	Clear();
 }
 
 Transform3F::Transform3F(const Vec3F& displacement_, const QuaternionF& rotation_) {
