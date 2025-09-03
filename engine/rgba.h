@@ -129,18 +129,6 @@ inline Rgba Mix(Rgba const &a, Rgba const &b, float const f) {
     static_cast<Ui8>(a.a * (1.0f - f) + f * b.a));
 }
 
-/// @brief Linearly interpolate between two colors (alternative version).
-/// @param a First color
-/// @param b Second color
-/// @param f Interpolation factor (0.0 to 1.0)
-/// @return Interpolated color
-inline Rgba Mix(Rgba const a, Rgba const b, float const f) {
-  return Rgba(static_cast<Ui8>(a.r * (1.0f - f) + f * b.r),
-              static_cast<Ui8>(a.g * (1.0f - f) + f * b.g),
-              static_cast<Ui8>(a.b * (1.0f - f) + f * b.b),
-              static_cast<Ui8>(a.a * (1.0f - f) + f * b.a));
-}
-
 /// @brief Get the minimum of two colors component-wise.
 /// @param a First color
 /// @param b Second color
@@ -264,7 +252,7 @@ inline Rgba GetGray(Rgba c) {
 /// @param d Top-right color
 /// @param ax X-axis interpolation factor (0-255), 0 = left, 255 = right
 /// @param ay Y-axis interpolation factor (0-255), 0 = bottom, 255 = top
-/// @return Interpolated color  
+/// @return Interpolated color
 inline Rgba Bilerp(Rgba a, Rgba b, Rgba c, Rgba d, Si32 ax, Si32 ay) {
   const Si32 axy = (ax * ay) >> 8u;
   Ui32 aa = a.rgba & MASK_LO;
