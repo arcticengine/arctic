@@ -873,9 +873,9 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
     Vec2Si32 size1;
     Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
     Vec2Si32 size2;
-    const signed char *plast = text_.c_str()+selection_end_-1;
+    const char *plast = text_.c_str()+selection_end_-1;
     while (plast > text_.c_str()+selection_begin_) {
-      if (*plast > 0 && *plast != '\n' && *plast != '\r') {
+      if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
         break;
       }
     }
@@ -1273,9 +1273,9 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     Vec2Si32 size1;
     Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
     Vec2Si32 size2;
-    const signed char *plast = text_.c_str()+selection_end_-1;
+    const char *plast = text_.c_str()+selection_end_-1;
     while (plast > text_.c_str()+selection_begin_) {
-      if (*plast > 0 && *plast != '\n' && *plast != '\r') {
+      if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
         break;
       }
     }

@@ -1028,7 +1028,7 @@ void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
     }
     DrawArrow(to_sprite, source_pos, destination_pos, body_width, head_width, head_length, border_color);
 
-    Vec2F S2 = source_pos + ((SD * border_size / sd_length));
+    Vec2F S2 = source_pos + (SD * border_size / sd_length);
     float L=std::sqrt((head_width * 0.5f) * (head_width * 0.5f) + head_length * head_length);
     float DestDist = L*border_size / (head_width * 0.5f);
 
