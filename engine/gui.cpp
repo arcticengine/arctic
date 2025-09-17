@@ -706,6 +706,13 @@ void Button::SetHotkey(KeyCode hotkey) {
   hotkey_ = hotkey;
 }
 
+void Button::SetTextPos(Vec2Si32 pos) {
+  if (text_) {
+    text_->SetPos(pos);
+  }
+}
+
+
 
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,

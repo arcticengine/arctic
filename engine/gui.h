@@ -605,6 +605,10 @@ class Button : public Panel {
   /// @param hotkey New hotkey for the button.
   void SetHotkey(KeyCode hotkey);
 
+  /// @brief Sets the position of the text of the button panel.
+  /// @param pos New position of the text.
+  void SetTextPos(Vec2Si32 pos);
+
   std::function<void(void)> OnButtonClick = DoNothing;
   std::function<void(void)> OnButtonDown = DoNothing;
 };
