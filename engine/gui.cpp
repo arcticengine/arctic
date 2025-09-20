@@ -362,7 +362,7 @@ void Panel::RemoveChild(std::shared_ptr<Panel> child) {
   Check(!!child, "RemoveChild called with child == nullptr");
   Check(child.get() != this, "RemoveChild called with child == this");
   Check(child->parent_ != nullptr, "RemoveChild called with child that does not have a parent");
-  Check(child->parent_ != this, "RemoveChild called with some other parents child");
+  Check(child->parent_ == this, "RemoveChild called with some other parents child");
   child->parent_ = nullptr;
   size_t size = children_.size();
   for (size_t to = 0; to < size; ++to) {
