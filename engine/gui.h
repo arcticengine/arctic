@@ -747,6 +747,10 @@ class Editbox: public Panel {
 
   /// @brief Regenerates the sprites of the edit box panel.
   void RegenerateSprites() override;
+
+  /// @brief Sets the flag indicating if the edit box only accepts digits.
+  /// @param is_digits Flag indicating if the edit box only accepts digits.
+  void SetIsDigits(bool is_digits);
 };
 
 /// @brief Class representing a scrollbar panel.

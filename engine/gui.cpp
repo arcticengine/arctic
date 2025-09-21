@@ -1197,6 +1197,7 @@ void Editbox::SetText(std::string text) {
   cursor_pos_ = std::min(std::max(0, cursor_pos_), (Si32)text_.length());
   selection_begin_ = 0;
   selection_end_ = 0;
+  text_ = text;
 }
 
 void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
@@ -1327,6 +1328,10 @@ void Editbox::RegenerateSprites() {
     normal_ = theme_->editbox_normal_.DrawExternalSize(size_);
     focused_ = theme_->editbox_focused_.DrawExternalSize(size_);
   }
+}
+
+void Editbox::SetIsDigits(bool is_digits) {
+  is_digits_ = is_digits;
 }
 
 
