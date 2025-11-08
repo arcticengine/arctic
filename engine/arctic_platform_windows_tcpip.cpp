@@ -82,7 +82,7 @@ ConnectionSocket::~ConnectionSocket() {
   if (result != 0) {
     last_error_ = "WinSock failed to resolve name ";
     last_error_.append(GetLastError());
-    return SocketConnectResult::kSocketConnectionFailed;
+    return SocketConnectResult::kSocketError;
   }
   result = ::connect((SOCKET)handle_.win, info->ai_addr,
       static_cast<int>(info->ai_addrlen)) == 0;
@@ -90,9 +90,9 @@ ConnectionSocket::~ConnectionSocket() {
   if (result == 0) {
     last_error_ = "WinSock failed to bind socket ";
     last_error_.append(GetLastError());
-    return SocketConnectResult::kSocketConnectionFailed;
+    return SocketConnectResult::kSocketError;
   }
-  return SocketConnectResult::kSocketConnectionSuccess;
+  return SocketConnectResult::kSocketOk;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::Read(char* buffer, size_t length,
