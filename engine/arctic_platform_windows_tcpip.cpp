@@ -82,7 +82,7 @@ ConnectionSocket::~ConnectionSocket() {
   if (result != 0) {
     last_error_ = "WinSock failed to resolve name ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketConnectResult::kSocketConnectionFailed;
   }
   result = ::connect((SOCKET)handle_.win, info->ai_addr,
       static_cast<int>(info->ai_addrlen)) == 0;
@@ -90,49 +90,49 @@ ConnectionSocket::~ConnectionSocket() {
   if (result == 0) {
     last_error_ = "WinSock failed to bind socket ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketConnectResult::kSocketConnectionFailed;
   }
-  return kSocketOk;
+  return SocketConnectResult::kSocketConnectionSuccess;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::Read(char* buffer, size_t length,
     size_t *out_size) {
   if (!out_size) {
     last_error_ = "Error: out_size argument of Write is nullptr.";
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   int res = recv((SOCKET)handle_.win, buffer, static_cast<int>(length), NULL);
   if (res > 0) {
     *out_size = res;
-    return kSocketOk;
+    return SocketResult::kSocketOk;
   }
   if (res == 0) {
-    return kSocketConnectionReset;
+    return SocketResult::kSocketConnectionReset;
   }
   if (res == SOCKET_ERROR) {
     if (WSAGetLastError() == WSAEWOULDBLOCK) {
-      return kSocketOk;
+      return SocketResult::kSocketOk;
     }
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketError;
+  return SocketResult::kSocketError;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::Write(const char* buffer,
     size_t length, size_t *out_size) {
   if (!out_size) {
     last_error_ = "Error: out_size argument of Write is nullptr.";
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   auto result = send((SOCKET)handle_.win, buffer, static_cast<int>(length), NULL);
   if (result == SOCKET_ERROR) {
     last_error_ = "WinSock failed to write to socket ";
     last_error_.append(GetLastError());
     *out_size = 0;
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   *out_size = length;
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 template <typename Value>
@@ -143,9 +143,9 @@ template <typename Value>
   if (status != 0) {
     *out_last_error = "WinSock failed to set socket option ";
     out_last_error->append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetTcpNoDelay(bool flag) {
@@ -203,9 +203,9 @@ template <typename Value>
   if (result != 0) {
     last_error_ = "Error: failed to set socket to nonblocking ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 bool ConnectionSocket::IsValid() const {
@@ -285,22 +285,22 @@ ListenerSocket::~ListenerSocket() {
   if (result != 0) {
     last_error_ = "WinSock failed to resolve name ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   auto status = ::bind((SOCKET)handle_.win, info->ai_addr,
       static_cast<int>(info->ai_addrlen));
   if (status != 0) {
     last_error_ = "WinSock failed to bind server socket ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   status = listen((SOCKET)handle_.win, static_cast<int>(backlog));
   if (status != 0) {
     last_error_ = "WinSock failed to listen server socket ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 ConnectionSocket ListenerSocket::Accept() const {
@@ -316,9 +316,9 @@ ConnectionSocket ListenerSocket::Accept() const {
   if (result == -1) {
     last_error_ = "WinSock failed to set socket option ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoLinger(bool flag,
@@ -329,9 +329,9 @@ ConnectionSocket ListenerSocket::Accept() const {
   if (result == -1) {
     last_error_ = "WinSock failed to set socket option ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 [[nodiscard]] SocketResult ListenerSocket::SetSoNonblocking(bool flag) {
@@ -340,9 +340,9 @@ ConnectionSocket ListenerSocket::Accept() const {
   if (result != 0) {
     last_error_ = "Error: failed to set socket to nonblocking ";
     last_error_.append(GetLastError());
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 bool ListenerSocket::IsValid() const {
