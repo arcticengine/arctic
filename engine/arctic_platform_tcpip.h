@@ -47,10 +47,23 @@ enum class SocketProtocol {
 };
 
 /// @brief The result of a socket operation.
-enum SocketResult {
+enum class SocketResult {
   kSocketOk = 0, ///< The socket operation was successful.
   kSocketError = 1, ///< The socket operation failed.
   kSocketConnectionReset = 2 ///< The socket operation failed because the connection was reset. Reset means the connection was closed by the remote host.
+};
+
+enum class SocketConnectResult {
+  kSocketOk = 0, ///< The socket operation was successful.
+  kSocketError = 1, ///< The socket operation failed.
+  kSocketConnectionReset = 2, ///< The socket operation failed because the connection was reset. Reset means the connection was closed by the remote host.
+  kSocketConnectionInProgress = 3 ///< The socket operation is in progress, check status with IsConnected() later.
+};
+
+enum class SocketState {
+  kConnectionInProgress = 0,
+  kConnected = 1,
+  kDisconnected = 2
 };
 
 struct SocketHandle {
@@ -83,7 +96,7 @@ class ConnectionSocket {
   /// @param ip The IP address to connect to
   /// @param port The port to connect to
   /// @return The result of the connection attempt
-  [[nodiscard]] SocketResult Connect(const std::string ip, uint16_t port);
+  [[nodiscard]] SocketConnectResult Connect(const std::string ip, uint16_t port);
 
   /// @brief Read data from the socket
   /// @param buffer The buffer to read into
@@ -184,8 +197,21 @@ class ConnectionSocket {
     return last_error_;
   }
 
+  /// @brief Get the state of the socket.
+  /// @return The state of the socket
+  SocketState GetState() const {
+    if (IsValid()) {
+      return state_;
+    }
+    return SocketState::kDisconnected;
+  }
+
+  /// @brief Update the state of the socket if it is in connection in progress state.
+  void UpdateConnectionInProgressState();
+
  protected:
   SocketHandle handle_;
+  SocketState state_;
   std::string last_error_;
 };
 

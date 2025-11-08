@@ -70,7 +70,7 @@ ConnectionSocket::~ConnectionSocket() {
   }
 }
 
-[[nodiscard]] SocketResult ConnectionSocket::Connect(const std::string address,
+[[nodiscard]] SocketConnectResult ConnectionSocket::Connect(const std::string address,
     uint16_t port) {
   char port_buffer[8];
   snprintf(port_buffer, sizeof(port_buffer), "%d", port);
@@ -212,8 +212,12 @@ bool ConnectionSocket::IsValid() const {
   return handle_.win != INVALID_SOCKET;
 }
 
+void ConnectionSocket::UpdateConnectionInProgressState() {
+}
+
 ConnectionSocket::ConnectionSocket() {
   handle_.win = INVALID_SOCKET;
+  state_ = SocketState::kDisconnected;
 }
 
 ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
@@ -229,6 +233,8 @@ ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
 ConnectionSocket::ConnectionSocket(ConnectionSocket&& rhs) noexcept {
   handle_.win = rhs.handle_.win;
   rhs.handle_.win = INVALID_SOCKET;
+  state_ = rhs.state_;
+  rhs.state_ = SocketState::kConnected;
 }
 
 

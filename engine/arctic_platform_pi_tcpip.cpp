@@ -65,7 +65,7 @@ ConnectionSocket::~ConnectionSocket() {
   }
 }
 
-[[nodiscard]] SocketResult ConnectionSocket::Connect(const std::string address,
+[[nodiscard]] SocketConnectResult ConnectionSocket::Connect(const std::string address,
     uint16_t port) {
   char port_buffer[8];
   snprintf(port_buffer, sizeof(port_buffer), "%d", port);
@@ -86,31 +86,38 @@ ConnectionSocket::~ConnectionSocket() {
   if (result != 0) {
     last_error_ = "OS failed to resolve address ";
     last_error_.append(gai_strerror(result));
-    return kSocketError;
+    state_ = SocketState::kDisconnected;
+    return SocketConnectResult::kSocketError;
   }
 
   result = ::connect(handle_.nix, res->ai_addr, res->ai_addrlen);
   freeaddrinfo(res);
 
   if (result == -1) {
+    if (errno == EINPROGRESS) {
+      state_ = SocketState::kConnectionInProgress;
+      return SocketConnectResult::kSocketConnectionInProgress;
+    }
     last_error_ = "OS failed to connect socket ";
     last_error_.append(std::strerror(errno));
-    return kSocketError;
+    state_ = SocketState::kDisconnected;
+    return SocketConnectResult::kSocketError;
   }
-  return kSocketOk;
+  state_ = SocketState::kConnected;
+  return SocketConnectResult::kSocketOk;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::Read(char* buffer, size_t length,
     size_t *out_size) {
   if (!out_size) {
     last_error_ = "Error: out_size argument of Read is nullptr.";
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   auto result = recv(handle_.nix, buffer, length, 0);
   if (result == -1) {
     if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
       *out_size = 0;
-      return kSocketOk;
+      return SocketResult::kSocketOk;
     }
     last_error_ = "OS failed to read from socket, ";
     char buff[100];
@@ -122,9 +129,9 @@ ConnectionSocket::~ConnectionSocket() {
       tmp.nix = handle_.nix;
       handle_.nix = -1;
       close(tmp.nix);
-      return kSocketConnectionReset;
+      return SocketResult::kSocketConnectionReset;
     }
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   if (result == 0) {
     last_error_ = "Recv returned with code 0, the connection is gracefully closed.";
@@ -132,21 +139,21 @@ ConnectionSocket::~ConnectionSocket() {
     tmp.nix = handle_.nix;
     handle_.nix = -1;
     close(tmp.nix);
-    return kSocketConnectionReset;
+    return SocketResult::kSocketConnectionReset;
   }
 
   *out_size = result;
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::Write(const char* buffer,
     size_t length, size_t *out_size) {
   if (!out_size) {
     last_error_ = "Error: out_size argument of Write is nullptr.";
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   if (handle_.nix == -1) {
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   auto result = send(handle_.nix, buffer, length, MSG_NOSIGNAL);
   if (result == -1) {
@@ -154,7 +161,7 @@ ConnectionSocket::~ConnectionSocket() {
         errno == EINTR ||
         errno == EWOULDBLOCK) {
       *out_size = 0;
-      return kSocketOk;
+      return SocketResult::kSocketOk;
     }
     last_error_ = "OS failed to write to socket ";
     char buff[100];
@@ -166,7 +173,7 @@ ConnectionSocket::~ConnectionSocket() {
       tmp.nix = handle_.nix;
       handle_.nix = -1;
       close(tmp.nix);
-      return kSocketConnectionReset;
+      return SocketResult::kSocketConnectionReset;
     }
     {
       SocketHandle tmp;
@@ -176,10 +183,10 @@ ConnectionSocket::~ConnectionSocket() {
         close(tmp.nix);
       }
     }
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
   *out_size = result;
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 template <typename Value>
@@ -190,9 +197,9 @@ template <typename Value>
   if (status == -1) {
     *out_last_error = "OS failed to set socket option ";
     out_last_error->append(std::strerror(errno));
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 [[nodiscard]] SocketResult ConnectionSocket::SetTcpNoDelay(bool flag) {
@@ -256,17 +263,81 @@ template <typename Value>
   if (result == -1) {
     last_error_ = "OS failed to set O_NONBLOCK socket ";
     last_error_.append(std::strerror(errno));
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 bool ConnectionSocket::IsValid() const {
   return handle_.nix != -1;
 }
 
+void ConnectionSocket::UpdateConnectionInProgressState() {
+  if (IsValid() && state_ == SocketState::kConnectionInProgress) {
+    int socket_error = 0;
+    socklen_t length = sizeof(socket_error);
+    
+    // Check the result of getsockopt itself
+    int result = getsockopt(handle_.nix, SOL_SOCKET, SO_ERROR, &socket_error, &length);
+    
+    if (result < 0) {
+      // getsockopt failed
+      state_ = SocketState::kDisconnected;
+      last_error_ = "getsockopt failed: ";
+      last_error_.append(std::strerror(errno));
+      return;
+    }
+    
+    // Verify that length wasn't changed unexpectedly
+    if (length != sizeof(socket_error)) {
+      state_ = SocketState::kDisconnected;
+      last_error_ = "getsockopt returned unexpected length";
+      return;
+    }
+    
+    
+    if (socket_error == 0) {
+      // SO_ERROR is 0, but let's double-check with a test write
+      // Try to send 0 bytes to verify the socket is truly ready
+      ssize_t test_result = ::send(handle_.nix, nullptr, 0, MSG_DONTWAIT | MSG_NOSIGNAL);
+      if (test_result == 0) {
+        // Socket is truly ready for writing
+        state_ = SocketState::kConnected;
+        return;
+      } else if (test_result == -1) {
+        if (errno == ENOTCONN) {
+          // Socket is not actually connected yet, despite SO_ERROR being 0
+          return;
+        } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+          // Socket is connected but not ready for writing yet
+          state_ = SocketState::kConnected;
+          return;
+        } else {
+          // Some other error
+          state_ = SocketState::kDisconnected;
+          last_error_ = "Connection test failed: ";
+          last_error_.append(std::strerror(errno));
+          return;
+        }
+      }
+    }
+    
+    if (socket_error == EINPROGRESS || socket_error == EALREADY || socket_error == EAGAIN || socket_error == EWOULDBLOCK || socket_error == EINTR) {
+      // Connection still in progress
+      return;
+    }
+    
+    // Any other error means connection failed
+    state_ = SocketState::kDisconnected;
+    last_error_ = "Connection failed: ";
+    last_error_.append(std::strerror(socket_error));  // Use socket_error, not errno!
+  }
+}
+
+
 ConnectionSocket::ConnectionSocket() {
   handle_.nix = -1;
+  state_ = SocketState::kDisconnected;
 }
 
 ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
@@ -275,6 +346,8 @@ ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
     tmp.nix = handle_.nix;
     handle_.nix = rhs.handle_.nix;
     rhs.handle_.nix = tmp.nix;
+    state_ = rhs.state_;
+    rhs.state_ = SocketState::kDisconnected;
   }
   return *this;
 }
@@ -282,6 +355,7 @@ ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
 ConnectionSocket::ConnectionSocket(ConnectionSocket&& rhs) noexcept {
   handle_.nix = rhs.handle_.nix;
   rhs.handle_.nix = -1;
+  state_ = SocketState::kDisconnected;
 }
 
 
@@ -326,7 +400,7 @@ ListenerSocket::~ListenerSocket() {
   if (result != 0) {
     last_error_ = "OS failed to resolve address ";
     last_error_.append(gai_strerror(result));
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
 
   result = ::bind(handle_.nix, res->ai_addr, res->ai_addrlen);
@@ -338,9 +412,9 @@ ListenerSocket::~ListenerSocket() {
   if (result == -1) {
     last_error_ = "OS failed to bind listener socket ";
     last_error_.append(std::strerror(errno));
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 ConnectionSocket ListenerSocket::Accept() const {
@@ -367,9 +441,9 @@ ConnectionSocket ListenerSocket::Accept() const {
   if (result == -1) {
     last_error_ = "OS failed to set O_NONBLOCK socket ";
     last_error_.append(std::strerror(errno));
-    return kSocketError;
+    return SocketResult::kSocketError;
   }
-  return kSocketOk;
+  return SocketResult::kSocketOk;
 }
 
 bool ListenerSocket::IsValid() const {
