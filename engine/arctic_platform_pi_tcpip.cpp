@@ -446,6 +446,14 @@ ConnectionSocket ListenerSocket::Accept() const {
   return SocketResult::kSocketOk;
 }
 
+[[nodiscard]] SocketResult ListenerSocket::SetTcpNoDelay(bool flag) {
+  #ifndef SOL_TCP
+  #define SOL_TCP IPPROTO_TCP
+  #endif  // SOL_TCP
+    return setsockopt(handle_, SOL_TCP, TCP_NODELAY,
+        static_cast<int>(flag), &last_error_);
+}
+
 bool ListenerSocket::IsValid() const {
   return handle_.nix != -1;
 }

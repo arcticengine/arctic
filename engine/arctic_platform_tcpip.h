@@ -256,6 +256,11 @@ class ListenerSocket {
   /// @param flag True to enable non-blocking, false for blocking
   [[nodiscard]] SocketResult SetSoNonblocking(bool flag);
 
+  /// @brief Set TCP_NODELAY option, disables Nagle's algorithm, reducing latency. 
+  /// @param flag True to enable, false to disable 
+  /// @return The result of the operation
+  [[nodiscard]] SocketResult SetTcpNoDelay(bool flag);
+  
   /// @brief Check if the socket is valid. The socket is valid if it is not closed, and the handle is not zero, and the last error is empty.  
   /// @return True if the socket is valid, false otherwise
   bool IsValid() const;

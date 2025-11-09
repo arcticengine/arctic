@@ -345,6 +345,11 @@ ConnectionSocket ListenerSocket::Accept() const {
   return SocketResult::kSocketOk;
 }
 
+[[nodiscard]] SocketResult ListenerSocket::SetTcpNoDelay(bool flag) {
+  return setsockopt(handle_, IPPROTO_TCP, TCP_NODELAY,
+    static_cast<BOOL>(flag), &last_error_);
+}
+
 bool ListenerSocket::IsValid() const {
   return handle_.win != INVALID_SOCKET;
 }
