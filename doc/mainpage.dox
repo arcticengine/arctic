@@ -423,6 +423,68 @@ Key GUI features:
 - Process input with `ApplyInput()` method
 - Draw GUI elements with `Draw()` method
 
+### Localization
+
+Arctic Engine provides an ICU MessageFormat-compatible localization system for multi-language game support:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    #include "engine/localization.h"
+    using namespace arctic;
+    
+    Ui32 EasyMain() {
+      // Load localization strings from CSV file
+      // CSV format: id,en,ru,de (or id,en for single language)
+      Localization::Instance().Load("data/strings.csv");
+      Localization::Instance().SetLocale("en");
+      
+      Font font;
+      font.Load("data/font.fnt");
+      
+      while (!IsKeyDownward(kKeyEscape)) {
+        Clear();
+        
+        // Simple string lookup
+        font.Draw(Loc("hello").c_str(), 100, 300);
+        
+        // String with variable substitution
+        std::string greeting = Loc("greeting", {{"name", "Player"}});
+        font.Draw(greeting.c_str(), 100, 250);
+        
+        // Plural forms (automatically selects correct form based on locale)
+        std::string items = Loc("items", {{"count", 5}});
+        font.Draw(items.c_str(), 100, 200);
+        
+        // Gender selection
+        std::string pronoun = Loc("pronoun", {{"gender", "female"}});
+        font.Draw(pronoun.c_str(), 100, 150);
+        
+        ShowFrame();
+      }
+      
+      return 0;
+    }
+~~~~~
+
+Example CSV file (strings.csv):
+~~~~~
+id,en,ru
+hello,Hello World,Привет Мир
+greeting,Hello {name}!,Привет {name}!
+items,"{count, plural, one {# item} other {# items}}","{count, plural, one {# предмет} few {# предмета} many {# предметов} other {# предметов}}"
+pronoun,"{gender, select, male {He} female {She} other {They}}","{gender, select, male {Он} female {Она} other {Они}}"
+~~~~~
+
+Key localization features:
+- Load strings from UTF-8 CSV files with automatic locale detection from column headers
+- Simple variable substitution: `{name}` replaced with provided value
+- ICU plural forms with locale-specific rules (one/few/many/other)
+- Select expressions for gender and other categorical choices
+- Ordinal numbers: `{n, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}`
+- Nested expressions: plural inside select and vice versa
+- Fallback locale support for missing translations
+- Merge multiple CSV files for modular localization
+
 Contribute
 ----------
 

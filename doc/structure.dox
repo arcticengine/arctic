@@ -127,9 +127,27 @@ To begin using Arctic Engine, create a new project using the Wizard located in t
  - Unicode string conversion
  - Data endianness conversion
  - Binary serialization, CSV format
+ - Localization with ICU MessageFormat support
  
  These utilities simplify common programming tasks and provide platform-independent
  implementations of frequently needed functionality.
+ @{
+ @}
+
+ @defgroup global_localization Localization
+ @brief Multi-language support with ICU MessageFormat
+ 
+ This module provides internationalization and localization functionality:
+ - Load localized strings from CSV files
+ - Simple variable substitution
+ - Plural forms with locale-specific rules
+ - Gender and categorical selection
+ - Ordinal number formatting
+ - Nested expressions support
+ - Fallback locale for missing translations
+ 
+ The localization system uses ICU MessageFormat syntax for complex string formatting
+ and supports automatic plural rule selection based on the current locale.
  @{
  @}
 

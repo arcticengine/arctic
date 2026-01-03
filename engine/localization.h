@@ -31,7 +31,7 @@
 
 namespace arctic {
 
-/// @addtogroup global_utility
+/// @addtogroup global_localization
 /// @{
 
 /// @brief Represents a value that can be passed to localization formatting.
