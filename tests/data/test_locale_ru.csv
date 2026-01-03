@@ -1,0 +1,5 @@
+id,ru
+hello,Привет Мир
+greeting,Привет {name}!
+items,"{count, plural, one {# предмет} few {# предмета} many {# предметов} other {# предметов}}"
+

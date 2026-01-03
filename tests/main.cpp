@@ -2,16 +2,17 @@
 
 #include <algorithm>
 #include <array>
+#include <ctime>
 #include <deque>
-#include <string>
 #include <iostream>
 #include <sstream>
+#include <string>
 
-#include "engine/arctic_types.h"
 #include "engine/arctic_platform.h"
+#include "engine/arctic_types.h"
 #include "engine/easy.h"
+#include "engine/localization.h"
 #include "engine/rgb.h"
-#include <ctime>
 
 
 using namespace arctic;
@@ -485,6 +486,339 @@ void test_random() {
 }
 
 
+// ============================================================================
+// Localization tests
+// ============================================================================
+
+std::string find_test_data_dir() {
+  std::string data_dir = "data";
+  for (int i = 0; i < 10; ++i) {
+    if (arctic::DoesDirectoryExist(data_dir.c_str())) {
+      return data_dir;
+    }
+    data_dir = "../" + data_dir;
+  }
+  return "data";
+}
+
+void test_localization_basic_load() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  bool loaded = loc.Load(data_dir + "/test_locale_en.csv");
+  TEST_CHECK_(loaded, "Failed to load test_locale_en.csv");
+  
+  loc.SetLocale("en");
+  
+  // Test basic string retrieval
+  const std::string& hello = Loc("hello");
+  TEST_CHECK_(hello == "Hello World", "Expected 'Hello World', got '%s'", hello.c_str());
+  
+  // Test missing key
+  const std::string& missing = Loc("nonexistent_key");
+  TEST_CHECK_(missing.find("nonexistent_key") != std::string::npos, 
+      "Missing key should contain key name, got '%s'", missing.c_str());
+  
+  // Test HasKey
+  TEST_CHECK(loc.HasKey("hello"));
+  TEST_CHECK(!loc.HasKey("nonexistent_key"));
+  
+  // Test Count
+  TEST_CHECK_(loc.Count() >= 6, "Expected at least 6 strings, got %llu", 
+      static_cast<unsigned long long>(loc.Count()));
+  
+  loc.Clear();
+}
+
+void test_localization_simple_substitution() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.SetLocale("en");
+  
+  // Test simple variable substitution
+  std::string result = Loc("greeting", {{"name", "Alice"}});
+  TEST_CHECK_(result == "Hello Alice!", "Expected 'Hello Alice!', got '%s'", result.c_str());
+  
+  // Test with missing variable (should keep placeholder)
+  std::string result2 = Loc("greeting", {});
+  TEST_CHECK_(result2.find("name") != std::string::npos, 
+      "Missing var should be preserved, got '%s'", result2.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_plural_english() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.SetLocale("en");
+  
+  // Test plural forms
+  std::string one = Loc("items", {{"count", 1}});
+  TEST_CHECK_(one == "1 item", "Expected '1 item', got '%s'", one.c_str());
+  
+  std::string two = Loc("items", {{"count", 2}});
+  TEST_CHECK_(two == "2 items", "Expected '2 items', got '%s'", two.c_str());
+  
+  std::string zero = Loc("items", {{"count", 0}});
+  TEST_CHECK_(zero == "0 items", "Expected '0 items', got '%s'", zero.c_str());
+  
+  std::string many = Loc("items", {{"count", 100}});
+  TEST_CHECK_(many == "100 items", "Expected '100 items', got '%s'", many.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_plural_russian() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_ru.csv");
+  loc.SetLocale("ru");
+  
+  // Russian has complex plural rules: one, few, many
+  // 1 -> one (предмет)
+  // 2,3,4 -> few (предмета)
+  // 5-20 -> many (предметов)
+  // 21 -> one, 22-24 -> few, 25-30 -> many
+  
+  std::string one = Loc("items", {{"count", 1}});
+  TEST_CHECK_(one == "1 предмет", "Expected '1 предмет', got '%s'", one.c_str());
+  
+  std::string two = Loc("items", {{"count", 2}});
+  TEST_CHECK_(two == "2 предмета", "Expected '2 предмета', got '%s'", two.c_str());
+  
+  std::string five = Loc("items", {{"count", 5}});
+  TEST_CHECK_(five == "5 предметов", "Expected '5 предметов', got '%s'", five.c_str());
+  
+  std::string eleven = Loc("items", {{"count", 11}});
+  TEST_CHECK_(eleven == "11 предметов", "Expected '11 предметов', got '%s'", eleven.c_str());
+  
+  std::string twentyone = Loc("items", {{"count", 21}});
+  TEST_CHECK_(twentyone == "21 предмет", "Expected '21 предмет', got '%s'", twentyone.c_str());
+  
+  std::string twentytwo = Loc("items", {{"count", 22}});
+  TEST_CHECK_(twentytwo == "22 предмета", "Expected '22 предмета', got '%s'", twentytwo.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_select() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.SetLocale("en");
+  
+  std::string male = Loc("gender", {{"g", "male"}});
+  TEST_CHECK_(male == "He", "Expected 'He', got '%s'", male.c_str());
+  
+  std::string female = Loc("gender", {{"g", "female"}});
+  TEST_CHECK_(female == "She", "Expected 'She', got '%s'", female.c_str());
+  
+  std::string other = Loc("gender", {{"g", "unknown"}});
+  TEST_CHECK_(other == "They", "Expected 'They', got '%s'", other.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_complex_pattern() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.SetLocale("en");
+  
+  // Test pattern with multiple substitutions
+  std::string result = Loc("complex", {{"name", "Bob"}, {"count", 1}});
+  TEST_CHECK_(result == "Bob has 1 cat", "Expected 'Bob has 1 cat', got '%s'", result.c_str());
+  
+  std::string result2 = Loc("complex", {{"name", "Alice"}, {"count", 3}});
+  TEST_CHECK_(result2 == "Alice has 3 cats", "Expected 'Alice has 3 cats', got '%s'", result2.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_nested_plural_select() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.SetLocale("en");
+  
+  // Test nested plural inside select
+  std::string he_one = Loc("nested", {{"g", "male"}, {"n", 1}});
+  TEST_CHECK_(he_one == "He has 1 apple", "Expected 'He has 1 apple', got '%s'", he_one.c_str());
+  
+  std::string he_many = Loc("nested", {{"g", "male"}, {"n", 5}});
+  TEST_CHECK_(he_many == "He has 5 apples", "Expected 'He has 5 apples', got '%s'", he_many.c_str());
+  
+  std::string she_one = Loc("nested", {{"g", "female"}, {"n", 1}});
+  TEST_CHECK_(she_one == "She has 1 apple", "Expected 'She has 1 apple', got '%s'", she_one.c_str());
+  
+  std::string she_many = Loc("nested", {{"g", "female"}, {"n", 3}});
+  TEST_CHECK_(she_many == "She has 3 apples", "Expected 'She has 3 apples', got '%s'", she_many.c_str());
+  
+  std::string they_one = Loc("nested", {{"g", "unknown"}, {"n", 1}});
+  TEST_CHECK_(they_one == "They have 1 apple", "Expected 'They have 1 apple', got '%s'", they_one.c_str());
+  
+  std::string they_many = Loc("nested", {{"g", "other"}, {"n", 10}});
+  TEST_CHECK_(they_many == "They have 10 apples", "Expected 'They have 10 apples', got '%s'", they_many.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_multi_locale_csv() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  bool loaded = loc.Load(data_dir + "/test_multi_locale.csv");
+  TEST_CHECK_(loaded, "Failed to load test_multi_locale.csv");
+  
+  // Check that all locales are available
+  std::vector<std::string> locales = loc.GetAvailableLocales();
+  TEST_CHECK_(locales.size() >= 3, "Expected at least 3 locales, got %zu", locales.size());
+  
+  // Test English
+  loc.SetLocale("en");
+  TEST_CHECK_(Loc("simple") == "Simple", "en: Expected 'Simple', got '%s'", Loc("simple").c_str());
+  
+  // Test Russian  
+  loc.SetLocale("ru");
+  TEST_CHECK_(Loc("simple") == "Простой", "ru: Expected 'Простой', got '%s'", Loc("simple").c_str());
+  
+  // Test German
+  loc.SetLocale("de");
+  TEST_CHECK_(Loc("simple") == "Einfach", "de: Expected 'Einfach', got '%s'", Loc("simple").c_str());
+  
+  // Test plural with multi-locale
+  loc.SetLocale("ru");
+  std::string ru_plural = Loc("count", {{"n", 5}});
+  TEST_CHECK_(ru_plural == "5 вещей", "ru plural: Expected '5 вещей', got '%s'", ru_plural.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_fallback() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.Load(data_dir + "/test_locale_ru.csv");
+  
+  loc.SetFallbackLocale("en");
+  loc.SetLocale("ru");
+  
+  // "hello" exists in Russian
+  TEST_CHECK_(Loc("hello") == "Привет Мир", "Should get Russian hello");
+  
+  // "gender" only exists in English, should fall back
+  const std::string& gender = Loc("gender");
+  TEST_CHECK_(gender.find("select") != std::string::npos || gender.find("male") != std::string::npos,
+      "Should fall back to English for 'gender', got '%s'", gender.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_merge_files() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  
+  // Load first file
+  loc.Load(data_dir + "/test_locale_en.csv");
+  Ui64 count1 = loc.Count("en");
+  
+  // Load multi-locale file (should merge)
+  loc.Load(data_dir + "/test_multi_locale.csv");
+  Ui64 count2 = loc.Count("en");
+  
+  TEST_CHECK_(count2 > count1, "Merging should increase count: %llu -> %llu",
+      static_cast<unsigned long long>(count1), static_cast<unsigned long long>(count2));
+  
+  // Both old and new keys should exist
+  loc.SetLocale("en");
+  TEST_CHECK(loc.HasKey("hello"));  // From first file
+  TEST_CHECK(loc.HasKey("simple")); // From multi-locale file
+  
+  loc.Clear();
+}
+
+void test_localization_loc_function() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.SetLocale("en");
+  
+  // Test global Loc() function
+  const std::string& hello = Loc("hello");
+  TEST_CHECK_(hello == "Hello World", "Loc() should return 'Hello World', got '%s'", hello.c_str());
+  
+  // Test Loc() with args
+  std::string greeting = Loc("greeting", {{"name", "World"}});
+  TEST_CHECK_(greeting == "Hello World!", "Loc() with args should return 'Hello World!', got '%s'", greeting.c_str());
+  
+  loc.Clear();
+}
+
+void test_localization_format_pattern_direct() {
+  Localization& loc = Localization::Instance();
+  loc.SetLocale("en");
+  
+  // Test FormatPattern directly without loading any files
+  std::string result = loc.FormatPattern("Hello {name}!", {{"name", "Test"}});
+  TEST_CHECK_(result == "Hello Test!", "Direct format: Expected 'Hello Test!', got '%s'", result.c_str());
+  
+  std::string plural = loc.FormatPattern("{n, plural, one {# apple} other {# apples}}", {{"n", 5}});
+  TEST_CHECK_(plural == "5 apples", "Direct plural: Expected '5 apples', got '%s'", plural.c_str());
+}
+
+void test_localization_ordinal_english() {
+  Localization& loc = Localization::Instance();
+  loc.Clear();
+  
+  std::string data_dir = find_test_data_dir();
+  loc.Load(data_dir + "/test_locale_en.csv");
+  loc.SetLocale("en");
+  
+  std::string first = Loc("ordinal", {{"n", 1}});
+  TEST_CHECK_(first == "1st", "Expected '1st', got '%s'", first.c_str());
+  
+  std::string second = Loc("ordinal", {{"n", 2}});
+  TEST_CHECK_(second == "2nd", "Expected '2nd', got '%s'", second.c_str());
+  
+  std::string third = Loc("ordinal", {{"n", 3}});
+  TEST_CHECK_(third == "3rd", "Expected '3rd', got '%s'", third.c_str());
+  
+  std::string fourth = Loc("ordinal", {{"n", 4}});
+  TEST_CHECK_(fourth == "4th", "Expected '4th', got '%s'", fourth.c_str());
+  
+  std::string eleventh = Loc("ordinal", {{"n", 11}});
+  TEST_CHECK_(eleventh == "11th", "Expected '11th', got '%s'", eleventh.c_str());
+  
+  std::string twentyfirst = Loc("ordinal", {{"n", 21}});
+  TEST_CHECK_(twentyfirst == "21st", "Expected '21st', got '%s'", twentyfirst.c_str());
+  
+  loc.Clear();
+}
+
+// ============================================================================
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -493,6 +827,19 @@ TEST_LIST = {
   {"Rgb", test_rgb},
   {"File operations", test_file_operations},
   {"Random generation", test_random},
+  {"Localization basic load", test_localization_basic_load},
+  {"Localization simple substitution", test_localization_simple_substitution},
+  {"Localization plural English", test_localization_plural_english},
+  {"Localization plural Russian", test_localization_plural_russian},
+  {"Localization select", test_localization_select},
+  {"Localization complex pattern", test_localization_complex_pattern},
+  {"Localization nested plural/select", test_localization_nested_plural_select},
+  {"Localization multi-locale CSV", test_localization_multi_locale_csv},
+  {"Localization fallback", test_localization_fallback},
+  {"Localization merge files", test_localization_merge_files},
+  {"Localization Loc() function", test_localization_loc_function},
+  {"Localization FormatPattern direct", test_localization_format_pattern_direct},
+  {"Localization ordinal English", test_localization_ordinal_english},
   {0}
 };
 

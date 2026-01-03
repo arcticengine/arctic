@@ -36,6 +36,7 @@
 #include "engine/engine.h"
 #include "engine/font.h"
 #include "engine/gui.h"
+#include "engine/localization.h"
 #include "engine/log.h"
 #include "engine/rgba.h"
 #include "engine/vec2si32.h"

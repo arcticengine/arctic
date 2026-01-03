@@ -1,0 +1,4 @@
+id,en,ru,de
+simple,Simple,Простой,Einfach
+count,"{n, plural, one {# thing} other {# things}}","{n, plural, one {# вещь} few {# вещи} many {# вещей} other {# вещей}}","{n, plural, one {# Ding} other {# Dinge}}"
+

@@ -1,0 +1,9 @@
+id,en
+hello,Hello World
+greeting,Hello {name}!
+items,"{count, plural, one {# item} other {# items}}"
+ordinal,"{n, selectordinal, one {#st} two {#nd} few {#rd} other {#th}}"
+gender,"{g, select, male {He} female {She} other {They}}"
+complex,"{name} has {count, plural, one {# cat} other {# cats}}"
+nested,"{g, select, male {{n, plural, one {He has # apple} other {He has # apples}}} female {{n, plural, one {She has # apple} other {She has # apples}}} other {{n, plural, one {They have # apple} other {They have # apples}}}}"
+
