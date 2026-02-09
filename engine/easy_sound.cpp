@@ -167,7 +167,7 @@ double Sound::Duration() const {
           sound_instance_->GetVorbisData(),
           sound_instance_->GetVorbisSize(), &error, nullptr);
         duration_samples = stb_vorbis_stream_length_in_samples(
-          vorbis_codec_);
+          vorbis_codec);
         stb_vorbis_close(vorbis_codec);
       }
       break;

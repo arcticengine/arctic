@@ -26,6 +26,7 @@
 #include "engine/localization.h"
 
 #include <cstdlib>
+#include <sstream>
 
 #include "engine/csv.h"
 

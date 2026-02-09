@@ -885,6 +885,7 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
       if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
         break;
       }
+      --plast;
     }
     Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
 
@@ -1194,7 +1195,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
 }
 
 void Editbox::SetText(std::string text) {
-  cursor_pos_ = std::min(std::max(0, cursor_pos_), (Si32)text_.length());
+  cursor_pos_ = std::min(std::max(0, cursor_pos_), (Si32)text.length());
   selection_begin_ = 0;
   selection_end_ = 0;
   text_ = text;
@@ -1286,6 +1287,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
       if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
         break;
       }
+      --plast;
     }
     Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
 
@@ -1984,9 +1986,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   LoadDecoratedFrame(ctx, "panel_background", &panel_background_);
 
   text_ = std::make_shared<GuiThemeText>();
-  LoadThemeFont(&text_->font_, ctx.doc.child("text_font"), ctx.parent_path);
   text_->origin_ = kTextOriginBottom;
-  text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
   text_->alignment_ = kTextAlignmentLeft;
   text_->selection_mode_ = kTextSelectionModeInvert;
   text_->selection_color_1_ = Rgba(0, 0, 0);

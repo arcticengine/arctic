@@ -31,8 +31,11 @@
 
 #include "engine/csv.h"
 #include "engine/arctic_types.h"
+#include "engine/arctic_platform_fatal.h"
 
 namespace arctic {
+
+CsvRow CsvRow::invalid_row_(std::vector<std::string>());
 
 CsvTable::CsvTable() {
 }
@@ -237,7 +240,9 @@ CsvRow *CsvTable::GetRow(Ui64 row_position) const {
 
 CsvRow &CsvTable::operator[](Ui64 row_position) const {
   CsvRow *row = CsvTable::GetRow(row_position);
-  // Check(row, "row_position out of bounds in CvsTable");
+  if (!row) {
+    return CsvRow::Invalid();
+  }
   return *row;
 }
 
@@ -328,10 +333,12 @@ Ui64 CsvRow::Size() const {
 }
 
 void CsvRow::Push(const std::string &value) {
+  Check(this != &invalid_row_, "CsvRow::Push called on invalid row");
   values_.push_back(value);
 }
 
 bool CsvRow::Set(const std::string &key, const std::string &value) {
+  Check(this != &invalid_row_, "CsvRow::Set called on invalid row");
   std::vector<std::string>::const_iterator it;
   size_t pos = 0;
   for (it = header_.begin(); it != header_.end(); ++it) {

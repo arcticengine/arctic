@@ -41,6 +41,7 @@ namespace arctic {
 /// @brief Represents a row in a CSV file.
 class CsvRow {
  private:
+  static CsvRow invalid_row_;
   const std::vector<std::string> header_;
   std::vector<std::string> values_;
 
@@ -48,6 +49,18 @@ class CsvRow {
   /// @brief Constructs a CsvRow with the given header.
   /// @param header The header for the CSV row.
   explicit CsvRow(const std::vector<std::string> &header);
+
+  /// @brief Returns a reference to a static invalid row sentinel.
+  /// Mutating methods on the invalid row will trigger a fatal error.
+  /// @return Reference to the invalid row.
+  static CsvRow &Invalid() {
+    return invalid_row_;
+  }
+
+  /// @brief Returns true if this is a valid row (not the invalid sentinel).
+  bool IsValid() const {
+    return this != &invalid_row_;
+  }
 
   /// @brief Destructor for CsvRow.
   ~CsvRow();

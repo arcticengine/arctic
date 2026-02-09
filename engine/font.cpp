@@ -495,10 +495,14 @@ void FontInstance::LoadTable(Sprite sprite, const char* utf8_letters,
   Utf32Reader reader;
   reader.Reset(vec.c_str());
   Si32 width = (sprite.Width() + cell_width - 1) / cell_width;
-  for (Si32 idx = 0; idx < (Si32)vec.size(); ++idx) {
+  Si32 idx = 0;
+  while (true) {
+    Ui32 codepoint = reader.ReadOne();
+    if (codepoint == 0) {
+      break;
+    }
     Si32 x = idx % width;
     Si32 y = idx / width;
-    Ui32 codepoint = reader.ReadOne();
     Sprite tmp;
     tmp.Reference(sprite, x * cell_width, y * cell_height, cell_width, cell_height);
     Sprite cs;
@@ -506,6 +510,7 @@ void FontInstance::LoadTable(Sprite sprite, const char* utf8_letters,
     cs.UpdateOpaqueSpans();
     cs.SetPivot(Vec2Si32(left_offset, cell_height - base_to_top - 1));
     AddGlyph(codepoint, space_width, cs);
+    ++idx;
   }
 
 }
