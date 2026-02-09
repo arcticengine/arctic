@@ -258,8 +258,7 @@ public:
   /// For example, if you have "font.fnt", you should also have "font_0.png" (and "font_1.png", "font_2.png", etc.
   /// if the font uses multiple texture pages).
   ///
-  /// @note TTF (TrueType Font) files are NOT supported. You must convert your TTF fonts to BMFont format
-  /// using tools like BMFont (https://www.angelcode.com/products/bmfont/) before using them.
+  /// For TrueType fonts (.ttf), use LoadTtf() instead.
   ///
   /// @throws Fatal error if the file extension is not recognized or the file cannot be loaded
   void Load(const char *file_name);
@@ -305,6 +304,24 @@ public:
   /// @param [in] base_to_top Distance from baseline to top of the font
   /// @param [in] line_height Height of a line of text
   void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height);
+
+  /// @brief Loads a TrueType font from a .ttf or .ttc file and rasterizes glyphs
+  /// @param [in] file_name Path to the .ttf or .ttc font file
+  /// @param [in] pixel_height Desired font height in pixels
+  /// @param [in] utf8_chars UTF-8 string of characters to rasterize.
+  ///   If nullptr, a default set of ASCII + Cyrillic characters is used.
+  /// @param [in] font_index Index of the font within a .ttc collection (0 by default)
+  void LoadTtf(const char *file_name, float pixel_height,
+               const char *utf8_chars = nullptr, Si32 font_index = 0);
+
+  /// @brief Loads a system font by name and rasterizes glyphs
+  /// @param [in] font_name Name of the system font (e.g. "Arial", "Helvetica")
+  /// @param [in] pixel_height Desired font height in pixels
+  /// @param [in] utf8_chars UTF-8 string of characters to rasterize.
+  ///   If nullptr, a default set of ASCII + Cyrillic characters is used.
+  /// @param [in] font_index Index of the font within a .ttc collection (0 by default)
+  void LoadSystemFont(const char *font_name, float pixel_height,
+                      const char *utf8_chars = nullptr, Si32 font_index = 0);
 
   /// @brief Draws text or evaluates its size
   /// @param [in] to_sprite Sprite to draw on (can be empty for size evaluation)
@@ -435,15 +452,13 @@ public:
 ///
 /// @section font_format Font Format Requirements
 ///
-/// The Arctic Engine font system ONLY supports bitmap fonts in the following formats:
+/// The Arctic Engine font system supports the following formats:
+/// - TrueType font (.ttf) - Loaded via LoadTtf()
 /// - BMFont binary format (.fnt)
 /// - BMFont XML format (.xml)
 /// - ASCII square font format (16x16 grid)
 /// - Horizontal stripe font format
 /// - Table font format
-///
-/// TTF (TrueType Font) files are NOT supported. You must convert your TTF fonts to one of the supported bitmap formats
-/// using tools like BMFont (https://www.angelcode.com/products/bmfont/) before using them with the Arctic Engine.
 ///
 /// @section font_blending Blending Modes
 /// 
@@ -546,8 +561,7 @@ class Font {
   /// The font file must be accompanied by its corresponding texture file(s) in the same directory.
   /// For example, if you have "font.fnt", you should also have "font_0.tga"
   ///
-  /// @note TTF (TrueType Font) files are NOT supported. You must convert your TTF fonts to BMFont format
-  /// using tools like BMFont (https://www.angelcode.com/products/bmfont/) before using them.
+  /// For TrueType fonts (.ttf), use LoadTtf() instead.
   ///
   /// @throws Fatal error if the file extension is not recognized or the file cannot be loaded
   void Load(const char *file_name) {
@@ -603,6 +617,63 @@ class Font {
 
   void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height) {
     font_instance_->LoadLetterBits(in_letters, base_to_top, line_height);
+  }
+
+  /// @brief Loads a TrueType font and rasterizes glyphs at the specified size
+  /// @param [in] file_name Path to the .ttf font file
+  /// @param [in] pixel_height Desired font height in pixels
+  /// @param [in] utf8_chars UTF-8 string of characters to rasterize.
+  ///   If nullptr, a default set of ASCII + Cyrillic characters is used.
+  /// @param [in] font_index Index of the font within a .ttc collection
+  ///   (0 by default). Use this when loading from .ttc files that contain
+  ///   multiple fonts (e.g. Regular, Bold, Italic).
+  ///
+  /// The rasterized glyphs are stored as white-on-transparent sprites suitable
+  /// for use with kDrawBlendingModeColorize. After loading, the Font can be
+  /// used with all Draw methods just like a BMFont.
+  ///
+  /// Example:
+  /// @code
+  /// Font titleFont;
+  /// titleFont.LoadTtf("data/fonts/MyFont.ttf", 48.0f);
+  /// titleFont.Draw("Hello!", 100, 100, kTextOriginTop,
+  ///                kTextAlignmentLeft, kDrawBlendingModeColorize,
+  ///                kFilterNearest, Rgba(255, 255, 255));
+  ///
+  /// // Loading a specific font from a .ttc collection:
+  /// Font boldFont;
+  /// boldFont.LoadTtf("/System/Library/Fonts/Helvetica.ttc", 32.0f,
+  ///                   nullptr, 1);
+  /// @endcode
+  void LoadTtf(const char *file_name, float pixel_height,
+               const char *utf8_chars = nullptr, Si32 font_index = 0) {
+    font_instance_->LoadTtf(file_name, pixel_height, utf8_chars, font_index);
+  }
+
+  /// @brief Loads a system font by name and rasterizes glyphs
+  /// @param [in] font_name Name of the system font (e.g. "Arial", "Helvetica")
+  /// @param [in] pixel_height Desired font height in pixels
+  /// @param [in] utf8_chars UTF-8 string of characters to rasterize.
+  ///   If nullptr, a default set of ASCII + Cyrillic characters is used.
+  /// @param [in] font_index Index of the font within a .ttc collection
+  ///   (0 by default)
+  ///
+  /// Uses the platform's font system to locate the font file by name,
+  /// then rasterizes it with LoadTtf.
+  ///
+  /// Example:
+  /// @code
+  /// Font uiFont;
+  /// uiFont.LoadSystemFont("Helvetica", 24.0f);
+  /// uiFont.Draw("Hello!", 100, 100, kTextOriginTop,
+  ///             kTextAlignmentLeft, kDrawBlendingModeColorize,
+  ///             kFilterNearest, Rgba(255, 255, 255));
+  /// @endcode
+  void LoadSystemFont(const char *font_name, float pixel_height,
+                      const char *utf8_chars = nullptr,
+                      Si32 font_index = 0) {
+    font_instance_->LoadSystemFont(font_name, pixel_height,
+                                   utf8_chars, font_index);
   }
 
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance) {

@@ -213,6 +213,114 @@ std::string GluePath(const char *first_part, const char *second_part) {
 }
 
 
+namespace {
+
+bool MatchesFontName(const char *file_name, const char *font_name) {
+  // Extract the base name without extension
+  const char *slash = strrchr(file_name, '/');
+  const char *base = slash ? slash + 1 : file_name;
+  const char *dot = strrchr(base, '.');
+  size_t base_len = dot ? static_cast<size_t>(dot - base) : strlen(base);
+  size_t name_len = strlen(font_name);
+
+  // Case-insensitive comparison of base name vs font_name
+  if (base_len == name_len) {
+    bool match = true;
+    for (size_t i = 0; i < base_len; ++i) {
+      char a = base[i];
+      char b = font_name[i];
+      if (a >= 'A' && a <= 'Z') {
+        a = a - 'A' + 'a';
+      }
+      if (b >= 'A' && b <= 'Z') {
+        b = b - 'A' + 'a';
+      }
+      if (a != b) {
+        match = false;
+        break;
+      }
+    }
+    if (match) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void SearchFontDir(const char *dir_path, const char *font_name,
+                   std::string *out_result) {
+  if (!out_result->empty()) {
+    return;
+  }
+  DIR *dir = opendir(dir_path);
+  if (!dir) {
+    return;
+  }
+  struct dirent *entry;
+  while ((entry = readdir(dir)) != nullptr) {
+    if (entry->d_name[0] == '.') {
+      continue;
+    }
+    std::string full_path = std::string(dir_path) + "/" + entry->d_name;
+    struct stat st;
+    if (stat(full_path.c_str(), &st) != 0) {
+      continue;
+    }
+    if (S_ISDIR(st.st_mode)) {
+      SearchFontDir(full_path.c_str(), font_name, out_result);
+      if (!out_result->empty()) {
+        break;
+      }
+    } else if (S_ISREG(st.st_mode)) {
+      const char *ext = strrchr(entry->d_name, '.');
+      if (ext && (strcmp(ext, ".ttf") == 0 || strcmp(ext, ".ttc") == 0 ||
+                  strcmp(ext, ".otf") == 0 || strcmp(ext, ".TTF") == 0 ||
+                  strcmp(ext, ".TTC") == 0 || strcmp(ext, ".OTF") == 0)) {
+        if (MatchesFontName(entry->d_name, font_name)) {
+          *out_result = full_path;
+          break;
+        }
+      }
+    }
+  }
+  closedir(dir);
+}
+
+}  // namespace
+
+std::string FindSystemFont(const char *font_name) {
+  if (!font_name) {
+    return std::string();
+  }
+  std::string result;
+  const char *search_dirs[] = {
+    "/usr/share/fonts",
+    "/usr/local/share/fonts",
+    nullptr
+  };
+  for (int i = 0; search_dirs[i] != nullptr; ++i) {
+    SearchFontDir(search_dirs[i], font_name, &result);
+    if (!result.empty()) {
+      return result;
+    }
+  }
+  // Try user font directories
+  const char *home = getenv("HOME");
+  if (home) {
+    std::string user_fonts = std::string(home) + "/.fonts";
+    SearchFontDir(user_fonts.c_str(), font_name, &result);
+    if (!result.empty()) {
+      return result;
+    }
+    user_fonts = std::string(home) + "/.local/share/fonts";
+    SearchFontDir(user_fonts.c_str(), font_name, &result);
+    if (!result.empty()) {
+      return result;
+    }
+  }
+  return std::string();
+}
+
 }  // namespace arctic
 
 #endif  // defined(ARCTIC_PLATFORM_PI) || defined(ARCTIC_PLATFORM_WEB)

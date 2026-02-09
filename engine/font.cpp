@@ -24,17 +24,22 @@
 // IN THE SOFTWARE.
 
 #include <cstring>
+#include <cmath>
 #include <vector>
 #include <sstream>
 
 #include "engine/font.h"
 #include "engine/arctic_types.h"
+#include "engine/arctic_platform.h"
 #include "engine/arctic_platform_fatal.h"
 #include "engine/easy_advanced.h"
 #include "engine/easy_files.h"
 #include "engine/log.h"
 #include "engine/unicode.h"
 #include "engine/pugixml.h"
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "engine/stb_truetype.h"
 
 namespace arctic {
 
@@ -535,6 +540,136 @@ void FontInstance::LoadLetterBits(Letter *in_letters,
   }
   Sprite space;
   AddGlyph(32, 4, space);
+}
+
+void FontInstance::LoadTtf(const char *file_name, float pixel_height,
+                           const char *utf8_chars, Si32 font_index) {
+  Check(!!file_name,
+    "Error in FontInstance::LoadTtf, file_name is nullptr.");
+  Check(pixel_height > 0.0f,
+    "Error in FontInstance::LoadTtf, pixel_height must be positive.");
+  Check(font_index >= 0,
+    "Error in FontInstance::LoadTtf, font_index must be non-negative.");
+
+  // Default character set: ASCII printable + Cyrillic
+  const char *default_chars =
+    " !\"#$%&'()*+,-./0123456789:;<=>?@"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`"
+    "abcdefghijklmnopqrstuvwxyz{|}~"
+    "\xd0\x81"  // Ё
+    "\xd0\x90\xd0\x91\xd0\x92\xd0\x93\xd0\x94\xd0\x95\xd0\x96\xd0\x97"
+    "\xd0\x98\xd0\x99\xd0\x9a\xd0\x9b\xd0\x9c\xd0\x9d\xd0\x9e\xd0\x9f"
+    "\xd0\xa0\xd0\xa1\xd0\xa2\xd0\xa3\xd0\xa4\xd0\xa5\xd0\xa6\xd0\xa7"
+    "\xd0\xa8\xd0\xa9\xd0\xaa\xd0\xab\xd0\xac\xd0\xad\xd0\xae\xd0\xaf"
+    "\xd0\xb0\xd0\xb1\xd0\xb2\xd0\xb3\xd0\xb4\xd0\xb5\xd0\xb6\xd0\xb7"
+    "\xd0\xb8\xd0\xb9\xd0\xba\xd0\xbb\xd0\xbc\xd0\xbd\xd0\xbe\xd0\xbf"
+    "\xd1\x80\xd1\x81\xd1\x82\xd1\x83\xd1\x84\xd1\x85\xd1\x86\xd1\x87"
+    "\xd1\x88\xd1\x89\xd1\x8a\xd1\x8b\xd1\x8c\xd1\x8d\xd1\x8e\xd1\x8f"
+    "\xd1\x91";  // ё
+
+  if (!utf8_chars) {
+    utf8_chars = default_chars;
+  }
+
+  std::vector<Ui8> ttf_data = ReadFile(file_name);
+  Check(!ttf_data.empty(),
+    "Error in FontInstance::LoadTtf, could not read file: ", file_name);
+
+  stbtt_fontinfo font_info;
+  int font_offset = stbtt_GetFontOffsetForIndex(ttf_data.data(), font_index);
+  Check(font_offset >= 0,
+    "Error in FontInstance::LoadTtf, font_index out of range: ", file_name);
+  int init_result = stbtt_InitFont(&font_info, ttf_data.data(), font_offset);
+  Check(init_result != 0,
+    "Error in FontInstance::LoadTtf, failed to parse font: ", file_name);
+
+  float scale = stbtt_ScaleForPixelHeight(&font_info, pixel_height);
+
+  int ascent_unscaled, descent_unscaled, line_gap_unscaled;
+  stbtt_GetFontVMetrics(&font_info,
+    &ascent_unscaled, &descent_unscaled, &line_gap_unscaled);
+
+  Si32 ascent = static_cast<Si32>(
+    std::floor(ascent_unscaled * scale + 0.5f));
+  Si32 descent = static_cast<Si32>(
+    std::floor(-descent_unscaled * scale + 0.5f));
+  Si32 line_gap = static_cast<Si32>(
+    std::floor(line_gap_unscaled * scale + 0.5f));
+
+  CreateEmpty(ascent, ascent + descent + line_gap);
+
+  Utf32Reader reader;
+  reader.Reset(utf8_chars);
+  while (true) {
+    Ui32 cp = reader.ReadOne();
+    if (cp == 0) {
+      break;
+    }
+
+    int advance_unscaled, lsb_unscaled;
+    stbtt_GetCodepointHMetrics(&font_info,
+      static_cast<int>(cp), &advance_unscaled, &lsb_unscaled);
+
+    int w = 0, h = 0, xoff = 0, yoff = 0;
+    unsigned char *bitmap = stbtt_GetCodepointBitmap(
+      &font_info, scale, scale,
+      static_cast<int>(cp), &w, &h, &xoff, &yoff);
+
+    Si32 xadvance = static_cast<Si32>(
+      std::floor(advance_unscaled * scale + 0.5f));
+
+    if (!bitmap || w <= 0 || h <= 0) {
+      // Invisible glyph (e.g. space) - add with empty sprite
+      if (bitmap) {
+        stbtt_FreeBitmap(bitmap, nullptr);
+      }
+      Sprite empty;
+      AddGlyph(cp, xadvance, empty);
+      continue;
+    }
+
+    Sprite glyph_sprite;
+    glyph_sprite.Create(w, h);
+    Rgba *pixels = const_cast<Rgba*>(glyph_sprite.RgbaData());
+    Si32 stride = glyph_sprite.StridePixels();
+
+    // stb_truetype produces top-to-bottom bitmaps,
+    // arctic Sprite stores bottom-to-top
+    for (Si32 row = 0; row < h; ++row) {
+      for (Si32 col = 0; col < w; ++col) {
+        Ui8 alpha = bitmap[row * w + col];
+        pixels[col + (h - 1 - row) * stride] =
+          Rgba(255, 255, 255, alpha);
+      }
+    }
+    stbtt_FreeBitmap(bitmap, nullptr);
+
+    glyph_sprite.UpdateOpaqueSpans();
+
+    // Pivot positions the glyph relative to the baseline cursor.
+    // In stb_truetype, xoff/yoff are offsets from the baseline cursor
+    // to the top-left of the bitmap (in screen coords where y is down).
+    // In arctic (y-up), the sprite bottom-left should be at
+    // (cursor_x + xoff, cursor_y - yoff - h), so:
+    //   pivot.x = -xoff
+    //   pivot.y = h + yoff
+    // This matches the BMFont formula: pivot.y = height + yoffset - base,
+    // since stb_truetype's yoff = BMFont's (yoffset - base).
+    glyph_sprite.SetPivot(Vec2Si32(-xoff, h + yoff));
+
+    AddGlyph(cp, xadvance, glyph_sprite);
+  }
+}
+
+void FontInstance::LoadSystemFont(const char *font_name, float pixel_height,
+                                  const char *utf8_chars, Si32 font_index) {
+  Check(!!font_name,
+    "Error in FontInstance::LoadSystemFont, font_name is nullptr.");
+  std::string path = FindSystemFont(font_name);
+  Check(!path.empty(),
+    "Error in FontInstance::LoadSystemFont, system font not found: ",
+    font_name);
+  LoadTtf(path.c_str(), pixel_height, utf8_chars, font_index);
 }
 
 void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,

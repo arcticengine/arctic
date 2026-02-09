@@ -137,6 +137,11 @@ std::string ParentPath(const char *path);
 /// @return a composite path built by glueing together first_part and second_part
 std::string GluePath(const char *first_part, const char *second_part);
 
+/// @brief Finds a system font file by font name
+/// @param [in] font_name Name of the font to find (e.g. "Arial", "Helvetica")
+/// @return Full path to the font file, or empty string if not found
+std::string FindSystemFont(const char *font_name);
+
 /// @}
 
 }  // namespace arctic

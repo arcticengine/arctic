@@ -32,6 +32,7 @@
 #endif
 
 #import <AppKit/AppKit.h>
+#import <CoreText/CoreText.h>
 #import <OpenGL/OpenGL.h>
 #import <GameController/GameController.h>
 
@@ -1060,6 +1061,37 @@ std::string GluePath(const char *first_part, const char *second_part) {
   }
   str << second_part;
   return str.str();
+}
+
+std::string FindSystemFont(const char *font_name) {
+  if (!font_name) {
+    return std::string();
+  }
+  CFStringRef name = CFStringCreateWithCString(
+    nullptr, font_name, kCFStringEncodingUTF8);
+  if (!name) {
+    return std::string();
+  }
+  CTFontDescriptorRef descriptor =
+    CTFontDescriptorCreateWithNameAndSize(name, 0);
+  CFRelease(name);
+  if (!descriptor) {
+    return std::string();
+  }
+  CFURLRef url = static_cast<CFURLRef>(
+    CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute));
+  CFRelease(descriptor);
+  if (!url) {
+    return std::string();
+  }
+  char path[PATH_MAX];
+  Boolean ok = CFURLGetFileSystemRepresentation(
+    url, true, reinterpret_cast<UInt8*>(path), PATH_MAX);
+  CFRelease(url);
+  if (!ok) {
+    return std::string();
+  }
+  return std::string(path);
 }
 
 std::string PrepareInitialPath() {

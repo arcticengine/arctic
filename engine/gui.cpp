@@ -1911,6 +1911,36 @@ void LoadDecoratedFrame(LoaderContext &ctx, const char* child_name, DecoratedFra
   }
 }
 
+namespace {
+
+void LoadThemeFont(Font *font, const pugi::XmlNode &node,
+                   const std::string &parent_path) {
+  const char *system_name = node.attribute("system").as_string(nullptr);
+  if (system_name) {
+    float size = node.attribute("size").as_float(24.0f);
+    const char *chars = node.attribute("chars").as_string(nullptr);
+    Si32 index = node.attribute("index").as_int(0);
+    font->LoadSystemFont(system_name, size, chars, index);
+    return;
+  }
+  const char *path_str = node.attribute("path").as_string(nullptr);
+  if (!path_str) {
+    return;
+  }
+  std::string full_path = GluePath(parent_path.c_str(), path_str);
+  const char *ext = strrchr(path_str, '.');
+  if (ext && (strcmp(ext, ".ttf") == 0 || strcmp(ext, ".ttc") == 0)) {
+    float size = node.attribute("size").as_float(24.0f);
+    const char *chars = node.attribute("chars").as_string(nullptr);
+    Si32 index = node.attribute("index").as_int(0);
+    font->LoadTtf(full_path.c_str(), size, chars, index);
+  } else {
+    font->Load(full_path.c_str());
+  }
+}
+
+}  // namespace
+
 void GuiTheme::Load(const char *xml_file_path) {
   LoaderContext ctx;
   pugi::XmlParseResult parse_result = ctx.doc.load_file(xml_file_path);
@@ -1954,8 +1984,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   LoadDecoratedFrame(ctx, "panel_background", &panel_background_);
 
   text_ = std::make_shared<GuiThemeText>();
-  text_->font_.Load(GluePath(ctx.parent_path.c_str(),
-    ctx.doc.child("text_font").attribute("path").as_string("text_font")).c_str());
+  LoadThemeFont(&text_->font_, ctx.doc.child("text_font"), ctx.parent_path);
   text_->origin_ = kTextOriginBottom;
   text_->disabled_palete_ = {Rgba(128, 128, 128), Rgba(64, 128, 64)};
   text_->alignment_ = kTextAlignmentLeft;
@@ -1994,8 +2023,8 @@ void GuiTheme::Load(const char *xml_file_path) {
   LoadDecoratedFrame(ctx, "progressbar_complete", &progressbar_complete_);
 
   editbox_text_ = std::make_shared<GuiThemeText>();
-  editbox_text_->font_.Load(GluePath(ctx.parent_path.c_str(),
-    ctx.doc.child("editbox_font").attribute("path").as_string("")).c_str());
+  LoadThemeFont(&editbox_text_->font_, ctx.doc.child("editbox_font"),
+    ctx.parent_path);
   editbox_text_->origin_ = kTextOriginBottom;
   for (auto it = ctx.doc.child("text_palete").children().begin(); it != ctx.doc.child("text_palete").children().end(); ++it) {
     Rgba rgb(it->attribute("r").as_uint(255),
@@ -2016,8 +2045,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   LoadDecoratedFrame(ctx, "editbox_focused", &editbox_focused_);
 
 
-  text_->font_.Load(GluePath(ctx.parent_path.c_str(),
-    ctx.doc.child("text_font").attribute("path").as_string("text_font")).c_str());
+  LoadThemeFont(&text_->font_, ctx.doc.child("text_font"), ctx.parent_path);
   text_->origin_ = kTextOriginBottom;
   for (auto it = ctx.doc.child("text_palete").children().begin(); it != ctx.doc.child("text_palete").children().end(); ++it) {
     Rgba rgb(it->attribute("r").as_uint(255),
@@ -2027,6 +2055,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   }
   if (text_->palete_.empty()) {
     text_->palete_ = {Rgba(255, 255, 255), Rgba(128, 128, 128)};
+
   }
   for (auto it = ctx.doc.child("disabled_palete").children().begin(); it != ctx.doc.child("disabled_palete").children().end(); ++it) {
     Rgba rgb(it->attribute("r").as_uint(255),

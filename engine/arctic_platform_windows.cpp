@@ -1000,6 +1000,69 @@ std::string GluePath(const char *first_part, const char *second_part) {
   return str.str();
 }
 
+std::string FindSystemFont(const char *font_name) {
+  if (!font_name) {
+    return std::string();
+  }
+  HKEY hKey;
+  LONG ret = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+    "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts",
+    0, KEY_READ, &hKey);
+  if (ret != ERROR_SUCCESS) {
+    return std::string();
+  }
+  std::string result;
+  std::string target(font_name);
+  // Convert target to lowercase for comparison
+  for (size_t i = 0; i < target.size(); ++i) {
+    if (target[i] >= 'A' && target[i] <= 'Z') {
+      target[i] = target[i] - 'A' + 'a';
+    }
+  }
+  for (DWORD index = 0; ; ++index) {
+    char value_name[512];
+    DWORD value_name_size = sizeof(value_name);
+    char value_data[512];
+    DWORD value_data_size = sizeof(value_data);
+    DWORD type;
+    ret = RegEnumValueA(hKey, index, value_name, &value_name_size,
+      nullptr, &type, reinterpret_cast<LPBYTE>(value_data),
+      &value_data_size);
+    if (ret != ERROR_SUCCESS) {
+      break;
+    }
+    if (type != REG_SZ) {
+      continue;
+    }
+    // Registry value names look like "Arial (TrueType)"
+    // Extract just the font name part before the parenthesis
+    std::string entry(value_name);
+    for (size_t i = 0; i < entry.size(); ++i) {
+      if (entry[i] >= 'A' && entry[i] <= 'Z') {
+        entry[i] = entry[i] - 'A' + 'a';
+      }
+    }
+    // Check if the font name matches (before any parenthetical suffix)
+    size_t paren = entry.find(" (");
+    std::string entry_name = (paren != std::string::npos)
+      ? entry.substr(0, paren) : entry;
+    if (entry_name == target) {
+      std::string file_path(value_data);
+      // If the path is not absolute, prepend the Windows Fonts directory
+      if (file_path.size() > 1 && file_path[1] != ':' &&
+          file_path[0] != '\\') {
+        char win_dir[MAX_PATH];
+        GetWindowsDirectoryA(win_dir, MAX_PATH);
+        file_path = std::string(win_dir) + "\\Fonts\\" + file_path;
+      }
+      result = file_path;
+      break;
+    }
+  }
+  RegCloseKey(hKey);
+  return result;
+}
+
 std::string PrepareInitialPath() {
   std::string initial_path;
   arctic::GetCurrentPath(&initial_path);

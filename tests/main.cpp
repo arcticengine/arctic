@@ -9,6 +9,7 @@
 #include <string>
 
 #include "engine/arctic_platform.h"
+#include "engine/arctic_platform_def.h"
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
 #include "engine/localization.h"
@@ -819,6 +820,75 @@ void test_localization_ordinal_english() {
 
 // ============================================================================
 
+void test_ttf_font_loading() {
+  std::string data_dir = find_test_data_dir();
+  std::string ttf_path = data_dir + "/ArcticOne.ttf";
+
+  // Test LoadTtf with explicit parameters
+  Font font;
+  font.LoadTtf(ttf_path.c_str(), 32.0f);
+
+  TEST_CHECK_(!font.IsEmpty(), "Font should not be empty after LoadTtf");
+
+  // Test that ASCII glyphs were rasterized
+  Vec2Si32 size_a = font.EvaluateSize("A", true);
+  TEST_CHECK_(size_a.x > 0, "Glyph 'A' should have positive width, got %d", size_a.x);
+  TEST_CHECK_(size_a.y > 0, "Glyph 'A' should have positive height, got %d", size_a.y);
+
+  // Test multi-character string size
+  Vec2Si32 size_hello = font.EvaluateSize("Hello", true);
+  TEST_CHECK_(size_hello.x > size_a.x,
+      "String 'Hello' should be wider than 'A': %d vs %d",
+      size_hello.x, size_a.x);
+
+  // Test that different pixel heights produce different sizes
+  Font font_small;
+  font_small.LoadTtf(ttf_path.c_str(), 16.0f);
+  Vec2Si32 size_small = font_small.EvaluateSize("A", true);
+  TEST_CHECK_(size_small.x < size_a.x || size_small.y < size_a.y,
+      "16px font should be smaller than 32px font");
+
+  // Test with custom character set
+  Font font_custom;
+  font_custom.LoadTtf(ttf_path.c_str(), 24.0f, "ABC123");
+  TEST_CHECK_(!font_custom.IsEmpty(), "Font with custom charset should not be empty");
+  Vec2Si32 size_b = font_custom.EvaluateSize("B", true);
+  TEST_CHECK_(size_b.x > 0, "Glyph 'B' from custom charset should have positive width");
+}
+
+void test_find_system_font() {
+  // Test FindSystemFont with a font that should exist on this platform
+#ifdef ARCTIC_PLATFORM_MACOSX
+  std::string path = arctic::FindSystemFont("Helvetica");
+  TEST_CHECK_(!path.empty(), "Helvetica should be found on macOS, got empty path");
+  TEST_CHECK_(path.find(".ttc") != std::string::npos ||
+              path.find(".ttf") != std::string::npos,
+              "Path should end with .ttc or .ttf, got '%s'", path.c_str());
+#endif
+
+  // Test with a non-existent font name
+  std::string bad_path = arctic::FindSystemFont("NonExistentFont12345XYZ");
+  TEST_CHECK_(bad_path.empty(),
+      "Non-existent font should return empty path, got '%s'",
+      bad_path.c_str());
+
+  // Test with nullptr
+  std::string null_path = arctic::FindSystemFont(nullptr);
+  TEST_CHECK_(null_path.empty(), "nullptr font_name should return empty path");
+}
+
+void test_load_system_font() {
+#ifdef ARCTIC_PLATFORM_MACOSX
+  Font font;
+  font.LoadSystemFont("Helvetica", 24.0f);
+  TEST_CHECK_(!font.IsEmpty(), "System font Helvetica should load successfully");
+
+  Vec2Si32 size = font.EvaluateSize("Hello", true);
+  TEST_CHECK_(size.x > 0, "System font should render text with positive width");
+  TEST_CHECK_(size.y > 0, "System font should render text with positive height");
+#endif
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -840,6 +910,9 @@ TEST_LIST = {
   {"Localization Loc() function", test_localization_loc_function},
   {"Localization FormatPattern direct", test_localization_format_pattern_direct},
   {"Localization ordinal English", test_localization_ordinal_english},
+  {"TTF font loading", test_ttf_font_loading},
+  {"Find system font", test_find_system_font},
+  {"Load system font", test_load_system_font},
   {0}
 };
 
