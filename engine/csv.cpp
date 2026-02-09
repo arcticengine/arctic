@@ -35,7 +35,7 @@
 
 namespace arctic {
 
-CsvRow CsvRow::invalid_row_(std::vector<std::string>());
+CsvRow CsvRow::invalid_row_{std::vector<std::string>()};
 
 CsvTable::CsvTable() {
 }
