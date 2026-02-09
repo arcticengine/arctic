@@ -233,11 +233,11 @@ void FontInstance::GenerateCodepointVector() {
 void FontInstance::Load(const char *file_name) {
   Check(!!file_name, "Error in FontInstance::Load, file_name is nullptr.");
   const char *last_dot = strrchr(file_name, '.');
-  if (!last_dot || strcmp(last_dot, ".fnt") == 0) {
+  if (!last_dot || StrCaseCmp(last_dot, ".fnt") == 0) {
     LoadBinaryFnt(file_name);
     return;
   }
-  if (strcmp(last_dot, ".xml") == 0) {
+  if (StrCaseCmp(last_dot, ".xml") == 0) {
     LoadXml(file_name);
     return;
   }

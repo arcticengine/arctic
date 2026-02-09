@@ -273,9 +273,9 @@ void SearchFontDir(const char *dir_path, const char *font_name,
       }
     } else if (S_ISREG(st.st_mode)) {
       const char *ext = strrchr(entry->d_name, '.');
-      if (ext && (strcmp(ext, ".ttf") == 0 || strcmp(ext, ".ttc") == 0 ||
-                  strcmp(ext, ".otf") == 0 || strcmp(ext, ".TTF") == 0 ||
-                  strcmp(ext, ".TTC") == 0 || strcmp(ext, ".OTF") == 0)) {
+      if (ext && (StrCaseCmp(ext, ".ttf") == 0 ||
+                  StrCaseCmp(ext, ".ttc") == 0 ||
+                  StrCaseCmp(ext, ".otf") == 0)) {
         if (MatchesFontName(entry->d_name, font_name)) {
           *out_result = full_path;
           break;

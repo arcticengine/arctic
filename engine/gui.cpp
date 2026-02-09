@@ -1929,7 +1929,7 @@ void LoadThemeFont(Font *font, const pugi::XmlNode &node,
   }
   std::string full_path = GluePath(parent_path.c_str(), path_str);
   const char *ext = strrchr(path_str, '.');
-  if (ext && (strcmp(ext, ".ttf") == 0 || strcmp(ext, ".ttc") == 0)) {
+  if (ext && (StrCaseCmp(ext, ".ttf") == 0 || StrCaseCmp(ext, ".ttc") == 0)) {
     float size = node.attribute("size").as_float(24.0f);
     const char *chars = node.attribute("chars").as_string(nullptr);
     Si32 index = node.attribute("index").as_int(0);

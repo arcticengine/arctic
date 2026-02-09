@@ -207,7 +207,7 @@ void HwSprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
       " Not loading sprite.";
     return;
   }
-  if (strcmp(last_dot, ".tga") == 0) {
+  if (StrCaseCmp(last_dot, ".tga") == 0) {
     if (size_bytes == 0) {
       *Log() << "Error in HwSprite::Load, file: \""
         << file_name << "\" could not be loaded (size=0)."
@@ -251,7 +251,7 @@ void HwSprite::Load(const char *file_name) {
       " Not loading sprite.";
     return;
   }
-  if (strcmp(last_dot, ".tga") == 0) {
+  if (StrCaseCmp(last_dot, ".tga") == 0) {
     std::vector<Ui8> data = ReadFile(file_name, true);
     if (data.empty()) {
       *Log() << "Error in HwSprite::Load, file: \""
@@ -310,7 +310,7 @@ std::vector<Ui8> HwSprite::SaveToData(const char *file_name) {
   Check(!!file_name, "Error in HwSprite::Save, file_name is nullptr.");
   const char *last_dot = strrchr(file_name, '.');
   Check(!!last_dot, "Error in HwSprite::Save, file_name has no extension.");
-  if (strcmp(last_dot, ".tga") == 0) {
+  if (StrCaseCmp(last_dot, ".tga") == 0) {
       HwSpriteInstance::SaveTga(sprite_instance_, &data);
   } else {
     Fatal("Error in HwSprite::Save, unknown file extension.");

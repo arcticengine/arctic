@@ -44,6 +44,29 @@ enum Trivalent {
   kTrivalentTrue = 1,
   kTrivalentUnknown = 2
 };
+
+/// @brief Case-insensitive string comparison (ASCII only)
+/// @param a First string
+/// @param b Second string
+/// @return 0 if equal (ignoring case), non-zero otherwise
+inline int StrCaseCmp(const char *a, const char *b) {
+  while (*a && *b) {
+    char ca = *a;
+    char cb = *b;
+    if (ca >= 'A' && ca <= 'Z') {
+      ca = ca - 'A' + 'a';
+    }
+    if (cb >= 'A' && cb <= 'Z') {
+      cb = cb - 'A' + 'a';
+    }
+    if (ca != cb) {
+      return ca - cb;
+    }
+    ++a;
+    ++b;
+  }
+  return static_cast<unsigned char>(*a) - static_cast<unsigned char>(*b);
+}
 /// @}
 
 }  // namespace arctic
