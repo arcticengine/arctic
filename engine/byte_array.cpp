@@ -3,6 +3,6 @@
 // Copyright (c) 2019 Huldra
 
 #pragma message("Please remove this file (/engine/byte_array.cpp)" \
-    " from your porject.")
+    " from your project.")
 
 #include "engine/byte_array.h"

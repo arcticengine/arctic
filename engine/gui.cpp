@@ -1409,7 +1409,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
   // |--|-----|---|-----|--|
   Si32 s1 = 1 + normal_button_dec_.Size()[dir_];
   Si32 s4 = size_[dir_] - 1 - normal_button_inc_.Size()[dir_];
-  Si32 w = s4 - s1 - normal_button_cur_.Size()[dir_];
+  Si32 w = std::max(1, s4 - s1 - normal_button_cur_.Size()[dir_]);
   Si64 value_range = Si64(max_value_) - Si64(min_value_);
   Si32 s2 = Si32(Si64(s1) +
                  (value_range ? Si64(w) * (Si64(value_) - Si64(min_value_)) / value_range : 0));
@@ -1986,6 +1986,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   LoadDecoratedFrame(ctx, "panel_background", &panel_background_);
 
   text_ = std::make_shared<GuiThemeText>();
+  LoadThemeFont(&text_->font_, ctx.doc.child("text_font"), ctx.parent_path);
   text_->origin_ = kTextOriginBottom;
   text_->alignment_ = kTextAlignmentLeft;
   text_->selection_mode_ = kTextSelectionModeInvert;
@@ -2045,7 +2046,7 @@ void GuiTheme::Load(const char *xml_file_path) {
   LoadDecoratedFrame(ctx, "editbox_focused", &editbox_focused_);
 
 
-  LoadThemeFont(&text_->font_, ctx.doc.child("text_font"), ctx.parent_path);
+  
   text_->origin_ = kTextOriginBottom;
   for (auto it = ctx.doc.child("text_palete").children().begin(); it != ctx.doc.child("text_palete").children().end(); ++it) {
     Rgba rgb(it->attribute("r").as_uint(255),

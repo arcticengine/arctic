@@ -44,11 +44,12 @@ class CsvRow {
   static CsvRow invalid_row_;
   const std::vector<std::string> header_;
   std::vector<std::string> values_;
+  char sep_ = ',';
 
  public:
   /// @brief Constructs a CsvRow with the given header.
   /// @param header The header for the CSV row.
-  explicit CsvRow(const std::vector<std::string> &header);
+  explicit CsvRow(const std::vector<std::string> &header, char sep = ',');
 
   /// @brief Returns a reference to a static invalid row sentinel.
   /// Mutating methods on the invalid row will trigger a fatal error.

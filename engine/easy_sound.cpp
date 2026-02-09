@@ -112,7 +112,7 @@ void Sound::Load(const std::string &file_name, bool do_unpack) {
 void Sound::Create(double duration) {
   Clear();
   file_name_ = std::make_shared<std::string>("CREATE");
-  double samples = duration * 44100.f + 0.5f;
+  double samples = duration * 44100.0 + 0.5;
   // TODO(Huldra): Handle overflows
   sound_instance_ = std::make_shared<SoundInstance>(static_cast<Si32>(samples));
   Si16 *data = sound_instance_->GetWavData();

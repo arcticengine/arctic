@@ -169,7 +169,7 @@ bool CsvTable::ParseContent() {
     bool quoted = false;
     std::string current_field;
     current_field.reserve(it->length()); // Reserve memory to avoid reallocations
-    CsvRow *row = new CsvRow(header_);
+    CsvRow *row = new CsvRow(header_, sep_);
 
     for (size_t i = 0; i < it->length(); ++i) {
       char c = it->at(i);
@@ -279,7 +279,7 @@ bool CsvTable::DeleteRow(Ui64 pos) {
 }
 
 bool CsvTable::AddRow(Ui64 pos, const std::vector<std::string> &r) {
-  CsvRow *row = new CsvRow(header_);
+  CsvRow *row = new CsvRow(header_, sep_);
 
   for (auto it = r.begin(); it != r.end(); ++it) {
     row->Push(*it);
@@ -303,7 +303,7 @@ void CsvTable::SaveFile() const {
     for (auto it = header_.begin(); it != header_.end(); ++it) {
       f << *it;
       if (i < header_.size() - 1) {
-        f << ",";
+        f << sep_;
       } else {
         f << std::endl;
       }
@@ -322,8 +322,9 @@ const std::string &CsvTable::GetFileName() const {
 }
 
 // ROW
-CsvRow::CsvRow(const std::vector<std::string> &header)
+CsvRow::CsvRow(const std::vector<std::string> &header, char sep)
     : header_(header)
+    , sep_(sep)
 {}
 
 CsvRow::~CsvRow() {}
@@ -381,7 +382,7 @@ std::ofstream &operator<<(std::ofstream &os, const CsvRow &row) {
   for (size_t i = 0; i != row.values_.size(); ++i) {
     os << row.values_[i];
     if (i + 1 < row.values_.size()) {
-      os << ",";
+      os << row.sep_;
     }
   }
   return os;
