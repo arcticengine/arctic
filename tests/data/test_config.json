@@ -1,0 +1,33 @@
+{
+  "window": {
+    "title": "Arctic Test",
+    "width": 1280,
+    "height": 720,
+    "fullscreen": false
+  },
+  "audio": {
+    "master_volume": 0.8,
+    "music_volume": 0.6,
+    "sfx_volume": 1.0,
+    "muted": false
+  },
+  "player": {
+    "name": "Arctic Fox",
+    "level": 42,
+    "health": 100.5,
+    "inventory": ["sword", "shield", "potion"],
+    "position": {
+      "x": 10.5,
+      "y": -3.2,
+      "z": 0.0
+    }
+  },
+  "enemies": [
+    {"type": "goblin", "hp": 30, "aggressive": true},
+    {"type": "dragon", "hp": 500, "aggressive": false}
+  ],
+  "empty_object": {},
+  "empty_array": [],
+  "unicode_string": "Hello \u00e9\u00e0\u00fc\u00f1",
+  "null_value": null
+}

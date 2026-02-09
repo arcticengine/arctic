@@ -4,6 +4,7 @@
 #include <array>
 #include <ctime>
 #include <deque>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -13,6 +14,7 @@
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
 #include "engine/localization.h"
+#include "engine/json.h"
 #include "engine/rgb.h"
 
 
@@ -889,6 +891,225 @@ void test_load_system_font() {
 #endif
 }
 
+// ============================================================================
+// JSON tests (nlohmann/json)
+// ============================================================================
+
+using json = nlohmann::json;
+
+void test_json_parse_string() {
+  // Parse from string
+  json j = json::parse(R"({"name": "Arctic", "version": 1})");
+  TEST_CHECK(j.is_object());
+  TEST_CHECK_(j["name"] == "Arctic", "Expected 'Arctic', got '%s'",
+      j["name"].get<std::string>().c_str());
+  TEST_CHECK_(j["version"] == 1, "Expected 1, got %d",
+      j["version"].get<int>());
+
+  // Parse array
+  json arr = json::parse("[1, 2, 3]");
+  TEST_CHECK(arr.is_array());
+  TEST_CHECK_(arr.size() == 3, "Expected size 3, got %zu", arr.size());
+  TEST_CHECK(arr[0] == 1);
+  TEST_CHECK(arr[1] == 2);
+  TEST_CHECK(arr[2] == 3);
+
+  // Parse scalar types
+  TEST_CHECK(json::parse("true").get<bool>() == true);
+  TEST_CHECK(json::parse("false").get<bool>() == false);
+  TEST_CHECK(json::parse("null").is_null());
+  TEST_CHECK(json::parse("42").get<int>() == 42);
+  TEST_CHECK(json::parse("3.14").get<double>() > 3.13);
+  TEST_CHECK(json::parse("\"hello\"").get<std::string>() == "hello");
+}
+
+void test_json_parse_file() {
+  std::string data_dir = find_test_data_dir();
+  std::string path = data_dir + "/test_config.json";
+
+  std::ifstream file(path);
+  if (!TEST_CHECK_(file.is_open(), "Failed to open %s", path.c_str())) {
+    return;
+  }
+
+  json j = json::parse(file);
+
+  // Window section
+  TEST_CHECK(j.contains("window"));
+  TEST_CHECK_(j["window"]["title"] == "Arctic Test",
+      "Expected 'Arctic Test', got '%s'",
+      j["window"]["title"].get<std::string>().c_str());
+  TEST_CHECK(j["window"]["width"] == 1280);
+  TEST_CHECK(j["window"]["height"] == 720);
+  TEST_CHECK(j["window"]["fullscreen"] == false);
+
+  // Audio section
+  TEST_CHECK_(j["audio"]["master_volume"].get<double>() > 0.79,
+      "Expected ~0.8, got %f", j["audio"]["master_volume"].get<double>());
+
+  // Nested object
+  TEST_CHECK_(j["player"]["name"] == "Arctic Fox",
+      "Expected 'Arctic Fox'");
+  TEST_CHECK(j["player"]["level"] == 42);
+
+  // Nested array
+  const auto &inv = j["player"]["inventory"];
+  TEST_CHECK(inv.is_array());
+  TEST_CHECK_(inv.size() == 3, "Expected 3 items, got %zu", inv.size());
+  TEST_CHECK(inv[0] == "sword");
+  TEST_CHECK(inv[1] == "shield");
+  TEST_CHECK(inv[2] == "potion");
+
+  // Deep nesting
+  TEST_CHECK_(j["player"]["position"]["x"].get<double>() > 10.4,
+      "Expected x ~10.5");
+
+  // Array of objects
+  const auto &enemies = j["enemies"];
+  TEST_CHECK_(enemies.size() == 2, "Expected 2 enemies");
+  TEST_CHECK(enemies[0]["type"] == "goblin");
+  TEST_CHECK(enemies[0]["hp"] == 30);
+  TEST_CHECK(enemies[0]["aggressive"] == true);
+  TEST_CHECK(enemies[1]["type"] == "dragon");
+  TEST_CHECK(enemies[1]["hp"] == 500);
+
+  // Empty containers
+  TEST_CHECK(j["empty_object"].is_object());
+  TEST_CHECK(j["empty_object"].empty());
+  TEST_CHECK(j["empty_array"].is_array());
+  TEST_CHECK(j["empty_array"].empty());
+
+  // Null
+  TEST_CHECK(j["null_value"].is_null());
+}
+
+void test_json_build_and_serialize() {
+  // Build JSON programmatically
+  json j;
+  j["name"] = "test";
+  j["count"] = 42;
+  j["pi"] = 3.14159;
+  j["active"] = true;
+  j["tags"] = {"alpha", "beta", "gamma"};
+  j["nested"]["x"] = 1;
+  j["nested"]["y"] = 2;
+
+  // Serialize and re-parse (round-trip)
+  std::string serialized = j.dump();
+  json j2 = json::parse(serialized);
+
+  TEST_CHECK(j2["name"] == "test");
+  TEST_CHECK(j2["count"] == 42);
+  TEST_CHECK(j2["active"] == true);
+  TEST_CHECK(j2["tags"].size() == 3);
+  TEST_CHECK(j2["tags"][0] == "alpha");
+  TEST_CHECK(j2["nested"]["x"] == 1);
+  TEST_CHECK(j2["nested"]["y"] == 2);
+
+  // Pretty print round-trip
+  std::string pretty = j.dump(2);
+  json j3 = json::parse(pretty);
+  TEST_CHECK(j3 == j);
+}
+
+void test_json_type_conversions() {
+  json j = json::parse(R"({"i": 42, "f": 3.14, "s": "hello", "b": true, "n": null})");
+
+  // value() with defaults (like IniSection::GetInt / GetString style)
+  TEST_CHECK(j.value("i", 0) == 42);
+  TEST_CHECK(j.value("missing", 99) == 99);
+  TEST_CHECK(j.value("s", std::string("default")) == "hello");
+  TEST_CHECK(j.value("missing_str", std::string("fallback")) == "fallback");
+  TEST_CHECK(j.value("b", false) == true);
+  TEST_CHECK(j.value("missing_bool", true) == true);
+  TEST_CHECK(j.value("f", 0.0) > 3.13);
+  TEST_CHECK(j.value("missing_f", 1.5) > 1.49);
+
+  // Null checks
+  TEST_CHECK(j["n"].is_null());
+  TEST_CHECK(!j["i"].is_null());
+}
+
+void test_json_iteration() {
+  json j = json::parse(R"({"a": 1, "b": 2, "c": 3})");
+
+  // Iterate object
+  int sum = 0;
+  int count = 0;
+  for (auto it = j.items().begin(); it != j.items().end(); ++it) {
+    sum += it.value().get<int>();
+    count++;
+  }
+  TEST_CHECK_(sum == 6, "Expected sum 6, got %d", sum);
+  TEST_CHECK_(count == 3, "Expected 3 items, got %d", count);
+
+  // Iterate array
+  json arr = json::parse("[10, 20, 30]");
+  int arr_sum = 0;
+  for (const auto &elem : arr) {
+    arr_sum += elem.get<int>();
+  }
+  TEST_CHECK_(arr_sum == 60, "Expected sum 60, got %d", arr_sum);
+}
+
+void test_json_error_handling() {
+  // Invalid JSON should throw
+  bool caught = false;
+  try {
+    (void)json::parse("{invalid json}");
+  } catch (const json::parse_error &) {
+    caught = true;
+  }
+  TEST_CHECK_(caught, "Expected parse_error for invalid JSON");
+
+  // parse with default value on error (accept policy)
+  json j = json::parse("{bad}", nullptr, false);
+  TEST_CHECK_(j.is_discarded(), "Expected discarded value for invalid JSON");
+}
+
+void test_json_modification() {
+  json j = json::parse(R"({"items": [1, 2, 3], "meta": {"version": 1}})");
+
+  // Modify values
+  j["meta"]["version"] = 2;
+  TEST_CHECK(j["meta"]["version"] == 2);
+
+  // Add new keys
+  j["meta"]["author"] = "tester";
+  TEST_CHECK(j["meta"]["author"] == "tester");
+
+  // Modify array
+  j["items"].push_back(4);
+  TEST_CHECK_(j["items"].size() == 4, "Expected 4 items after push_back");
+  TEST_CHECK(j["items"][3] == 4);
+
+  // Erase
+  j["items"].erase(j["items"].begin());
+  TEST_CHECK_(j["items"].size() == 3, "Expected 3 items after erase");
+  TEST_CHECK(j["items"][0] == 2);
+
+  // Remove key from object
+  j["meta"].erase("author");
+  TEST_CHECK(!j["meta"].contains("author"));
+}
+
+void test_json_comparison() {
+  json a = json::parse(R"({"x": 1, "y": 2})");
+  json b = json::parse(R"({"y": 2, "x": 1})");
+  json c = json::parse(R"({"x": 1, "y": 3})");
+
+  // Object equality is independent of key order
+  TEST_CHECK(a == b);
+  TEST_CHECK(a != c);
+
+  // Array equality is order-dependent
+  json arr1 = json::parse("[1, 2, 3]");
+  json arr2 = json::parse("[1, 2, 3]");
+  json arr3 = json::parse("[3, 2, 1]");
+  TEST_CHECK(arr1 == arr2);
+  TEST_CHECK(arr1 != arr3);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -913,6 +1134,14 @@ TEST_LIST = {
   {"TTF font loading", test_ttf_font_loading},
   {"Find system font", test_find_system_font},
   {"Load system font", test_load_system_font},
+  {"JSON parse string", test_json_parse_string},
+  {"JSON parse file", test_json_parse_file},
+  {"JSON build and serialize", test_json_build_and_serialize},
+  {"JSON type conversions", test_json_type_conversions},
+  {"JSON iteration", test_json_iteration},
+  {"JSON error handling", test_json_error_handling},
+  {"JSON modification", test_json_modification},
+  {"JSON comparison", test_json_comparison},
   {0}
 };
 
