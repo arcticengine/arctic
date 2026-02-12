@@ -121,7 +121,7 @@ static std::mutex g_quit_mutex;
     const char *newline = "\r\n";
     std::ofstream out(file_name,
       std::ios_base::binary | std::ios_base::out | std::ios_base::app);
-    Check(out.rdstate() != std::ios_base::failbit,
+    Check(!(out.rdstate() & std::ios_base::failbit),
       "Error in LoggerThreadFunction. Can't create/open the file, file_name: ",
       file_name);
     out.exceptions(std::ios_base::goodbit);
