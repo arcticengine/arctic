@@ -40,11 +40,17 @@ GlFramebuffer::GlFramebuffer()
 }
 
 GlFramebuffer::~GlFramebuffer() {
+    if (current_framebuffer_id_ == framebuffer_id_) {
+        current_framebuffer_id_ = 0;
+    }
     ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
 }
 
 void GlFramebuffer::Create(GlTexture2D &texture) {
     if (framebuffer_id_ != 0) {
+        if (current_framebuffer_id_ == framebuffer_id_) {
+            current_framebuffer_id_ = 0;
+        }
         ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
     }
 

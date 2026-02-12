@@ -22,10 +22,14 @@
 // IN THE SOFTWARE.
 
 #include "engine/easy.h"
+#include "engine/gl_buffer.h"
+#include "engine/gl_framebuffer.h"
 #include "engine/gl_program.h"
 #include "engine/gl_texture2d.h"
+#include "engine/mesh.h"
 #include "engine/opengl.h"
 #include <cstdio>
+#include <vector>
 
 using namespace arctic;  // NOLINT
 
@@ -533,14 +537,275 @@ void TestGlTexture2DStaleCacheAfterRecreate() {
   }
 }
 
+// -----------------------------------------------------------------------
+// Bug 5.  GlFramebuffer destructor and Create() do not invalidate
+//         current_framebuffer_id_.
+//
+// When a GlFramebuffer is destroyed, glDeleteFramebuffers is called, but
+// the static cache current_framebuffer_id_ is not cleared.  OpenGL
+// automatically unbinds a deleted framebuffer (binding reverts to 0),
+// yet the cache still holds the old ID.
+//
+// If Create() is later called on the same object, glGenFramebuffers may
+// reuse the old ID.  Bind() then sees current_framebuffer_id_ == new id
+// (a false "cache hit") and skips glBindFramebuffer.  The framebuffer
+// is never actually bound, so glFramebufferTexture2D inside Create()
+// attaches the texture to FBO 0 (the default framebuffer) instead.
+//
+// We reproduce this by creating a framebuffer, binding it, then
+// re-creating it.  After re-creation we query GL_FRAMEBUFFER_BINDING
+// to see whether the new FBO is actually bound.
+// -----------------------------------------------------------------------
+void TestGlFramebufferStaleCacheAfterRecreate() {
+  GlTexture2D tex;
+  tex.Create(1, 1);
+
+  GlFramebuffer fb;
+  fb.Create(tex);
+  fb.Bind();
+
+  // Query the currently bound FBO -- this is the "old" ID.
+  GLint old_bound = 0;
+  ARCTIC_GL_CHECK_ERROR(glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_bound));
+
+  // Re-create.  Internally: glDeleteFramebuffers(old_id) (GL unbinds it,
+  // binding -> 0, but cache keeps old_id), glGenFramebuffers(&new_id),
+  // Bind() -- if new_id == old_id, cache hit, skip.
+  GlTexture2D tex2;
+  tex2.Create(1, 1);
+  fb.Create(tex2);
+
+  GLint new_bound = 0;
+  ARCTIC_GL_CHECK_ERROR(glGetIntegerv(GL_FRAMEBUFFER_BINDING, &new_bound));
+
+  if (new_bound == 0 && old_bound != 0) {
+    std::printf("[gl_framebuf BUG] stale cache: after re-Create(), GL "
+                "framebuffer binding is 0 (default). The new FBO was "
+                "never bound because the cache saw a false hit on the "
+                "reused ID %d.\n", old_bound);
+  } else if (new_bound == 0) {
+    std::printf("[gl_framebuf BUG] after re-Create(), GL framebuffer "
+                "binding is 0 -- expected the new FBO to be bound.\n");
+  } else {
+    std::printf("[gl_framebuf OK ] framebuffer correctly bound after "
+                "re-Create() (GL binding = %d).\n", new_bound);
+  }
+
+  // Restore default framebuffer so subsequent rendering is not affected.
+  GlFramebuffer::BindDefault();
+}
+
+// -----------------------------------------------------------------------
+// Bug 6.  GlBuffer destructor and Create() do not invalidate
+//         current_buffer_id_.
+//
+// Identical pattern to the framebuffer bug.  When a GlBuffer is
+// destroyed or re-created, glDeleteBuffers frees the old GL name and
+// OpenGL unbinds it, but the static cache current_buffer_id_ still
+// holds the stale value.  If glGenBuffers reuses the same name,
+// Bind() sees a false cache hit and skips glBindBuffer.
+//
+// We reproduce this by creating a buffer, binding it to GL_ARRAY_BUFFER,
+// then calling Create() again.  After the re-creation we query
+// GL_ARRAY_BUFFER_BINDING to check whether the new buffer is bound.
+// -----------------------------------------------------------------------
+void TestGlBufferStaleCacheAfterRecreate() {
+  GlBuffer buf;
+  buf.Create();
+  buf.Bind(GL_ARRAY_BUFFER);
+
+  GLuint old_id = buf.buffer_id();
+
+  // Re-create.  Internally: glDeleteBuffers(old_id) (GL unbinds,
+  // binding -> 0, cache keeps old_id), glGenBuffers(&new_id).
+  // No Bind() is called from Create(), so the new buffer isn't bound
+  // at all.  A subsequent buf.Bind(GL_ARRAY_BUFFER) checks the cache.
+  buf.Create();
+  buf.Bind(GL_ARRAY_BUFFER);
+
+  GLint bound = 0;
+  ARCTIC_GL_CHECK_ERROR(glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &bound));
+
+  GLuint new_id = buf.buffer_id();
+
+  if (old_id == new_id && static_cast<GLuint>(bound) != new_id) {
+    std::printf("[gl_buffer   BUG] stale cache: driver reused buffer ID %u, "
+                "but GL binding is %d (not %u). Cache 'hit' prevented "
+                "glBindBuffer.\n", new_id, bound, new_id);
+  } else if (static_cast<GLuint>(bound) != new_id) {
+    std::printf("[gl_buffer   BUG] after re-Create(), GL_ARRAY_BUFFER "
+                "binding is %d but expected %u.\n", bound, new_id);
+  } else if (old_id == new_id) {
+    std::printf("[gl_buffer   OK ] driver reused ID %u and buffer is "
+                "correctly bound.\n", new_id);
+  } else {
+    std::printf("[gl_buffer   OK ] new buffer ID %u correctly bound "
+                "(old was %u, cache miss).\n", new_id, old_id);
+  }
+
+  GlBuffer::BindDefault(GL_ARRAY_BUFFER);
+}
+
+// -----------------------------------------------------------------------
+// Bug 7.  Mesh::Clone() forgets to copy vertex and face counts.
+//
+// Clone() calls Init() on the destination mesh, which allocates
+// buffers with the correct *capacity* (mMax) but sets mNum = 0 for
+// both vertex arrays and index arrays.  Clone() then memcpy's the
+// source data into the destination buffers but never sets
+// dst.mVertexArray[0].mNum or dst.mIndexArray[0].mNum.
+//
+// As a result, the cloned mesh reports 0 vertices and 0 faces even
+// though the data is present in the buffers.  Any code that uses
+// GetCurrentVertexCount / GetCurrentFaceCount (or mNum directly)
+// will see an empty mesh.
+// -----------------------------------------------------------------------
+void TestMeshCloneForgetsCount() {
+  MeshVertexFormat vf;
+  vf.AddElement(3, kRMVEDT_Float);  // position: 3 floats
+
+  Mesh src;
+  // 1 vertex stream, up to 8 vertices, polygon mesh, 1 index array, up to 4 faces
+  if (!src.Init(1, 8, &vf, kRMVEDT_Polys, 1, 4)) {
+    std::printf("[mesh        ???] Init failed, cannot run Clone test.\n");
+    return;
+  }
+
+  // Add 3 vertices (a triangle).
+  src.AddVertex(0, 0.0f, 0.0f, 0.0f);
+  src.AddVertex(0, 1.0f, 0.0f, 0.0f);
+  src.AddVertex(0, 0.0f, 1.0f, 0.0f);
+
+  // Add 1 face.
+  src.AddFace(0, 0, 1, 2);
+
+  int src_vcount = src.GetCurrentVertexCount(0);
+  int src_fcount = src.GetCurrentFaceCount(0);
+
+  Mesh dst;
+  if (!src.Clone(&dst)) {
+    std::printf("[mesh        ???] Clone failed.\n");
+    return;
+  }
+
+  int dst_vcount = dst.GetCurrentVertexCount(0);
+  int dst_fcount = dst.GetCurrentFaceCount(0);
+
+  bool vbug = (dst_vcount != src_vcount);
+  bool fbug = (dst_fcount != src_fcount);
+
+  if (vbug || fbug) {
+    std::printf("[mesh        BUG] Clone() lost counts: "
+                "src has %d verts / %d faces, "
+                "dst has %d verts / %d faces. "
+                "Init() zeroes mNum and Clone() never restores it.\n",
+                src_vcount, src_fcount, dst_vcount, dst_fcount);
+  } else {
+    std::printf("[mesh        OK ] Clone() preserved counts correctly "
+                "(%d verts, %d faces).\n", dst_vcount, dst_fcount);
+  }
+}
+
+// -----------------------------------------------------------------------
+// Bug 8.  Mesh::AddFace() has no bounds check.
+//
+// AddFace() writes to ia->mBuffer[ia->mNum] and increments mNum
+// without checking whether mNum < mMax.  If more faces are added
+// than were allocated, this overflows the heap buffer.
+//
+// We demonstrate this by filling a mesh to capacity and then
+// attempting to add one more face.  Without the bounds check the
+// write would go past the allocated buffer (heap overflow).  With
+// the fix, AddFace() returns -1 and the count stays at capacity.
+// -----------------------------------------------------------------------
+void TestMeshAddFaceNoBoundsCheck() {
+  MeshVertexFormat vf;
+  vf.AddElement(3, kRMVEDT_Float);
+
+  Mesh mesh;
+  // Allocate space for exactly 1 face.
+  if (!mesh.Init(1, 8, &vf, kRMVEDT_Polys, 1, 1)) {
+    std::printf("[mesh        ???] Init failed, cannot run AddFace test.\n");
+    return;
+  }
+
+  mesh.AddVertex(0, 0.0f, 0.0f, 0.0f);
+  mesh.AddVertex(0, 1.0f, 0.0f, 0.0f);
+  mesh.AddVertex(0, 0.0f, 1.0f, 0.0f);
+
+  // Add one face -- this fills the buffer to capacity.
+  mesh.AddFace(0, 0, 1, 2);
+
+  // Try to add a second face past the capacity limit.
+  int overflow_result = mesh.AddFace(0, 0, 1, 2);
+  int count_after = mesh.GetCurrentFaceCount(0);
+  int capacity = static_cast<int>(mesh.mFaceData.mIndexArray[0].mMax);
+
+  if (overflow_result >= 0 || count_after > capacity) {
+    std::printf("[mesh        BUG] AddFace() has no bounds check. "
+                "Buffer is full (%d/%d) but AddFace() returned %d "
+                "instead of -1 (heap overflow).\n",
+                count_after, capacity, overflow_result);
+  } else {
+    std::printf("[mesh        OK ] AddFace() rejected overflow "
+                "(returned %d, count stayed at %d/%d).\n",
+                overflow_result, count_after, capacity);
+  }
+}
+
+// -----------------------------------------------------------------------
+// Bug 9.  Font::Draw(palette) dereferences palete[0] without checking
+//         if the palette is empty.
+//
+// Both the Sprite-overload (font.h) and the backbuffer-overload
+// (font.cpp) pass palete[0] as the color argument to
+// DrawEvaluateSizeImpl.  If the caller provides an empty
+// std::vector<Rgba>, this is an unconditional out-of-bounds access
+// that immediately crashes (SIGSEGV / SIGABRT).
+//
+// We test this by actually calling Draw with an empty palette on a
+// small sprite.  Without the fix this would crash; with the fix it
+// should fall back to a default color and return normally.
+// -----------------------------------------------------------------------
+void TestFontDrawEmptyPaletteCrash() {
+  Font font;
+  font.CreateEmpty(8, 10);
+
+  Sprite target;
+  target.Create(16, 16);
+
+  std::vector<Rgba> empty_palette;
+
+  // Before the fix this line would crash (palete[0] on empty vector).
+  // After the fix it should use a default color and return safely.
+  font.Draw(target, "x", 0, 0,
+            kTextOriginBottom, kTextAlignmentLeft,
+            kDrawBlendingModeColorize, kFilterNearest,
+            empty_palette);
+
+  std::printf("[font        OK ] Font::Draw(palette) survived an "
+              "empty palette without crashing.\n");
+}
+
 void EasyMain() {
   SetVSync(false);
   g_prev_time = Time();
   g_frame_acc = 0.0;
   g_time_acc = 0.0;
+
+  // Mesh / font tests do not require a GL context.
+  std::printf("--- mesh bug reproduction ---\n");
+  TestMeshCloneForgetsCount();
+  TestMeshAddFaceNoBoundsCheck();
+  std::printf("-----------------------------\n");
+
+  std::printf("--- font bug reproduction ---\n");
+  TestFontDrawEmptyPaletteCrash();
+  std::printf("-----------------------------\n");
+
   Init();
 
-  // GL context is ready after Init() -- run bug reproduction tests.
+  // GL context is ready after Init() -- run GL bug reproduction tests.
   std::printf("--- gl_program bug reproduction ---\n");
   TestShaderLeak();
   TestUniformsTableStaleValue();
@@ -550,6 +815,14 @@ void EasyMain() {
   TestGlTexture2DBindSkipsActiveSlot();
   TestGlTexture2DStaleCacheAfterRecreate();
   std::printf("-------------------------------------\n");
+
+  std::printf("--- gl_framebuffer bug reproduction ---\n");
+  TestGlFramebufferStaleCacheAfterRecreate();
+  std::printf("---------------------------------------\n");
+
+  std::printf("--- gl_buffer bug reproduction ---\n");
+  TestGlBufferStaleCacheAfterRecreate();
+  std::printf("----------------------------------\n");
   InitTiles();
 
   while (!IsKeyDownward(kKeyEscape)) {

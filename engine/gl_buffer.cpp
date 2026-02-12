@@ -39,10 +39,16 @@ GlBuffer::GlBuffer() : buffer_id_(0), size_(0), target_(0) {
 }
 
 GlBuffer::~GlBuffer() {
+    if (current_buffer_id_ == buffer_id_) {
+        current_buffer_id_ = 0;
+    }
     ARCTIC_GL_CHECK_ERROR(glDeleteBuffers(1, &buffer_id_));
 }
 
 void GlBuffer::Create() {
+    if (current_buffer_id_ == buffer_id_) {
+        current_buffer_id_ = 0;
+    }
     ARCTIC_GL_CHECK_ERROR(glDeleteBuffers(1, &buffer_id_));
     ARCTIC_GL_CHECK_ERROR(glGenBuffers(1, &buffer_id_));
 }

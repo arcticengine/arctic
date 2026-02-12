@@ -778,8 +778,9 @@ class Font {
       const DrawBlendingMode blending_mode,
       const DrawFilterMode filter_mode,
       const std::vector<Rgba> &palete) {
+    Rgba color = palete.empty() ? Rgba(0xffffffff) : palete[0];
     font_instance_->DrawEvaluateSizeImpl(to_sprite,
-                                         text, false, x, y, origin, alignment, blending_mode, filter_mode, palete[0],
+                                         text, false, x, y, origin, alignment, blending_mode, filter_mode, color,
                                          palete, true, nullptr, false, nullptr, nullptr);
   }
 

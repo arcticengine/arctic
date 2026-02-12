@@ -156,9 +156,13 @@ bool Mesh::Clone(Mesh *dst) {
   memcpy(dst->mVertexData.mVertexArray[0].mBuffer,
       mVertexData.mVertexArray[0].mBuffer,
       nv*vf->mStride);
+  dst->mVertexData.mVertexArray[0].mNum = nv;
+
   memcpy(dst->mFaceData.mIndexArray[0].mBuffer,
       mFaceData.mIndexArray[0].mBuffer,
       bufferSize);
+  dst->mFaceData.mIndexArray[0].mNum = numElements;
+
   return true;
 }
 
@@ -1084,13 +1088,16 @@ int Mesh::AddVertex(int streamID, ...) {
 
 int Mesh::AddFace(int streamID, int v1, int v2, int v3) {
     MeshIndexArray* ia = &mFaceData.mIndexArray[streamID];
+    if (ia->mNum >= ia->mMax) {
+        return -1;
+    }
     int faceIndex = ia->mNum;
-    
+
     MeshFace* face = &ia->mBuffer[faceIndex];
     face->mIndex[0] = v1;
     face->mIndex[1] = v2;
     face->mIndex[2] = v3;
-    
+
     ia->mNum++;
     return faceIndex;
 }
