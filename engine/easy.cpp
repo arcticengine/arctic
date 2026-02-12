@@ -507,18 +507,18 @@ void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
   float dxdy_ac = static_cast<float>(c.x - a.x) /
       static_cast<float>(c.y - a.y);
-  float dxdy_bc = static_cast<float>(c.x - b.x) /
-      static_cast<float>(c.y - b.y);
-  float dxdy_ab = static_cast<float>(b.x - a.x) /
-      static_cast<float>(b.y - a.y);
+  float dxdy_bc = (c.y != b.y) ? static_cast<float>(c.x - b.x) /
+      static_cast<float>(c.y - b.y) : 0.0f;
+  float dxdy_ab = (b.y != a.y) ? static_cast<float>(b.x - a.x) /
+      static_cast<float>(b.y - a.y) : 0.0f;
 
   Vec4F rgba_a(color_a.r, color_a.g, color_a.b, color_a.a);
   Vec4F rgba_b(color_b.r, color_b.g, color_b.b, color_b.a);
   Vec4F rgba_c(color_c.r, color_c.g, color_c.b, color_c.a);
 
   Vec4F dcdy_ac = (rgba_c - rgba_a) / static_cast<float>(c.y - a.y);
-  Vec4F dcdy_bc = (rgba_c - rgba_b) / static_cast<float>(c.y - b.y);
-  Vec4F dcdy_ab = (rgba_b - rgba_a) / static_cast<float>(b.y - a.y);
+  Vec4F dcdy_bc = (c.y != b.y) ? (rgba_c - rgba_b) / static_cast<float>(c.y - b.y) : Vec4F(0.f, 0.f, 0.f, 0.f);
+  Vec4F dcdy_ab = (b.y != a.y) ? (rgba_b - rgba_a) / static_cast<float>(b.y - a.y) : Vec4F(0.f, 0.f, 0.f, 0.f);
 
   float x1;
   float x2;
@@ -1271,8 +1271,8 @@ void ClearKeyStateTransitions() {
 }
 
 float ControllerAxis(Si32 controller_idx, Si32 axis_idx) {
-  if (controller_idx < InputMessage::kControllerCount &&
-      axis_idx < kAxisCount) {
+  if (controller_idx >= 0 && controller_idx < InputMessage::kControllerCount &&
+      axis_idx >= 0 && axis_idx < kAxisCount) {
     return g_controller_state[controller_idx].axis[axis_idx];
   } else {
     return 0.f;
@@ -1323,7 +1323,7 @@ void ResizeScreen(const Si32 width, const Si32 height) {
 }
 
 void ResizeScreen(const Vec2Si32 size) {
-  GetEngine()->ResizeBackbuffer(size.x, size.y);
+  ResizeScreen(size.x, size.y);
 }
 
 void SetInverseY(bool is_inverse) {
