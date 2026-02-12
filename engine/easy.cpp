@@ -1257,7 +1257,7 @@ void SetKey(const KeyCode key_code, bool is_pressed) {
 
 void SetKey(const char key, bool is_pressed) {
   if (key >= 'a' && key <= 'z') {
-    SetKeyImpl(static_cast<Ui32>(key)
+    return SetKeyImpl(static_cast<Ui32>(key)
       + static_cast<Ui32>('A')
       - static_cast<Ui32>('a'), is_pressed);
   }
