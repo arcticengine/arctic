@@ -22,6 +22,9 @@
 // IN THE SOFTWARE.
 
 #include "engine/easy.h"
+#include "engine/gl_program.h"
+#include "engine/opengl.h"
+#include <cstdio>
 
 using namespace arctic;  // NOLINT
 
@@ -318,12 +321,117 @@ void Render() {
 }
 
 
+// Minimal shaders used by bug-reproduction tests below.
+// The vertex shader does nothing interesting; the fragment shader declares
+// a single float uniform so we can verify its value from the CPU side.
+static const char *kTestVS = R"SHADER(
+#ifdef GL_ES
+precision mediump float;
+#endif
+attribute vec2 vPosition;
+void main() {
+  gl_Position = vec4(vPosition, 0.0, 1.0);
+}
+)SHADER";
+
+static const char *kTestFS = R"SHADER(
+#ifdef GL_ES
+precision lowp float;
+#endif
+uniform float u_test;
+void main() {
+  gl_FragColor = vec4(u_test, 0.0, 0.0, 1.0);
+}
+)SHADER";
+
+// -----------------------------------------------------------------------
+// Bug 1.  GlProgram::Create() leaks vertex and fragment shader objects.
+//
+// After linking the program, the two shader handles created by LoadShader()
+// are never deleted with glDeleteShader().  They stay attached to the
+// program and consume driver memory for the lifetime of the program (and
+// remain as orphaned GL objects if the program is later destroyed while
+// shaders are still attached).
+//
+// We detect this by querying GL_ATTACHED_SHADERS on the program right
+// after Create().  If the shaders were properly detached and deleted the
+// count would be 0.  With the bug the count is 2.
+// -----------------------------------------------------------------------
+void TestShaderLeak() {
+  GlProgram program;
+  program.Create(kTestVS, kTestFS);
+  program.Bind();
+
+  GLint prog_id = 0;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &prog_id);
+
+  GLint attached = 0;
+  glGetProgramiv(prog_id, GL_ATTACHED_SHADERS, &attached);
+
+  if (attached > 0) {
+    std::printf("[gl_program BUG] shader leak: %d shader(s) still attached "
+                "after Create() -- they should be deleted after linking\n",
+                attached);
+  } else {
+    std::printf("[gl_program OK ] shaders properly cleaned up after Create()\n");
+  }
+}
+
+// -----------------------------------------------------------------------
+// Bug 2.  UniformsTable::SetUniform() silently ignores updates.
+//
+// Every SetUniform overload does:
+//     table_.insert(std::make_pair(name, data));
+//
+// std::unordered_map::insert() is a no-op when the key already exists, so
+// calling SetUniform("u_test", 1.0f) followed by SetUniform("u_test", 99.0f)
+// leaves the map with value 1.0f.  The second call is silently discarded.
+//
+// We prove this by creating a real GL program, setting a uniform via
+// UniformsTable, "updating" it, calling Apply(), and reading back the
+// actual GL uniform value with glGetUniformfv.
+// -----------------------------------------------------------------------
+void TestUniformsTableStaleValue() {
+  GlProgram program;
+  program.Create(kTestVS, kTestFS);
+  program.Bind();
+
+  UniformsTable table;
+  table.SetUniform(std::string("u_test"), 1.0f);
+  table.SetUniform(std::string("u_test"), 99.0f);  // should overwrite, but doesn't
+  table.Apply(program);
+
+  GLint prog_id = 0;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &prog_id);
+
+  GLint loc = glGetUniformLocation(prog_id, "u_test");
+  float readback = -1.0f;
+  glGetUniformfv(prog_id, loc, &readback);
+
+  if (readback == 1.0f) {
+    std::printf("[gl_program BUG] stale uniform: SetUniform(\"u_test\", 99.0f) "
+                "was ignored, GPU value is still %.1f (insert() does not "
+                "overwrite)\n", readback);
+  } else if (readback == 99.0f) {
+    std::printf("[gl_program OK ] SetUniform update applied correctly "
+                "(value = %.1f)\n", readback);
+  } else {
+    std::printf("[gl_program ??? ] unexpected uniform value: %.1f\n", readback);
+  }
+}
+
 void EasyMain() {
   SetVSync(false);
   g_prev_time = Time();
   g_frame_acc = 0.0;
   g_time_acc = 0.0;
   Init();
+
+  // GL context is ready after Init() -- run bug reproduction tests.
+  std::printf("--- gl_program bug reproduction ---\n");
+  TestShaderLeak();
+  TestUniformsTableStaleValue();
+  std::printf("-----------------------------------\n");
   InitTiles();
 
   while (!IsKeyDownward(kKeyEscape)) {
