@@ -47,9 +47,9 @@ namespace arctic {
 
   std::shared_ptr<HwSpriteInstance> HwSpriteInstance::LoadTga(const Ui8 *data, const Si64 size) {
     std::shared_ptr<SpriteInstance> sw_sprite = arctic::LoadTga(data, size);
-    std::shared_ptr<HwSpriteInstance> sprite = std::make_shared<HwSpriteInstance>(sw_sprite->width(), sw_sprite->height());
-
+    std::shared_ptr<HwSpriteInstance> sprite(nullptr);
     if (sw_sprite) {
+        sprite = std::make_shared<HwSpriteInstance>(sw_sprite->width(), sw_sprite->height());
         sprite->texture_.SetData(sw_sprite->RawData(), sw_sprite->width(), sw_sprite->height());
     }
 
