@@ -327,7 +327,11 @@ struct SoundMixerState {
     InputTasksToMixerThread();
     float master_volume_16 = static_cast<float>(
       this->master_volume.load() / 32767.0);
-    if (buffers.empty()) {
+
+    // Always zero the output before the mix loop.  This avoids the
+    // idx==0 assignment-vs-accumulation split that silently dropped
+    // audio when the first buffer was released mid-frame.
+    {
       Si32 mix_idx = 0;
       for (Si32 i = 0; i < buffer_samples_per_channel; ++i) {
         mix_l[mix_idx] = 0.f;
@@ -339,19 +343,11 @@ struct SoundMixerState {
     for (Ui32 idx = 0; idx < buffers.size(); ++idx) {
       SoundTask &sound = *buffers[idx];
       if (sound.is_3d) {
-        if (idx == 0) {
-          Si32 mix_idx = 0;
-          for (Si32 i = 0; i < buffer_samples_per_channel; ++i) {
-            mix_l[mix_idx] = 0.f;
-            mix_r[mix_idx] = 0.f;
-            mix_idx += mix_stride;
-          }
-        }
         bool is_over = true;
         for (Si32 channel_idx = 0; channel_idx < 2; ++channel_idx) {
           RenderSound<T>(
               &sound, head, channel_idx,
-              (channel_idx == 0 ? mix_l : mix_r), 1, buffer_samples_per_channel, 44100.0,
+              (channel_idx == 0 ? mix_l : mix_r), mix_stride, buffer_samples_per_channel, 44100.0,
               master_volume_16);
           if (sound.channel_playback_state[channel_idx].play_position * 44100.0 < sound.sound.DurationSamples()) {
             is_over = false;
@@ -371,24 +367,10 @@ struct SoundMixerState {
         Si16 *in_data = tmp;
         float volume = sound.volume * master_volume_16;
         Si32 mix_idx = 0;
-        if (idx == 0) {
-          for (Si32 i = 0; i < size; ++i) {
-            mix_l[mix_idx] = static_cast<float>(in_data[i * 2]) * volume;
-            mix_r[mix_idx] = static_cast<float>(in_data[i * 2 + 1]) * volume;
-            mix_idx += mix_stride;
-          }
-          mix_idx = size * mix_stride;
-          for (Si32 i = size; i < buffer_samples_per_channel; ++i) {
-            mix_l[mix_idx] = 0.f;
-            mix_r[mix_idx] = 0.f;
-            mix_idx += mix_stride;
-          }
-        } else {
-          for (Si32 i = 0; i < size; ++i) {
-            mix_l[mix_idx] += static_cast<float>(in_data[i * 2]) * volume;
-            mix_r[mix_idx] += static_cast<float>(in_data[i * 2 + 1]) * volume;
-            mix_idx += mix_stride;
-          }
+        for (Si32 i = 0; i < size; ++i) {
+          mix_l[mix_idx] += static_cast<float>(in_data[i * 2]) * volume;
+          mix_r[mix_idx] += static_cast<float>(in_data[i * 2 + 1]) * volume;
+          mix_idx += mix_stride;
         }
         sound.next_position += size;
 
@@ -402,16 +384,18 @@ struct SoundMixerState {
 
     const float Attack = 1.f / (44100.f * 0.005f);
     const float Release = 1.f / (44100.f * 0.2f);
+    Si32 comp_idx = 0;
     for (Si32 frame = 0; frame < buffer_samples_per_channel; ++frame) {
-      float smax = std::max(std::abs(mix_l[frame]), std::abs(mix_r[frame]));
+      float smax = std::max(std::abs(mix_l[comp_idx]), std::abs(mix_r[comp_idx]));
       if (smax > compressor_level) {
         compressor_level = compressor_level * (1.f - Attack) + smax * Attack;
       } else {
         compressor_level = compressor_level * (1.f - Release) + smax * Release;
       }
       float gain_k = (compressor_level > 1.f ? 1.f / compressor_level : 1.f);
-      mix_l[frame] = SoftClipSound(mix_l[frame] * gain_k);
-      mix_r[frame] = SoftClipSound(mix_r[frame] * gain_k);
+      mix_l[comp_idx] = SoftClipSound(mix_l[comp_idx] * gain_k);
+      mix_r[comp_idx] = SoftClipSound(mix_r[comp_idx] * gain_k);
+      comp_idx += mix_stride;
     }
   }
 };
