@@ -23,6 +23,7 @@
 
 #include "engine/easy.h"
 #include "engine/gl_program.h"
+#include "engine/gl_texture2d.h"
 #include "engine/opengl.h"
 #include <cstdio>
 
@@ -420,6 +421,118 @@ void TestUniformsTableStaleValue() {
   }
 }
 
+// -----------------------------------------------------------------------
+// Bug 3.  GlTexture2D::Bind() skips glActiveTexture on cache hit.
+//
+// The bind-cache logic is structured so that glActiveTexture is only
+// called *inside* the "cache miss" branch:
+//
+//   if (current_texture_id_[slot] != texture_id_) {
+//       if (current_texture_slot_ != slot) {
+//           glActiveTexture(GL_TEXTURE0 + slot);        // <-- here
+//       }
+//       glBindTexture(GL_TEXTURE_2D, texture_id_);
+//   }
+//
+// If the texture is already cached for the requested slot, the entire
+// block is skipped -- including glActiveTexture.  This means the GL
+// active texture unit can be left pointing at the wrong slot.  Any
+// subsequent GL texture operation (glTexImage2D, glTexSubImage2D, etc.)
+// will silently modify the wrong texture.
+//
+// Reproduction: bind texA to slot 0, then texB to slot 1 (active
+// slot moves to 1), then call texA.Bind(0) again.  Since texA is
+// cached in slot 0, everything is skipped.  GL_ACTIVE_TEXTURE stays
+// at GL_TEXTURE1 instead of switching to GL_TEXTURE0.
+// -----------------------------------------------------------------------
+void TestGlTexture2DBindSkipsActiveSlot() {
+  GlTexture2D texA;
+  texA.Create(1, 1);
+
+  GlTexture2D texB;
+  texB.Create(1, 1);
+
+  // Step 1: bind texA to slot 0.  Active slot becomes 0.
+  texA.Bind(0);
+
+  // Step 2: bind texB to slot 1.  Active slot becomes 1.
+  texB.Bind(1);
+
+  // Step 3: re-bind texA to slot 0.
+  // With the bug, this is a cache hit and glActiveTexture is NOT called.
+  texA.Bind(0);
+
+  GLint active_texture = 0;
+  ARCTIC_GL_CHECK_ERROR(glGetIntegerv(GL_ACTIVE_TEXTURE, &active_texture));
+
+  if (active_texture != GL_TEXTURE0) {
+    std::printf("[gl_texture2d BUG] Bind(0) cache hit skipped glActiveTexture. "
+                "Active slot is %d, expected 0. Subsequent GL texture "
+                "operations would corrupt the wrong texture.\n",
+                active_texture - GL_TEXTURE0);
+  } else {
+    std::printf("[gl_texture2d OK ] Bind(0) correctly set the active "
+                "texture slot.\n");
+  }
+}
+
+// -----------------------------------------------------------------------
+// Bug 4.  GlTexture2D::Create() does not invalidate the bind cache.
+//
+// Create() deletes the old GL texture via glDeleteTextures, then
+// generates a new one via glGenTextures.  However, the static cache
+// array current_texture_id_[] is never updated.  If the old texture
+// was cached in some slot, the cache still maps that slot to the old
+// (now-deleted) ID.
+//
+// OpenGL drivers commonly reuse texture IDs once they are freed.  So
+// the newly generated texture may receive the exact same GLuint as
+// the old one.  When Bind() is called, it compares new_id == cached_id,
+// finds a "hit", and skips glBindTexture entirely.  But the actual GL
+// binding was cleared by glDeleteTextures, so the new texture is never
+// bound and subsequent texture uploads go nowhere (or to texture 0).
+//
+// We reproduce this by creating a texture, binding it, then calling
+// Create() again on the same object.  If the driver reuses the ID,
+// the cache hit prevents the new texture from being bound.
+// -----------------------------------------------------------------------
+void TestGlTexture2DStaleCacheAfterRecreate() {
+  GlTexture2D tex;
+  tex.Create(1, 1);
+  tex.Bind(0);
+
+  GLuint old_id = tex.texture_id();
+
+  // Re-create.  Internally: glDeleteTextures(old_id), glGenTextures(&new_id),
+  // Bind(0).  If new_id == old_id, the cache thinks it's already bound, but
+  // glDeleteTextures already unbound it in GL.
+  tex.Create(2, 2);
+
+  // After Create, the texture must be bound.  Query what GL actually has.
+  GLint bound = 0;
+  ARCTIC_GL_CHECK_ERROR(glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound));
+
+  GLuint new_id = tex.texture_id();
+
+  if (old_id == new_id && static_cast<GLuint>(bound) != new_id) {
+    std::printf("[gl_texture2d BUG] stale cache: after re-Create(), driver "
+                "reused texture ID %u, but GL binding is %d (not %u). "
+                "The cache 'hit' prevented glBindTexture.\n",
+                new_id, bound, new_id);
+  } else if (static_cast<GLuint>(bound) != new_id) {
+    std::printf("[gl_texture2d BUG] after re-Create(), GL binding is %d "
+                "but expected %u. Cache was not invalidated.\n",
+                bound, new_id);
+  } else if (old_id == new_id) {
+    std::printf("[gl_texture2d OK ] driver reused ID %u and texture is "
+                "correctly bound (cache was invalidated or driver kept "
+                "binding alive).\n", new_id);
+  } else {
+    std::printf("[gl_texture2d OK ] new texture ID %u correctly bound "
+                "(old was %u, cache miss).\n", new_id, old_id);
+  }
+}
+
 void EasyMain() {
   SetVSync(false);
   g_prev_time = Time();
@@ -432,6 +545,11 @@ void EasyMain() {
   TestShaderLeak();
   TestUniformsTableStaleValue();
   std::printf("-----------------------------------\n");
+
+  std::printf("--- gl_texture2d bug reproduction ---\n");
+  TestGlTexture2DBindSkipsActiveSlot();
+  TestGlTexture2DStaleCacheAfterRecreate();
+  std::printf("-------------------------------------\n");
   InitTiles();
 
   while (!IsKeyDownward(kKeyEscape)) {

@@ -43,6 +43,11 @@ GlTexture2D::GlTexture2D()
 }
 
 GlTexture2D::~GlTexture2D() {
+    for (GLuint i = 0; i < max_textures_slots; ++i) {
+        if (current_texture_id_[i] == texture_id_) {
+            current_texture_id_[i] = 0;
+        }
+    }
     ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
 }
 
@@ -50,6 +55,11 @@ void GlTexture2D::Create(Si32 w, Si32 h) {
     width_ = w;
     height_ = h;
 
+    for (GLuint i = 0; i < max_textures_slots; ++i) {
+        if (current_texture_id_[i] == texture_id_) {
+            current_texture_id_[i] = 0;
+        }
+    }
     ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
 
     ARCTIC_GL_CHECK_ERROR(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
@@ -69,11 +79,11 @@ void GlTexture2D::Create(Si32 w, Si32 h) {
 
 void GlTexture2D::Bind(Ui32 slot) const {
     Check(slot < max_textures_slots, "invalid texture slot");
+    if (current_texture_slot_ != slot) {
+        current_texture_slot_ = slot;
+        ARCTIC_GL_CHECK_ERROR(glActiveTexture(GL_TEXTURE0 + slot));
+    }
     if (current_texture_id_[slot] != texture_id_) {
-        if (current_texture_slot_ != slot) {
-            current_texture_slot_ = slot;
-            ARCTIC_GL_CHECK_ERROR(glActiveTexture(GL_TEXTURE0 + slot));
-        }
         current_texture_id_[slot] = texture_id_;
         ARCTIC_GL_CHECK_ERROR(glBindTexture(GL_TEXTURE_2D, texture_id_));
     }
