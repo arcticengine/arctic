@@ -231,7 +231,8 @@ inline Rgba GetGray(Rgba c) {
   Ui32 res = 19595 * static_cast<Ui32>(c.r)
     + 38470 * static_cast<Ui32>(c.g)
     + 7471 * static_cast<Ui32>(c.b);
-  return Rgba(res >> 16);
+  Ui8 x = (Ui8)(res >> 16);
+  return Rgba(x, x, x, c.a);
 }
 
 /// @brief Interpolate color in a bi-linear way.
