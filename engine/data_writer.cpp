@@ -28,14 +28,14 @@
 
 namespace arctic {
 
-Ui64 DataWriter::Write(const void *dst, Ui64 amount) {
-  if (data.capacity() < data.size() + amount) {
-    Ui64 needed = std::max(amount, (Ui64)(data.size())) + data.size();
+Ui64 DataWriter::Write(const void *src, Ui64 amount) {
+  size_t old_size = data.size();
+  if (data.capacity() < old_size + amount) {
+    Ui64 needed = std::max(amount, (Ui64)old_size) + old_size;
     data.reserve((size_t)needed);
   }
-  Ui8 *p = &data.back();
-  data.resize(data.size() + (size_t)amount);
-  memcpy(p, dst, (size_t)amount);
+  data.resize(old_size + (size_t)amount);
+  memcpy(&data[old_size], src, (size_t)amount);
   return amount;
 }
 
@@ -59,24 +59,24 @@ void DataWriter::WriteFloat(float x) {
   Write(&x, 4);
 }
 
-void DataWriter::WriteFloatarray2(float *ori, Ui64 amount) {
-  Write(ori, 4*(size_t)amount);
+void DataWriter::WriteFloatarray2(float *src, Ui64 amount) {
+  Write(src, 4*(size_t)amount);
 }
 
-void DataWriter::WriteDoublearray2(double *ori, Ui64 amount) {
-  Write(ori, (size_t)amount*8);
+void DataWriter::WriteDoublearray2(double *src, Ui64 amount) {
+  Write(src, (size_t)amount*8);
 }
 
-void DataWriter::WriteUInt32array(Ui32 *dst, Ui64 amount) {
-  Write(dst, amount*4);
+void DataWriter::WriteUInt32array(Ui32 *src, Ui64 amount) {
+  Write(src, amount*4);
 }
 
-void DataWriter::WriteUInt64array(Ui64 *dst, Ui64 amount) {
-  Write(dst, amount*8);
+void DataWriter::WriteUInt64array(Ui64 *src, Ui64 amount) {
+  Write(src, amount*8);
 }
 
-void DataWriter::WriteUInt16array(Ui16 *dst, Ui64 amount) {
-  Write(dst, amount*4);
+void DataWriter::WriteUInt16array(Ui16 *src, Ui64 amount) {
+  Write(src, amount*2);
 }
 
 }

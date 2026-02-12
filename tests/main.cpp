@@ -16,6 +16,8 @@
 #include "engine/localization.h"
 #include "engine/json.h"
 #include "engine/rgb.h"
+#include "engine/data_writer.h"
+#include "engine/data_reader.h"
 
 
 using namespace arctic;
@@ -1110,6 +1112,203 @@ void test_json_comparison() {
   TEST_CHECK(arr1 != arr3);
 }
 
+// ============================================================================
+// DataWriter / DataReader tests
+// ============================================================================
+
+void test_data_writer_empty_initial_write() {
+  DataWriter w;
+  TEST_CHECK(w.data.empty());
+
+  Ui8 val = 0xAB;
+  w.WriteUInt8(val);
+  TEST_CHECK_(w.data.size() == 1, "Expected size 1, got %zu", w.data.size());
+  TEST_CHECK_(w.data[0] == 0xAB, "Expected 0xAB, got 0x%02X", w.data[0]);
+}
+
+void test_data_writer_multiple_writes_no_overlap() {
+  DataWriter w;
+  w.WriteUInt8(0x11);
+  w.WriteUInt8(0x22);
+  w.WriteUInt8(0x33);
+  TEST_CHECK_(w.data.size() == 3, "Expected size 3, got %zu", w.data.size());
+  TEST_CHECK_(w.data[0] == 0x11, "Byte 0: expected 0x11, got 0x%02X", w.data[0]);
+  TEST_CHECK_(w.data[1] == 0x22, "Byte 1: expected 0x22, got 0x%02X", w.data[1]);
+  TEST_CHECK_(w.data[2] == 0x33, "Byte 2: expected 0x33, got 0x%02X", w.data[2]);
+}
+
+void test_data_writer_uint16() {
+  DataWriter w;
+  w.WriteUInt16(0x1234);
+  TEST_CHECK_(w.data.size() == 2, "Expected size 2, got %zu", w.data.size());
+  Ui16 result;
+  memcpy(&result, &w.data[0], 2);
+  TEST_CHECK_(result == 0x1234, "Expected 0x1234, got 0x%04X", result);
+}
+
+void test_data_writer_uint32() {
+  DataWriter w;
+  w.WriteUInt32(0xDEADBEEF);
+  TEST_CHECK_(w.data.size() == 4, "Expected size 4, got %zu", w.data.size());
+  Ui32 result;
+  memcpy(&result, &w.data[0], 4);
+  TEST_CHECK_(result == 0xDEADBEEF, "Expected 0xDEADBEEF, got 0x%08X", result);
+}
+
+void test_data_writer_uint64() {
+  DataWriter w;
+  w.WriteUInt64(0x0102030405060708ULL);
+  TEST_CHECK_(w.data.size() == 8, "Expected size 8, got %zu", w.data.size());
+  Ui64 result;
+  memcpy(&result, &w.data[0], 8);
+  TEST_CHECK_(result == 0x0102030405060708ULL, "Expected 0x0102030405060708");
+}
+
+void test_data_writer_float() {
+  DataWriter w;
+  float val = 3.14f;
+  w.WriteFloat(val);
+  TEST_CHECK_(w.data.size() == 4, "Expected size 4, got %zu", w.data.size());
+  float result;
+  memcpy(&result, &w.data[0], 4);
+  TEST_CHECK_(result == val, "Expected 3.14, got %f", result);
+}
+
+void test_data_writer_mixed_sequence() {
+  DataWriter w;
+  w.WriteUInt8(0xAA);
+  w.WriteUInt16(0xBBCC);
+  w.WriteUInt32(0xDDEEFF00);
+  w.WriteFloat(1.5f);
+  TEST_CHECK_(w.data.size() == 1 + 2 + 4 + 4,
+      "Expected size 11, got %zu", w.data.size());
+
+  // Verify no overlap: first byte should still be 0xAA
+  TEST_CHECK_(w.data[0] == 0xAA, "First byte corrupted: 0x%02X", w.data[0]);
+  Ui16 u16;
+  memcpy(&u16, &w.data[1], 2);
+  TEST_CHECK_(u16 == 0xBBCC, "Ui16 corrupted: 0x%04X", u16);
+  Ui32 u32;
+  memcpy(&u32, &w.data[3], 4);
+  TEST_CHECK_(u32 == 0xDDEEFF00, "Ui32 corrupted: 0x%08X", u32);
+}
+
+void test_data_writer_uint16array() {
+  DataWriter w;
+  Ui16 arr[] = {0x1111, 0x2222, 0x3333};
+  w.WriteUInt16array(arr, 3);
+  TEST_CHECK_(w.data.size() == 6, "Expected size 6, got %zu", w.data.size());
+  Ui16 out[3];
+  memcpy(out, &w.data[0], 6);
+  TEST_CHECK_(out[0] == 0x1111, "arr[0] expected 0x1111, got 0x%04X", out[0]);
+  TEST_CHECK_(out[1] == 0x2222, "arr[1] expected 0x2222, got 0x%04X", out[1]);
+  TEST_CHECK_(out[2] == 0x3333, "arr[2] expected 0x3333, got 0x%04X", out[2]);
+}
+
+void test_data_reader_advances_pointer() {
+  DataWriter w;
+  w.WriteUInt8(0x11);
+  w.WriteUInt8(0x22);
+  w.WriteUInt8(0x33);
+
+  DataReader r;
+  r.Reset(std::move(w.data));
+
+  Ui8 a = r.ReadUInt8();
+  Ui8 b = r.ReadUInt8();
+  Ui8 c = r.ReadUInt8();
+  TEST_CHECK_(a == 0x11, "First read: expected 0x11, got 0x%02X", a);
+  TEST_CHECK_(b == 0x22, "Second read: expected 0x22, got 0x%02X", b);
+  TEST_CHECK_(c == 0x33, "Third read: expected 0x33, got 0x%02X", c);
+}
+
+void test_data_roundtrip_all_types() {
+  DataWriter w;
+  w.WriteUInt8(42);
+  w.WriteUInt16(1234);
+  w.WriteUInt32(0xCAFEBABE);
+  w.WriteUInt64(0x0123456789ABCDEFULL);
+  w.WriteFloat(2.718f);
+
+  DataReader r;
+  r.Reset(std::move(w.data));
+
+  Ui8 v8 = r.ReadUInt8();
+  TEST_CHECK_(v8 == 42, "Ui8: expected 42, got %u", v8);
+
+  Ui16 v16 = r.ReadUInt16();
+  TEST_CHECK_(v16 == 1234, "Ui16: expected 1234, got %u", v16);
+
+  Ui32 v32 = r.ReadUInt32();
+  TEST_CHECK_(v32 == 0xCAFEBABE, "Ui32: expected 0xCAFEBABE, got 0x%08X", v32);
+
+  Ui64 v64 = r.ReadUInt64();
+  TEST_CHECK_(v64 == 0x0123456789ABCDEFULL, "Ui64 mismatch");
+
+  float vf = r.ReadFloat();
+  TEST_CHECK_(vf == 2.718f, "Float: expected 2.718, got %f", vf);
+}
+
+void test_data_roundtrip_arrays() {
+  DataWriter w;
+  Ui16 src16[] = {100, 200, 300, 400};
+  w.WriteUInt16array(src16, 4);
+  Ui32 src32[] = {0xAAAA, 0xBBBB};
+  w.WriteUInt32array(src32, 2);
+
+  DataReader r;
+  r.Reset(std::move(w.data));
+
+  Ui16 dst16[4] = {};
+  r.ReadUInt16array(dst16, 4);
+  for (int i = 0; i < 4; ++i) {
+    TEST_CHECK_(dst16[i] == src16[i], "Ui16 arr[%d]: expected %u, got %u",
+        i, src16[i], dst16[i]);
+  }
+
+  Ui32 dst32[2] = {};
+  r.ReadUInt32array(dst32, 2);
+  for (int i = 0; i < 2; ++i) {
+    TEST_CHECK_(dst32[i] == src32[i], "Ui32 arr[%d]: expected 0x%X, got 0x%X",
+        i, src32[i], dst32[i]);
+  }
+}
+
+void test_data_reader_past_end() {
+  DataWriter w;
+  w.WriteUInt8(0xFF);
+
+  DataReader r;
+  r.Reset(std::move(w.data));
+
+  // Read the one available byte
+  Ui8 v = r.ReadUInt8();
+  TEST_CHECK_(v == 0xFF, "Expected 0xFF, got 0x%02X", v);
+
+  // Reading past end should return 0 bytes
+  Ui8 buf[4] = {0xCC, 0xCC, 0xCC, 0xCC};
+  Ui64 read = r.Read(buf, 4);
+  TEST_CHECK_(read == 0, "Expected 0 bytes read past end, got %llu",
+      static_cast<unsigned long long>(read));
+}
+
+void test_data_writer_large_sequence() {
+  DataWriter w;
+  for (Ui32 i = 0; i < 1000; ++i) {
+    w.WriteUInt32(i);
+  }
+  TEST_CHECK_(w.data.size() == 4000, "Expected 4000 bytes, got %zu", w.data.size());
+
+  DataReader r;
+  r.Reset(std::move(w.data));
+  for (Ui32 i = 0; i < 1000; ++i) {
+    Ui32 v = r.ReadUInt32();
+    if (!TEST_CHECK_(v == i, "At index %u: expected %u, got %u", i, i, v)) {
+      break;
+    }
+  }
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -1142,6 +1341,19 @@ TEST_LIST = {
   {"JSON error handling", test_json_error_handling},
   {"JSON modification", test_json_modification},
   {"JSON comparison", test_json_comparison},
+  {"DataWriter empty initial write", test_data_writer_empty_initial_write},
+  {"DataWriter multiple writes no overlap", test_data_writer_multiple_writes_no_overlap},
+  {"DataWriter Ui16", test_data_writer_uint16},
+  {"DataWriter Ui32", test_data_writer_uint32},
+  {"DataWriter Ui64", test_data_writer_uint64},
+  {"DataWriter float", test_data_writer_float},
+  {"DataWriter mixed sequence", test_data_writer_mixed_sequence},
+  {"DataWriter Ui16 array", test_data_writer_uint16array},
+  {"DataReader advances pointer", test_data_reader_advances_pointer},
+  {"Data roundtrip all types", test_data_roundtrip_all_types},
+  {"Data roundtrip arrays", test_data_roundtrip_arrays},
+  {"DataReader past end", test_data_reader_past_end},
+  {"DataWriter large sequence", test_data_writer_large_sequence},
   {0}
 };
 
