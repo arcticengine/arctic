@@ -213,11 +213,11 @@ std::string Utf16ToUtf8(const void* data) {
   converter.Reset(reinterpret_cast<const Ui8*>(data));
   while (true) {
     Ui32 d = converter.ReadOne();
-    cp.WriteUtf32(d);
-    size += cp.size;
     if (d == 0) {
       break;
     }
+    cp.WriteUtf32(d);
+    size += cp.size;
   }
   std::string buf;
   buf.resize(static_cast<size_t>(size));
@@ -226,6 +226,9 @@ std::string Utf16ToUtf8(const void* data) {
   converter.Reset(reinterpret_cast<const Ui8*>(data));
   while (true) {
     Ui32 d = converter.ReadOne();
+    if (d == 0) {
+      break;
+    }
     cp.WriteUtf32(d);
 
     Ui32 readPos = 0;
@@ -233,10 +236,6 @@ std::string Utf16ToUtf8(const void* data) {
       buf[pos] = static_cast<char>(cp.buffer[readPos]);
       pos++;
       readPos++;
-    }
-
-    if (d == 0) {
-      break;
     }
   }
   return buf;
