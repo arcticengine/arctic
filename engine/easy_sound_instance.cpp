@@ -220,19 +220,16 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
     if (fmt->bits_per_sample == 8) {
       if (fmt->channels == 1) {
         for (Ui32 idx = 0; idx < sample_count; ++idx) {
-          Si16 value = static_cast<Si16>(*static_cast<const Si8*>(
-                static_cast<const void*>(in_data))) * 256;
+          Si16 value = (static_cast<Si16>(*in_data) - 128) * 256;
           out_data[idx * 2] = value;
           out_data[idx * 2 + 1] = value;
           in_data += block_align;
         }
       } else {
         for (Ui32 idx = 0; idx < sample_count; ++idx) {
-          Si16 value = static_cast<Si16>(*static_cast<const Si8*>(
-                static_cast<const void*>(in_data))) * 256;
+          Si16 value = (static_cast<Si16>(*in_data) - 128) * 256;
           out_data[idx * 2] = value;
-          value = static_cast<Si16>(*static_cast<const Si8*>(
-                static_cast<const void*>(in_data + sizeof(Ui16)))) * 256;
+          value = (static_cast<Si16>(*(in_data + sizeof(Ui8))) - 128) * 256;
           out_data[idx * 2 + 1] = value;
           in_data += block_align;
         }
@@ -269,13 +266,11 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
       Si16 value2 = 0;
 
       if (fmt->bits_per_sample == 8) {
-        value1 = static_cast<Si16>(*static_cast<const Si8*>(
-              static_cast<const void*>(in_block))) * 256;
+        value1 = (static_cast<Si16>(*in_block) - 128) * 256;
         if (fmt->channels == 1) {
           value2 = value1;
         } else {
-          value2 = static_cast<Si16>(*static_cast<const Si8*>(
-                static_cast<const void*>(in_block + sizeof(Ui16)))) * 256;
+          value2 = (static_cast<Si16>(*(in_block + sizeof(Ui8))) - 128) * 256;
         }
       } else if (fmt->bits_per_sample == 16) {
         value1 = *static_cast<const Si16*>(static_cast<const void*>(
@@ -291,7 +286,7 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
         return nullptr;
       }
 
-      if (idx*2*sizeof(Si16) < sample_count * 2 * sizeof(Si16)) {
+      if (idx*2*sizeof(Si16) >= sample_count * 2 * sizeof(Si16)) {
         *Log() << "Reading past end of sample memory buffer.";
         return nullptr;
       }
