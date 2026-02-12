@@ -19,6 +19,7 @@
 #include "engine/data_writer.h"
 #include "engine/data_reader.h"
 #include "engine/easy_sound_instance.h"
+#include "engine/quaternion.h"
 
 
 using namespace arctic;
@@ -1483,6 +1484,118 @@ void test_sound_8bit_signed_vs_unsigned() {
       (int)max_sample);
 }
 
+// ============================================================================
+// Quaternion bug tests
+// ============================================================================
+
+// Bug: ToMat33F has sign errors in the w*x terms at positions [5] and [7].
+//
+// The correct rotation matrix from unit quaternion (x,y,z,w) is:
+//   [5] = 2*y*z - 2*w*x
+//   [7] = 2*y*z + 2*w*x
+// But the code has the signs swapped:
+//   [5] = 2*y*z + 2*w*x   (wrong)
+//   [7] = 2*y*z - 2*w*x   (wrong)
+//
+// Test: 90-degree rotation around X should map (0,1,0) to (0,0,1).
+// The bug flips the rotation direction, mapping (0,1,0) to (0,0,-1).
+void test_quat_to_mat33f_sign() {
+  float angle = static_cast<float>(M_PI / 2.0);  // 90 degrees
+  Vec3F axis(1.0f, 0.0f, 0.0f);
+  QuaternionF q(axis, angle);
+
+  Mat33F mat = q.ToMat33F();
+  Vec3F v(0.0f, 1.0f, 0.0f);
+  Vec3F result = mat * v;
+
+  // 90-deg rotation around X: (0,1,0) -> (0,0,1)
+  TEST_CHECK_(fabsf(result.x) < 0.001f,
+      "Quat X-rot: result.x should be ~0, got %f", result.x);
+  TEST_CHECK_(fabsf(result.y) < 0.001f,
+      "Quat X-rot: result.y should be ~0, got %f", result.y);
+  TEST_CHECK_(fabsf(result.z - 1.0f) < 0.001f,
+      "Quat X-rot: result.z should be ~1, got %f (sign error in ToMat33F "
+      "swaps w*x terms at [5] and [7])", result.z);
+}
+
+// Same sign bug exists in ToPartialMatrix33F (copy of ToMat33F logic).
+void test_quat_to_partial_mat33f_sign() {
+  float angle = static_cast<float>(M_PI / 2.0);
+  Vec3F axis(1.0f, 0.0f, 0.0f);
+  QuaternionF q(axis, angle);
+
+  Mat33F mat;
+  q.ToPartialMatrix33F(mat);
+  Vec3F v(0.0f, 1.0f, 0.0f);
+  Vec3F result = mat * v;
+
+  TEST_CHECK_(fabsf(result.x) < 0.001f,
+      "Partial mat X-rot: result.x should be ~0, got %f", result.x);
+  TEST_CHECK_(fabsf(result.y) < 0.001f,
+      "Partial mat X-rot: result.y should be ~0, got %f", result.y);
+  TEST_CHECK_(fabsf(result.z - 1.0f) < 0.001f,
+      "Partial mat X-rot: result.z should be ~1, got %f (sign error in "
+      "ToPartialMatrix33F swaps w*x terms at [5] and [7])", result.z);
+}
+
+// Bug: slerp computes normalizedA and normalizedB but then uses the
+// original a and b in all subsequent calculations. The normalization is
+// dead code.
+//
+// Test: slerp two non-unit quaternions that represent orthogonal rotations.
+// At t=0, the result should be a unit quaternion equivalent to the first
+// input rotation. The bug returns an unnormalized quaternion.
+void test_quat_slerp_unnormalized() {
+  // Identity rotation, scaled by 2. Normalized form: (0,0,0,1).
+  QuaternionF a(0.0f, 0.0f, 0.0f, 2.0f);
+  // 180-degree rotation around Y, unit length.
+  QuaternionF b(0.0f, 1.0f, 0.0f, 0.0f);
+
+  // dot(a,b) = 0*0 + 0*1 + 0*0 + 2*0 = 0, so this takes the slerp path
+  // (not the linear fallback). alpha = acos(0) = pi/2.
+  //
+  // At t=0: result = a*cos(0) + c*sin(0) = a = (0,0,0,2).
+  // A correct slerp should return a normalized quaternion ~(0,0,0,1).
+  QuaternionF result = slerp(a, b, 0.0f);
+  float modulus = result.Modulus();
+
+  TEST_CHECK_(fabsf(modulus - 1.0f) < 0.01f,
+      "slerp(t=0) should return a unit quaternion (modulus ~1), got %f. "
+      "The bug uses unnormalized inputs instead of normalizedA/normalizedB",
+      modulus);
+}
+
+// Bug: slerp does not handle negative dot products. When dot(a,b) < 0,
+// one quaternion should be negated to interpolate along the shorter arc.
+// Without this, slerp between antipodal quaternions (same rotation,
+// opposite signs) produces NaN because it tries to normalize a zero vector.
+//
+// Test: (0,0,0,1) and (0,0,0,-1) represent the same rotation (identity).
+// slerp at t=0.5 should produce identity. The bug produces NaN.
+void test_quat_slerp_negative_dot() {
+  QuaternionF a(0.0f, 0.0f, 0.0f, 1.0f);
+  QuaternionF b(0.0f, 0.0f, 0.0f, -1.0f);
+
+  QuaternionF result = slerp(a, b, 0.5f);
+
+  // The result should be a valid quaternion, not NaN.
+  bool is_finite = std::isfinite(result.x) && std::isfinite(result.y)
+      && std::isfinite(result.z) && std::isfinite(result.w);
+  TEST_CHECK_(is_finite,
+      "slerp of antipodal quaternions should not produce NaN. "
+      "Got (%f, %f, %f, %f). The bug does not negate b when dot < 0, "
+      "causing Normalize of a zero quaternion",
+      result.x, result.y, result.z, result.w);
+
+  if (is_finite) {
+    // Both represent identity, so the interpolation should also be identity.
+    float modulus = result.Modulus();
+    TEST_CHECK_(fabsf(modulus - 1.0f) < 0.01f,
+        "slerp of two identity quaternions should be unit length, got %f",
+        modulus);
+  }
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -1531,6 +1644,10 @@ TEST_LIST = {
   {"Sound resample returns nullptr", test_sound_resample_returns_nullptr},
   {"Sound 8-bit stereo wrong offset", test_sound_8bit_stereo_wrong_offset},
   {"Sound 8-bit signed vs unsigned", test_sound_8bit_signed_vs_unsigned},
+  {"Quaternion ToMat33F sign error", test_quat_to_mat33f_sign},
+  {"Quaternion ToPartialMatrix33F sign error", test_quat_to_partial_mat33f_sign},
+  {"Quaternion slerp uses unnormalized inputs", test_quat_slerp_unnormalized},
+  {"Quaternion slerp negative dot product", test_quat_slerp_negative_dot},
   {0}
 };
 

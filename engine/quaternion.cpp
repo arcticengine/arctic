@@ -107,14 +107,14 @@ void QuaternionF::ToAxisAngle(Vec3F& out_axis, float& out_angle) const {
 Mat33F QuaternionF::ToMat33F() const {
 	return Mat33F(
 		w*w + x*x - y*y - z*z, 2.0f*x*y - 2.0f*w*z, 2.0f*x*z + 2.0f*w*y,
-		2.0f*x*y + 2.0f*w*z, w*w - x*x + y*y - z*z, 2.0f*y*z + 2.0f*w*x,
-		2.0f*x*z - 2.0f*w*y, 2.0f*y*z - 2.0f*w*x, w*w - x*x - y*y + z*z);
+		2.0f*x*y + 2.0f*w*z, w*w - x*x + y*y - z*z, 2.0f*y*z - 2.0f*w*x,
+		2.0f*x*z - 2.0f*w*y, 2.0f*y*z + 2.0f*w*x, w*w - x*x - y*y + z*z);
 }
 
 void QuaternionF::ToPartialMatrix33F(Mat33F& out) const {
 	out.m[0] = w*w + x*x - y*y - z*z; out.m[1] = 2.0f*x*y - 2.0f*w*z; out.m[2] = 2.0f*x*z + 2.0f*w*y;
-	out.m[3] = 2.0f*x*y + 2.0f*w*z; out.m[4] = w*w - x*x + y*y - z*z; out.m[5] = 2.0f*y*z + 2.0f*w*x;
-  out.m[6] = 2.0f*x*z - 2.0f*w*y; out.m[7] = 2.0f*y*z - 2.0f*w*x; out.m[8] = w*w - x*x - y*y + z*z;
+	out.m[3] = 2.0f*x*y + 2.0f*w*z; out.m[4] = w*w - x*x + y*y - z*z; out.m[5] = 2.0f*y*z - 2.0f*w*x;
+  out.m[6] = 2.0f*x*z - 2.0f*w*y; out.m[7] = 2.0f*y*z + 2.0f*w*x; out.m[8] = w*w - x*x - y*y + z*z;
 }
 
 void QuaternionF::Normalize() {
@@ -167,22 +167,28 @@ QuaternionF Conjugate(const QuaternionF& a) {
 }
 
 QuaternionF slerp(QuaternionF const &a, QuaternionF const &b, float t) {
-	QuaternionF normalizedA = Normalize(a);
-	QuaternionF normalizedB = Normalize(b);
+	QuaternionF na = Normalize(a);
+	QuaternionF nb = Normalize(b);
 
-	float dotProduct = a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;
+	float dotProduct = na.x*nb.x + na.y*nb.y + na.z*nb.z + na.w*nb.w;
+
+	// If dot product is negative, negate one quaternion to take the shorter arc.
+	if (dotProduct < 0.0f) {
+		nb = nb * -1.0f;
+		dotProduct = -dotProduct;
+	}
 
 	const float THRESHOLD = 0.9995f;
 	if (dotProduct > THRESHOLD) {
-		return Normalize(a + t*(b - a));
-  }
+		return Normalize(na + t*(nb - na));
+	}
 
-	dotProduct = (dotProduct < -1.0f ? -1.0f : (dotProduct > 1.0f ? 1.0f : dotProduct));
+	dotProduct = (dotProduct > 1.0f ? 1.0f : dotProduct);
 	float alpha = acos(dotProduct);
 	float beta = alpha*t;
 
-	QuaternionF c = Normalize(b - a*dotProduct);
-	return a*::cos(beta) + c*::sin(beta);
+	QuaternionF c = Normalize(nb - na*dotProduct);
+	return na*::cos(beta) + c*::sin(beta);
 }
 
 
