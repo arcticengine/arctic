@@ -20,6 +20,7 @@
 #include "engine/data_reader.h"
 #include "engine/easy_sound_instance.h"
 #include "engine/quaternion.h"
+#include "engine/transform3f.h"
 
 
 using namespace arctic;
@@ -1514,8 +1515,7 @@ void test_quat_to_mat33f_sign() {
   TEST_CHECK_(fabsf(result.y) < 0.001f,
       "Quat X-rot: result.y should be ~0, got %f", result.y);
   TEST_CHECK_(fabsf(result.z - 1.0f) < 0.001f,
-      "Quat X-rot: result.z should be ~1, got %f (sign error in ToMat33F "
-      "swaps w*x terms at [5] and [7])", result.z);
+      "Quat X-rot: result.z should be ~1, got %f", result.z);
 }
 
 // Same sign bug exists in ToPartialMatrix33F (copy of ToMat33F logic).
@@ -1534,8 +1534,7 @@ void test_quat_to_partial_mat33f_sign() {
   TEST_CHECK_(fabsf(result.y) < 0.001f,
       "Partial mat X-rot: result.y should be ~0, got %f", result.y);
   TEST_CHECK_(fabsf(result.z - 1.0f) < 0.001f,
-      "Partial mat X-rot: result.z should be ~1, got %f (sign error in "
-      "ToPartialMatrix33F swaps w*x terms at [5] and [7])", result.z);
+      "Partial mat X-rot: result.z should be ~1, got %f", result.z);
 }
 
 // Bug: slerp computes normalizedA and normalizedB but then uses the
@@ -1560,8 +1559,7 @@ void test_quat_slerp_unnormalized() {
   float modulus = result.Modulus();
 
   TEST_CHECK_(fabsf(modulus - 1.0f) < 0.01f,
-      "slerp(t=0) should return a unit quaternion (modulus ~1), got %f. "
-      "The bug uses unnormalized inputs instead of normalizedA/normalizedB",
+      "slerp(t=0) should return a unit quaternion (modulus ~1), got %f. ",
       modulus);
 }
 
@@ -1583,8 +1581,7 @@ void test_quat_slerp_negative_dot() {
       && std::isfinite(result.z) && std::isfinite(result.w);
   TEST_CHECK_(is_finite,
       "slerp of antipodal quaternions should not produce NaN. "
-      "Got (%f, %f, %f, %f). The bug does not negate b when dot < 0, "
-      "causing Normalize of a zero quaternion",
+      "Got (%f, %f, %f, %f).",
       result.x, result.y, result.z, result.w);
 
   if (is_finite) {
@@ -1594,6 +1591,75 @@ void test_quat_slerp_negative_dot() {
         "slerp of two identity quaternions should be unit length, got %f",
         modulus);
   }
+}
+
+// Bug: Inverse(Transform3F) was computed as Transform3F(-d, R^{-1}), simply
+// negating the displacement.  The correct inverse of T(x) = R*x + d is
+// T^{-1}(x) = R^{-1}*(x - d), which means the displacement must be
+// -R^{-1}*d, not just -d.  The old code only worked when rotation was
+// identity.
+//
+// Test: create a transform with a 90-degree rotation around Z and a non-zero
+// displacement, apply it to a point, then apply the inverse.  The result
+// should be the original point.
+void test_transform3f_inverse() {
+  // 90 degrees around Z: q = (0, 0, sin(pi/4), cos(pi/4))
+  float s = sinf(3.14159265f / 4.0f);
+  float c = cosf(3.14159265f / 4.0f);
+  QuaternionF rot(0.0f, 0.0f, s, c);
+  Vec3F disp(5.0f, 3.0f, -2.0f);
+  Transform3F t(disp, rot);
+
+  Vec3F original(1.0f, 2.0f, 3.0f);
+  Vec3F transformed = t.Transform(original);
+  Transform3F inv = Inverse(t);
+  Vec3F recovered = inv.Transform(transformed);
+
+  float dx = recovered.x - original.x;
+  float dy = recovered.y - original.y;
+  float dz = recovered.z - original.z;
+  float error = sqrtf(dx * dx + dy * dy + dz * dz);
+
+  TEST_CHECK_(error < 0.001f,
+      "Inverse(t).Transform(t.Transform(p)) should return p. "
+      "Original (%.3f, %.3f, %.3f), recovered (%.3f, %.3f, %.3f), error %.6f",
+      original.x, original.y, original.z,
+      recovered.x, recovered.y, recovered.z, error);
+}
+
+// Additional check: composing a transform with its inverse should produce
+// identity (no rotation, zero displacement).
+void test_transform3f_inverse_composition() {
+  float s = sinf(3.14159265f / 3.0f);  // 60 degrees
+  float c = cosf(3.14159265f / 3.0f);
+  // Rotation around axis (1,1,0)/sqrt(2)
+  float norm = 1.0f / sqrtf(2.0f);
+  QuaternionF rot(s * norm, s * norm, 0.0f, c);
+  Vec3F disp(10.0f, -7.0f, 4.0f);
+  Transform3F t(disp, rot);
+
+  Transform3F inv = Inverse(t);
+  Transform3F composed = inv.Transform(t);
+
+  // Displacement should be ~zero.
+  float disp_len = sqrtf(composed.displacement.x * composed.displacement.x
+      + composed.displacement.y * composed.displacement.y
+      + composed.displacement.z * composed.displacement.z);
+  TEST_CHECK_(disp_len < 0.001f,
+      "Inverse(t).Transform(t) displacement should be ~zero, got (%.4f, %.4f, %.4f), "
+      "length %.6f",
+      composed.displacement.x, composed.displacement.y, composed.displacement.z,
+      disp_len);
+
+  // Rotation should be ~identity: (0, 0, 0, +/-1).
+  float identity_error = sqrtf(composed.rotation.x * composed.rotation.x
+      + composed.rotation.y * composed.rotation.y
+      + composed.rotation.z * composed.rotation.z);
+  TEST_CHECK_(identity_error < 0.001f,
+      "Inverse(t).Transform(t) rotation should be ~identity, "
+      "got (%.4f, %.4f, %.4f, %.4f)",
+      composed.rotation.x, composed.rotation.y,
+      composed.rotation.z, composed.rotation.w);
 }
 
 TEST_LIST = {
@@ -1648,6 +1714,8 @@ TEST_LIST = {
   {"Quaternion ToPartialMatrix33F sign error", test_quat_to_partial_mat33f_sign},
   {"Quaternion slerp uses unnormalized inputs", test_quat_slerp_unnormalized},
   {"Quaternion slerp negative dot product", test_quat_slerp_negative_dot},
+  {"Transform3F Inverse round-trip", test_transform3f_inverse},
+  {"Transform3F Inverse composition is identity", test_transform3f_inverse_composition},
   {0}
 };
 

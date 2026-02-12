@@ -64,7 +64,9 @@ void Transform3F::Clear() {
 }*/
 
 Transform3F Inverse(const Transform3F& a) {
-	return Transform3F(a.displacement*-1.f, Inverse(a.rotation));
+	QuaternionF inv_rot = Inverse(a.rotation);
+	Vec3F inv_disp = inv_rot.Rotate(a.displacement * -1.f);
+	return Transform3F(inv_disp, inv_rot);
 }
 
 }  // namespace arctic
