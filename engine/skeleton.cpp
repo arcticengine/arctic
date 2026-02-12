@@ -39,47 +39,49 @@ piSkeleton::~piSkeleton() {
 bool piSkeleton::Init(int maxBones) {
   mBones.clear();
   mBones.reserve(maxBones);
-  mRoot = nullptr;
+  mRootIndex = -1;
   return true;
 }
 
 int piSkeleton::AddBone(int parentID) {
   const int id = (int)mBones.size();
   mBones.emplace_back();
-  piBone *me = &mBones.back();
-  me->mNumChildren = 0;
-  if (parentID>0) {
-    piBone *parent = &mBones[parentID];
-    parent->mChild[parent->mNumChildren++] = me;
+  mBones[id].mNumChildren = 0;
+  if (parentID >= 0) {
+    piBone &parent = mBones[parentID];
+    parent.mChildIndex[parent.mNumChildren++] = id;
   } else {
-    mRoot = me;
+    mRootIndex = id;
   }
   return id;
 }
 
 
 void piSkeleton::UpdateBone(int id, const Mat44F & m) {
-  piBone *me = (piBone*)&mBones[id];
-  me->mLocalMatrix = m;
+  mBones[id].mLocalMatrix = m;
 }
 
-void piSkeleton::iUpdateBoneGlobalMatrix(piBone *me, piBone *parent) {
-  Mat44F m = me->mLocalMatrix;    
+void piSkeleton::iUpdateBoneGlobalMatrix(int boneIndex, int parentIndex) {
+  piBone &me = mBones[boneIndex];
+  Mat44F m = me.mLocalMatrix;
 
-  if (parent !=nullptr) {
-    m = parent->mGlobalMatrix * m;
+  if (parentIndex >= 0) {
+    m = mBones[parentIndex].mGlobalMatrix * m;
   }
 
-  me->mGlobalMatrix = m;
+  me.mGlobalMatrix = m;
 
-  const int num = me->mNumChildren;
-  for (int i=0; i<num; i++) {
-    iUpdateBoneGlobalMatrix(me->mChild[i], me);
+  const int num = me.mNumChildren;
+  for (int i = 0; i < num; i++) {
+    iUpdateBoneGlobalMatrix(me.mChildIndex[i], boneIndex);
   }
 }
 
 void piSkeleton::Update() {
-  iUpdateBoneGlobalMatrix((piBone*)mRoot, nullptr);    
+  if (mRootIndex < 0) {
+    return;
+  }
+  iUpdateBoneGlobalMatrix(mRootIndex, -1);
 }
 
 void piSkeleton::GetData(void *data) {

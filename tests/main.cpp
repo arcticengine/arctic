@@ -21,6 +21,7 @@
 #include "engine/easy_sound_instance.h"
 #include "engine/quaternion.h"
 #include "engine/transform3f.h"
+#include "engine/skeleton.h"
 
 
 using namespace arctic;
@@ -1662,6 +1663,90 @@ void test_transform3f_inverse_composition() {
       composed.rotation.z, composed.rotation.w);
 }
 
+// Bug: piSkeleton::AddBone checks "if (parentID > 0)" instead of
+// "if (parentID >= 0)".  This means bone 0 can never be a parent.
+// When you add a bone with parentID=0 (intending it to be a child of the
+// first bone), the condition 0 > 0 is false, so the new bone replaces
+// mRoot.  The original root (bone 0) is orphaned and never traversed
+// during Update().
+//
+// Test: create a 3-bone chain: bone 0 (root) -> bone 1 -> bone 2.
+// Set bone 0 to translate by (10, 0, 0) and bone 1 to translate by (0, 5, 0).
+// Bone 2's global matrix should include both parents' translations, giving
+// (10, 5, 0).  With the bug, bone 0 is orphaned, so bone 2 only gets
+// bone 1's translation (0, 5, 0).
+void test_skeleton_bone0_cannot_be_parent() {
+  piSkeleton skel;
+  skel.Init(4);
+
+  int b0 = skel.AddBone(-1);  // root
+  int b1 = skel.AddBone(0);   // should be child of bone 0
+  int b2 = skel.AddBone(1);   // child of bone 1
+
+  // Bone 0: translate by (10, 0, 0)
+  skel.UpdateBone(b0, SetTranslation(10.0f, 0.0f, 0.0f));
+  // Bone 1: translate by (0, 5, 0)
+  skel.UpdateBone(b1, SetTranslation(0.0f, 5.0f, 0.0f));
+  // Bone 2: identity
+  skel.UpdateBone(b2, SetIdentity());
+
+  skel.Update();
+
+  // Read back global matrices.
+  Mat44F globals[3];
+  skel.GetData(globals);
+
+  // Bone 2's global matrix should be the composition of all parents.
+  // Correct: translation(10, 5, 0).  Buggy: translation(0, 5, 0).
+  Vec3F bone2_translation = ExtractTranslation(globals[2]);
+
+  TEST_CHECK_(fabsf(bone2_translation.x - 10.0f) < 0.001f,
+      "Bone 2 global translation X should be 10.0 (from bone 0), got %.3f. "
+      "If 0.0, bone 0 was orphaned because parentID=0 failed the > 0 check.",
+      bone2_translation.x);
+  TEST_CHECK_(fabsf(bone2_translation.y - 5.0f) < 0.001f,
+      "Bone 2 global translation Y should be 5.0 (from bone 1), got %.3f.",
+      bone2_translation.y);
+  TEST_CHECK_(fabsf(bone2_translation.z) < 0.001f,
+      "Bone 2 global translation Z should be 0.0, got %.3f.",
+      bone2_translation.z);
+}
+
+// Verify that bone 0's own global matrix is computed (i.e. bone 0 is
+// reachable from mRoot).  With the bug, adding any bone with parentID=0
+// replaces mRoot, so bone 0 is never visited by Update() and its
+// global matrix remains uninitialized / zero.
+void test_skeleton_root_not_orphaned() {
+  piSkeleton skel;
+  skel.Init(4);
+
+  skel.AddBone(-1);  // bone 0, root
+  skel.AddBone(0);   // bone 1, should be child of bone 0
+
+  // Set bone 0 to a known translation.
+  skel.UpdateBone(0, SetTranslation(7.0f, 3.0f, 1.0f));
+  skel.UpdateBone(1, SetIdentity());
+
+  skel.Update();
+
+  Mat44F globals[2];
+  skel.GetData(globals);
+
+  // Bone 0 is root, so its global matrix == its local matrix.
+  Vec3F bone0_translation = ExtractTranslation(globals[0]);
+
+  TEST_CHECK_(fabsf(bone0_translation.x - 7.0f) < 0.001f,
+      "Bone 0 global translation X should be 7.0, got %.3f. "
+      "If wrong, bone 0 was not visited during Update() -- it was orphaned.",
+      bone0_translation.x);
+  TEST_CHECK_(fabsf(bone0_translation.y - 3.0f) < 0.001f,
+      "Bone 0 global translation Y should be 3.0, got %.3f.",
+      bone0_translation.y);
+  TEST_CHECK_(fabsf(bone0_translation.z - 1.0f) < 0.001f,
+      "Bone 0 global translation Z should be 1.0, got %.3f.",
+      bone0_translation.z);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -1716,6 +1801,8 @@ TEST_LIST = {
   {"Quaternion slerp negative dot product", test_quat_slerp_negative_dot},
   {"Transform3F Inverse round-trip", test_transform3f_inverse},
   {"Transform3F Inverse composition is identity", test_transform3f_inverse_composition},
+  {"Skeleton bone 0 cannot be parent", test_skeleton_bone0_cannot_be_parent},
+  {"Skeleton root not orphaned after AddBone(0)", test_skeleton_root_not_orphaned},
   {0}
 };
 

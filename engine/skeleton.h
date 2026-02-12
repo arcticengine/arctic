@@ -45,21 +45,23 @@ public:
   void Update();
   void GetData(void *data);
 
+  static const int kMaxChildren = 8;
+
   typedef struct _piBone {
     Mat44F mLocalMatrix;
     Mat44F mGlobalMatrix;
 
     int mNumChildren;
-    struct _piBone *mChild[8];
+    int mChildIndex[kMaxChildren];
   }piBone;
 
 private:
-  void iUpdateBoneGlobalMatrix(piBone *me, piBone *parent);
+  void iUpdateBoneGlobalMatrix(int boneIndex, int parentIndex);
 
 private:
 
   std::vector<piBone> mBones;
-  void *mRoot;
+  int mRootIndex;
 };
 
 
