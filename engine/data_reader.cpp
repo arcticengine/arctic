@@ -42,6 +42,7 @@ void DataReader::Reset(std::vector<Ui8> &&in_data) {
 Ui64 DataReader::Read(void *dst, Ui64 amount) {
   Ui64 to_read = std::min(amount, (Ui64)(end - p));
   memcpy(dst, p, (size_t)to_read);
+  p += to_read;
   return to_read;
 }
 
