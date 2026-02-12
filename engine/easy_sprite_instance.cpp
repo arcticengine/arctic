@@ -320,8 +320,10 @@ struct TgaHeader {
   void SaveTga(std::shared_ptr<SpriteInstance> sprite, std::vector<Ui8> *data) {
     TgaHeader tga;
     memset(&tga, 0, sizeof(tga));
-    tga.image_width = static_cast<Ui16>(sprite->width());
-    tga.image_height = static_cast<Ui16>(sprite->height());
+    const Si64 w = sprite->width();
+    const Si64 h = sprite->height();
+    tga.image_width = static_cast<Ui16>(w);
+    tga.image_height = static_cast<Ui16>(h);
 #ifdef BIGENDIAN
     tga.image_width = ((tga.image_width & 255) << 8)
       | (tga.image_width >> 8);
@@ -331,15 +333,15 @@ struct TgaHeader {
     tga.pixel_depth = 32;
     tga.image_type = 2;  // uncommpressed rgb
 
-    Si64 length = sizeof(tga) + 4 * tga.image_width * tga.image_height;
+    Si64 length = sizeof(tga) + 4 * w * h;
     data->resize(static_cast<size_t>(length));
     memcpy(data->data(), &tga, sizeof(tga));
 
     const Ui8 *from = sprite->RawData();
     Ui8 *to = data->data() + sizeof(tga);
 
-    for (Si64 y = 0; y < tga.image_height; ++y) {
-      for (Si64 x = 0; x < tga.image_width; ++x) {
+    for (Si64 y = 0; y < h; ++y) {
+      for (Si64 x = 0; x < w; ++x) {
         to[0] = from[2];
         to[1] = from[1];
         to[2] = from[0];

@@ -239,6 +239,9 @@ bool Mesh::Load(const char *name) {
   fp.ReadFloatarray2((float*)&mBBox, 6);
 
   mVertexData.mNumVertexArrays = fp.ReadUInt32();
+  if (mVertexData.mNumVertexArrays > Mesh_MAXVERTEXARRAYS) {
+    return false;
+  }
 
   for (int j = 0; j<mVertexData.mNumVertexArrays; j++) {
     MeshVertexArray *va = mVertexData.mVertexArray + j;
@@ -247,6 +250,9 @@ bool Mesh::Load(const char *name) {
     va->mFormat.mStride = fp.ReadUInt32();
     va->mFormat.mDivisor = fp.ReadUInt32();
     va->mFormat.mNumElems = fp.ReadUInt32();
+    if (va->mFormat.mNumElems > Mesh_MAXELEMS) {
+      return false;
+    }
     va->mMax = va->mNum;
 
     for (int i=0; i<va->mFormat.mNumElems; i++) {
@@ -270,6 +276,9 @@ bool Mesh::Load(const char *name) {
 
   mFaceData.mType = (fp.ReadUInt32()==0)?kRMVEDT_Polys:kRMVEDT_Points;
   mFaceData.mNumIndexArrays = fp.ReadUInt32();
+  if (mFaceData.mNumIndexArrays > Mesh_MAXINDEXARRAYS) {
+    return false;
+  }
   const int esize = (mFaceData.mType==kRMVEDT_Polys) ? sizeof(MeshFace) : sizeof(unsigned int);
   for (int i=0; i<mFaceData.mNumIndexArrays; i++) {
     mFaceData.mIndexArray[i].mNum = fp.ReadUInt32();
@@ -878,22 +887,25 @@ bool Mesh::Expand(int nv, int nf) {
   for (int j=0; j<mVertexData.mNumVertexArrays; j++) {
     MeshVertexArray *va = mVertexData.mVertexArray + j;
 
-    if ((va->mNum + nv) >= va->mMax){
+    if ((va->mNum + nv) >= va->mMax) {
       const unsigned int newNV = va->mMax + ((nv<64)?64:nv);
-      va->mBuffer = realloc(va->mBuffer, newNV*va->mFormat.mStride);
-      if (!va->mBuffer) {
+      void *tmp = realloc(va->mBuffer, newNV*va->mFormat.mStride);
+      if (!tmp) {
         return false;
       }
+      va->mBuffer = tmp;
       va->mMax = newNV;
     }
+  }
 
-    if ((mFaceData.mIndexArray[0].mNum + nf) >= mFaceData.mIndexArray[0].mMax) {
-      const unsigned int newNF = mFaceData.mIndexArray[0].mMax + ((nf<64)?64:nf);
-      mFaceData.mIndexArray[0].mBuffer = (MeshFace*)realloc(mFaceData.mIndexArray[0].mBuffer, newNF*sizeof(MeshFace));
-      if (!mFaceData.mIndexArray[0].mBuffer)   
-        return false;
-      mFaceData.mIndexArray[0].mMax = newNF;
+  if ((mFaceData.mIndexArray[0].mNum + nf) >= mFaceData.mIndexArray[0].mMax) {
+    const unsigned int newNF = mFaceData.mIndexArray[0].mMax + ((nf<64)?64:nf);
+    void *tmp = realloc(mFaceData.mIndexArray[0].mBuffer, newNF*sizeof(MeshFace));
+    if (!tmp) {
+      return false;
     }
+    mFaceData.mIndexArray[0].mBuffer = (MeshFace*)tmp;
+    mFaceData.mIndexArray[0].mMax = newNF;
   }
 
   return true;

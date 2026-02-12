@@ -148,7 +148,7 @@ inline Frustum3F SetFrustum(float left, float right, float bottom, float top,
 
 inline Frustum3F SetFrustumPerspective(float fovy, float aspect,
   float znear, float zfar) {
-  const float ymax = znear * tanf(fovy * 3.141592653589f / 180.0f);
+  const float ymax = znear * tanf(fovy * 3.141592653589f / 360.0f);
   const float ymin = -ymax;
   const float xmin = ymin * aspect;
   const float xmax = ymax * aspect;

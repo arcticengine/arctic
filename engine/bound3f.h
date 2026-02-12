@@ -288,6 +288,9 @@ inline Si32 Overlap(Bound3F const &a, Bound3F const &b) {
 /// @param num The number of points.
 /// @return The bounding box containing all the points.
 inline Bound3F Compute(const Vec3F *const p, const Si32 num) {
+  if (num <= 0) {
+    return Bound3F(0.f, 0.f, 0.f, 0.f, 0.f, 0.f);
+  }
   Bound3F res = Bound3F(p[0].x, p[0].x,
     p[0].y, p[0].y,
     p[0].z, p[0].z);

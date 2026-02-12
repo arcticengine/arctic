@@ -177,7 +177,7 @@ inline Vec3F RotateZ(const Vec3F &v, float a) {
   const float si = sinf(a);
   const float co = cosf(a);
 
-  return Vec3F(v[0] * co + v[1] * si, -v[0] * si + v[1] * co, v[2]);
+  return Vec3F(v[0] * co - v[1] * si, v[0] * si + v[1] * co, v[2]);
 }
 
 inline Mat33F SetRotationAxisAngle3(const Vec3F &a, const float t) {
