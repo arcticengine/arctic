@@ -786,6 +786,23 @@ void Text::SetFont(Font font) {
 void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2,
                    TextSelectionMode selection_mode,
                    Rgba c1, Rgba c2, Sprite backbuffer) {
+  Si32 bw = backbuffer.Width();
+  Si32 bh = backbuffer.Height();
+  if (x1 < 0) {
+    x1 = 0;
+  }
+  if (y1 < 0) {
+    y1 = 0;
+  }
+  if (x2 > bw) {
+    x2 = bw;
+  }
+  if (y2 > bh) {
+    y2 = bh;
+  }
+  if (x1 >= x2 || y1 >= y2) {
+    return;
+  }
   switch (selection_mode) {
     case kTextSelectionModeInvert:
       for (Si32 y = y1; y < y2; ++y) {
