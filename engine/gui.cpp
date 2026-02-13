@@ -1225,7 +1225,8 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   } else {
     normal_.Draw(pos);
   }
-  Si32 border = (normal_.Height() - font_.FontInstance()->line_height_) / 2;
+  Si32 border = std::max(0,
+    (normal_.Height() - font_.FontInstance()->line_height_) / 2);
   Si32 space_width = font_.EvaluateSize(" ", false).x;
 
   Si32 available_width = size_.x - border * 2 - space_width;
