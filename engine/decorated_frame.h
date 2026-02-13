@@ -128,13 +128,13 @@ class DecoratedFrame {
   /// @brief Estimates the size of the frame for a given client area size.
   /// @param client_area_size The size of the client area.
   /// @return The estimated size of the frame.
-  Vec2Si32 EstimateSizeForClienArea(Vec2Si32 client_area_size) {
+  Vec2Si32 EstimateSizeForClientArea(Vec2Si32 client_area_size) {
     Vec2Si32 size_bound = client_area_size;
-    if (!is_x_scaleable_) {
+    if (!is_x_scaleable_ && top_.Width() > 0) {
       size_bound.x = (client_area_size.x + top_.Width() - 1) /
         top_.Width() * top_.Width();
     }
-    if (!is_y_scaleable_) {
+    if (!is_y_scaleable_ && left_.Height() > 0) {
       size_bound.y = (client_area_size.y + left_.Height() - 1) /
         left_.Height() * left_.Height();
     }
@@ -158,7 +158,7 @@ class DecoratedFrame {
   /// @param client_area_size The size of the client area.
   /// @return The sprite containing the drawn frame.
   Sprite DrawClientSize(Vec2Si32 client_area_size) {
-    Vec2Si32 size = EstimateSizeForClienArea(client_area_size);
+    Vec2Si32 size = EstimateSizeForClientArea(client_area_size);
     client_area_size = ClientAreaForSize(size);
     return DrawBothSizes(client_area_size, size);
   }
