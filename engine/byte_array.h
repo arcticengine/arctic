@@ -3,7 +3,7 @@
 // Copyright (c) 2019 Huldra
 
 #pragma message("Please remove this file (/engine/byte_array.h)" \
-    " from your porject.")
+    " from your project.")
 
 #ifndef ENGINE_BYTE_ARRAY_H_
 #define ENGINE_BYTE_ARRAY_H_
