@@ -190,6 +190,9 @@ Si32 Sound::DurationSamples() {
 
 Si32 Sound::StreamOut(Si32 offset, Si32 size,
   Si16 *out_buffer, Si32 out_buffer_samples) {
+  if (!sound_instance_) {
+    return 0;
+  }
   switch (sound_instance_->GetFormat()) {
   case kSoundDataWav: {
     Si16 *data = sound_instance_->GetWavData();
