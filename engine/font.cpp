@@ -419,6 +419,15 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
       &file[static_cast<size_t>(inner_pos)]);
     // chars->Log();
 
+    if (chars->page >= static_cast<Ui8>(page_images.size())) {
+      *Log() << "Warning in LoadBinaryFnt(\"" << file_name
+             << "\"): glyph id=" << chars->id
+             << " references page " << static_cast<int>(chars->page)
+             << " but only " << page_images.size()
+             << " page(s) loaded, skipping glyph.";
+      inner_pos += 20;
+      continue;
+    }
     Sprite sprite0;
     sprite0.Reference(page_images[chars->page],
       chars->x, page_images[chars->page].Height() - chars->y - chars->height,
