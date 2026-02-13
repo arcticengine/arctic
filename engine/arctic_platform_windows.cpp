@@ -960,7 +960,7 @@ std::string ParentPath(const char *path) {
   if (path) {
     const char *p = path;
     while (*p != 0) {
-      if (*p == '/') {
+      if (*p == '/' || *p == '\\') {
         prev_len = len;
         len = p - path + 1;
       }
