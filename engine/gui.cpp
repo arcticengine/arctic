@@ -1242,7 +1242,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     std::string part = text_.substr(static_cast<size_t>(display_pos_),
                                     static_cast<size_t>(cursor_pos_ - display_pos_));
     Si32 w = font_.EvaluateSize(part.c_str(), true).x;
-    if (available_width) {
+    if (available_width > 0) {
       while (w > available_width) {
         display_pos_++;
         part = text_.substr(static_cast<size_t>(display_pos_),
