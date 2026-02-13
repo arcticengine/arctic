@@ -32,7 +32,9 @@
 namespace arctic {
 
 bool Mesh_GenerateTorus(Mesh *me, const MeshVertexFormat *vertexFormat, int gy, int gx, float ry, float rx) {
-  if (!me->Init(1, (gx + 1)*(gy + 1), vertexFormat, kRMVEDT_Polys, 1, gx*gy)) {
+  const int numVerts = (gx + 1) * (gy + 1);
+  const int numFaces = 2 * gx * gy;
+  if (!me->Init(1, numVerts, vertexFormat, kRMVEDT_Polys, 1, numFaces)) {
     return false;
   }
 
@@ -66,11 +68,15 @@ bool Mesh_GenerateTorus(Mesh *me, const MeshVertexFormat *vertexFormat, int gy, 
       face++;
     }
   }
+  me->mVertexData.mVertexArray[0].mNum = numVerts;
+  me->mFaceData.mIndexArray[0].mNum = numFaces;
   return true;
 }
 
 bool Mesh_GeneratePlane(Mesh *me, const MeshVertexFormat *vertexFormat, int gx, int gy) {
-  if (!me->Init(1, (gx+1)*(gy+1), vertexFormat, kRMVEDT_Polys, 1, gx*gy)) {
+  const int numVerts = (gx + 1) * (gy + 1);
+  const int numFaces = 2 * gx * gy;
+  if (!me->Init(1, numVerts, vertexFormat, kRMVEDT_Polys, 1, numFaces)) {
     return false;
   }
 
@@ -106,9 +112,10 @@ bool Mesh_GeneratePlane(Mesh *me, const MeshVertexFormat *vertexFormat, int gx, 
       face->mIndex[2] = (gx+1)*(j+1) + (i+0);
       face++;
 #endif
-      face->mIndex[1] = (gx+1)*(j+1) + (i+1);
     }
   }
+  me->mVertexData.mVertexArray[0].mNum = numVerts;
+  me->mFaceData.mIndexArray[0].mNum = numFaces;
   return true;
 }
 
@@ -128,8 +135,10 @@ static char cvd[] = {
   4, 5, 7, 6,
   0, 2, 3, 1 };
 
-bool Mesh_GenerateCube(Mesh *me, const MeshVertexFormat *vertexFormat)                     {
-  if (!me->Init(1, 8, vertexFormat, kRMVEDT_Polys, 1, 6)) {
+bool Mesh_GenerateCube(Mesh *me, const MeshVertexFormat *vertexFormat) {
+  const int numVerts = 8;
+  const int numFaces = 12;
+  if (!me->Init(1, numVerts, vertexFormat, kRMVEDT_Polys, 1, numFaces)) {
     return false;
   }
 
@@ -151,12 +160,16 @@ bool Mesh_GenerateCube(Mesh *me, const MeshVertexFormat *vertexFormat)          
     face->mIndex[2] = cvd[4*i+0];
     face++;
   }
+  me->mVertexData.mVertexArray[0].mNum = numVerts;
+  me->mFaceData.mIndexArray[0].mNum = numFaces;
   return true;
 }
 
 
 bool Mesh_GenerateCubePlanes(Mesh *me, const MeshVertexFormat *vertexFormat) {
-  if (!me->Init(1, 24, vertexFormat, kRMVEDT_Polys, 1, 6)) {
+  const int numVerts = 24;
+  const int numFaces = 12;
+  if (!me->Init(1, numVerts, vertexFormat, kRMVEDT_Polys, 1, numFaces)) {
     return false;
   }
 
@@ -206,7 +219,8 @@ bool Mesh_GenerateCubePlanes(Mesh *me, const MeshVertexFormat *vertexFormat) {
     face++;
   }
 
-
+  me->mVertexData.mVertexArray[0].mNum = numVerts;
+  me->mFaceData.mIndexArray[0].mNum = numFaces;
   return true;
 }
 
