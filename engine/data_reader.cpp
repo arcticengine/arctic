@@ -59,7 +59,7 @@ Ui16 DataReader::ReadUInt16() {
 }
 
 Ui32 DataReader::ReadUInt32() {
-  unsigned int n;
+  Ui32 n;
   Read(&n, 4);
   return n;
 }
