@@ -971,6 +971,9 @@ void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
     Vec2F SD = destination_pos - source_pos;
 
     float sd_length = Length(SD);
+    if (sd_length <= 0.f) {
+      return;
+    }
     if (sd_length < head_length) {
       head_width = head_width * sd_length / head_length;
       head_length = sd_length;
@@ -1028,17 +1031,19 @@ void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
     }
     DrawArrow(to_sprite, source_pos, destination_pos, body_width, head_width, head_length, border_color);
 
-    Vec2F S2 = source_pos + (SD * border_size / sd_length);
-    float L=std::sqrt((head_width * 0.5f) * (head_width * 0.5f) + head_length * head_length);
-    float DestDist = L*border_size / (head_width * 0.5f);
+    if (head_width > 0.f && head_length > 0.f) {
+      Vec2F S2 = source_pos + (SD * border_size / sd_length);
+      float L=std::sqrt((head_width * 0.5f) * (head_width * 0.5f) + head_length * head_length);
+      float DestDist = L*border_size / (head_width * 0.5f);
 
-    Vec2F D2 = destination_pos - (SD / sd_length * DestDist);
-    float BodyWidth2 = std::max(0.f, body_width - (border_size * 2.f));
-    float HeadLength2 = head_length - border_size -DestDist;
-    float HeadWidth2 = head_width / head_length * HeadLength2;
+      Vec2F D2 = destination_pos - (SD / sd_length * DestDist);
+      float BodyWidth2 = std::max(0.f, body_width - (border_size * 2.f));
+      float HeadLength2 = head_length - border_size -DestDist;
+      float HeadWidth2 = head_width / head_length * HeadLength2;
 
-    if (Dot(D2-S2, SD) > 0.f) {
-      DrawArrow(to_sprite, S2, D2, BodyWidth2, HeadWidth2, HeadLength2, color);
+      if (Dot(D2-S2, SD) > 0.f) {
+        DrawArrow(to_sprite, S2, D2, BodyWidth2, HeadWidth2, HeadLength2, color);
+      }
     }
   }
 }
