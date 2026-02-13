@@ -179,9 +179,7 @@ ConnectionSocket::~ConnectionSocket() {
       SocketHandle tmp;
       tmp.nix = handle_.nix;
       handle_.nix = -1;
-      if (errno == ENOMEM || errno == ENOTCONN || errno == EPIPE) {
-        close(tmp.nix);
-      }
+      close(tmp.nix);
     }
     return SocketResult::kSocketError;
   }
