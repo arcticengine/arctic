@@ -355,7 +355,8 @@ ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
 ConnectionSocket::ConnectionSocket(ConnectionSocket&& rhs) noexcept {
   handle_.nix = rhs.handle_.nix;
   rhs.handle_.nix = -1;
-  state_ = SocketState::kDisconnected;
+  state_ = rhs.state_;
+  rhs.state_ = SocketState::kDisconnected;
 }
 
 
