@@ -101,6 +101,10 @@ ConnectionSocket::~ConnectionSocket() {
     last_error_ = "OS failed to connect socket ";
     last_error_.append(std::strerror(errno));
     state_ = SocketState::kDisconnected;
+    SocketHandle tmp;
+    tmp.nix = handle_.nix;
+    handle_.nix = -1;
+    close(tmp.nix);
     return SocketConnectResult::kSocketError;
   }
   state_ = SocketState::kConnected;
@@ -119,16 +123,17 @@ ConnectionSocket::~ConnectionSocket() {
       *out_size = 0;
       return SocketResult::kSocketOk;
     }
+    int saved_errno = errno;
     last_error_ = "OS failed to read from socket, ";
     char buff[100];
-    snprintf(buff, sizeof(buff), "error code: %d, ", errno);
+    snprintf(buff, sizeof(buff), "error code: %d, ", saved_errno);
     last_error_.append(buff);
-    last_error_.append(std::strerror(errno));
-    if (errno == ECONNRESET) {
-      SocketHandle tmp;
-      tmp.nix = handle_.nix;
-      handle_.nix = -1;
-      close(tmp.nix);
+    last_error_.append(std::strerror(saved_errno));
+    SocketHandle tmp;
+    tmp.nix = handle_.nix;
+    handle_.nix = -1;
+    close(tmp.nix);
+    if (saved_errno == ECONNRESET) {
       return SocketResult::kSocketConnectionReset;
     }
     return SocketResult::kSocketError;

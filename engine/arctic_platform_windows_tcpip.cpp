@@ -88,7 +88,7 @@ ConnectionSocket::~ConnectionSocket() {
       static_cast<int>(info->ai_addrlen)) == 0;
   freeaddrinfo(info);
   if (result == 0) {
-    last_error_ = "WinSock failed to bind socket ";
+    last_error_ = "WinSock failed to connect socket ";
     last_error_.append(GetLastError());
     return SocketConnectResult::kSocketError;
   }
@@ -98,7 +98,7 @@ ConnectionSocket::~ConnectionSocket() {
 [[nodiscard]] SocketResult ConnectionSocket::Read(char* buffer, size_t length,
     size_t *out_size) {
   if (!out_size) {
-    last_error_ = "Error: out_size argument of Write is nullptr.";
+    last_error_ = "Error: out_size argument of Read is nullptr.";
     return SocketResult::kSocketError;
   }
   int res = recv((SOCKET)handle_.win, buffer, static_cast<int>(length), NULL);
@@ -131,7 +131,7 @@ ConnectionSocket::~ConnectionSocket() {
     *out_size = 0;
     return SocketResult::kSocketError;
   }
-  *out_size = length;
+  *out_size = result;
   return SocketResult::kSocketOk;
 }
 
@@ -290,11 +290,13 @@ ListenerSocket::~ListenerSocket() {
   auto status = ::bind((SOCKET)handle_.win, info->ai_addr,
       static_cast<int>(info->ai_addrlen));
   if (status != 0) {
+    freeaddrinfo(info);
     last_error_ = "WinSock failed to bind server socket ";
     last_error_.append(GetLastError());
     return SocketResult::kSocketError;
   }
   status = listen((SOCKET)handle_.win, static_cast<int>(backlog));
+  freeaddrinfo(info);
   if (status != 0) {
     last_error_ = "WinSock failed to listen server socket ";
     last_error_.append(GetLastError());
@@ -313,7 +315,7 @@ ConnectionSocket ListenerSocket::Accept() const {
   BOOL bFlag = flag;
   auto result = ::setsockopt((SOCKET)handle_.win, SOL_SOCKET, SO_REUSEADDR,
       reinterpret_cast<const char*>(&bFlag), sizeof(BOOL));
-  if (result == -1) {
+  if (result != 0) {
     last_error_ = "WinSock failed to set socket option ";
     last_error_.append(GetLastError());
     return SocketResult::kSocketError;
@@ -326,7 +328,7 @@ ConnectionSocket ListenerSocket::Accept() const {
   linger linger{flag, seconds};
   auto result = ::setsockopt((SOCKET)handle_.win, SOL_SOCKET, SO_LINGER,
       reinterpret_cast<char*>(&linger), sizeof(linger));
-  if (result == -1) {
+  if (result != 0) {
     last_error_ = "WinSock failed to set socket option ";
     last_error_.append(GetLastError());
     return SocketResult::kSocketError;
