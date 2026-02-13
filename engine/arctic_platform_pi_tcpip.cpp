@@ -45,6 +45,7 @@ namespace arctic {
 
 ConnectionSocket::ConnectionSocket(AddressFamily addressFamily,
     SocketProtocol protocol) {
+  state_ = SocketState::kDisconnected;
   int family = addressFamily == AddressFamily::kIpV4 ? AF_INET : AF_INET6;
   int type = protocol == SocketProtocol::kTcp ? SOCK_STREAM : SOCK_DGRAM;
   int protocolMask =
@@ -345,12 +346,14 @@ ConnectionSocket::ConnectionSocket() {
 
 ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
   if (this != &rhs) {
-    SocketHandle tmp;
-    tmp.nix = handle_.nix;
+    if (handle_.nix != -1) {
+      close(handle_.nix);
+    }
     handle_.nix = rhs.handle_.nix;
-    rhs.handle_.nix = tmp.nix;
+    rhs.handle_.nix = -1;
     state_ = rhs.state_;
     rhs.state_ = SocketState::kDisconnected;
+    last_error_ = std::move(rhs.last_error_);
   }
   return *this;
 }
@@ -360,6 +363,7 @@ ConnectionSocket::ConnectionSocket(ConnectionSocket&& rhs) noexcept {
   rhs.handle_.nix = -1;
   state_ = rhs.state_;
   rhs.state_ = SocketState::kDisconnected;
+  last_error_ = std::move(rhs.last_error_);
 }
 
 
@@ -374,6 +378,10 @@ ListenerSocket::ListenerSocket(AddressFamily addressFamily,
   int protocolMask =
     (protocol == SocketProtocol::kTcp ? IPPROTO_TCP : IPPROTO_UDP);
   handle_.nix = socket(family, type, protocolMask);
+  if (handle_.nix == -1) {
+    last_error_ = "OS failed to create listener socket ";
+    last_error_.append(std::strerror(errno));
+  }
 }
 
 
@@ -468,10 +476,12 @@ ListenerSocket::ListenerSocket() {
 
 ListenerSocket& ListenerSocket::operator=(ListenerSocket&& rhs) noexcept {
   if (this != &rhs) {
-    SocketHandle tmp;
-    tmp.nix = handle_.nix;
+    if (handle_.nix != -1) {
+      close(handle_.nix);
+    }
     handle_.nix = rhs.handle_.nix;
-    rhs.handle_.nix = tmp.nix;
+    rhs.handle_.nix = -1;
+    last_error_ = std::move(rhs.last_error_);
   }
   return *this;
 }
@@ -479,6 +489,7 @@ ListenerSocket& ListenerSocket::operator=(ListenerSocket&& rhs) noexcept {
 ListenerSocket::ListenerSocket(ListenerSocket&& rhs) noexcept {
   handle_.nix = rhs.handle_.nix;
   rhs.handle_.nix = -1;
+  last_error_ = std::move(rhs.last_error_);
 }
 
 }  // namespace arctic

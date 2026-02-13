@@ -111,6 +111,7 @@ ConnectionSocket::~ConnectionSocket() {
   }
   if (res == SOCKET_ERROR) {
     if (WSAGetLastError() == WSAEWOULDBLOCK) {
+      *out_size = 0;
       return SocketResult::kSocketOk;
     }
     return SocketResult::kSocketError;
@@ -222,10 +223,14 @@ ConnectionSocket::ConnectionSocket() {
 
 ConnectionSocket& ConnectionSocket::operator=(ConnectionSocket&& rhs) noexcept {
   if (this != &rhs) {
-    SocketHandle tmp;
-    tmp.win = handle_.win;
+    if (handle_.win != INVALID_SOCKET) {
+      closesocket((SOCKET)handle_.win);
+    }
     handle_.win = rhs.handle_.win;
-    rhs.handle_.win = tmp.win;
+    rhs.handle_.win = INVALID_SOCKET;
+    state_ = rhs.state_;
+    rhs.state_ = SocketState::kDisconnected;
+    last_error_ = std::move(rhs.last_error_);
   }
   return *this;
 }
@@ -234,7 +239,8 @@ ConnectionSocket::ConnectionSocket(ConnectionSocket&& rhs) noexcept {
   handle_.win = rhs.handle_.win;
   rhs.handle_.win = INVALID_SOCKET;
   state_ = rhs.state_;
-  rhs.state_ = SocketState::kConnected;
+  rhs.state_ = SocketState::kDisconnected;
+  last_error_ = std::move(rhs.last_error_);
 }
 
 
@@ -258,10 +264,12 @@ ListenerSocket::ListenerSocket(AddressFamily addressFamily,
 
 ListenerSocket& ListenerSocket::operator=(ListenerSocket&& rhs) noexcept {
   if (this != &rhs) {
-    SocketHandle tmp;
-    tmp.win = handle_.win;
+    if (handle_.win != INVALID_SOCKET) {
+      closesocket((SOCKET)handle_.win);
+    }
     handle_.win = rhs.handle_.win;
-    rhs.handle_.win = tmp.win;
+    rhs.handle_.win = INVALID_SOCKET;
+    last_error_ = std::move(rhs.last_error_);
   }
   return *this;
 }
@@ -363,6 +371,7 @@ ListenerSocket::ListenerSocket() {
 ListenerSocket::ListenerSocket(ListenerSocket&& rhs) noexcept {
   handle_.win = rhs.handle_.win;
   rhs.handle_.win = INVALID_SOCKET;
+  last_error_ = std::move(rhs.last_error_);
 }
 
 }  // namespace arctic
