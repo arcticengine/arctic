@@ -118,6 +118,7 @@ bool SoundCheck(bool condition, const char *error_message,
   // Signal error and stop the mixer
   g_sound_mixer_state.SetError(full_message);
   g_sound_mixer_state.do_quit.store(true);
+  free(full_message);
   return false;
 }
 

@@ -84,11 +84,21 @@ void GlProgram::Create(const char *vs_src, const char *fs_src) {
 
     // Load the vertex/fragment shaders
     GLuint vertexShader = LoadShader(vs_src, GL_VERTEX_SHADER);
+    if (vertexShader == 0) {
+        return;
+    }
     GLuint fragmentShader = LoadShader(fs_src, GL_FRAGMENT_SHADER);
+    if (fragmentShader == 0) {
+        ARCTIC_GL_CHECK_ERROR(glDeleteShader(vertexShader));
+        return;
+    }
     // Create the program object
     ARCTIC_GL_CHECK_ERROR(program_id_ = glCreateProgram());
     if (program_id_ == 0) {
+        ARCTIC_GL_CHECK_ERROR(glDeleteShader(vertexShader));
+        ARCTIC_GL_CHECK_ERROR(glDeleteShader(fragmentShader));
         Fatal("Unknown error creating program");
+        return;
     }
     ARCTIC_GL_CHECK_ERROR(glAttachShader(program_id_, vertexShader));
     ARCTIC_GL_CHECK_ERROR(glAttachShader(program_id_, fragmentShader));

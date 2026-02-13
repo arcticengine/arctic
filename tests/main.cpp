@@ -40,7 +40,7 @@ void radix_sort(std::vector<KeyT> &in_out_data) {
     (KeyT*)alloca(kTempSize * sizeof(KeyT));
 #else
   const bool kIsBig = true;
-  Ui32 *temp = (Ui32*)malloc(temp_size * sizeof(Ui32));
+  KeyT *temp = (KeyT*)malloc(kTempSize * sizeof(KeyT));
 #endif
 
   std::array<KeyT*, kBuckets> buf_a;

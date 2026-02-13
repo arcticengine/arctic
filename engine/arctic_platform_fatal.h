@@ -42,7 +42,7 @@ void Check(bool condition, const char *error_message,
 /// @param [in] message_postfix A postfix to append to the error message.
 /// Nothing is appended if error_message_postfix is nullptr
 /// @details The function does not return
-void Fatal(const char *error_message, const char *message_postfix = nullptr);
+[[noreturn]] void Fatal(const char *error_message, const char *message_postfix = nullptr);
 
 /// @}
 

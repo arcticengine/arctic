@@ -179,7 +179,7 @@ inline Vec2D floor(Vec2D const &v) {
 
 inline Vec2D Normalize(Vec2D const &v) {
   double const m2 = v.x * v.x + v.y * v.y;
-  double const im = 1.0f / std::sqrt(m2);
+  double const im = 1.0 / std::sqrt(m2);
   return Vec2D(v.x * im, v.y * im);
 }
 
