@@ -34,14 +34,19 @@ Transform3F::Transform3F() {
 Transform3F::Transform3F(const Vec3F& displacement_, const QuaternionF& rotation_) {
 	displacement = displacement_;
 	rotation = rotation_;
+	scale = 1.f;
 }
 
 Transform3F Transform3F::Transform(const Transform3F& a) const {
-	return Transform3F(rotation.Rotate(a.displacement) + displacement, rotation * a.rotation);
+	Transform3F result;
+	result.displacement = rotation.Rotate(a.displacement * scale) + displacement;
+	result.rotation = rotation * a.rotation;
+	result.scale = scale * a.scale;
+	return result;
 }
 
 Vec3F Transform3F::Transform(const Vec3F& a) const {
-	return rotation.Rotate(a) + displacement;
+	return rotation.Rotate(a * scale) + displacement;
 }
 
 QuaternionF Transform3F::Transform(const QuaternionF& a) const {
@@ -64,9 +69,12 @@ void Transform3F::Clear() {
 }*/
 
 Transform3F Inverse(const Transform3F& a) {
+	float inv_scale = 1.f / a.scale;
 	QuaternionF inv_rot = Inverse(a.rotation);
-	Vec3F inv_disp = inv_rot.Rotate(a.displacement * -1.f);
-	return Transform3F(inv_disp, inv_rot);
+	Vec3F inv_disp = inv_rot.Rotate(a.displacement * -inv_scale);
+	Transform3F result(inv_disp, inv_rot);
+	result.scale = inv_scale;
+	return result;
 }
 
 }  // namespace arctic

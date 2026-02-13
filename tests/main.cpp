@@ -2374,6 +2374,91 @@ void test_quat_to_axis_angle_normalized_roundtrip() {
       axis_error);
 }
 
+void test_transform3f_scale_affects_point() {
+  // Transform3F has a public `scale` member (default 1.0), but
+  // Transform(Vec3F) ignores it entirely. Setting scale to 2.0
+  // should double the point before applying rotation and displacement.
+
+  Transform3F t;
+  t.displacement = Vec3F(0.f, 0.f, 0.f);
+  t.rotation.Clear();  // identity rotation
+  t.scale = 2.0f;
+
+  Vec3F input(1.f, 0.f, 0.f);
+  Vec3F result = t.Transform(input);
+
+  // With identity rotation, zero displacement, and scale=2:
+  //   expected = rotate(input * scale) + displacement
+  //            = (2, 0, 0) + (0, 0, 0) = (2, 0, 0)
+  // But the bug makes Transform ignore scale, producing (1, 0, 0).
+
+  TEST_CHECK_(fabsf(result.x - 2.0f) < 0.001f,
+      "Transform(Vec3F) with scale=2 should produce x=2.0, got x=%.4f "
+      "(scale member is ignored)",
+      result.x);
+}
+
+void test_transform3f_scale_affects_transform_composition() {
+  // When composing two transforms via Transform(Transform3F),
+  // the parent's scale should affect the child's displacement.
+
+  Transform3F parent;
+  parent.displacement = Vec3F(0.f, 0.f, 0.f);
+  parent.rotation.Clear();  // identity
+  parent.scale = 3.0f;
+
+  Transform3F child;
+  child.displacement = Vec3F(1.f, 0.f, 0.f);
+  child.rotation.Clear();  // identity
+  child.scale = 1.0f;
+
+  Transform3F composed = parent.Transform(child);
+
+  // With identity parent rotation and parent scale=3:
+  //   composed.displacement = parent.rotation.Rotate(child.displacement * parent.scale) + parent.displacement
+  //                         = (3, 0, 0) + (0, 0, 0) = (3, 0, 0)
+  //   composed.scale = parent.scale * child.scale = 3.0
+  // But the bug makes Transform ignore scale, giving displacement=(1,0,0)
+  // and not propagating scale at all.
+
+  TEST_CHECK_(fabsf(composed.displacement.x - 3.0f) < 0.001f,
+      "Parent scale=3 should scale child displacement to x=3.0, got x=%.4f "
+      "(scale member is ignored in Transform(Transform3F))",
+      composed.displacement.x);
+
+  TEST_CHECK_(fabsf(composed.scale - 3.0f) < 0.001f,
+      "Composed scale should be parent*child = 3.0, got %.4f "
+      "(scale is not propagated in Transform(Transform3F))",
+      composed.scale);
+}
+
+void test_transform3f_inverse_respects_scale() {
+  // Inverse() also ignores scale. Applying a transform and then its
+  // inverse should return to the original point, but this fails when
+  // scale != 1.0.
+
+  Transform3F t;
+  t.displacement = Vec3F(1.f, 2.f, 3.f);
+  t.rotation = QuaternionF(Normalize(Vec3F(0.f, 1.f, 0.f)), 0.5f);
+  t.scale = 2.0f;
+
+  Transform3F inv = Inverse(t);
+
+  Vec3F original(4.f, 5.f, 6.f);
+  Vec3F transformed = t.Transform(original);
+  Vec3F roundtrip = inv.Transform(transformed);
+
+  float dx = roundtrip.x - original.x;
+  float dy = roundtrip.y - original.y;
+  float dz = roundtrip.z - original.z;
+  float error = sqrtf(dx*dx + dy*dy + dz*dz);
+
+  TEST_CHECK_(error < 0.01f,
+      "Transform then Inverse should round-trip with scale=2.0, "
+      "but error=%.4f (Inverse ignores scale)",
+      error);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -2448,6 +2533,9 @@ TEST_LIST = {
   {"Colorize blend full vs partial alpha discontinuity", test_colorize_blend_full_vs_partial_alpha_discontinuity},
   {"Quaternion ToAxisAngle acos out of range", test_quat_to_axis_angle_acos_out_of_range},
   {"Quaternion ToAxisAngle normalized round-trip", test_quat_to_axis_angle_normalized_roundtrip},
+  {"Transform3F scale affects point", test_transform3f_scale_affects_point},
+  {"Transform3F scale affects composition", test_transform3f_scale_affects_transform_composition},
+  {"Transform3F Inverse respects scale", test_transform3f_inverse_respects_scale},
   {0}
 };
 
