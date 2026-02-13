@@ -1067,7 +1067,7 @@ void Sprite::Clear() {
     return;
   }
   const size_t size = static_cast<size_t>(ref_size_.x) * sizeof(Rgba);
-  Ui8 *data = sprite_instance_->RawData();
+  Ui8 *data = reinterpret_cast<Ui8*>(RgbaData());
   const Si32 stride = StrideBytes();
   for (Si32 y = 0; y < ref_size_.y; ++y) {
     memset(data, 0, size);
@@ -1080,7 +1080,7 @@ void Sprite::Clear(Rgba color) {
     return;
   }
   const Si32 stride = StridePixels();
-  Rgba *begin = reinterpret_cast<Rgba*>(sprite_instance_->RawData());
+  Rgba *begin = RgbaData();
   Rgba *end = begin + ref_size_.x;
   for (Si32 y = 0; y < ref_size_.y; ++y) {
     Rgba *p = begin;
