@@ -228,8 +228,12 @@ EM_BOOL MouseCallback(int eventType, const EmscriptenMouseEvent* e, void* userDa
       case 2 : key_code = kKeyMouseRight; break;
       default: break;
     }
+    Vec2F pos(static_cast<float>(g_last_mouse_x) / static_cast<float>(g_window_width - 1),
+      static_cast<float>(g_window_height - g_last_mouse_y) / static_cast<float>(g_window_height - 1));
     InputMessage msg;
     msg.kind = InputMessage::kMouse;
+    msg.mouse.pos = pos;
+    msg.mouse.wheel_delta = 0;
     msg.keyboard.key = key_code;
     msg.keyboard.key_state = (is_down ? 1 : 2);
     msg.keyboard.characters[0] = '\0';
