@@ -1111,6 +1111,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   arctic::CreateMainWindow(&arctic::g_system_info);
   arctic::GetEngine()->SetArgcArgvW(num_args,
     const_cast<const wchar_t **>(args));
+  LocalFree(args);
 
   arctic::GetEngine()->SetInitialPath(initial_path);
 
