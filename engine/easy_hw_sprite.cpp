@@ -133,20 +133,18 @@ HwSprite::HwSprite(const HwSprite &other) {
 }
 
 HwSprite::HwSprite(HwSprite &&other) noexcept {
-  sprite_instance_ = other.sprite_instance_;
+  sprite_instance_ = std::move(other.sprite_instance_);
   ref_pos_ = other.ref_pos_;
   ref_size_ = other.ref_size_;
   pivot_ = other.pivot_;
-  gl_buffer_ = nullptr;
-  last_buffer_pivot_ = Vec2Si32(0, 0);
-  last_buffer_ref_size_ = Vec2Si32(0, 0);
-  last_angle_ = 0.0f;
+  gl_buffer_ = std::move(other.gl_buffer_);
+  last_buffer_pivot_ = other.last_buffer_pivot_;
+  last_buffer_ref_size_ = other.last_buffer_ref_size_;
+  last_angle_ = other.last_angle_;
 
-  other.sprite_instance_ = nullptr;
   other.ref_pos_ = Vec2Si32(0, 0);
   other.ref_size_ = Vec2Si32(0, 0);
   other.pivot_ = Vec2Si32(0, 0);
-  other.gl_buffer_ = nullptr;
   other.last_buffer_pivot_ = Vec2Si32(0, 0);
   other.last_buffer_ref_size_ = Vec2Si32(0, 0);
   other.last_angle_ = 0.0f;
@@ -166,23 +164,23 @@ HwSprite &HwSprite::operator=(const HwSprite &other) {
 }
 
 HwSprite &HwSprite::operator=(HwSprite &&other) noexcept {
-  sprite_instance_ = other.sprite_instance_;
-  ref_pos_ = other.ref_pos_;
-  ref_size_ = other.ref_size_;
-  pivot_ = other.pivot_;
-  gl_buffer_ = nullptr;
-  last_buffer_pivot_ = Vec2Si32(0, 0);
-  last_buffer_ref_size_ = Vec2Si32(0, 0);
-  last_angle_ = 0.0f;
+  if (this != &other) {
+    sprite_instance_ = std::move(other.sprite_instance_);
+    ref_pos_ = other.ref_pos_;
+    ref_size_ = other.ref_size_;
+    pivot_ = other.pivot_;
+    gl_buffer_ = std::move(other.gl_buffer_);
+    last_buffer_pivot_ = other.last_buffer_pivot_;
+    last_buffer_ref_size_ = other.last_buffer_ref_size_;
+    last_angle_ = other.last_angle_;
 
-  other.sprite_instance_ = nullptr;
-  other.ref_pos_ = Vec2Si32(0, 0);
-  other.ref_size_ = Vec2Si32(0, 0);
-  other.pivot_ = Vec2Si32(0, 0);
-  other.gl_buffer_ = nullptr;
-  other.last_buffer_pivot_ = Vec2Si32(0, 0);
-  other.last_buffer_ref_size_ = Vec2Si32(0, 0);
-  other.last_angle_ = 0.0f;
+    other.ref_pos_ = Vec2Si32(0, 0);
+    other.ref_size_ = Vec2Si32(0, 0);
+    other.pivot_ = Vec2Si32(0, 0);
+    other.last_buffer_pivot_ = Vec2Si32(0, 0);
+    other.last_buffer_ref_size_ = Vec2Si32(0, 0);
+    other.last_angle_ = 0.0f;
+  }
 
   return *this;
 }
