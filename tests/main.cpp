@@ -2316,6 +2316,64 @@ void test_colorize_blend_full_vs_partial_alpha_discontinuity() {
       r_jump);
 }
 
+void test_quat_to_axis_angle_acos_out_of_range() {
+  // QuaternionF::ToAxisAngle calls acos(w) without clamping w to [-1, 1].
+  // For unnormalized quaternions, or normalized ones that have drifted
+  // past 1.0 due to floating-point accumulation, |w| > 1 causes acos()
+  // to return NaN.
+
+  // Construct a quaternion with w slightly above 1.0, simulating
+  // floating-point drift after many rotations.
+  QuaternionF q(0.0f, 0.0f, 0.0001f, 1.00001f);
+
+  Vec3F axis;
+  float angle;
+  q.ToAxisAngle(axis, angle);
+
+  // acos(1.00001) is undefined and returns NaN on IEEE 754 systems.
+  // A robust implementation should clamp w to [-1, 1] and return a
+  // valid angle.
+  bool angle_is_nan = (angle != angle);  // NaN != NaN is true
+
+  TEST_CHECK_(!angle_is_nan,
+      "ToAxisAngle returned NaN angle for w=1.00001 (slightly above 1.0). "
+      "acos(w) is undefined for |w| > 1; w should be clamped to [-1, 1].");
+
+  // Also test w slightly below -1.0
+  QuaternionF q2(0.0f, 0.0f, 0.0001f, -1.00001f);
+  q2.ToAxisAngle(axis, angle);
+
+  angle_is_nan = (angle != angle);
+  TEST_CHECK_(!angle_is_nan,
+      "ToAxisAngle returned NaN angle for w=-1.00001 (slightly below -1.0). "
+      "acos(w) is undefined for |w| > 1; w should be clamped to [-1, 1].");
+}
+
+void test_quat_to_axis_angle_normalized_roundtrip() {
+  // A properly normalized quaternion should round-trip through
+  // ToAxisAngle without issues. This serves as a control test.
+  Vec3F original_axis = Normalize(Vec3F(1.0f, 2.0f, 3.0f));
+  float original_angle = 1.23f;
+  QuaternionF q(original_axis, original_angle);
+
+  Vec3F axis;
+  float angle;
+  q.ToAxisAngle(axis, angle);
+
+  float angle_error = fabsf(angle - original_angle);
+  float axis_error = sqrtf(
+      (axis.x - original_axis.x) * (axis.x - original_axis.x) +
+      (axis.y - original_axis.y) * (axis.y - original_axis.y) +
+      (axis.z - original_axis.z) * (axis.z - original_axis.z));
+
+  TEST_CHECK_(angle_error < 0.001f,
+      "ToAxisAngle angle round-trip error = %.6f, expected < 0.001",
+      angle_error);
+  TEST_CHECK_(axis_error < 0.001f,
+      "ToAxisAngle axis round-trip error = %.6f, expected < 0.001",
+      axis_error);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -2388,6 +2446,8 @@ TEST_LIST = {
   {"Rotation XY composition vs AxisAngle4", test_rotation_xy_composition_vs_axis_angle},
   {"Colorize blend R/B vs G inconsistency", test_colorize_blend_rb_vs_g_inconsistency},
   {"Colorize blend full vs partial alpha discontinuity", test_colorize_blend_full_vs_partial_alpha_discontinuity},
+  {"Quaternion ToAxisAngle acos out of range", test_quat_to_axis_angle_acos_out_of_range},
+  {"Quaternion ToAxisAngle normalized round-trip", test_quat_to_axis_angle_normalized_roundtrip},
   {0}
 };
 

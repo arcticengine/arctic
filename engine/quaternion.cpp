@@ -91,7 +91,8 @@ QuaternionF QuaternionF::operator* (const QuaternionF& b) const {
 void QuaternionF::ToAxisAngle(Vec3F& out_axis, float& out_angle) const {
 	float lengthSquared = x*x + y*y + z*z;
 	if (lengthSquared > 0.0f) {
-		out_angle = 2.0f*acos(w);
+		float clamped_w = w < -1.0f ? -1.0f : (w > 1.0f ? 1.0f : w);
+		out_angle = 2.0f*acos(clamped_w);
 		float inv = 1.0f / sqrtf(lengthSquared);
 		out_axis.x = x*inv;
 		out_axis.y = y*inv;
