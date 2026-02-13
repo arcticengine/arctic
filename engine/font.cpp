@@ -315,11 +315,28 @@ void FontInstance::LoadAsciiSquare(const char *file_name, bool is_dense) {
       AddGlyph(codepoint, dense_width + 1, optimized);
     }
   }
-  codepoint_[32]->sprite.Reference(
-    codepoint_[32]->sprite, 0, 0,
-    codepoint_['I']->sprite.Width(),
-    codepoint_['I']->sprite.Height());
-  codepoint_[32]->xadvance = codepoint_['I']->xadvance;
+  if (codepoint_[32]) {
+    // Find a narrow reference character to base the space width on.
+    // Try 'I', then other typically narrow glyphs, then fall back to
+    // half the cell width.
+    const char narrow_candidates[] = "Iil1t";
+    Si32 space_xadvance = (width + 1) / 2;
+    Si32 space_sprite_w = width / 2;
+    Si32 space_sprite_h = height;
+    for (const char *c = narrow_candidates; *c; ++c) {
+      if (codepoint_[static_cast<Ui8>(*c)] &&
+          codepoint_[static_cast<Ui8>(*c)]->xadvance > 0) {
+        space_xadvance = codepoint_[static_cast<Ui8>(*c)]->xadvance;
+        space_sprite_w = codepoint_[static_cast<Ui8>(*c)]->sprite.Width();
+        space_sprite_h = codepoint_[static_cast<Ui8>(*c)]->sprite.Height();
+        break;
+      }
+    }
+    codepoint_[32]->sprite.Reference(
+      codepoint_[32]->sprite, 0, 0,
+      space_sprite_w, space_sprite_h);
+    codepoint_[32]->xadvance = space_xadvance;
+  }
 }
 
 void FontInstance::LoadBinaryFnt(const char *file_name) {
