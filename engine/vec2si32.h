@@ -186,7 +186,7 @@ inline Vec2Si32 Min(const Vec2Si32 &v, Si32 mi) {  // NOLINT
 }
 
 inline Si64 LengthSquared(Vec2Si32 const &v) {
-  return v.x * v.x + v.y * v.y;
+  return static_cast<Si64>(v.x) * v.x + static_cast<Si64>(v.y) * v.y;
 }
 
 inline Vec2Si32 Clamp(const Vec2Si32 &v, Si32 mi, Si32 ma) {
