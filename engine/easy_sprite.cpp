@@ -510,11 +510,12 @@ void DrawTriangle(Sprite to_sprite,
           Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
           Ui32 m2 = ca;
-          Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
-          Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
-          Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
+          Ui32 cr = (Ui32(color.r) * (Ui32(in_color.r) + 1u)) >> 8u;
+          Ui32 cb = (Ui32(color.b) * (Ui32(in_color.b) + 1u)) >> 8u;
+          Ui32 rb2 = (cr | (cb << 16u)) * m2;
+          Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1u)) >> 8u;
 
-          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul);
+          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul) | (ca << 24u);
         }
       } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
         Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
@@ -649,11 +650,12 @@ void DrawSprite(Sprite *to_sprite,
             Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
             Ui32 m2 = ca;
-            Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
-            Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
-            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
+            Ui32 cr = (Ui32(color.r) * (Ui32(in_color.r) + 1u)) >> 8u;
+            Ui32 cb = (Ui32(color.b) * (Ui32(in_color.b) + 1u)) >> 8u;
+            Ui32 rb2 = (cr | (cb << 16u)) * m2;
+            Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1u)) >> 8u;
 
-            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul)| (ca <<24);;
+            to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul) | (ca << 24u);
           }
         } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
           Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;
@@ -803,11 +805,12 @@ void DrawSprite(Sprite *to_sprite,
           Ui32 g = ((to_rgba->rgba & 0x0000ff00ul) >> 8u) * m;
 
           Ui32 m2 = ca;
-          Ui32 rb2_ = (((color.rgba & 0x00ff00fful) * m2) & 0xff00ff00u) >> 8u;
-          Ui32 rb2  = ((rb2_ & 0x00ff0000u) * ((in_color.rgba & 0x00ff0000u) >> 16u)) | ((rb2_ & 0x000000ffu) * (in_color.rgba & 0x000000ffu));
-          Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1)) >> 8u;
+          Ui32 cr = (Ui32(color.r) * (Ui32(in_color.r) + 1u)) >> 8u;
+          Ui32 cb = (Ui32(color.b) * (Ui32(in_color.b) + 1u)) >> 8u;
+          Ui32 rb2 = (cr | (cb << 16u)) * m2;
+          Ui32 g2 = (Ui32(color.g) * m2 * (Ui32(in_color.g) + 1u)) >> 8u;
 
-          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul) | (ca <<24);
+          to_rgba->rgba = (((rb + rb2) >> 8u) & 0x00ff00fful) | ((g + g2) & 0x0000ff00ul) | (ca << 24u);
         }
       } else if (kBlendingMode == kDrawBlendingModeSolidColor) {
         Ui32 ca = (Ui32(color.a) * (Ui32(in_color.a) + 1u)) >> 8u;

@@ -2189,6 +2189,133 @@ void test_rotation_xy_composition_vs_axis_angle() {
 }
 
 
+void test_colorize_blend_rb_vs_g_inconsistency() {
+  // The partial-alpha colorize blend uses different formulas for R/B vs G
+  // channels. R/B are packed and processed via integer bit tricks, while G
+  // is computed with a single multiply chain. For a perfectly gray source
+  // pixel (R=G=B) drawn with a perfectly gray tint, all three output
+  // channels must be equal. The bug causes R and B to differ from G.
+
+  // Create a 4x4 source sprite filled with white at partial alpha
+  Sprite src;
+  src.Create(4, 4);
+  {
+    Rgba *p = src.RgbaData();
+    for (int i = 0; i < 4 * 4; ++i) {
+      p[i] = Rgba(255, 255, 255, 200);  // Semi-transparent white
+    }
+  }
+
+  // Create a 4x4 destination sprite filled with black
+  Sprite dst;
+  dst.Create(4, 4);
+  dst.Clear(Rgba(0, 0, 0, 255));
+
+  // Draw source onto destination with colorize blending and a gray tint.
+  // Since src R=G=B and tint R=G=B, the output R, G, B must all be equal.
+  Rgba tint(128, 128, 128, 255);
+  src.Draw(dst, 0, 0, kDrawBlendingModeColorize, kFilterNearest, tint);
+
+  // Read back a pixel
+  Rgba result = dst.RgbaData()[0];
+
+  // Compute what the correct reference value should be for all channels.
+  // With the full-alpha colorize formula (known correct):
+  //   colorized = (src_ch * (tint_ch + 1)) >> 8 = (255 * 129) >> 8 = 100
+  // Then alpha-blended onto black:
+  //   ca = (200 * 256) >> 8 = 200
+  //   result = (colorized * ca) / 256 = (100 * 200) / 256 = 78
+  //
+  // The G channel computes this correctly via:
+  //   g2 = (src_G * m2 * (tint_G + 1)) >> 8
+  // The R/B channels use a packed approach that first truncates src*alpha
+  // to 8 bits, then multiplies by tint, losing precision:
+  //   rb2_scaled = floor(src_R * ca / 256) = floor(255 * 200 / 256) = 199
+  //   rb2_R = rb2_scaled * tint_R = 199 * 128 = 25472
+  //   result_R = 25472 / 256 = 99
+  //
+  // So G = 100 but R = B = 99 -- a visible inconsistency.
+
+  TEST_MSG("Colorize partial-alpha result: R=%d, G=%d, B=%d, A=%d",
+      (int)result.r, (int)result.g, (int)result.b, (int)result.a);
+
+  TEST_CHECK_(result.r == result.g,
+      "R and G should be equal for gray-on-gray colorize, "
+      "but R=%d, G=%d (R/B formula loses precision vs G formula)",
+      (int)result.r, (int)result.g);
+  TEST_CHECK_(result.g == result.b,
+      "G and B should be equal for gray-on-gray colorize, "
+      "but G=%d, B=%d",
+      (int)result.g, (int)result.b);
+}
+
+void test_colorize_blend_full_vs_partial_alpha_discontinuity() {
+  // When source alpha changes from 254 to 255, the colorize blend
+  // switches between two code paths with different formulas. This
+  // causes a color discontinuity: the output can jump by 2+ values
+  // for a single alpha step.
+
+  Rgba tint(128, 128, 128, 255);
+
+  // --- Full alpha (ca=255): uses per-channel formula ---
+  Sprite src_full;
+  src_full.Create(4, 4);
+  {
+    Rgba *p = src_full.RgbaData();
+    for (int i = 0; i < 16; ++i) {
+      p[i] = Rgba(255, 255, 255, 255);  // Fully opaque
+    }
+  }
+
+  Sprite dst_full;
+  dst_full.Create(4, 4);
+  dst_full.Clear(Rgba(0, 0, 0, 255));
+
+  src_full.Draw(dst_full, 0, 0, kDrawBlendingModeColorize, kFilterNearest, tint);
+  Rgba result_full = dst_full.RgbaData()[0];
+
+  // --- Partial alpha (ca=254): uses packed formula ---
+  Sprite src_partial;
+  src_partial.Create(4, 4);
+  {
+    Rgba *p = src_partial.RgbaData();
+    for (int i = 0; i < 16; ++i) {
+      p[i] = Rgba(255, 255, 255, 254);  // Nearly opaque
+    }
+  }
+
+  Sprite dst_partial;
+  dst_partial.Create(4, 4);
+  dst_partial.Clear(Rgba(0, 0, 0, 255));
+
+  src_partial.Draw(dst_partial, 0, 0, kDrawBlendingModeColorize, kFilterNearest, tint);
+  Rgba result_partial = dst_partial.RgbaData()[0];
+
+  // The full-alpha result for R: (255 * 129) >> 8 = 128
+  // The partial-alpha result for R with ca=254, dest=black:
+  //   rb2_R_scaled = floor(255 * 254 / 256) = 252
+  //   rb2_R = 252 * 128 = 32256
+  //   result_R = 32256 / 256 = 126
+  // Stepping from alpha=254 to alpha=255 jumps R from 126 to 128.
+  // The expected continuous value at alpha=254 is ~127.5.
+  // A well-behaved blend should differ by at most 1 per alpha step.
+
+  int r_jump = abs((int)result_full.r - (int)result_partial.r);
+  int g_jump = abs((int)result_full.g - (int)result_partial.g);
+
+  TEST_MSG("Full-alpha (a=255): R=%d, G=%d, B=%d",
+      (int)result_full.r, (int)result_full.g, (int)result_full.b);
+  TEST_MSG("Partial-alpha (a=254): R=%d, G=%d, B=%d",
+      (int)result_partial.r, (int)result_partial.g, (int)result_partial.b);
+  TEST_MSG("Jump when crossing alpha boundary: R=%d, G=%d", r_jump, g_jump);
+
+  TEST_CHECK_(r_jump <= 1,
+      "R channel jumps by %d when alpha goes from 254 to 255, "
+      "expected at most 1 (discontinuity between full-alpha and "
+      "partial-alpha colorize formulas)",
+      r_jump);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -2259,6 +2386,8 @@ TEST_LIST = {
   {"SetRotationY vs SetRotationAxisAngle4", test_rotation_y_vs_axis_angle},
   {"SetRotationZ vs SetRotationAxisAngle4 (control)", test_rotation_z_vs_axis_angle},
   {"Rotation XY composition vs AxisAngle4", test_rotation_xy_composition_vs_axis_angle},
+  {"Colorize blend R/B vs G inconsistency", test_colorize_blend_rb_vs_g_inconsistency},
+  {"Colorize blend full vs partial alpha discontinuity", test_colorize_blend_full_vs_partial_alpha_discontinuity},
   {0}
 };
 
