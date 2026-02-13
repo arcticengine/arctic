@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.5.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10...3.31 FATAL_ERROR)
 ################### Variables. ####################
 # Change if you want modify path or other values. #
 ###################################################
