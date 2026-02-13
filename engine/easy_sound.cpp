@@ -166,9 +166,11 @@ double Sound::Duration() const {
         stb_vorbis *vorbis_codec = stb_vorbis_open_memory(
           sound_instance_->GetVorbisData(),
           sound_instance_->GetVorbisSize(), &error, nullptr);
-        duration_samples = stb_vorbis_stream_length_in_samples(
-          vorbis_codec);
-        stb_vorbis_close(vorbis_codec);
+        if (vorbis_codec) {
+          duration_samples = stb_vorbis_stream_length_in_samples(
+            vorbis_codec);
+          stb_vorbis_close(vorbis_codec);
+        }
       }
       break;
     }
@@ -178,6 +180,7 @@ double Sound::Duration() const {
 }
 
 Si16 *Sound::RawData() {
+  Check(sound_instance_ != nullptr, "Error in Sound::RawData, sound_instance_ is nullptr.");
   return sound_instance_->GetWavData();
 }
 
