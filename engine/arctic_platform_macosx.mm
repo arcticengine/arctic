@@ -376,7 +376,7 @@ isScroll: (bool)is_scroll {
   msg.kind = arctic::InputMessage::kController;
 
   msg.keyboard.characters[0] = '\0';
-  msg.keyboard.key = arctic::kKeyCount;
+  msg.keyboard.key = arctic::kKeyNone;
   msg.keyboard.key_state = 0;
 
   arctic::InputMessage::Controller &controller = msg.controller;

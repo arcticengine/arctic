@@ -405,7 +405,7 @@ void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
     static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
-  msg.keyboard.key = kKeyCount;
+  msg.keyboard.key = kKeyNone;
   msg.keyboard.key_state = 0;
   msg.keyboard.characters[0] = '\0';
   msg.mouse.pos = pos;
@@ -569,7 +569,7 @@ LRESULT CALLBACK InnerWndProc(HWND inner_window_handle, UINT message,
     arctic::OnMouse(kKeyMouseWheel, word_param, long_param, true);
     break;
   case WM_MOUSEMOVE:
-    arctic::OnMouse(kKeyCount, word_param, long_param, false);
+    arctic::OnMouse(kKeyNone, word_param, long_param, false);
     break;
   case WM_MOUSEWHEEL:
     arctic::OnMouseWheel(word_param, long_param);

@@ -1062,7 +1062,7 @@ void ShowFrame() {
         GetEngine()->MouseToBackbuffer(message.mouse.pos);
       g_mouse_pos = message.mouse.backbuffer_pos;
       g_mouse_wheel_delta += message.mouse.wheel_delta;
-      if (message.keyboard.key != kKeyCount) {
+      if (message.keyboard.key != kKeyNone) {
         g_key_state[message.keyboard.key].OnStateChange(
           message.keyboard.key_state == 1);
       }

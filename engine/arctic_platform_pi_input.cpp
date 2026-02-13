@@ -319,7 +319,7 @@ void OnMouseWheel(bool is_down) {
   }
   InputMessage msg;
   msg.kind = InputMessage::kMouse;
-  msg.keyboard.key = kKeyCount;
+  msg.keyboard.key = kKeyNone;
   msg.keyboard.key_state = false;
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = z_delta;
@@ -405,7 +405,7 @@ void PumpMessages() {
         arctic::OnMouse(key_code, ev.xbutton.x, ev.xbutton.y, is_down);
       }
     } else if (ev.type == MotionNotify) {
-      arctic::OnMouse(kKeyCount, ev.xbutton.x, ev.xbutton.y, false);
+      arctic::OnMouse(kKeyNone, ev.xbutton.x, ev.xbutton.y, false);
     }
   }
 
