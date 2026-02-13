@@ -224,6 +224,8 @@ class CsvTable {
   bool ParseContent();
 
  private:
+  void Clear();
+
   std::string file_;
   CsvSourceType type_ = kCsvSourcePure;
   char sep_ = ',';

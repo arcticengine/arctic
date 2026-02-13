@@ -40,7 +40,18 @@ CsvRow CsvRow::invalid_row_{std::vector<std::string>()};
 CsvTable::CsvTable() {
 }
 
+void CsvTable::Clear() {
+  for (auto it = content_.begin(); it != content_.end(); ++it) {
+    delete *it;
+  }
+  content_.clear();
+  header_.clear();
+  original_file_.clear();
+  error_description.clear();
+}
+
 bool CsvTable::LoadFile(const std::string &filename, char sep) {
+  Clear();
   type_ = kCsvSourceFile;
   sep_ = sep;
   file_ = filename;
@@ -82,6 +93,7 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
 }
 
 bool CsvTable::LoadString(const std::string &data, char sep) {
+  Clear();
   type_ = kCsvSourcePure;
   sep_ = sep;
   std::string line;
@@ -103,10 +115,7 @@ bool CsvTable::LoadString(const std::string &data, char sep) {
 }
 
 CsvTable::~CsvTable() {
-  std::vector<CsvRow *>::iterator it;
-  for (it = content_.begin(); it != content_.end(); ++it) {
-    delete *it;
-  }
+  Clear();
 }
 
 bool CsvTable::ParseHeader() {
