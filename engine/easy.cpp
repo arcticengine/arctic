@@ -1409,7 +1409,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
     if (is_bulletproof) {
       return data;
     }
-    Check(false, "Error in ReadFile. Can't open the file, file_name: ",
+    Fatal("Error in ReadFile. Can't open the file, file_name: ",
       file_name);
   }
   in.exceptions(std::ios_base::goodbit);
@@ -1419,7 +1419,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
       in.close();
       return data;
     }
-    Check(false, "Error in ReadFile. Can't seek to the end, file_name: ",
+    Fatal("Error in ReadFile. Can't seek to the end, file_name: ",
       file_name);
   }
     std::streampos pos = in.tellg();
@@ -1428,7 +1428,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
       in.close();
       return data;
     }
-    Check(false, "Error in ReadFile."
+    Fatal("Error in ReadFile."
       " Can't determine file size via tellg, file_name: ",
       file_name);
   }
@@ -1438,7 +1438,7 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
       in.close();
       return data;
     }
-    Check(false, "Error in ReadFile. Can't seek to the beg, file_name: ",
+    Fatal("Error in ReadFile. Can't seek to the beg, file_name: ",
       file_name);
   }
 
