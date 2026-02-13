@@ -36,8 +36,8 @@ namespace arctic {
 /// @brief A class for reading data from a buffer
 struct DataReader {
   std::vector<Ui8> data;
-  Ui8 *p;
-  Ui8 *end;
+  Ui8 *p = nullptr;
+  Ui8 *end = nullptr;
 
   /// @brief Reset the data reader with a new buffer
   /// @param in_data The new buffer to read from
