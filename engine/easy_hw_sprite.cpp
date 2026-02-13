@@ -408,19 +408,19 @@ void HwSprite::Clone(const HwSprite &from, CloneTransform transform) {
           dst_base = Vec2Si32(0, Height() - 1);
           dst_dir_x = Vec2Si32(0, -1);
           dst_dir_y = Vec2Si32(1, 0);
-          angle = -3.14f / 2.0f;
+          angle = -3.14159265f / 2.0f;
       } else if (transform == kCloneRotateCcw90) {
           Create(from.Height(), from.Width());
           dst_base = Vec2Si32(Width() - 1, 0);
           dst_dir_x = Vec2Si32(0, 1);
           dst_dir_y = Vec2Si32(-1, 0);
-          angle = 3.14f / 2.0f;
+          angle = 3.14159265f / 2.0f;
       } else if (transform == kCloneRotate180) {
           Create(from.Width(), from.Height());
           dst_base = Vec2Si32(Width() - 1, Height() - 1);
           dst_dir_x = Vec2Si32(-1, 0);
           dst_dir_y = Vec2Si32(0, -1);
-          angle = 3.14f;
+          angle = 3.14159265f;
       }
       DrawSprite(*this, static_cast<float>(dst_base.x), static_cast<float>(dst_base.y), static_cast<float>(from.Width()), static_cast<float>(from.Height()),
           from, 0, 0, static_cast<float>(from.Width()), static_cast<float>(from.Height()), Rgba(255, 255, 255, 255),
