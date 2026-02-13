@@ -448,8 +448,8 @@ inline Mat44F SetRotationX(const float t) {
   const float cost = cosf(t);
 
   return Mat44F(1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, cost, sint, 0.0f,
-    0.0f, -sint, cost, 0.0f,
+    0.0f, cost, -sint, 0.0f,
+    0.0f, sint, cost, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f);
 }
 
@@ -457,9 +457,9 @@ inline Mat44F SetRotationY(const float t) {
   const float sint = sinf(t);
   const float cost = cosf(t);
 
-  return Mat44F(cost, 0.0f, -sint, 0.0f,
+  return Mat44F(cost, 0.0f, sint, 0.0f,
     0.0f, 1.0f, 0.0f, 0.0f,
-    sint, 0.0f, cost, 0.0f,
+    -sint, 0.0f, cost, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f);
 }
 

@@ -2066,6 +2066,129 @@ void test_mesh_extrude_face_covers_all_edges(void) {
 }
 
 
+// ---------------------------------------------------------------------------
+// Mat44F rotation consistency tests
+// ---------------------------------------------------------------------------
+
+// SetRotationX/Y should produce the same rotation as SetRotationAxisAngle4
+// with the corresponding unit axis. SetRotationZ is already consistent.
+//
+// The bug: SetRotationX(t) and SetRotationY(t) rotate in the opposite
+// direction compared to SetRotationAxisAngle4(axis, t). For example,
+// SetRotationAxisAngle4(Vec3F(1,0,0), pi/4) applied to (0,1,0) gives
+// (0, cos, sin) ~ (0, 0.707, 0.707), but SetRotationX(pi/4) applied to
+// (0,1,0) gives (0, cos, -sin) ~ (0, 0.707, -0.707). The sign of sin is
+// flipped in m[6] and m[9] for X, and similarly for Y.
+void test_rotation_x_vs_axis_angle() {
+  const float angle = 3.14159265f / 4.0f;  // 45 degrees
+  Vec3F point(0.0f, 1.0f, 0.0f);
+
+  Mat44F mat_x = SetRotationX(angle);
+  Mat44F mat_aa = SetRotationAxisAngle4(Vec3F(1.0f, 0.0f, 0.0f), angle);
+
+  Vec3F result_x = Transform(mat_x, point);
+  Vec3F result_aa = Transform(mat_aa, point);
+
+  float dx = result_x.x - result_aa.x;
+  float dy = result_x.y - result_aa.y;
+  float dz = result_x.z - result_aa.z;
+  float error = sqrtf(dx * dx + dy * dy + dz * dz);
+
+  TEST_CHECK_(error < 0.001f,
+      "SetRotationX(pi/4) and SetRotationAxisAngle4(X, pi/4) should produce "
+      "the same result for point (0,1,0). "
+      "SetRotationX -> (%.4f, %.4f, %.4f), "
+      "AxisAngle4   -> (%.4f, %.4f, %.4f), "
+      "error = %.6f",
+      result_x.x, result_x.y, result_x.z,
+      result_aa.x, result_aa.y, result_aa.z,
+      error);
+}
+
+void test_rotation_y_vs_axis_angle() {
+  const float angle = 3.14159265f / 4.0f;  // 45 degrees
+  Vec3F point(0.0f, 0.0f, 1.0f);
+
+  Mat44F mat_y = SetRotationY(angle);
+  Mat44F mat_aa = SetRotationAxisAngle4(Vec3F(0.0f, 1.0f, 0.0f), angle);
+
+  Vec3F result_y = Transform(mat_y, point);
+  Vec3F result_aa = Transform(mat_aa, point);
+
+  float dx = result_y.x - result_aa.x;
+  float dy = result_y.y - result_aa.y;
+  float dz = result_y.z - result_aa.z;
+  float error = sqrtf(dx * dx + dy * dy + dz * dz);
+
+  TEST_CHECK_(error < 0.001f,
+      "SetRotationY(pi/4) and SetRotationAxisAngle4(Y, pi/4) should produce "
+      "the same result for point (0,0,1). "
+      "SetRotationY -> (%.4f, %.4f, %.4f), "
+      "AxisAngle4   -> (%.4f, %.4f, %.4f), "
+      "error = %.6f",
+      result_y.x, result_y.y, result_y.z,
+      result_aa.x, result_aa.y, result_aa.z,
+      error);
+}
+
+// SetRotationZ is already consistent with SetRotationAxisAngle4.
+// This test serves as a control to confirm the test methodology is correct.
+void test_rotation_z_vs_axis_angle() {
+  const float angle = 3.14159265f / 4.0f;  // 45 degrees
+  Vec3F point(1.0f, 0.0f, 0.0f);
+
+  Mat44F mat_z = SetRotationZ(angle);
+  Mat44F mat_aa = SetRotationAxisAngle4(Vec3F(0.0f, 0.0f, 1.0f), angle);
+
+  Vec3F result_z = Transform(mat_z, point);
+  Vec3F result_aa = Transform(mat_aa, point);
+
+  float dx = result_z.x - result_aa.x;
+  float dy = result_z.y - result_aa.y;
+  float dz = result_z.z - result_aa.z;
+  float error = sqrtf(dx * dx + dy * dy + dz * dz);
+
+  TEST_CHECK_(error < 0.001f,
+      "SetRotationZ(pi/4) and SetRotationAxisAngle4(Z, pi/4) should produce "
+      "the same result for point (1,0,0). "
+      "SetRotationZ -> (%.4f, %.4f, %.4f), "
+      "AxisAngle4   -> (%.4f, %.4f, %.4f), "
+      "error = %.6f",
+      result_z.x, result_z.y, result_z.z,
+      result_aa.x, result_aa.y, result_aa.z,
+      error);
+}
+
+// Composing SetRotationX and SetRotationY should be equivalent to composing
+// the corresponding SetRotationAxisAngle4 calls in the same order.
+// This test catches the inconsistency in a more realistic usage scenario.
+void test_rotation_xy_composition_vs_axis_angle() {
+  const float angle_x = 3.14159265f / 6.0f;  // 30 degrees
+  const float angle_y = 3.14159265f / 3.0f;  // 60 degrees
+  Vec3F point(1.0f, 2.0f, 3.0f);
+
+  Mat44F composed_xyz = SetRotationX(angle_x) * SetRotationY(angle_y);
+  Mat44F composed_aa = SetRotationAxisAngle4(Vec3F(1.0f, 0.0f, 0.0f), angle_x)
+                     * SetRotationAxisAngle4(Vec3F(0.0f, 1.0f, 0.0f), angle_y);
+
+  Vec3F result_xyz = Transform(composed_xyz, point);
+  Vec3F result_aa = Transform(composed_aa, point);
+
+  float dx = result_xyz.x - result_aa.x;
+  float dy = result_xyz.y - result_aa.y;
+  float dz = result_xyz.z - result_aa.z;
+  float error = sqrtf(dx * dx + dy * dy + dz * dz);
+
+  TEST_CHECK_(error < 0.001f,
+      "Composing SetRotationX * SetRotationY should match composing "
+      "AxisAngle4(X) * AxisAngle4(Y). "
+      "XY -> (%.4f, %.4f, %.4f), AA -> (%.4f, %.4f, %.4f), error = %.6f",
+      result_xyz.x, result_xyz.y, result_xyz.z,
+      result_aa.x, result_aa.y, result_aa.z,
+      error);
+}
+
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -2132,6 +2255,10 @@ TEST_LIST = {
   {"Mesh PLY readline does not strip CRLF", test_mesh_ply_readline_crlf},
   {"Mesh vertex attrib write overflow", test_mesh_vertex_attrib_write_overflow},
   {"Mesh extrude face covers all edges", test_mesh_extrude_face_covers_all_edges},
+  {"SetRotationX vs SetRotationAxisAngle4", test_rotation_x_vs_axis_angle},
+  {"SetRotationY vs SetRotationAxisAngle4", test_rotation_y_vs_axis_angle},
+  {"SetRotationZ vs SetRotationAxisAngle4 (control)", test_rotation_z_vs_axis_angle},
+  {"Rotation XY composition vs AxisAngle4", test_rotation_xy_composition_vs_axis_angle},
   {0}
 };
 
