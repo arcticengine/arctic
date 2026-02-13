@@ -468,44 +468,43 @@ return 1;
 
 
 bool Mesh_ExtrudeFace(Mesh *me, int faceID) {
+  const int num = 3;
   {
-    const int num = 3;
-    if (!me->Expand(num, num)) {
+    if (!me->Expand(num, num * 2)) {
       return false;
     }
   }
 
   MeshFace *face = me->mFaceData.mIndexArray[0].mBuffer + faceID;
-  const int num = 3;
-
 
   const int newIndices = me->mVertexData.mVertexArray[0].mNum;
   const int newFace = me->mFaceData.mIndexArray[0].mNum;
-  for (int i=0; i<num; i+=2) {
-    MeshFace *nface = me->mFaceData.mIndexArray[0].mBuffer + newFace + i;
-    nface->mIndex[0] =  face->mIndex[i];
-    nface->mIndex[1] =  face->mIndex[(i+1)%num];
-    nface->mIndex[2] =  newIndices + ((i+1)%num);
-    nface = me->mFaceData.mIndexArray[0].mBuffer + newFace + i + 1;
-    nface->mIndex[0] =  newIndices + ((i+1)%num);
-    nface->mIndex[1] =  newIndices +   i;
-    nface->mIndex[2] =  face->mIndex[i];
+  for (int i = 0; i < num; i++) {
+    int j = (i + 1) % num;
+    MeshFace *nface = me->mFaceData.mIndexArray[0].mBuffer + newFace + i * 2;
+    nface->mIndex[0] = face->mIndex[i];
+    nface->mIndex[1] = face->mIndex[j];
+    nface->mIndex[2] = newIndices + j;
+    nface = me->mFaceData.mIndexArray[0].mBuffer + newFace + i * 2 + 1;
+    nface->mIndex[0] = newIndices + j;
+    nface->mIndex[1] = newIndices + i;
+    nface->mIndex[2] = face->mIndex[i];
   }
   //--------
 
-  for (int i=0; i<num; i++) {
+  for (int i = 0; i < num; i++) {
     Vec3F *w = (Vec3F *)me->GetVertexData(STREAMID, face->mIndex[i], POSID);
-    Vec3F *v = (Vec3F *)me->GetVertexData(STREAMID, newIndices+i, POSID);
+    Vec3F *v = (Vec3F *)me->GetVertexData(STREAMID, newIndices + i, POSID);
 
     *v = *w;
   }
   //--------
-  for (int i=0; i<num; i++) {
+  for (int i = 0; i < num; i++) {
     face->mIndex[i] = newIndices + i;
   }
 
   me->mVertexData.mVertexArray[0].mNum += num;
-  me->mFaceData.mIndexArray[0].mNum += num;
+  me->mFaceData.mIndexArray[0].mNum += num * 2;
 
   return true;
 }

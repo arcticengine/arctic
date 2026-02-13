@@ -23,6 +23,8 @@
 #include "engine/transform3f.h"
 #include "engine/skeleton.h"
 #include "engine/unicode.h"
+#include "engine/mesh.h"
+#include "engine/mesh_gen_mod_complex.h"
 
 
 using namespace arctic;
@@ -1891,6 +1893,179 @@ void test_utf8_codepoint_sizes() {
   TEST_CHECK(cp.size == 0);
 }
 
+
+// ---------------------------------------------------------------------------
+// Mesh bug regression tests
+// ---------------------------------------------------------------------------
+
+// Reproduce the readline() bug from mesh_ply.cpp: the while-loop that strips
+// trailing CR/LF never decrements 'l', so only the last character is removed.
+// On files with \r\n line endings, \r survives and all strcmp() comparisons
+// in the PLY parser fail.
+static int ply_readline_fixed(char *str, int max, const char *src) {
+  strncpy(str, src, (size_t)max);
+  str[max - 1] = 0;
+  size_t l = strlen(str);
+  while (l > 0 && (str[l - 1] == 10 || str[l - 1] == 13)) {
+    str[l - 1] = 0;
+    l--;
+  }
+  return 1;
+}
+
+void test_mesh_ply_readline_crlf(void) {
+  char buf[256];
+
+  // Unix line ending: should strip \n, result is "ply"
+  ply_readline_fixed(buf, 256, "ply\n");
+  TEST_CHECK(strcmp(buf, "ply") == 0);
+  TEST_MSG("Unix ending: got \"%s\"", buf);
+
+  // Windows line ending: should strip \r\n, result should be "ply"
+  ply_readline_fixed(buf, 256, "ply\r\n");
+  TEST_CHECK(strcmp(buf, "ply") == 0);
+  TEST_MSG("Windows ending: got \"%s\" (len=%zu), expected \"ply\" (len=3)",
+           buf, strlen(buf));
+}
+
+// Reproduce the mesh_ply.cpp bug: vertex format declares element 1 as 2 floats,
+// but 3 floats are written, overwriting vertex (i+1)'s position data.
+void test_mesh_vertex_attrib_write_overflow(void) {
+  Mesh mesh;
+
+  // Same format as mesh_ply.cpp:
+  // element 0: 3 floats (position), element 1: 3 floats (normal)
+  // stride = 6 * sizeof(float) = 24 bytes
+  const MeshVertexFormat vf = {6 * (int)sizeof(float), 2, 0,
+    {{3, kRMVEDT_Float, false}, {3, kRMVEDT_Float, false}}};
+
+  bool ok = mesh.Init(1, 4, &vf, kRMVEDT_Polys, 1, 1);
+  TEST_CHECK(ok);
+  if (!ok) {
+    return;
+  }
+
+  // Write known position values for vertex 0 and vertex 1
+  float *v0 = (float *)mesh.GetVertexData(0, 0, 0);  // vertex 0, element 0 (pos)
+  float *v1 = (float *)mesh.GetVertexData(0, 1, 0);  // vertex 1, element 0 (pos)
+  v0[0] = 1.0f;  v0[1] = 2.0f;  v0[2] = 3.0f;
+  v1[0] = 10.0f; v1[1] = 20.0f; v1[2] = 30.0f;
+
+  // Now write to element 1 of vertex 0 (texcoord, 2 floats)
+  float *nt = (float *)mesh.GetVertexData(0, 0, 1);  // vertex 0, element 1
+
+  // Correct: write only 2 floats (within the 2-float attribute)
+  nt[0] = 100.0f;
+  nt[1] = 200.0f;
+
+  // Verify vertex 1 position is intact after writing 2 floats
+  TEST_CHECK(v1[0] == 10.0f);
+  TEST_MSG("After 2-float write: v1[0] = %f, expected 10.0", (double)v1[0]);
+
+  // Reproduce mesh_ply.cpp pattern: write 3 floats into a 2-float attribute.
+  // The vertex format must have room for 3 floats in element 1 for this to
+  // be safe.  If it only has 2, nt[2] overwrites the next vertex.
+  nt[0] = 100.0f;
+  nt[1] = 200.0f;
+  nt[2] = 300.0f;  // Would overwrite v1[0] if element 1 is only 2 floats
+
+  TEST_CHECK(v1[0] == 10.0f);
+  TEST_MSG("After 3-float write into element 1: v1[0] = %f, expected 10.0",
+           (double)v1[0]);
+}
+
+// Test Mesh_ExtrudeFace: extrusion of a single triangle should create 3 side
+// quads (6 triangles) connecting original and extruded vertices.  With the
+// i+=2 bug, only edges 0 and 2 are processed, edge 1 is skipped.
+void test_mesh_extrude_face_covers_all_edges(void) {
+  Mesh mesh;
+
+  // Simple format: 3 floats per vertex (position only)
+  const MeshVertexFormat vf = {3 * (int)sizeof(float), 1, 0,
+    {{3, kRMVEDT_Float, false}}};
+
+  // Allocate room for 6 verts (3 original + 3 extruded) and
+  // 7 faces (1 original + 6 side faces = 3 quads * 2 triangles each).
+  // We over-allocate so we can check what Mesh_ExtrudeFace actually writes.
+  bool ok = mesh.Init(1, 128, &vf, kRMVEDT_Polys, 1, 128);
+  TEST_CHECK(ok);
+  if (!ok) {
+    return;
+  }
+
+  // Set up a single triangle: vertices 0, 1, 2
+  float *v0 = (float *)mesh.GetVertexData(0, 0, 0);
+  float *v1 = (float *)mesh.GetVertexData(0, 1, 0);
+  float *v2 = (float *)mesh.GetVertexData(0, 2, 0);
+  v0[0] = 0.0f; v0[1] = 0.0f; v0[2] = 0.0f;
+  v1[0] = 1.0f; v1[1] = 0.0f; v1[2] = 0.0f;
+  v2[0] = 0.0f; v2[1] = 1.0f; v2[2] = 0.0f;
+
+  mesh.mVertexData.mVertexArray[0].mNum = 3;
+  mesh.mFaceData.mIndexArray[0].mBuffer[0].mIndex[0] = 0;
+  mesh.mFaceData.mIndexArray[0].mBuffer[0].mIndex[1] = 1;
+  mesh.mFaceData.mIndexArray[0].mBuffer[0].mIndex[2] = 2;
+  mesh.mFaceData.mIndexArray[0].mNum = 1;
+
+  // Extrude face 0
+  ok = Mesh_ExtrudeFace(&mesh, 0);
+  TEST_CHECK(ok);
+  if (!ok) {
+    return;
+  }
+
+  // After extrusion we expect:
+  //   - 3 new vertices (indices 3, 4, 5)
+  //   - 3 new side faces (one per edge of the original triangle)
+  //   - The original face now references the new vertices (3, 4, 5)
+  TEST_CHECK(mesh.mVertexData.mVertexArray[0].mNum == 6);
+  TEST_MSG("Expected 6 vertices, got %u", mesh.mVertexData.mVertexArray[0].mNum);
+
+  // The extrude function adds num=3 to mNum, making total = 1 + 3 = 4.
+  // But a correct extrusion of a triangle needs 2*3=6 side faces,
+  // so total should be 1 + 6 = 7.
+  // With the i+=2 bug, only 4 faces are written but mNum is set to 4.
+  Si32 face_count = (Si32)mesh.mFaceData.mIndexArray[0].mNum;
+  TEST_MSG("Face count after extrude: %d", face_count);
+
+  // Verify that every original edge (0-1, 1-2, 2-0) is covered by side faces.
+  // Original vertex indices are 0, 1, 2; new copies are 3, 4, 5.
+  // For edge between original vertex i and i+1 (mod 3), we expect two side
+  // triangles connecting (orig_i, orig_j, new_j) and (new_j, new_i, orig_i).
+  //
+  // Collect all edges from the side faces (faces 1..face_count-1) and check
+  // that edges (0,1), (1,2), (2,0) all appear in some side face.
+  bool edge01_found = false;
+  bool edge12_found = false;
+  bool edge20_found = false;
+
+  for (Si32 fi = 1; fi < face_count; ++fi) {
+    MeshFace *f = &mesh.mFaceData.mIndexArray[0].mBuffer[fi];
+    for (int e = 0; e < 3; ++e) {
+      int a = f->mIndex[e];
+      int b = f->mIndex[(e + 1) % 3];
+      // Check if this edge matches any original edge (in either direction)
+      if ((a == 0 && b == 1) || (a == 1 && b == 0)) {
+        edge01_found = true;
+      }
+      if ((a == 1 && b == 2) || (a == 2 && b == 1)) {
+        edge12_found = true;
+      }
+      if ((a == 2 && b == 0) || (a == 0 && b == 2)) {
+        edge20_found = true;
+      }
+    }
+  }
+
+  TEST_CHECK(edge01_found);
+  TEST_MSG("Edge 0-1 covered by side faces: %s", edge01_found ? "yes" : "NO (BUG: i+=2 skips edge 1)");
+  TEST_CHECK(edge12_found);
+  TEST_MSG("Edge 1-2 covered by side faces: %s", edge12_found ? "yes" : "NO (BUG: i+=2 skips edge 1)");
+  TEST_CHECK(edge20_found);
+  TEST_MSG("Edge 2-0 covered by side faces: %s", edge20_found ? "yes" : "NO");
+}
+
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -1954,6 +2129,9 @@ TEST_LIST = {
   {"Utf16ToUtf8 surrogate pair", test_utf16_to_utf8_surrogate},
   {"Utf32Reader round-trip", test_utf32_reader_roundtrip},
   {"Utf8Codepoint sizes", test_utf8_codepoint_sizes},
+  {"Mesh PLY readline does not strip CRLF", test_mesh_ply_readline_crlf},
+  {"Mesh vertex attrib write overflow", test_mesh_vertex_attrib_write_overflow},
+  {"Mesh extrude face covers all edges", test_mesh_extrude_face_covers_all_edges},
   {0}
 };
 

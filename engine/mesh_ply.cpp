@@ -47,22 +47,21 @@ static int separa_palabras(char *str, char *ptrs[], const char *del, int maxpala
 }
 
 static int readline(char *str, int max, FILE *fp) {
-  size_t l;
-
-  if (!fgets(str,max,fp)) {
+  if (!fgets(str, max, fp)) {
     return 0;
   }
 
-  l = strlen(str)-1;
-  while (str[l]==10 || str[l]==13) {
-    str[l] = 0;
+  size_t l = strlen(str);
+  while (l > 0 && (str[l - 1] == 10 || str[l - 1] == 13)) {
+    str[l - 1] = 0;
+    l--;
   }
 
   return 1;
 }
 
 
-int piRenderMeshPly_Read(Mesh *me, const char *name, bool calcNormals) {
+int MeshPly_Read(Mesh *me, const char *name, bool calcNormals) {
   int n, nv, nf;
   char str[256];
   char *ptrs[16];
@@ -102,8 +101,8 @@ int piRenderMeshPly_Read(Mesh *me, const char *name, bool calcNormals) {
     return 0;
   }
 
-  const MeshVertexFormat vf = {5*sizeof(float), 2, 0,
-    {{3, kRMVEDT_Float, false}, {2, kRMVEDT_Float, false}}};
+  const MeshVertexFormat vf = {6*sizeof(float), 2, 0,
+    {{3, kRMVEDT_Float, false}, {3, kRMVEDT_Float, false}}};
   if (!me->Init(1, nv, &vf, kRMVEDT_Polys, 1, nf)) {
     fclose(fp);
     return 0;
