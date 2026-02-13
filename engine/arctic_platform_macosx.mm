@@ -940,6 +940,7 @@ bool GetDirectoryEntries(const char *path,
     snprintf(full_path, sizeof(full_path), "%s/%s", path, dir_entry->d_name);
     struct stat info;
     if (stat(full_path, &info) != 0) {
+      closedir(dir);
       return false;
     }
     if (info.st_mode & S_IFDIR) {
