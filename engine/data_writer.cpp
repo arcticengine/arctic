@@ -79,4 +79,8 @@ void DataWriter::WriteUInt16array(Ui16 *src, Ui64 amount) {
   Write(src, amount*2);
 }
 
+void DataWriter::WriteUInt8array(Ui8 *src, Ui64 amount) {
+  Write(src, amount);
+}
+
 }
