@@ -372,7 +372,7 @@ void PumpMessages() {
       } else if (ev.xbutton.button == Button5) {
         arctic::OnMouseWheel(true);  // down
       } else {
-        arctic::KeyCode key_code = kKeyCount;
+        arctic::KeyCode key_code = kKeyNone;
         bool is_down = false;
         if (ev.type == ButtonPress) {
           switch (ev.xbutton.button) {
