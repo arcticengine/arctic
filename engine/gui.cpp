@@ -1249,7 +1249,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
         part = text_.substr(static_cast<size_t>(display_pos_),
                             static_cast<size_t>(cursor_pos_ - display_pos_));
         w = font_.EvaluateSize(part.c_str(), true).x;
-        end_pos = cursor_pos_ + 1;
+        end_pos = std::min(cursor_pos_ + 1, (Si32)text_.length());
       }
     }
   }
