@@ -286,11 +286,6 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
         return nullptr;
       }
 
-      if (idx*2*sizeof(Si16) >= sample_count * 2 * sizeof(Si16)) {
-        *Log() << "Reading past end of sample memory buffer.";
-        return nullptr;
-      }
-
       out_data[idx * 2] = value1;
       out_data[idx * 2 + 1] = value2;
     }
