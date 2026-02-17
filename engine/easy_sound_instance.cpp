@@ -261,6 +261,10 @@ std::shared_ptr<SoundInstance> LoadWav(const Ui8 *data,
   } else {
     for (Ui64 idx = 0; idx < sample_count; ++idx) {
       Ui64 in_sample_idx = (Ui64)fmt->sample_rate * (Ui64)idx / 44100ull;
+      if (in_sample_idx * block_align + block_align >
+          static_cast<Ui64>(sound_data_size)) {
+        break;
+      }
       const Ui8 *in_block = in_data + in_sample_idx * block_align;
       Si16 value1 = 0;
       Si16 value2 = 0;
