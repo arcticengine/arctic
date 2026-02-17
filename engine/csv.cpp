@@ -280,8 +280,8 @@ const std::string CsvTable::GetHeaderElement(Ui64 pos) const {
 
 bool CsvTable::DeleteRow(Ui64 pos) {
   if (static_cast<size_t>(pos) < content_.size()) {
-    delete *(content_.begin() + static_cast<int>(pos));
-    content_.erase(content_.begin() + static_cast<int>(pos));
+    delete *(content_.begin() + static_cast<size_t>(pos));
+    content_.erase(content_.begin() + static_cast<size_t>(pos));
     return true;
   }
   return false;
