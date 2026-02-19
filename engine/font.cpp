@@ -354,7 +354,8 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
     "Font file is truncated (block 1 header): ", file_name);
   Ui8 block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  Si32 block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
+  Si32 block_size;
+  memcpy(&block_size, &file[static_cast<size_t>(pos)], sizeof(Si32));
   pos += sizeof(Si32);
   Check(pos + block_size <= file_size,
     "Font file is truncated (block 1 data): ", file_name);
@@ -376,19 +377,18 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
     "Font file is truncated (block 2 header): ", file_name);
   block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
+  memcpy(&block_size, &file[static_cast<size_t>(pos)], sizeof(Si32));
   pos += sizeof(Si32);
   Check(block_type == kBlockCommon, "Unexpected block type 2");
   Check(block_size >= sizeof(BmFontBinCommon), "Common block is too small");
   Check(pos + block_size <= file_size,
     "Font file is truncated (block 2 data): ", file_name);
-  BmFontBinCommon *common =
-    reinterpret_cast<BmFontBinCommon*>(&file[static_cast<size_t>(pos)]);
-  // common->Log();
+  BmFontBinCommon common;
+  memcpy(&common, &file[static_cast<size_t>(pos)], sizeof(BmFontBinCommon));
 
-  base_to_top_ = common->base;
-  base_to_bottom_ = common->line_height - common->base;
-  line_height_ = common->line_height;
+  base_to_top_ = common.base;
+  base_to_bottom_ = common.line_height - common.base;
+  line_height_ = common.line_height;
 
   pos += block_size;
 
@@ -396,7 +396,7 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
     "Font file is truncated (block 3 header): ", file_name);
   block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
+  memcpy(&block_size, &file[static_cast<size_t>(pos)], sizeof(Si32));
   pos += sizeof(Si32);
   Check(block_type == kBlockPages, "Unexpected block type 3");
   Check(block_size >= 1, "Pages block is too small");
@@ -404,11 +404,11 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
     "Font file is truncated (block 3 data): ", file_name);
   Si32 inner_pos = pos;
   std::vector<Sprite> page_images;
-  page_images.resize(common->pages);
+  page_images.resize(common.pages);
 
   size_t file_name_len = strlen(file_name);
 
-  for (Si32 id = 0; id < common->pages; ++id) {
+  for (Si32 id = 0; id < common.pages; ++id) {
     BmFontBinPages page;
     page.page_name =
       reinterpret_cast<char*>(&file[static_cast<size_t>(inner_pos)]);
@@ -441,7 +441,7 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
     "Font file is truncated (block 4 header): ", file_name);
   block_type = file[static_cast<size_t>(pos)];
   ++pos;
-  block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
+  memcpy(&block_size, &file[static_cast<size_t>(pos)], sizeof(Si32));
   pos += sizeof(Si32);
   Check(block_type == kBlockChars, "Unexpected block type 4");
   Check(block_size >= sizeof(BmFontBinChars), "Pages block is too small");
@@ -451,29 +451,28 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
   for (Si32 id = 0; id < block_size / 20; ++id) {
     Check(inner_pos + 20 <= file_size,
       "Font file is truncated (chars entry): ", file_name);
-    BmFontBinChars *chars = reinterpret_cast<BmFontBinChars*>(
-      &file[static_cast<size_t>(inner_pos)]);
-    // chars->Log();
+    BmFontBinChars chars;
+    memcpy(&chars, &file[static_cast<size_t>(inner_pos)], sizeof(BmFontBinChars));
 
-    if (chars->page >= static_cast<Ui8>(page_images.size())) {
+    if (chars.page >= static_cast<Ui8>(page_images.size())) {
       *Log() << "Warning in LoadBinaryFnt(\"" << file_name
-             << "\"): glyph id=" << chars->id
-             << " references page " << static_cast<int>(chars->page)
+             << "\"): glyph id=" << chars.id
+             << " references page " << static_cast<int>(chars.page)
              << " but only " << page_images.size()
              << " page(s) loaded, skipping glyph.";
       inner_pos += 20;
       continue;
     }
     Sprite sprite0;
-    sprite0.Reference(page_images[chars->page],
-      chars->x, page_images[chars->page].Height() - chars->y - chars->height,
-      chars->width, chars->height);
+    sprite0.Reference(page_images[chars.page],
+      chars.x, page_images[chars.page].Height() - chars.y - chars.height,
+      chars.width, chars.height);
     Sprite sprite;
     sprite.Clone(sprite0);
     sprite.UpdateOpaqueSpans();
     sprite.SetPivot(arctic::Vec2Si32(
-      -chars->xoffset, chars->height + chars->yoffset - common->base));
-    glyph_.emplace_back(chars->id, chars->xadvance, sprite);
+      -chars.xoffset, chars.height + chars.yoffset - common.base));
+    glyph_.emplace_back(chars.id, chars.xadvance, sprite);
 
     inner_pos += 20;
   }
@@ -482,7 +481,7 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
   if (pos + 1 + static_cast<Si32>(sizeof(Si32)) <= file_size) {
     block_type = static_cast<Ui8>(file[static_cast<size_t>(pos)]);
     ++pos;
-    block_size = *reinterpret_cast<Si32*>(&file[static_cast<size_t>(pos)]);
+    memcpy(&block_size, &file[static_cast<size_t>(pos)], sizeof(Si32));
     pos += sizeof(Si32);
     Check(pos + block_size <= file_size,
       "Font file is truncated (block 5 data): ", file_name);
