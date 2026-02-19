@@ -347,6 +347,13 @@ void Engine::Draw2d() {
     }
 
     if (!do_draw) {
+      if (h.from_width == 0.f || h.from_height == 0.f) {
+        ++idx;
+        if (idx == hw_sprite_drawing_.size()) {
+          do_draw = true;
+        }
+        continue;
+      }
       Vec2F pivot = Vec2F(h.to_x_pivot, h.to_y_pivot);
       float sin_a = sinf(h.angle_radians);
       float cos_a = cosf(h.angle_radians);
