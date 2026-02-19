@@ -2463,6 +2463,279 @@ void test_transform3f_inverse_respects_scale() {
       error);
 }
 
+// ============================================================
+// Matrix / rotation consistency tests
+// ============================================================
+
+static float mat44_max_diff(const Mat44F &a, const Mat44F &b) {
+  float d = 0.f;
+  for (int i = 0; i < 16; ++i) {
+    float ad = fabsf(a.m[i] - b.m[i]);
+    if (ad > d) {
+      d = ad;
+    }
+  }
+  return d;
+}
+
+static Mat44F mat44_mul(const Mat44F &a, const Mat44F &b) {
+  return a * b;
+}
+
+// 1. SetRotationQuaternion agrees with SetRotationAxisAngle4
+void test_quat_matrix_vs_axis_angle() {
+  Vec3F axis = Normalize(Vec3F(1.f, 2.f, 3.f));
+  float angle = 0.73f;
+  Mat44F from_aa = SetRotationAxisAngle4(axis, angle);
+  Vec4F q(sinf(angle / 2) * axis.x,
+          sinf(angle / 2) * axis.y,
+          sinf(angle / 2) * axis.z,
+          cosf(angle / 2));
+  Mat44F from_q = SetRotationQuaternion(q);
+  float d = mat44_max_diff(from_aa, from_q);
+  TEST_CHECK_(d < 1e-5f,
+      "SetRotationQuaternion vs SetRotationAxisAngle4: max diff=%.7f "
+      "(should be consistent)", d);
+}
+
+// 2. SetRotationX/Y/Z agree with SetRotationAxisAngle4
+void test_rotation_xyz_vs_axis_angle_consistency() {
+  float t = 1.1f;
+  float dx = mat44_max_diff(SetRotationX(t),
+      SetRotationAxisAngle4(Vec3F(1, 0, 0), t));
+  float dy = mat44_max_diff(SetRotationY(t),
+      SetRotationAxisAngle4(Vec3F(0, 1, 0), t));
+  float dz = mat44_max_diff(SetRotationZ(t),
+      SetRotationAxisAngle4(Vec3F(0, 0, 1), t));
+  TEST_CHECK_(dx < 1e-5f && dy < 1e-5f && dz < 1e-5f,
+      "Rx/Ry/Rz vs AxisAngle: dx=%.7f dy=%.7f dz=%.7f", dx, dy, dz);
+}
+
+// 3. SetRotationEuler4 must equal Rz * Ry * Rx (same convention as all
+//    other rotation-building functions in the engine).
+void test_euler4_equals_composition() {
+  float x = 0.3f, y = 0.5f, z = 0.7f;
+  Mat44F euler = SetRotationEuler4(Vec3F(x, y, z));
+  Mat44F composed = mat44_mul(SetRotationZ(z),
+                   mat44_mul(SetRotationY(y), SetRotationX(x)));
+  float d = mat44_max_diff(euler, composed);
+  TEST_CHECK_(d < 1e-5f,
+      "SetRotationEuler4(%.1f,%.1f,%.1f) must equal Rz*Ry*Rx, "
+      "max diff=%.7f", x, y, z, d);
+}
+
+// 4. QuaternionF::ToMat33F matches top-left 3x3 of SetRotationQuaternion
+void test_quat_tomat33_vs_setrotationquat() {
+  Vec3F axis = Normalize(Vec3F(-1.f, 0.5f, 2.f));
+  float angle = 1.2f;
+  QuaternionF q(axis, angle);
+  Mat33F m3 = q.ToMat33F();
+  Vec4F q4(q.x, q.y, q.z, q.w);
+  Mat44F m4 = SetRotationQuaternion(q4);
+  float d = 0.f;
+  for (int r = 0; r < 3; ++r) {
+    for (int c = 0; c < 3; ++c) {
+      float ad = fabsf(m3.m[r * 3 + c] - m4.m[r * 4 + c]);
+      if (ad > d) {
+        d = ad;
+      }
+    }
+  }
+  TEST_CHECK_(d < 1e-5f,
+      "ToMat33F vs SetRotationQuaternion(4x4): max diff=%.7f", d);
+}
+
+// 5. ExtractRotationEuler must round-trip with SetRotationEuler4:
+//    ExtractRotationEuler(SetRotationEuler4(x,y,z)) == (x,y,z).
+void test_extract_euler_roundtrip_euler4() {
+  float x = 0.4f, y = 0.3f, z = 0.6f;
+  Mat44F m = SetRotationEuler4(Vec3F(x, y, z));
+  Vec3F e = ExtractRotationEuler(m);
+  TEST_CHECK_(fabsf(e.x - x) < 1e-4f &&
+              fabsf(e.y - y) < 1e-4f &&
+              fabsf(e.z - z) < 1e-4f,
+      "ExtractRotationEuler(SetRotationEuler4(%.1f,%.1f,%.1f)) = "
+      "(%.4f,%.4f,%.4f) -- must recover original angles",
+      x, y, z, e.x, e.y, e.z);
+}
+
+// 6. ExtractRotationEuler for a pure X-axis rotation must return (angle,0,0).
+void test_extract_euler_pure_x() {
+  float angle = 0.6f;
+  Mat44F rx = SetRotationX(angle);
+  Vec3F e = ExtractRotationEuler(rx);
+  TEST_CHECK_(fabsf(e.x - angle) < 1e-4f &&
+              fabsf(e.y) < 1e-4f &&
+              fabsf(e.z) < 1e-4f,
+      "ExtractRotationEuler(SetRotationX(%.1f)) = (%.4f,%.4f,%.4f) -- "
+      "must be (%.1f, 0, 0)",
+      angle, e.x, e.y, e.z, angle);
+}
+
+// 6b. ExtractRotationEuler for a pure Y-axis rotation must return (0,angle,0).
+void test_extract_euler_pure_y() {
+  float angle = 0.6f;
+  Mat44F ry = SetRotationY(angle);
+  Vec3F e = ExtractRotationEuler(ry);
+  TEST_CHECK_(fabsf(e.x) < 1e-4f &&
+              fabsf(e.y - angle) < 1e-4f &&
+              fabsf(e.z) < 1e-4f,
+      "ExtractRotationEuler(SetRotationY(%.1f)) = (%.4f,%.4f,%.4f) -- "
+      "must be (0, %.1f, 0)",
+      angle, e.x, e.y, e.z, angle);
+}
+
+// 6c. ExtractRotationEuler for a pure Z-axis rotation must return (0,0,angle).
+void test_extract_euler_pure_z() {
+  float angle = 0.6f;
+  Mat44F rz = SetRotationZ(angle);
+  Vec3F e = ExtractRotationEuler(rz);
+  TEST_CHECK_(fabsf(e.x) < 1e-4f &&
+              fabsf(e.y) < 1e-4f &&
+              fabsf(e.z - angle) < 1e-4f,
+      "ExtractRotationEuler(SetRotationZ(%.1f)) = (%.4f,%.4f,%.4f) -- "
+      "must be (0, 0, %.1f)",
+      angle, e.x, e.y, e.z, angle);
+}
+
+// 7. At gimbal lock (y ~ pi/2), ExtractRotationEuler must still recover y
+//    and the sum x+z correctly (individual x,z are degenerate at gimbal lock
+//    but y must be close to pi/2).
+void test_extract_euler_gimbal_lock() {
+  float x = 0.5f, z = 0.3f;
+  float y = static_cast<float>(M_PI) / 2.f;
+  Mat44F m = SetRotationEuler4(Vec3F(x, y, z));
+  Vec3F e = ExtractRotationEuler(m);
+  TEST_CHECK_(fabsf(e.y - y) < 0.05f,
+      "ExtractRotationEuler at gimbal lock: extracted y=%.4f, "
+      "expected ~%.4f",
+      e.y, y);
+}
+
+// 7b. ExtractRotationEuler must not depend on translation components.
+//     Adding translation to a rotation matrix must not change the result.
+//     Test several rotations: Rx hits the m[0]==1 branch, Ry/Rz and a
+//     combined rotation hit the general branch.
+void test_extract_euler_ignores_translation() {
+  Mat44F rotations[] = {
+    SetRotationX(0.5f),
+    SetRotationY(0.7f),
+    SetRotationZ(0.3f),
+    SetRotationAxisAngle4(Normalize(Vec3F(1, 2, 3)), 0.9f),
+  };
+  const char *names[] = {"Rx", "Ry", "Rz", "AxisAngle"};
+  for (int i = 0; i < 4; ++i) {
+    Mat44F m = rotations[i];
+    Vec3F e1 = ExtractRotationEuler(m);
+    m.m[3] = 10.0f;
+    m.m[7] = 20.0f;
+    m.m[11] = 30.0f;
+    Vec3F e2 = ExtractRotationEuler(m);
+    TEST_CHECK_(fabsf(e1.x - e2.x) < 1e-6f &&
+                fabsf(e1.y - e2.y) < 1e-6f &&
+                fabsf(e1.z - e2.z) < 1e-6f,
+        "%s: ExtractRotationEuler must not depend on translation: "
+        "without=(%.4f,%.4f,%.4f) with=(%.4f,%.4f,%.4f)",
+        names[i], e1.x, e1.y, e1.z, e2.x, e2.y, e2.z);
+  }
+}
+
+// 7c. The gimbal-lock branch uses m[11] (translation element [2][3]) instead
+//     of a rotation element. For orthogonal matrices this is masked because
+//     m[0]==1 forces m[2]==0, making atan2(0, m[11])=0. But for a scaled
+//     rotation (realistic: model matrix = Scale * Rotation), m[0] can be 1
+//     while m[2]!=0, and then m[11] leaks into the result.
+//     Example: Ry(a) * Scale(1/cos(a), 1, 1) gives m[0]=1, m[2]=sin(a)!=0.
+void test_extract_euler_gimbal_branch_reads_m11() {
+  float a = 0.4f;
+  Mat44F m = SetRotationY(a) * SetScale4(1.f / cosf(a), 1.f, 1.f);
+  Vec3F e1 = ExtractRotationEuler(m);
+  m.m[11] = 50.0f;
+  Vec3F e2 = ExtractRotationEuler(m);
+  TEST_CHECK_(fabsf(e1.x - e2.x) < 1e-6f &&
+              fabsf(e1.y - e2.y) < 1e-6f &&
+              fabsf(e1.z - e2.z) < 1e-6f,
+      "Scaled Ry: translation m[11] must not affect extraction: "
+      "without=(%.4f,%.4f,%.4f) with=(%.4f,%.4f,%.4f)",
+      e1.x, e1.y, e1.z, e2.x, e2.y, e2.z);
+}
+
+// 8. M * Transpose(M) should be identity for all rotation functions
+//    (orthogonality check).
+void test_rotation_matrices_are_orthogonal() {
+  float t = 0.8f;
+  Vec3F axis = Normalize(Vec3F(1, 1, 1));
+
+  auto check_ortho = [](const Mat44F &m, const char *name) {
+    Mat44F mt = Transpose(m);
+    Mat44F prod = m * mt;
+    Mat44F id = SetIdentity();
+    float d = mat44_max_diff(prod, id);
+    TEST_CHECK_(d < 1e-5f,
+        "%s: M * M^T should be identity, max diff=%.7f", name, d);
+  };
+
+  check_ortho(SetRotationX(t), "SetRotationX");
+  check_ortho(SetRotationY(t), "SetRotationY");
+  check_ortho(SetRotationZ(t), "SetRotationZ");
+  check_ortho(SetRotationAxisAngle4(axis, t), "SetRotationAxisAngle4");
+  check_ortho(SetRotationEuler4(Vec3F(0.3f, 0.5f, 0.7f)), "SetRotationEuler4");
+
+  Vec4F q(sinf(t / 2) * axis.x, sinf(t / 2) * axis.y,
+          sinf(t / 2) * axis.z, cosf(t / 2));
+  check_ortho(SetRotationQuaternion(q), "SetRotationQuaternion");
+}
+
+// 9. Translation matrix: Transform(SetTranslation(t), v) == v + t
+void test_translation_transforms_point() {
+  Vec3F t(3.f, -1.f, 7.f);
+  Vec3F v(1.f, 2.f, 3.f);
+  Mat44F m = SetTranslation(t);
+  Vec3F result = Transform(m, v);
+  float d = Length(result - (v + t));
+  TEST_CHECK_(d < 1e-5f,
+      "SetTranslation * point: error=%.7f", d);
+}
+
+// 10. SetLookat produces orthonormal basis (post-fix for bug 23)
+void test_lookat_orthonormal() {
+  Vec3F eye(1, 2, 3);
+  Vec3F target(4, 5, 6);
+  Vec3F up(0, 1, 0);
+  Mat44F m = SetLookat(eye, target, up);
+
+  Vec3F row0(m.m[0], m.m[1], m.m[2]);
+  Vec3F row1(m.m[4], m.m[5], m.m[6]);
+  Vec3F row2(m.m[8], m.m[9], m.m[10]);
+
+  float len0 = Length(row0);
+  float len1 = Length(row1);
+  float len2 = Length(row2);
+  float dot01 = Dot(row0, row1);
+  float dot02 = Dot(row0, row2);
+  float dot12 = Dot(row1, row2);
+
+  TEST_CHECK_(fabsf(len0 - 1.f) < 1e-5f &&
+              fabsf(len1 - 1.f) < 1e-5f &&
+              fabsf(len2 - 1.f) < 1e-5f,
+      "SetLookat rows unit length: %.6f %.6f %.6f", len0, len1, len2);
+  TEST_CHECK_(fabsf(dot01) < 1e-5f &&
+              fabsf(dot02) < 1e-5f &&
+              fabsf(dot12) < 1e-5f,
+      "SetLookat rows orthogonal: dots=%.6f %.6f %.6f",
+      dot01, dot02, dot12);
+}
+
+// 11. SetLookat with eye==target returns identity (bug 23 fix)
+void test_lookat_degenerate_returns_identity() {
+  Vec3F p(5, 5, 5);
+  Mat44F m = SetLookat(p, p, Vec3F(0, 1, 0));
+  Mat44F id = SetIdentity();
+  float d = mat44_max_diff(m, id);
+  TEST_CHECK_(d < 1e-5f,
+      "SetLookat(eye==target) should be identity, diff=%.7f", d);
+}
+
 void test_hw_sprite_subregion_draws_correctly() {
   const Si32 TEX_W = 16;
   const Si32 TEX_H = 16;
@@ -2682,6 +2955,21 @@ TEST_LIST = {
   {"Transform3F scale affects composition", test_transform3f_scale_affects_transform_composition},
   {"Transform3F Inverse respects scale", test_transform3f_inverse_respects_scale},
   {"HW sprite sub-region draws correctly", test_hw_sprite_subregion_draws_correctly},
+  {"Quat matrix vs AxisAngle consistency", test_quat_matrix_vs_axis_angle},
+  {"Rotation XYZ vs AxisAngle consistency", test_rotation_xyz_vs_axis_angle_consistency},
+  {"Euler4 equals Rz*Ry*Rx", test_euler4_equals_composition},
+  {"Quat ToMat33F vs SetRotationQuat 4x4", test_quat_tomat33_vs_setrotationquat},
+  {"ExtractEuler roundtrip Euler4", test_extract_euler_roundtrip_euler4},
+  {"ExtractEuler pure X rotation", test_extract_euler_pure_x},
+  {"ExtractEuler pure Y rotation", test_extract_euler_pure_y},
+  {"ExtractEuler pure Z rotation", test_extract_euler_pure_z},
+  {"ExtractEuler gimbal lock", test_extract_euler_gimbal_lock},
+  {"ExtractEuler ignores translation", test_extract_euler_ignores_translation},
+  {"ExtractEuler gimbal branch reads m11", test_extract_euler_gimbal_branch_reads_m11},
+  {"All rotation matrices are orthogonal", test_rotation_matrices_are_orthogonal},
+  {"Translation transforms point correctly", test_translation_transforms_point},
+  {"SetLookat produces orthonormal basis", test_lookat_orthonormal},
+  {"SetLookat degenerate returns identity", test_lookat_degenerate_returns_identity},
   {0}
 };
 
