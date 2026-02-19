@@ -790,37 +790,52 @@ inline Mat44F SetCubeFaceTiled(Si32 faceid,
 
 
 inline Mat44F SetLookat(const Vec3F &eye, const Vec3F &tar, const Vec3F &up) {
-  Mat44F mat;
-
-  float im;
-
   const float dir[3] = {
     -tar[0] + eye[0],
     -tar[1] + eye[1],
     -tar[2] + eye[2]
   };
 
-  // right vector
+  const float kEps = 1e-12f;
+
+  float dir_len2 = dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2];
+  if (dir_len2 < kEps) {
+    return SetIdentity();
+  }
+
+  Mat44F mat;
+
+  // right vector = up x dir
   mat[0] = dir[2] * up[1] - dir[1] * up[2];
   mat[1] = dir[0] * up[2] - dir[2] * up[0];
   mat[2] = dir[1] * up[0] - dir[0] * up[1];
-  im = 1.0f / sqrtf(mat[0] * mat[0] + mat[1] * mat[1] + mat[2] * mat[2]);
+  float right_len2 = mat[0] * mat[0] + mat[1] * mat[1] + mat[2] * mat[2];
+  if (right_len2 < kEps) {
+    return SetIdentity();
+  }
+  float im = 1.0f / sqrtf(right_len2);
   mat[0] *= im;
   mat[1] *= im;
   mat[2] *= im;
-  // up vector
+
+  // up vector = dir x right
   mat[4] = mat[2] * dir[1] - mat[1] * dir[2];
   mat[5] = mat[0] * dir[2] - mat[2] * dir[0];
   mat[6] = mat[1] * dir[0] - mat[0] * dir[1];
-  im = 1.0f / sqrtf(mat[4] * mat[4] + mat[5] * mat[5] + mat[6] * mat[6]);
+  float up_len2 = mat[4] * mat[4] + mat[5] * mat[5] + mat[6] * mat[6];
+  if (up_len2 < kEps) {
+    return SetIdentity();
+  }
+  im = 1.0f / sqrtf(up_len2);
   mat[4] *= im;
   mat[5] *= im;
   mat[6] *= im;
+
   // view vector
   mat[8] = dir[0];
   mat[9] = dir[1];
   mat[10] = dir[2];
-  im = 1.0f / sqrtf(mat[8] * mat[8] + mat[9] * mat[9] + mat[10] * mat[10]);
+  im = 1.0f / sqrtf(dir_len2);
   mat[8] *= im;
   mat[9] *= im;
   mat[10] *= im;
