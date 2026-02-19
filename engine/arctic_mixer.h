@@ -149,7 +149,9 @@ void RenderSound(SoundTask *sound, const SoundListenerHead &head, Si32 channel_i
     double time_offset_in_src = dst_time + src_start_pos - cur_delay;
     Si32 src_sample_idx = (Si32)(time_offset_in_src * src_sample_rate);
     if (src_sample_idx >= 0 && src_sample_idx < src_size_samples) {
-      acc = acc * acc_k + src_buffer[src_stride * src_sample_idx] * signal_k;
+      float mono_2x = (float)src_buffer[src_stride * src_sample_idx] +
+                      (float)src_buffer[src_stride * src_sample_idx + 1];
+      acc = acc * acc_k + mono_2x * (0.5f * signal_k);
       dst_buffer[dst_stride * dst_sample_idx] += (T)(acc * volume);
     }
   }
