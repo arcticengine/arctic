@@ -38,10 +38,14 @@ struct DataReader {
   std::vector<Ui8> data;
   Ui8 *p = nullptr;
   Ui8 *end = nullptr;
+  bool is_ok_ = true;
 
   /// @brief Reset the data reader with a new buffer
   /// @param in_data The new buffer to read from
   void Reset(std::vector<Ui8> &&in_data);
+
+  /// @brief Check if all reads so far completed without truncation
+  bool IsOk() const { return is_ok_; }
 
   /// @brief Read data from the buffer
   /// @param dst The destination to read to

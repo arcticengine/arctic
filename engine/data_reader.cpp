@@ -30,6 +30,7 @@ namespace arctic {
 
 void DataReader::Reset(std::vector<Ui8> &&in_data) {
   data = std::move(in_data);
+  is_ok_ = true;
   if (data.empty()) {
     p = nullptr;
     end = nullptr;
@@ -42,6 +43,10 @@ void DataReader::Reset(std::vector<Ui8> &&in_data) {
 Ui64 DataReader::Read(void *dst, Ui64 amount) {
   Ui64 to_read = std::min(amount, (Ui64)(end - p));
   memcpy(dst, p, (size_t)to_read);
+  if (to_read < amount) {
+    memset(static_cast<Ui8*>(dst) + to_read, 0, (size_t)(amount - to_read));
+    is_ok_ = false;
+  }
   p += to_read;
   return to_read;
 }
