@@ -370,18 +370,21 @@ inline Vec3F ExtractScale(Mat44F const &m) {
 }
 
 inline Vec3F ExtractRotationEuler(const Mat44F &m) {
-  Vec3F res = Vec3F(0.0f);
-  if (m.m[0] == 1.0f) {
-    res.x = atan2f(m.m[2], m.m[11]);
-    res.y = 0.0f;
-    res.z = 0.0f;
-  } else if (m.m[0] == -1.0f) {
-    res.x = atan2f(m.m[2], m.m[11]);
-    res.y = 0.0f;
+  Vec3F res(0.0f);
+  float cy = sqrtf(m.m[9] * m.m[9] + m.m[10] * m.m[10]);
+  if (cy < 1e-6f) {
+    res.y = (m.m[8] < 0.0f)
+      ? static_cast<float>(M_PI) / 2.0f
+      : -static_cast<float>(M_PI) / 2.0f;
+    if (m.m[8] < 0.0f) {
+      res.x = atan2f(m.m[1], m.m[2]);
+    } else {
+      res.x = atan2f(-m.m[1], -m.m[2]);
+    }
     res.z = 0.0f;
   } else {
-    res.x = atan2f(-m.m[9], m.m[10]);
-    res.y = atan2f(m.m[8], sqrtf(m.m[9] * m.m[9] + m.m[10] * m.m[10]));
+    res.x = atan2f(m.m[9], m.m[10]);
+    res.y = atan2f(-m.m[8], cy);
     res.z = atan2f(m.m[4], m.m[0]);
   }
   return res;
@@ -480,13 +483,11 @@ inline Mat44F SetRotationEuler4(const Vec3F &r) {
   const float d = cosf(r.y);
   const float e = sinf(r.z);
   const float f = cosf(r.z);
-  const float ac = a * c;
-  const float bc = b * c;
 
   return Mat44F(
-    d * f, d * e, -c, 0.0f,
-    ac * f - b * e, ac * e + b * f, a * d, 0.0f,
-    bc * f + a * e, bc * e - a * f, b * d, 0.0f,
+    d * f, f * a * c - e * b, f * b * c + e * a, 0.0f,
+    d * e, e * a * c + f * b, e * b * c - f * a, 0.0f,
+    -c, d * a, d * b, 0.0f,
     0.0f, 0.0f, 0.0f, 1.0f);
 }
 

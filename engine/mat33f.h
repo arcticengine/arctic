@@ -206,12 +206,11 @@ inline Mat33F SetRotationEuler3(float x, float y, float z) {
   const float d = cosf(y);
   const float e = sinf(z);
   const float f = cosf(z);
-  const float ac = a * c;
-  const float bc = b * c;
 
-  return Mat33F(d * f, d * e, -c,
-    ac * f - b * e, ac * e + b * f, a * d,
-    bc * f + a * e, bc * e - a * f, b * d);
+  return Mat33F(
+    d * f, f * a * c - e * b, f * b * c + e * a,
+    d * e, e * a * c + f * b, e * b * c - f * a,
+    -c, d * a, d * b);
 }
 
 
