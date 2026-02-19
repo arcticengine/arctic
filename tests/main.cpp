@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <ctime>
 #include <deque>
 #include <fstream>
@@ -13,6 +14,9 @@
 #include "engine/arctic_platform_def.h"
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
+#include "engine/easy_hw_sprite.h"
+#include "engine/opengl.h"
+#include "engine/gl_state.h"
 #include "engine/localization.h"
 #include "engine/json.h"
 #include "engine/rgb.h"
@@ -2459,6 +2463,130 @@ void test_transform3f_inverse_respects_scale() {
       error);
 }
 
+void test_hw_sprite_draw2d_uv_ignores_subregion() {
+  const Si32 SRC_W = 8;
+  const Si32 SRC_H = 8;
+  const Si32 HALF = SRC_W / 2;
+  const Rgba RED(255, 0, 0, 255);
+  const Rgba BLUE(0, 0, 255, 255);
+
+  // -- 1. Build a SW sprite: left half RED, right half BLUE --
+  Sprite sw_source;
+  sw_source.Create(SRC_W, SRC_H);
+  {
+    Rgba *px = sw_source.RgbaData();
+    Si32 stride = sw_source.StridePixels();
+    for (Si32 y = 0; y < SRC_H; ++y) {
+      for (Si32 x = 0; x < SRC_W; ++x) {
+        px[y * stride + x] = (x < HALF) ? RED : BLUE;
+      }
+    }
+  }
+
+  // -- 2. Upload to GPU as HwSprite --
+  HwSprite hw_source;
+  hw_source.LoadFromSoftwareSprite(sw_source);
+
+  // -- 3. Reference the left half only (should see only RED) --
+  HwSprite hw_ref;
+  hw_ref.Reference(hw_source, 0, 0, HALF, SRC_H);
+
+  // -- 4. Create a target HwSprite (has its own framebuffer + texture) --
+  HwSprite hw_target;
+  hw_target.Create(HALF, SRC_H);
+
+  // -- 5. Create the same shader that Engine::Draw2d() uses --
+  const char *vs = R"(
+    attribute vec3 vPosition;
+    attribute vec2 vTex;
+    varying vec2 v_texCoord;
+    void main() {
+      gl_Position = vec4(vPosition, 1.0);
+      v_texCoord = vTex;
+    }
+  )";
+  const char *fs = R"(
+    #ifdef GL_ES
+    precision mediump float;
+    #endif
+    varying vec2 v_texCoord;
+    uniform sampler2D s_texture;
+    void main() {
+      gl_FragColor = texture2D(s_texture, v_texCoord);
+    }
+  )";
+  GlProgram program;
+  program.Create(vs, fs);
+
+  // -- 6. Build a fullscreen quad with the UV coordinates
+  //        that Engine::Draw2d() actually generates: always (0,0)-(1,1).
+  //        Correct UVs for the left-half sub-region would be
+  //        u=[0..0.5], v=[0..1], but Draw2d() hardcodes [0..1] for both. --
+  struct V {
+    float px, py, pz;
+    float u, v;
+  };
+  V quad[6] = {
+    {-1, -1, 0,  0, 0}, { 1, -1, 0,  1, 0}, { 1,  1, 0,  1, 1},
+    {-1, -1, 0,  0, 0}, { 1,  1, 0,  1, 1}, {-1,  1, 0,  0, 1},
+  };
+  GlBuffer vbo;
+  vbo.Create();
+  vbo.Bind(GL_ARRAY_BUFFER);
+  vbo.SetData(quad, sizeof(quad));
+
+  // -- 7. Render into the target's framebuffer --
+  hw_target.sprite_instance()->framebuffer().Bind();
+  glViewport(0, 0, HALF, SRC_H);
+  glDisable(GL_SCISSOR_TEST);
+  glClearColor(0.f, 0.f, 0.f, 1.f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  program.Bind();
+  program.SetUniform("s_texture", 0);
+  hw_ref.sprite_instance()->texture().Bind(0);
+
+  vbo.Bind(GL_ARRAY_BUFFER);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+      sizeof(V), reinterpret_cast<void *>(0));
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+      sizeof(V), reinterpret_cast<void *>(3 * sizeof(float)));
+  glEnableVertexAttribArray(1);
+
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  glFinish();
+
+  // -- 8. Read back the rendered pixels --
+  std::vector<Rgba> pixels(HALF * SRC_H);
+  glReadPixels(0, 0, HALF, SRC_H, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+  GlFramebuffer::BindDefault();
+
+  // -- 9. Every pixel must be RED. If any BLUE pixels appear, the GPU
+  //        sampled the full texture instead of the left-half sub-region. --
+  Si32 blue_count = 0;
+  Si32 red_count = 0;
+  Si32 other_count = 0;
+  for (size_t i = 0; i < pixels.size(); ++i) {
+    Rgba c = pixels[i];
+    if (c.b > 128 && c.r < 128) {
+      ++blue_count;
+    } else if (c.r > 128 && c.b < 128) {
+      ++red_count;
+    } else {
+      ++other_count;
+    }
+  }
+
+  Si32 total = HALF * SRC_H;
+  TEST_CHECK_(blue_count == 0,
+    "GPU rendered %d RED, %d BLUE, %d other out of %d pixels. "
+    "BLUE pixels prove that Draw2d() samples the full texture with "
+    "UV (0,0)-(1,1) instead of the sub-region (Bug 19).",
+    red_count, blue_count, other_count, total);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -2536,6 +2664,7 @@ TEST_LIST = {
   {"Transform3F scale affects point", test_transform3f_scale_affects_point},
   {"Transform3F scale affects composition", test_transform3f_scale_affects_transform_composition},
   {"Transform3F Inverse respects scale", test_transform3f_inverse_respects_scale},
+  {"HW sprite Draw2d UV ignores sub-region", test_hw_sprite_draw2d_uv_ignores_subregion},
   {0}
 };
 
