@@ -335,6 +335,10 @@ void Engine::Draw2d() {
 
   while(idx < hw_sprite_drawing_.size()) {
     HwSpriteDrawing &h = hw_sprite_drawing_[idx];
+    if (!h.from_sprite.sprite_instance()) {
+      ++idx;
+      continue;
+    }
     GlTexture2D *texture = &h.from_sprite.sprite_instance()->texture();
     if (first_texture != texture || first_blending_mode != h.blending_mode || first_in_color != h.in_color) {
       if (first_idx != idx) {
