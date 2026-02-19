@@ -916,6 +916,9 @@ Vec2F BlockEdgePos(Vec2F lower_left_pos, Vec2F size, float corner_radius, Vec2F 
     return lower_left_pos + half_size;
   }
   direction = NormalizeSafe(direction);
+  if (direction.x == 0.f && direction.y == 0.f) {
+    return lower_left_pos + half_size;
+  }
   if (std::abs(half_size.x * direction.y) < std::abs(half_size.y * direction.x)) {
     time = std::abs(half_size.x / direction.x);
   } else {
