@@ -276,6 +276,9 @@ void FontInstance::LoadXml(const char *file_name) {
 void FontInstance::LoadAsciiSquare(const char *file_name, bool is_dense) {
   Sprite sprites;
   sprites.Load(file_name);
+  Check(sprites.Width() >= 32 && sprites.Height() >= 32,
+    "ASCII square font sprite is too small (need at least 32x32): ",
+    file_name);
 
   Si32 width = sprites.Width() / 16 - 1;
   Si32 height = sprites.Height() / 16 - 1;
