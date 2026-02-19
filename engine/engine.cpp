@@ -369,31 +369,39 @@ void Engine::Draw2d() {
       Vec3F xm = tx / static_cast<float>(backbuffer_texture_.Width());
       Vec3F ym = ty / static_cast<float>(backbuffer_texture_.Height());
 
+      float tex_w = static_cast<float>(h.from_sprite.sprite_instance()->width());
+      float tex_h = static_cast<float>(h.from_sprite.sprite_instance()->height());
+      Vec2Si32 rp = h.from_sprite.RefPos();
+      float u0 = (static_cast<float>(rp.x) + h.from_x) / tex_w;
+      float v0 = (static_cast<float>(rp.y) + h.from_y) / tex_h;
+      float u1 = (static_cast<float>(rp.x) + h.from_x + fabsf(h.from_width)) / tex_w;
+      float v1 = (static_cast<float>(rp.y) + h.from_y + fabsf(h.from_height)) / tex_h;
+
       int vertex_id = mesh_.mVertexData.mVertexArray[0].mNum;
       Vertex v;
       v = Vertex(
           base 
           + a.x * xm
           + a.y * ym,
-          n, Vec2F(0.0f, is_inverse_y_ ? 1.0f : 0.0f));
+          n, Vec2F(u0, is_inverse_y_ ? v1 : v0));
       mesh_.SetVertex(0, vertex_id, &v);
       v = Vertex(
           base 
           + b.x * xm
           + b.y * ym,
-          n, Vec2F(1.0f, is_inverse_y_ ? 1.0f : 0.0f));
+          n, Vec2F(u1, is_inverse_y_ ? v1 : v0));
       mesh_.SetVertex(0, vertex_id + 1, &v);
       v = Vertex(
           base 
           + c.x * xm
           + c.y * ym,
-          n, Vec2F(1.0f, is_inverse_y_ ? 0.0f : 1.0f));
+          n, Vec2F(u1, is_inverse_y_ ? v0 : v1));
       mesh_.SetVertex(0, vertex_id + 2, &v);
       v = Vertex(
           base 
           + d.x * xm
           + d.y * ym,
-          n, Vec2F(0.0f, is_inverse_y_ ? 0.0f : 1.0f));
+          n, Vec2F(u0, is_inverse_y_ ? v0 : v1));
       mesh_.SetVertex(0, vertex_id + 3, &v);
       mesh_.mVertexData.mVertexArray[0].mNum += 4;
 

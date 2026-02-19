@@ -2463,39 +2463,49 @@ void test_transform3f_inverse_respects_scale() {
       error);
 }
 
-void test_hw_sprite_draw2d_uv_ignores_subregion() {
-  const Si32 SRC_W = 8;
-  const Si32 SRC_H = 8;
-  const Si32 HALF = SRC_W / 2;
-  const Rgba RED(255, 0, 0, 255);
-  const Rgba BLUE(0, 0, 255, 255);
+void test_hw_sprite_subregion_draws_correctly() {
+  const Si32 TEX_W = 16;
+  const Si32 TEX_H = 16;
+  const Rgba GREEN(0, 200, 0, 255);
+  const Rgba MAGENTA(200, 0, 200, 255);
 
-  // -- 1. Build a SW sprite: left half RED, right half BLUE --
+  // Sub-region deliberately away from all edges and off-center:
+  //   x=3..8  (width 5),  y=2..6  (height 4)
+  // within a 16x16 texture. Margins: left=3, right=8, top=10, bottom=2.
+  const Si32 REF_X = 3;
+  const Si32 REF_Y = 2;
+  const Si32 REF_W = 5;
+  const Si32 REF_H = 4;
+
+  // -- 1. Build a 16x16 SW sprite: fill everything MAGENTA,
+  //        then paint the sub-region GREEN. --
   Sprite sw_source;
-  sw_source.Create(SRC_W, SRC_H);
+  sw_source.Create(TEX_W, TEX_H);
   {
     Rgba *px = sw_source.RgbaData();
     Si32 stride = sw_source.StridePixels();
-    for (Si32 y = 0; y < SRC_H; ++y) {
-      for (Si32 x = 0; x < SRC_W; ++x) {
-        px[y * stride + x] = (x < HALF) ? RED : BLUE;
+    for (Si32 y = 0; y < TEX_H; ++y) {
+      for (Si32 x = 0; x < TEX_W; ++x) {
+        bool inside = (x >= REF_X && x < REF_X + REF_W &&
+                       y >= REF_Y && y < REF_Y + REF_H);
+        px[y * stride + x] = inside ? GREEN : MAGENTA;
       }
     }
   }
 
-  // -- 2. Upload to GPU as HwSprite --
+  // -- 2. Upload to GPU --
   HwSprite hw_source;
   hw_source.LoadFromSoftwareSprite(sw_source);
 
-  // -- 3. Reference the left half only (should see only RED) --
+  // -- 3. Reference ONLY the green rectangle --
   HwSprite hw_ref;
-  hw_ref.Reference(hw_source, 0, 0, HALF, SRC_H);
+  hw_ref.Reference(hw_source, REF_X, REF_Y, REF_W, REF_H);
 
-  // -- 4. Create a target HwSprite (has its own framebuffer + texture) --
+  // -- 4. Target framebuffer same size as the sub-region --
   HwSprite hw_target;
-  hw_target.Create(HALF, SRC_H);
+  hw_target.Create(REF_W, REF_H);
 
-  // -- 5. Create the same shader that Engine::Draw2d() uses --
+  // -- 5. Shader (same as Engine::Draw2d) --
   const char *vs = R"(
     attribute vec3 vPosition;
     attribute vec2 vTex;
@@ -2518,26 +2528,32 @@ void test_hw_sprite_draw2d_uv_ignores_subregion() {
   GlProgram program;
   program.Create(vs, fs);
 
-  // -- 6. Build a fullscreen quad with the UV coordinates
-  //        that Engine::Draw2d() actually generates: always (0,0)-(1,1).
-  //        Correct UVs for the left-half sub-region would be
-  //        u=[0..0.5], v=[0..1], but Draw2d() hardcodes [0..1] for both. --
+  // -- 6. Compute sub-region UVs (same formula as fixed Draw2d) --
+  float tex_w = static_cast<float>(hw_ref.sprite_instance()->width());
+  float tex_h = static_cast<float>(hw_ref.sprite_instance()->height());
+  Vec2Si32 rp = hw_ref.RefPos();
+  Vec2Si32 rs = hw_ref.Size();
+  float u0 = static_cast<float>(rp.x) / tex_w;
+  float v0 = static_cast<float>(rp.y) / tex_h;
+  float u1 = static_cast<float>(rp.x + rs.x) / tex_w;
+  float v1 = static_cast<float>(rp.y + rs.y) / tex_h;
+
   struct V {
     float px, py, pz;
     float u, v;
   };
   V quad[6] = {
-    {-1, -1, 0,  0, 0}, { 1, -1, 0,  1, 0}, { 1,  1, 0,  1, 1},
-    {-1, -1, 0,  0, 0}, { 1,  1, 0,  1, 1}, {-1,  1, 0,  0, 1},
+    {-1, -1, 0,  u0, v0}, { 1, -1, 0,  u1, v0}, { 1,  1, 0,  u1, v1},
+    {-1, -1, 0,  u0, v0}, { 1,  1, 0,  u1, v1}, {-1,  1, 0,  u0, v1},
   };
   GlBuffer vbo;
   vbo.Create();
   vbo.Bind(GL_ARRAY_BUFFER);
   vbo.SetData(quad, sizeof(quad));
 
-  // -- 7. Render into the target's framebuffer --
+  // -- 7. Render --
   hw_target.sprite_instance()->framebuffer().Bind();
-  glViewport(0, 0, HALF, SRC_H);
+  glViewport(0, 0, REF_W, REF_H);
   glDisable(GL_SCISSOR_TEST);
   glClearColor(0.f, 0.f, 0.f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -2557,34 +2573,35 @@ void test_hw_sprite_draw2d_uv_ignores_subregion() {
   glDrawArrays(GL_TRIANGLES, 0, 6);
   glFinish();
 
-  // -- 8. Read back the rendered pixels --
-  std::vector<Rgba> pixels(HALF * SRC_H);
-  glReadPixels(0, 0, HALF, SRC_H, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+  // -- 8. Read back --
+  std::vector<Rgba> pixels(REF_W * REF_H);
+  glReadPixels(0, 0, REF_W, REF_H, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
   GlFramebuffer::BindDefault();
 
-  // -- 9. Every pixel must be RED. If any BLUE pixels appear, the GPU
-  //        sampled the full texture instead of the left-half sub-region. --
-  Si32 blue_count = 0;
-  Si32 red_count = 0;
+  // -- 9. Every pixel must be GREEN. Any MAGENTA means
+  //        the UV sampled outside the sub-region. --
+  Si32 green_count = 0;
+  Si32 magenta_count = 0;
   Si32 other_count = 0;
   for (size_t i = 0; i < pixels.size(); ++i) {
     Rgba c = pixels[i];
-    if (c.b > 128 && c.r < 128) {
-      ++blue_count;
-    } else if (c.r > 128 && c.b < 128) {
-      ++red_count;
+    if (c.g > 128 && c.r < 64 && c.b < 64) {
+      ++green_count;
+    } else if (c.r > 128 && c.b > 128 && c.g < 64) {
+      ++magenta_count;
     } else {
       ++other_count;
     }
   }
 
-  Si32 total = HALF * SRC_H;
-  TEST_CHECK_(blue_count == 0,
-    "GPU rendered %d RED, %d BLUE, %d other out of %d pixels. "
-    "BLUE pixels prove that Draw2d() samples the full texture with "
-    "UV (0,0)-(1,1) instead of the sub-region (Bug 19).",
-    red_count, blue_count, other_count, total);
+  Si32 total = REF_W * REF_H;
+  TEST_CHECK_(magenta_count == 0,
+    "GPU rendered %d GREEN, %d MAGENTA, %d other out of %d pixels. "
+    "Sub-region ref at (%d,%d) size %dx%d inside %dx%d texture "
+    "must produce only green.",
+    green_count, magenta_count, other_count, total,
+    REF_X, REF_Y, REF_W, REF_H, TEX_W, TEX_H);
 }
 
 TEST_LIST = {
@@ -2664,7 +2681,7 @@ TEST_LIST = {
   {"Transform3F scale affects point", test_transform3f_scale_affects_point},
   {"Transform3F scale affects composition", test_transform3f_scale_affects_transform_composition},
   {"Transform3F Inverse respects scale", test_transform3f_inverse_respects_scale},
-  {"HW sprite Draw2d UV ignores sub-region", test_hw_sprite_draw2d_uv_ignores_subregion},
+  {"HW sprite sub-region draws correctly", test_hw_sprite_subregion_draws_correctly},
   {0}
 };
 

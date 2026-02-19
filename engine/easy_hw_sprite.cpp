@@ -555,6 +555,10 @@ Vec2Si32 HwSprite::Size() const {
   return ref_size_;
 }
 
+Vec2Si32 HwSprite::RefPos() const {
+  return ref_pos_;
+}
+
 bool HwSprite::IsRef() const {
   return sprite_instance_ && (ref_pos_.x
       || ref_pos_.y

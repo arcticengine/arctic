@@ -187,6 +187,8 @@ class HwSprite {
   Si32 Height() const;
   /// @brief Get size of the sprite in pixels
   Vec2Si32 Size() const;
+  /// @brief Get the position of the sub-region within the underlying texture
+  Vec2Si32 RefPos() const;
   /// @brief Returns true if the sprite is actually a reference to another sprite
   bool IsRef() const;
 
