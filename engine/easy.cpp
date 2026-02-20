@@ -42,6 +42,7 @@
 #include "engine/log.h"
 #include "engine/vec4si32.h"
 #include "engine/vec4f.h"
+#include "vec2d.h"
 
 
 namespace arctic {
@@ -1322,12 +1323,17 @@ void ResizeScreen(const Si32 width, const Si32 height) {
   Vec2Si32 prev_size = GetEngine()->GetBackbuffer().Size();
   GetEngine()->ResizeBackbuffer(width, height);
   Vec2Si32 new_size = GetEngine()->GetBackbuffer().Size();
-  Vec2F scale((prev_size.x - 1) ? static_cast<float>(new_size.x - 1) / static_cast<float>(prev_size.x - 1) : 1.f,
-              (prev_size.y - 1) ? static_cast<float>(new_size.y - 1) / static_cast<float>(prev_size.y - 1) : 1.f);
-  g_mouse_pos_prev = Vec2Si32(Vec2F(g_mouse_pos_prev) * scale);
-  g_mouse_pos = Vec2Si32(Vec2F(g_mouse_pos) * scale);
-  g_mouse_pos_prev = Clamp(g_mouse_pos_prev, Vec2Si32(0, 0), Vec2Si32(new_size.x - 1, new_size.y - 1));
-  g_mouse_pos = Clamp(g_mouse_pos, Vec2Si32(0, 0), Vec2Si32(new_size.x - 1, new_size.y - 1));
+  if (prev_size.x > 1 && prev_size.y > 1) {
+    Vec2F scale((prev_size.x - 1) ? static_cast<float>(new_size.x - 1) / static_cast<float>(prev_size.x - 1) : 1.f,
+                (prev_size.y - 1) ? static_cast<float>(new_size.y - 1) / static_cast<float>(prev_size.y - 1) : 1.f);
+    g_mouse_pos_prev = Vec2Si32(Vec2F(g_mouse_pos_prev) * scale);
+    g_mouse_pos = Vec2Si32(Vec2F(g_mouse_pos) * scale);
+    g_mouse_pos_prev = Clamp(g_mouse_pos_prev, Vec2Si32(0, 0), Vec2Si32(new_size.x - 1, new_size.y - 1));
+    g_mouse_pos = Clamp(g_mouse_pos, Vec2Si32(0, 0), Vec2Si32(new_size.x - 1, new_size.y - 1));
+  } else {
+    g_mouse_pos_prev = Vec2Si32(0, 0);
+    g_mouse_pos = Vec2Si32(0, 0);
+  }
 }
 
 void ResizeScreen(const Vec2Si32 size) {
