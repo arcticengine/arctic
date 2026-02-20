@@ -159,6 +159,9 @@ QuaternionF Normalize(const QuaternionF& a) {
 
 QuaternionF Inverse(const QuaternionF& a) {
 	float norm = (a.x*a.x + a.y*a.y + a.z*a.z + a.w*a.w);
+	if (norm < 1e-30f) {
+		return QuaternionF(0.f, 0.f, 0.f, 1.f);
+	}
 	float inv = 1.0f / norm;
 	return QuaternionF(-a.x * inv, -a.y * inv, -a.z * inv, a.w * inv);
 }
