@@ -764,7 +764,8 @@ public:
    kIncDown = 4,
    kMiddleDragged = 5,
    kDecFast = 6,
-   kIncFast = 7
+   kIncFast = 7,
+   kDisabled = 8
  };
 
  /// @brief Enumeration of scrollbar kinds.
@@ -776,15 +777,19 @@ public:
  protected:
   Sprite normal_background_;
   Sprite focused_background_;
+  Sprite disabled_background_;
   Sprite normal_button_dec_;
   Sprite focused_button_dec_;
   Sprite down_button_dec_;
+  Sprite disabled_button_dec_;
   Sprite normal_button_inc_;
   Sprite focused_button_inc_;
   Sprite down_button_inc_;
+  Sprite disabled_button_inc_;
   Sprite normal_button_cur_;
   Sprite focused_button_cur_;
   Sprite down_button_cur_;
+  Sprite disabled_button_cur_;
 
   Si32 step_;
   Si32 min_value_;
@@ -875,6 +880,14 @@ public:
   /// @brief Gets the maximum value of the scrollbar.
   /// @return Maximum value of the scrollbar.
   Si32 GetMaxValue() const;
+
+  /// @brief Sets the visibility of the scrollbar panel.
+  /// @param is_visible True to make the panel visible, false to hide it.
+  void SetVisible(bool is_visible) override;
+
+  /// @brief Sets the enabled status of the scrollbar panel.
+  /// @param is_enabled True to enable the panel, false to disable it.
+  void SetEnabled(bool is_enabled) override;
 
   /// @brief Regenerates the sprites of the scrollbar panel.
   void RegenerateSprites() override;

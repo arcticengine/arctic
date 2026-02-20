@@ -1395,15 +1395,19 @@ Scrollbar::Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme)
 , theme_(theme) {
   normal_background_ = theme_->normal_background_.DrawExternalSize(size_);
   focused_background_ = theme_->focused_background_.DrawExternalSize(size_);
+  disabled_background_ = theme_->disabled_background_.DrawExternalSize(size_);
   normal_button_dec_ = theme_->normal_button_dec_;
   focused_button_dec_ = theme_->focused_button_dec_;
   down_button_dec_ = theme_->down_button_dec_;
+  disabled_button_dec_ = theme_->disabled_button_dec_;
   normal_button_inc_ = theme_->normal_button_inc_;
   focused_button_inc_ = theme_->focused_button_inc_;
   down_button_inc_ = theme_->down_button_inc_;
+  disabled_button_inc_ = theme_->disabled_button_inc_;
   normal_button_cur_ = theme_->normal_button_cur_;
   focused_button_cur_ = theme_->focused_button_cur_;
   down_button_cur_ = theme_->down_button_cur_;
+  disabled_button_cur_ = theme_->disabled_button_cur_;
   step_ = 5;
   min_value_ = 0;
   max_value_ = 100;
@@ -1417,7 +1421,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
                            bool *in_out_is_applied,
                            std::deque<GuiMessage> *out_gui_messages,
                            std::shared_ptr<Panel> *out_current_tab) {
-  if (state_ == kHidden) {
+  if (state_ == kHidden || state_ == kDisabled) {
     return;
   }
   Check(in_out_is_applied,
@@ -1566,6 +1570,28 @@ void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
   }
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
   Vec2Si32 button_offset = Vec2Si32(1, 1);
+  if (state_ == kDisabled) {
+    disabled_background_.Draw(absolute_pos);
+    disabled_button_dec_.Draw(absolute_pos + button_offset);
+    Vec2Si32 inc_pos = absolute_pos +
+    (dir_
+     ? size_.oy() - disabled_button_inc_.Size().oy() + Vec2Si32(0, -2)
+     : size_.xo() - disabled_button_inc_.Size().xo() + Vec2Si32(-2, 0));
+    disabled_button_inc_.Draw(inc_pos + button_offset);
+    Vec2Si32 after_dec = absolute_pos +
+    (dir_
+     ? button_offset.oy() + disabled_button_dec_.Size().oy()
+     : button_offset.xo() + disabled_button_dec_.Size().xo());
+    Si32 length = inc_pos[dir_] - after_dec[dir_] - disabled_button_cur_.Size()[dir_] + 1;
+    Si32 offset = 0;
+    if (length > 0 && max_value_ != min_value_) {
+      offset = Si32(Si64(length) * (Si64(value_) - Si64(min_value_)) / (Si64(max_value_) - Si64(min_value_)));
+    }
+    Vec2Si32 cur_pos = after_dec + (dir_ ? Vec2Si32(1, offset) : Vec2Si32(offset, 1));
+    disabled_button_cur_.Draw(cur_pos);
+    Panel::Draw(parent_absolute_pos);
+    return;
+  }
   if (state_ == kNormal) {
     normal_background_.Draw(absolute_pos);
   } else {
@@ -1639,6 +1665,33 @@ void Scrollbar::RegenerateSprites() {
   if (theme_) {
     normal_background_ = theme_->normal_background_.DrawExternalSize(size_);
     focused_background_ = theme_->focused_background_.DrawExternalSize(size_);
+    disabled_background_ = theme_->disabled_background_.DrawExternalSize(size_);
+  }
+}
+
+void Scrollbar::SetVisible(bool is_visible) {
+  if (Panel::IsVisible() != is_visible) {
+    Panel::SetVisible(is_visible);
+    if (Panel::IsVisible()) {
+      state_ = kNormal;
+    } else {
+      state_ = kHidden;
+    }
+  }
+}
+
+void Scrollbar::SetEnabled(bool is_enabled) {
+  if (state_ == kHidden) {
+    return;
+  }
+  if (is_enabled) {
+    if (state_ == kDisabled) {
+      state_ = kNormal;
+    }
+  } else {
+    if (state_ != kDisabled) {
+      state_ = kDisabled;
+    }
   }
 }
 
