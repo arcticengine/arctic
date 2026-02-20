@@ -543,6 +543,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       is_current_tab_ = false;
       if (message.keyboard.state[kKeyMouseLeft] == 1) {
         state_ = kDown;
+        *in_out_is_applied = true;
       } else {
         state_ = kHovered;
         *in_out_is_applied = true;
@@ -567,7 +568,6 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (state_ != prev_state) {
       if (state_ == kDown) {
         down_sound_.Play();
-        *in_out_is_applied = true;
         if (out_gui_messages) {
           out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
         }
