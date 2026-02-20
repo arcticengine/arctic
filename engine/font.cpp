@@ -434,7 +434,10 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
     if (end != p) {
       memcpy(path, p, static_cast<size_t>(end - p));
     }
-    strncpy(path + (end - p), page.page_name, sizeof(path) / 2);
+    size_t prefix_len = static_cast<size_t>(end - p);
+    size_t remaining = sizeof(path) - prefix_len - 1;
+    strncpy(path + prefix_len, page.page_name, remaining);
+    path[sizeof(path) - 1] = '\0';
     page_images[static_cast<size_t>(id)].Load(path);
 
     inner_pos += static_cast<Si32>(std::strlen(page.page_name)) + 1;
