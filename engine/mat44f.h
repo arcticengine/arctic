@@ -26,6 +26,7 @@
 
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include "engine/arctic_pi.h"
 #include "engine/arctic_types.h"
 #include "engine/vec4f.h"
 
@@ -374,8 +375,8 @@ inline Vec3F ExtractRotationEuler(const Mat44F &m) {
   float cy = sqrtf(m.m[9] * m.m[9] + m.m[10] * m.m[10]);
   if (cy < 1e-6f) {
     res.y = (m.m[8] < 0.0f)
-      ? static_cast<float>(M_PI) / 2.0f
-      : -static_cast<float>(M_PI) / 2.0f;
+      ? static_cast<float>(kPi) / 2.0f
+      : -static_cast<float>(kPi) / 2.0f;
     if (m.m[8] < 0.0f) {
       res.x = atan2f(m.m[1], m.m[2]);
     } else {

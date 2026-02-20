@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 
+#include "engine/arctic_pi.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_platform_def.h"
 #include "engine/arctic_types.h"
@@ -1509,7 +1510,7 @@ void test_sound_8bit_signed_vs_unsigned() {
 // Test: 90-degree rotation around X should map (0,1,0) to (0,0,1).
 // The bug flips the rotation direction, mapping (0,1,0) to (0,0,-1).
 void test_quat_to_mat33f_sign() {
-  float angle = static_cast<float>(M_PI / 2.0);  // 90 degrees
+  float angle = static_cast<float>(kPi / 2.0);
   Vec3F axis(1.0f, 0.0f, 0.0f);
   QuaternionF q(axis, angle);
 
@@ -1528,7 +1529,7 @@ void test_quat_to_mat33f_sign() {
 
 // Same sign bug exists in ToPartialMatrix33F (copy of ToMat33F logic).
 void test_quat_to_partial_mat33f_sign() {
-  float angle = static_cast<float>(M_PI / 2.0);
+  float angle = static_cast<float>(kPi / 2.0);
   Vec3F axis(1.0f, 0.0f, 0.0f);
   QuaternionF q(axis, angle);
 
@@ -2603,7 +2604,7 @@ void test_extract_euler_pure_z() {
 //    but y must be close to pi/2).
 void test_extract_euler_gimbal_lock() {
   float x = 0.5f, z = 0.3f;
-  float y = static_cast<float>(M_PI) / 2.f;
+  float y = static_cast<float>(kPi) / 2.f;
   Mat44F m = SetRotationEuler4(Vec3F(x, y, z));
   Vec3F e = ExtractRotationEuler(m);
   TEST_CHECK_(fabsf(e.y - y) < 0.05f,

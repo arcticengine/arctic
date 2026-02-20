@@ -1,7 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 - 2016 Inigo Quilez
-// Copyright (c) 2016 Huldra
+// Copyright (c) 2025 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,29 +20,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_ARCTIC_MATH_H_
-#define ENGINE_ARCTIC_MATH_H_
-
-#include "engine/bound2f.h"
-#include "engine/bound3f.h"
-#include "engine/easing.h"
-#include "engine/frustum3f.h"
-#include "engine/mat22d.h"
-#include "engine/mat22f.h"
-#include "engine/mat33f.h"
-#include "engine/mat44f.h"
-#include "engine/scalar_math.h"
-#include "engine/vec2d.h"
-#include "engine/vec2f.h"
-#include "engine/vec2si32.h"
-#include "engine/vec3f.h"
-#include "engine/vec3si32.h"
-#include "engine/vec4f.h"
-#include "engine/vec4si32.h"
-
-#include "engine/arctic_pi.h"
+#ifndef ENGINE_ARCTIC_PI_H_
+#define ENGINE_ARCTIC_PI_H_
 
 namespace arctic {
+
+constexpr double kPi = 3.14159265358979323846;
+
 }  // namespace arctic
 
-#endif  // ENGINE_ARCTIC_MATH_H_
+#endif  // ENGINE_ARCTIC_PI_H_

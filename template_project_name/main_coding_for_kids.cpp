@@ -1,3 +1,4 @@
+#include "engine/arctic_pi.h"
 #include "engine/easy.h"
 #include "engine/unicode.h"
 #pragma warning( disable : 4244 )
@@ -146,7 +147,7 @@ void Draw(Si32 x, Si32 y) {
 /// @param [in] r Radius of the circle
 void Circle(Si32 x, Si32 y, float r) {
   for (Si32 i = 0; i < 1024; ++i) {
-    float alpha = (float)i * (1.f / 1024.f * (float)M_PI * 2.f);
+    float alpha = (float)i * (1.f / 1024.f * static_cast<float>(kPi) * 2.f);
     float s = std::sin(alpha) * r;
     float c = std::cos(alpha) * r;
     SetPixel(x + Si32(c + 0.5f), y + Si32(s + 0.5f), InkRgba());

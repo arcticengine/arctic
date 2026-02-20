@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform_sound.h"
@@ -149,7 +148,7 @@ Sound BeepAsync(float duration_seconds, Si32 note) {
   freq = std::min(std::max(freq, 100.f), 22050.f);
   for (Si32 i = 0; i < end; ++i) {
     float t = i * duration_seconds / end;
-    float v = std::sin(t * 2.f * float(M_PI) * freq)*32767.f;
+    float v = std::sin(t * 2.f * static_cast<float>(kPi) * freq)*32767.f;
     p[i * 2] = (Si16)v;
     p[i * 2 + 1] = (Si16)v;
   }

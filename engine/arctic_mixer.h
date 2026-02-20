@@ -39,6 +39,7 @@
 #include "engine/mtq_mpmc_befsbfsp_allocator.h"
 #include "engine/sound_handle.h"
 #include "engine/sound_task.h"
+#include "engine/arctic_pi.h"
 #include "engine/vec3f.h"
 #include "engine/quaternion.h"
 #include "engine/transform3f.h"
@@ -69,8 +70,8 @@ struct SoundListenerHead {
     Vec3F unit(0.0f, 0.f, 1.f);
     for (Si32 ear_idx = 0; ear_idx < 2; ++ear_idx) {
       float sign = static_cast<float>(1 - ear_idx * 2);
-      QuaternionF rot(Vec3F(0.0f, 1.0f, 0.0f), sign * ear_angle_degrees * (float)M_PI / 180.f);
-      QuaternionF rot_max(Vec3F(0.0f, 1.0f, 0.0f), sign * ear_max_angle_degrees * (float)M_PI / 180.f);
+      QuaternionF rot(Vec3F(0.0f, 1.0f, 0.0f), sign * ear_angle_degrees * static_cast<float>(kPi) / 180.f);
+      QuaternionF rot_max(Vec3F(0.0f, 1.0f, 0.0f), sign * ear_max_angle_degrees * static_cast<float>(kPi) / 180.f);
       Vec3F toEar = loc.rotation.Rotate(rot.Rotate(dir));
       Ear &ear = ears[ear_idx];
       ear.pos = loc.displacement + toEar;
