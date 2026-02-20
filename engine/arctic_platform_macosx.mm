@@ -937,7 +937,9 @@ bool GetDirectoryEntries(const char *path,
     }
     DirectoryEntry entry;
     entry.title = dir_entry->d_name;
-    snprintf(full_path, sizeof(full_path), "%s/%s", path, dir_entry->d_name);
+    int written = snprintf(full_path, sizeof(full_path), "%s/%s", path, dir_entry->d_name);
+    Check(written >= 0 && static_cast<size_t>(written) < sizeof(full_path),
+      "GetDirectoryEntries: path too long: ", dir_entry->d_name);
     struct stat info;
     if (stat(full_path, &info) != 0) {
       closedir(dir);
