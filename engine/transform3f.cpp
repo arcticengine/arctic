@@ -23,6 +23,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <cmath>
 #include "transform3f.h"
 
 namespace arctic {
@@ -69,6 +70,9 @@ void Transform3F::Clear() {
 }*/
 
 Transform3F Inverse(const Transform3F& a) {
+	if (fabsf(a.scale) < 1e-30f) {
+		return Transform3F();
+	}
 	float inv_scale = 1.f / a.scale;
 	QuaternionF inv_rot = Inverse(a.rotation);
 	Vec3F inv_disp = inv_rot.Rotate(a.displacement * -inv_scale);
