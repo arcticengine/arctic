@@ -220,17 +220,23 @@ class DecoratedFrame {
     }
     if (left_.Height()) {
       for (Si32 y = 0; y < client_size.y; y += left_.Height()) {
+        Si32 height = is_y_scaleable_ ?
+          std::min(left_.Height(), client_size.y - y) :
+          left_.Height();
         left_.Draw(0, y + bottom_.Height(),
-          left_.Width(), left_.Height(),
-          0, 0, left_.Width(), left_.Height(),
+          left_.Width(), height,
+          0, 0, left_.Width(), height,
           sprite, kDrawBlendingModeCopyRgba);
       }
     }
     if (right_.Height()) {
       for (Si32 y = 0; y < client_size.y; y += right_.Height()) {
+        Si32 height = is_y_scaleable_ ?
+          std::min(right_.Height(), client_size.y - y) :
+          right_.Height();
         right_.Draw(size.x - right_.Width(), y + bottom_.Height(),
-          right_.Width(), right_.Height(),
-          0, 0, right_.Width(), right_.Height(),
+          right_.Width(), height,
+          0, 0, right_.Width(), height,
           sprite, kDrawBlendingModeCopyRgba);
       }
     }
