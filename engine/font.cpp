@@ -753,7 +753,7 @@ void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,
       } else if (origin == kTextOriginLastBase) {
         next_y = y + total_size.y;
       } else if (origin == kTextOriginCenter) {
-        next_y = y + total_size.y / 2;
+        next_y = y + total_size.y / 2 - base_to_top_ + line_height_ - outline_;
       }
     }
   }
