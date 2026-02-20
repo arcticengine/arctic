@@ -1533,13 +1533,15 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
   } else if (message.kind == InputMessage::kKeyboard) {
     if (is_current_tab_) {
       if (message.keyboard.key_state == 1) {
-        if (message.keyboard.key == kKeyLeft) {
+        KeyCode key_dec = (dir_ == kScrollVertical) ? kKeyDown : kKeyLeft;
+        KeyCode key_inc = (dir_ == kScrollVertical) ? kKeyUp : kKeyRight;
+        if (message.keyboard.key == key_dec) {
           value_ = Clamp(value_ - 1, min_value_, max_value_);
           if (out_gui_messages) {
             out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
           }
           OnScrollChange();
-        } else if (message.keyboard.key == kKeyRight) {
+        } else if (message.keyboard.key == key_inc) {
           value_ = Clamp(value_ + 1, min_value_, max_value_);
           if (out_gui_messages) {
             out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
