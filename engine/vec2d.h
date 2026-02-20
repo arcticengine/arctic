@@ -213,7 +213,7 @@ inline Vec2D FromPolar(const double a) {
 }
 
 inline double InverseLength(Vec2D const &v) {
-  return 1.0f / std::sqrt(v.x * v.x + v.y * v.y);
+  return 1.0 / std::sqrt(v.x * v.x + v.y * v.y);
 }
 
 inline Vec2D sin(const Vec2D &v) {
