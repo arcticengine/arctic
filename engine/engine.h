@@ -161,7 +161,7 @@ class Engine {
   /// @return The current time as a double.
   double GetTime();
 
-  /// @brief Generates a random integer within the specified range.
+  /// @brief Generates a random integer within the specified range. The range is not expected to be larger than 58 bit, larger ranges may caluse integer overflow or bad random distribution.
   /// @param min The minimum value of the range (inclusive).
   /// @param max The maximum value of the range (inclusive).
   /// @return A random integer within the specified range.
