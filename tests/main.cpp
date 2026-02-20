@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdio>
 #include <ctime>
 #include <deque>
 #include <fstream>
@@ -32,6 +33,7 @@
 #include "engine/mesh.h"
 #include "engine/mesh_gen_mod_complex.h"
 #include "engine/gui.h"
+#include "engine/csv.h"
 
 
 using namespace arctic;
@@ -2808,6 +2810,71 @@ void test_perspective_tiled_matches_perspective() {
       max_diff);
 }
 
+// Bug 63: CSV serialization must quote fields containing separator or quotes.
+// Round-trip: LoadFile -> set field with comma -> SaveFile -> LoadFile.
+void test_csv_roundtrip_separator_in_field() {
+  const char *path = "/tmp/arctic_csv_test_sep.csv";
+  {
+    std::ofstream f(path);
+    f << "name,value" << std::endl;
+    f << "hello,world" << std::endl;
+  }
+
+  CsvTable table;
+  bool ok = table.LoadFile(path);
+  TEST_CHECK(ok);
+  TEST_CHECK_(table.RowCount() == 1,
+      "Expected 1 row, got %llu", (unsigned long long)table.RowCount());
+
+  table[0].Set("value", "has,comma");
+  table.SaveFile();
+
+  CsvTable table2;
+  ok = table2.LoadFile(path);
+  TEST_CHECK_(ok, "Re-parse must succeed, error: %s",
+      table2.GetErrorDescription().c_str());
+  TEST_CHECK_(table2.RowCount() == 1,
+      "Re-parsed table must have 1 row, got %llu",
+      (unsigned long long)table2.RowCount());
+  if (table2.RowCount() >= 1) {
+    std::string val = table2[0]["value"];
+    TEST_CHECK_(val == "has,comma",
+        "Round-trip must preserve 'has,comma', got '%s'", val.c_str());
+  }
+  std::remove(path);
+}
+
+// Bug 63b: Same round-trip for quotes inside field values.
+void test_csv_roundtrip_quotes_in_field() {
+  const char *path = "/tmp/arctic_csv_test_quot.csv";
+  {
+    std::ofstream f(path);
+    f << "name,value" << std::endl;
+    f << "hello,world" << std::endl;
+  }
+
+  CsvTable table;
+  bool ok = table.LoadFile(path);
+  TEST_CHECK(ok);
+
+  table[0].Set("value", "say \"hi\"");
+  table.SaveFile();
+
+  CsvTable table2;
+  ok = table2.LoadFile(path);
+  TEST_CHECK_(ok, "Re-parse must succeed, error: %s",
+      table2.GetErrorDescription().c_str());
+  TEST_CHECK_(table2.RowCount() == 1,
+      "Re-parsed table must have 1 row, got %llu",
+      (unsigned long long)table2.RowCount());
+  if (table2.RowCount() >= 1) {
+    std::string val = table2[0]["value"];
+    TEST_CHECK_(val == "say \"hi\"",
+        "Round-trip must preserve quotes, got '%s'", val.c_str());
+  }
+  std::remove(path);
+}
+
 // Bug 62: Panel with top+bottom (or left+right) anchoring gets negative
 // size when the parent shrinks below the sum of anchor distances.
 void test_panel_anchor_no_negative_size() {
@@ -3085,6 +3152,8 @@ TEST_LIST = {
   {"Translation transforms point correctly", test_translation_transforms_point},
   {"SetLookat produces orthonormal basis", test_lookat_orthonormal},
   {"SetLookat degenerate returns identity", test_lookat_degenerate_returns_identity},
+  {"CSV round-trip: separator in field", test_csv_roundtrip_separator_in_field},
+  {"CSV round-trip: quotes in field", test_csv_roundtrip_quotes_in_field},
   {"Panel anchor: no negative size on parent shrink", test_panel_anchor_no_negative_size},
   {"SetPerspective y == cot(fovy/2)", test_perspective_y_equals_cot_half_fovy},
   {"SetPerspective matches SetFrustumPerspective", test_perspective_matches_frustum_perspective},

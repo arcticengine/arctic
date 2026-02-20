@@ -35,6 +35,30 @@
 
 namespace arctic {
 
+static std::string CsvEscapeField(const std::string &field, char sep) {
+  bool needs_quoting = false;
+  for (char c : field) {
+    if (c == sep || c == '"' || c == '\n' || c == '\r') {
+      needs_quoting = true;
+      break;
+    }
+  }
+  if (!needs_quoting) {
+    return field;
+  }
+  std::string result;
+  result.reserve(field.size() + 2);
+  result += '"';
+  for (char c : field) {
+    if (c == '"') {
+      result += '"';
+    }
+    result += c;
+  }
+  result += '"';
+  return result;
+}
+
 CsvRow CsvRow::invalid_row_{std::vector<std::string>()};
 
 CsvTable::CsvTable() {
@@ -310,7 +334,7 @@ void CsvTable::SaveFile() const {
     // header
     Ui64 i = 0;
     for (auto it = header_.begin(); it != header_.end(); ++it) {
-      f << *it;
+      f << CsvEscapeField(*it, sep_);
       if (i < header_.size() - 1) {
         f << sep_;
       } else {
@@ -395,7 +419,7 @@ std::ostream &operator<<(std::ostream &os, const CsvRow &row) {
 
 std::ofstream &operator<<(std::ofstream &os, const CsvRow &row) {
   for (size_t i = 0; i != row.values_.size(); ++i) {
-    os << row.values_[i];
+    os << CsvEscapeField(row.values_[i], row.sep_);
     if (i + 1 < row.values_.size()) {
       os << row.sep_;
     }
