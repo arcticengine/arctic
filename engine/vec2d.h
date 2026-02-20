@@ -183,8 +183,8 @@ inline Vec2D Normalize(Vec2D const &v) {
 }
 
 inline Vec2D Mix(Vec2D const &a, Vec2D const &b, double const f) {
-  return Vec2D(a.x * (1.0f - f) + f * b.x,
-    a.y * (1.0f - f) + f * b.y);
+  return Vec2D(a.x * (1.0 - f) + f * b.x,
+    a.y * (1.0 - f) + f * b.y);
 }
 
 
