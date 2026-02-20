@@ -304,7 +304,7 @@ inline Vec3D Normalize(Vec3D const &v) {
 
 inline Vec3D NormalizeSafe(Vec3D const &v) {
   double const m2 = v.x * v.x + v.y * v.y + v.z * v.z;
-  if (m2 <= 0.000000001f) {
+  if (m2 <= 0.000000001) {
     return Vec3D(0.0);
   }
   double const im = 1.0 / std::sqrt(m2);
