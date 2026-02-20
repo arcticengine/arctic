@@ -28,6 +28,7 @@
 #include "engine/transform3f.h"
 #include "engine/skeleton.h"
 #include "engine/unicode.h"
+#include "engine/frustum3f.h"
 #include "engine/mesh.h"
 #include "engine/mesh_gen_mod_complex.h"
 
@@ -2737,6 +2738,75 @@ void test_lookat_degenerate_returns_identity() {
       "SetLookat(eye==target) should be identity, diff=%.7f", d);
 }
 
+// Bug 46: SetPerspective uses tan(fovy) instead of tan(fovy/2).
+// The vertical scale element m[5] must equal 1/tan(fovy/2).
+// With the bug, it equals 1/tan(fovy) -- a completely different value.
+void test_perspective_y_equals_cot_half_fovy() {
+  const float fovy = 60.0f;
+  const float aspect = 1.5f;
+  const float znear = 0.1f;
+  const float zfar = 100.0f;
+
+  Mat44F m = SetPerspective(fovy, aspect, znear, zfar);
+
+  float half_fovy_rad = fovy * static_cast<float>(M_PI) / 360.0f;
+  float expected_y = 1.0f / tanf(half_fovy_rad);
+  float expected_x = expected_y / aspect;
+
+  TEST_CHECK_(fabsf(m.m[5] - expected_y) < 1e-5f,
+      "m[5] should be cot(fovy/2)=%.6f, got %.6f", expected_y, m.m[5]);
+  TEST_CHECK_(fabsf(m.m[0] - expected_x) < 1e-5f,
+      "m[0] should be cot(fovy/2)/aspect=%.6f, got %.6f", expected_x, m.m[0]);
+}
+
+// SetPerspective and SetFrustumPerspective accept the same fovy parameter
+// and must produce the same projection matrix for the same inputs.
+void test_perspective_matches_frustum_perspective() {
+  const float fovy = 90.0f;
+  const float aspect = 16.0f / 9.0f;
+  const float znear = 0.5f;
+  const float zfar = 500.0f;
+
+  Mat44F mat = SetPerspective(fovy, aspect, znear, zfar);
+  Frustum3F fru = SetFrustumPerspective(fovy, aspect, znear, zfar);
+  Mat44F fru_mat = fru.matrix;
+
+  float max_diff = 0.0f;
+  for (int i = 0; i < 16; ++i) {
+    float d = fabsf(mat.m[i] - fru_mat.m[i]);
+    if (d > max_diff) {
+      max_diff = d;
+    }
+  }
+  TEST_CHECK_(max_diff < 1e-5f,
+      "SetPerspective and SetFrustumPerspective must match, max diff=%.7f",
+      max_diff);
+}
+
+// SetPerspectiveTiled with offset=(0,0) and size=(1,1) is a full tile,
+// which must produce the same matrix as SetPerspective.
+void test_perspective_tiled_matches_perspective() {
+  const float fovy = 75.0f;
+  const float aspect = 2.0f;
+  const float znear = 1.0f;
+  const float zfar = 1000.0f;
+
+  Mat44F mat = SetPerspective(fovy, aspect, znear, zfar);
+  Mat44F tiled = SetPerspectiveTiled(fovy, aspect, znear, zfar,
+      Vec2F(0.0f, 0.0f), Vec2F(1.0f, 1.0f));
+
+  float max_diff = 0.0f;
+  for (int i = 0; i < 16; ++i) {
+    float d = fabsf(mat.m[i] - tiled.m[i]);
+    if (d > max_diff) {
+      max_diff = d;
+    }
+  }
+  TEST_CHECK_(max_diff < 1e-5f,
+      "SetPerspectiveTiled(full) must match SetPerspective, max diff=%.7f",
+      max_diff);
+}
+
 // Bug 35: Sprite::Reference on a zero-sized sprite must not produce
 // negative ref_pos_ (from.ref_size_.x - 1 == -1 when ref_size_ is 0).
 void test_sprite_reference_zero_size() {
@@ -2990,6 +3060,9 @@ TEST_LIST = {
   {"Translation transforms point correctly", test_translation_transforms_point},
   {"SetLookat produces orthonormal basis", test_lookat_orthonormal},
   {"SetLookat degenerate returns identity", test_lookat_degenerate_returns_identity},
+  {"SetPerspective y == cot(fovy/2)", test_perspective_y_equals_cot_half_fovy},
+  {"SetPerspective matches SetFrustumPerspective", test_perspective_matches_frustum_perspective},
+  {"SetPerspectiveTiled identity matches SetPerspective", test_perspective_tiled_matches_perspective},
   {0}
 };
 

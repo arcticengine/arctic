@@ -663,14 +663,14 @@ inline Mat44F SetOrtho(float left, float right, float bottom, float top,
 inline Mat44F SetPerspective(float fovy, float aspect,
   float znear, float zfar) {
 #if 0
-  const float ymax = znear * tanf(fovy * 3.141592653589f / 180.0f);
+  const float ymax = znear * tanf(fovy * 3.141592653589f / 360.0f);
   const float ymin = -ymax;
   const float xmin = ymin * aspect;
   const float xmax = ymax * aspect;
 
   return setFrustumMat(xmin, xmax, ymin, ymax, znear, zfar);
 #else
-  const float tan = tanf(fovy * 3.141592653589f / 180.0f);
+  const float tan = tanf(fovy * 3.141592653589f / 360.0f);
   const float x = 1.0f / (tan * aspect);
   const float y = 1.0f / (tan);
   const float c = -(zfar + znear) / (zfar - znear);
@@ -718,7 +718,7 @@ inline Mat44F SetProjection(const Vec4F &fov, float znear, float zfar) {
 
 inline Mat44F SetPerspectiveTiled(float fovy, float aspect,
   float znear, float zfar, const Vec2F &off, const Vec2F &wid) {
-  float ym = znear * tanf(fovy * 3.141592653589f / 180.0f);
+  float ym = znear * tanf(fovy * 3.141592653589f / 360.0f);
   float xm = ym * aspect;
 
   const float xmin = -xm + 2.0f * xm * off.x;
