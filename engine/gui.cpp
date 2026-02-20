@@ -1218,6 +1218,7 @@ void Editbox::SetText(std::string text) {
   cursor_pos_ = std::min(std::max(0, cursor_pos_), (Si32)text.length());
   selection_begin_ = 0;
   selection_end_ = 0;
+  display_pos_ = 0;
   text_ = text;
 }
 
