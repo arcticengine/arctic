@@ -25,7 +25,6 @@
 #ifndef ENGINE_EASING_H_
 #define ENGINE_EASING_H_
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 
 namespace arctic {

@@ -23,7 +23,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#define _USE_MATH_DEFINES
 #include <cstring>
 #include <cmath>
 #include <vector>

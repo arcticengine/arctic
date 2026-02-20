@@ -24,7 +24,6 @@
 #ifndef ENGINE_ARCTIC_MIXER_H_
 #define ENGINE_ARCTIC_MIXER_H_
 
-#define _USE_MATH_DEFINES
 #include <cmath> 
 #include <deque>  // NOLINT
 #include <mutex>  // NOLINT

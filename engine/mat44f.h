@@ -24,7 +24,6 @@
 #ifndef ENGINE_MAT44F_H_
 #define ENGINE_MAT44F_H_
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include "engine/arctic_pi.h"
 #include "engine/arctic_types.h"

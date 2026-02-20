@@ -24,7 +24,6 @@
 #ifndef ENGINE_VEC3D_H_
 #define ENGINE_VEC3D_H_
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include "engine/arctic_types.h"
 #include "engine/vec2d.h"

@@ -27,7 +27,6 @@
 
 #ifdef ARCTIC_PLATFORM_MACOSX
 
-#define _USE_MATH_DEFINES
 
 #import <AppKit/AppKit.h>
 

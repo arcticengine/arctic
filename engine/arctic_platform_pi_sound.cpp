@@ -27,7 +27,6 @@
 
 #ifdef ARCTIC_PLATFORM_PI
 
-#define _USE_MATH_DEFINES
 #include <alsa/asoundlib.h>
 #include <alsa/control.h>
 

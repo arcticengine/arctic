@@ -27,7 +27,6 @@
 
 #ifdef ARCTIC_PLATFORM_WEB
 
-#define _USE_MATH_DEFINES
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <unistd.h>
