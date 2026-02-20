@@ -1055,8 +1055,8 @@ void Sprite::Reference(const Sprite &from, const Vec2Si32 from_pos, const Vec2Si
 void Sprite::Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     const Si32 from_width, const Si32 from_height) {
   ref_pos_ = Vec2Si32(
-    from.ref_pos_.x + std::min(std::max(from_x, 0), from.ref_size_.x - 1),
-    from.ref_pos_.y + std::min(std::max(from_y, 0), from.ref_size_.y - 1));
+    from.ref_pos_.x + std::min(std::max(from_x, 0), std::max(from.ref_size_.x - 1, 0)),
+    from.ref_pos_.y + std::min(std::max(from_y, 0), std::max(from.ref_size_.y - 1, 0)));
   const Vec2Si32 max_size = from.ref_pos_ + from.ref_size_ - ref_pos_;
   ref_size_ = Vec2Si32(
     std::min(from_width, max_size.x),

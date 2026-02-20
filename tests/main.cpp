@@ -2737,6 +2737,24 @@ void test_lookat_degenerate_returns_identity() {
       "SetLookat(eye==target) should be identity, diff=%.7f", d);
 }
 
+// Bug 35: Sprite::Reference on a zero-sized sprite must not produce
+// negative ref_pos_ (from.ref_size_.x - 1 == -1 when ref_size_ is 0).
+void test_sprite_reference_zero_size() {
+  Sprite empty;
+  TEST_CHECK_(empty.Width() == 0 && empty.Height() == 0,
+      "Default Sprite must be 0x0, got %dx%d",
+      empty.Width(), empty.Height());
+
+  Sprite ref;
+  ref.Reference(empty, 0, 0, 0, 0);
+  TEST_CHECK_(ref.RefPos().x >= 0 && ref.RefPos().y >= 0,
+      "Reference from zero-size sprite: RefPos must be >= (0,0), "
+      "got (%d,%d)", ref.RefPos().x, ref.RefPos().y);
+  TEST_CHECK_(ref.Width() >= 0 && ref.Height() >= 0,
+      "Reference from zero-size sprite: size must be >= 0, "
+      "got %dx%d", ref.Width(), ref.Height());
+}
+
 void test_hw_sprite_subregion_draws_correctly() {
   const Si32 TEX_W = 16;
   const Si32 TEX_H = 16;
@@ -2955,6 +2973,7 @@ TEST_LIST = {
   {"Transform3F scale affects point", test_transform3f_scale_affects_point},
   {"Transform3F scale affects composition", test_transform3f_scale_affects_transform_composition},
   {"Transform3F Inverse respects scale", test_transform3f_inverse_respects_scale},
+  {"Sprite Reference zero-size source", test_sprite_reference_zero_size},
   {"HW sprite sub-region draws correctly", test_hw_sprite_subregion_draws_correctly},
   {"Quat matrix vs AxisAngle consistency", test_quat_matrix_vs_axis_angle},
   {"Rotation XYZ vs AxisAngle consistency", test_rotation_xyz_vs_axis_angle_consistency},
