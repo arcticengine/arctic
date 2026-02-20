@@ -27,6 +27,8 @@
 
 #ifdef ARCTIC_PLATFORM_MACOSX
 
+#define _USE_MATH_DEFINES
+
 #import <AppKit/AppKit.h>
 
 #include <AudioToolbox/AudioToolbox.h>
@@ -36,7 +38,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <fstream>
 #include <memory>

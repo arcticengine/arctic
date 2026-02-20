@@ -30,6 +30,7 @@
 
 #define IDI_ICON1 129
 
+#define _USE_MATH_DEFINES
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
@@ -41,7 +42,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <fstream>
 #include <memory>

@@ -27,6 +27,8 @@
 
 #ifdef ARCTIC_PLATFORM_MACOSX
 
+#define _USE_MATH_DEFINES
+
 #ifndef GL_SILENCE_DEPRECATION
 #define GL_SILENCE_DEPRECATION
 #endif
@@ -41,7 +43,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <map>
 #include <memory>

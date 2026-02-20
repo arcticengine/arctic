@@ -27,12 +27,12 @@
 
 #ifdef ARCTIC_PLATFORM_WEB
 
+#define _USE_MATH_DEFINES
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
-#define _USE_MATH_DEFINES
 #include <cmath>
 #include <fstream>
 #include <memory>
