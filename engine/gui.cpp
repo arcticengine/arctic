@@ -851,6 +851,9 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   if (!IsVisible()) {
     return;
   }
+  if (!font_.FontInstance()) {
+    return;
+  }
   Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
   Vec2Si32 offset;
 
@@ -1225,103 +1228,102 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
   } else {
     normal_.Draw(pos);
   }
-  Si32 border = std::max(0,
-    (normal_.Height() - font_.FontInstance()->line_height_) / 2);
-  Si32 space_width = font_.EvaluateSize(" ", false).x;
+  if (font_.FontInstance()) {
+    Si32 border = std::max(0,
+      (normal_.Height() - font_.FontInstance()->line_height_) / 2);
+    Si32 space_width = font_.EvaluateSize(" ", false).x;
 
-  Si32 available_width = size_.x - border * 2 - space_width;
-  Si32 displayable_width = size_.x - border * 2;
+    Si32 available_width = size_.x - border * 2 - space_width;
+    Si32 displayable_width = size_.x - border * 2;
 
-  // Update display_pos_ so that both display_pos_
-  // and cursor_pos_ are both visible.
-  Si32 end_pos = (Si32)text_.length();
-  if (cursor_pos_ <= display_pos_) {
-    // Move display pos to the left when cursor is at the left border.
-    display_pos_ = std::max(0, cursor_pos_ - 1);
-  } else {
-    // Move display pos to the right when cursor is at the right border.
-    std::string part = text_.substr(static_cast<size_t>(display_pos_),
-                                    static_cast<size_t>(cursor_pos_ - display_pos_));
-    Si32 w = font_.EvaluateSize(part.c_str(), true).x;
-    if (available_width > 0) {
-      while (w > available_width && display_pos_ < cursor_pos_) {
-        display_pos_++;
-        part = text_.substr(static_cast<size_t>(display_pos_),
-                            static_cast<size_t>(cursor_pos_ - display_pos_));
-        w = font_.EvaluateSize(part.c_str(), true).x;
-        end_pos = std::min(cursor_pos_ + 1, (Si32)text_.length());
+    // Update display_pos_ so that both display_pos_
+    // and cursor_pos_ are both visible.
+    Si32 end_pos = (Si32)text_.length();
+    if (cursor_pos_ <= display_pos_) {
+      // Move display pos to the left when cursor is at the left border.
+      display_pos_ = std::max(0, cursor_pos_ - 1);
+    } else {
+      // Move display pos to the right when cursor is at the right border.
+      std::string part = text_.substr(static_cast<size_t>(display_pos_),
+                                      static_cast<size_t>(cursor_pos_ - display_pos_));
+      Si32 w = font_.EvaluateSize(part.c_str(), true).x;
+      if (available_width > 0) {
+        while (w > available_width && display_pos_ < cursor_pos_) {
+          display_pos_++;
+          part = text_.substr(static_cast<size_t>(display_pos_),
+                              static_cast<size_t>(cursor_pos_ - display_pos_));
+          w = font_.EvaluateSize(part.c_str(), true).x;
+          end_pos = std::min(cursor_pos_ + 1, (Si32)text_.length());
+        }
       }
     }
-  }
-  // Display part of text with start at the display_pos_.
+    // Display part of text with start at the display_pos_.
 
-  // const char *visible = text_.c_str();
-
-  std::string display_text = text_.substr(static_cast<size_t>(display_pos_),
-                                          static_cast<size_t>(end_pos - display_pos_));
-  Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
-  if (available_width) {
-    while (visible_width > displayable_width) {
-      Si32 visible_len = (Si32)display_text.length();
-      Si32 desired_len = Si32(Si64(visible_len) * Si64(displayable_width) / Si64(visible_width));
-      if (desired_len >= visible_len) {
-        desired_len = visible_len - 1;
+    std::string display_text = text_.substr(static_cast<size_t>(display_pos_),
+                                            static_cast<size_t>(end_pos - display_pos_));
+    Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
+    if (available_width) {
+      while (visible_width > displayable_width) {
+        Si32 visible_len = (Si32)display_text.length();
+        Si32 desired_len = Si32(Si64(visible_len) * Si64(displayable_width) / Si64(visible_width));
+        if (desired_len >= visible_len) {
+          desired_len = visible_len - 1;
+        }
+        end_pos = display_pos_ + desired_len;
+        display_text = text_.substr(static_cast<size_t>(display_pos_),
+                                    static_cast<size_t>(end_pos - display_pos_));
+        visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
       }
-      end_pos = display_pos_ + desired_len;
-      display_text = text_.substr(static_cast<size_t>(display_pos_),
-                                  static_cast<size_t>(end_pos - display_pos_));
-      visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
     }
-  }
 
-  font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
-             origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
+    font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
+               origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
 
-  Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
-  std::string left_part = text_.substr(0, static_cast<size_t>(cursor_pos));
-  Si32 cursor_x = font_.EvaluateSize(left_part.c_str(), false).x;
+    Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
+    std::string left_part = text_.substr(0, static_cast<size_t>(cursor_pos));
+    Si32 cursor_x = font_.EvaluateSize(left_part.c_str(), false).x;
 
-  Si32 skip_x = font_.EvaluateSize(
-                                   text_.substr(0, static_cast<size_t>(display_pos_)).c_str(), false).x;
+    Si32 skip_x = font_.EvaluateSize(
+                                     text_.substr(0, static_cast<size_t>(display_pos_)).c_str(), false).x;
 
-  Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
-  a.x = std::max(pos.x + border, a.x - skip_x);
-  Vec2Si32 b(a.x + space_width - 1, a.y);
-  if (fmod(Time(), 0.6) < 0.3 && is_current_tab_) {
-    for (Si32 y = 0; y < 3; ++y) {
-      DrawLine(a, b, color_);
-      a.y++;
-      b.y++;
-    }
-  }
-
-  if (selection_begin_ != selection_end_ && is_current_tab_) {
-
-    Vec2Si32 size1;
-    Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
-    Vec2Si32 size2;
-    const char *plast = text_.c_str()+selection_end_-1;
-    while (plast > text_.c_str()+selection_begin_) {
-      if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
-        break;
+    Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
+    a.x = std::max(pos.x + border, a.x - skip_x);
+    Vec2Si32 b(a.x + space_width - 1, a.y);
+    if (fmod(Time(), 0.6) < 0.3 && is_current_tab_) {
+      for (Si32 y = 0; y < 3; ++y) {
+        DrawLine(a, b, color_);
+        a.y++;
+        b.y++;
       }
-      --plast;
     }
-    Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
 
-    Si32 x1 = pos.x + border + pos1.x;
-    Si32 x2 = pos.x + border + pos2.x + size2.x;
-    Si32 y1 = pos.y + border;
-    Si32 y2 = pos.y + border + font_.FontInstance()->line_height_;
-    Sprite backbuffer = GetEngine()->GetBackbuffer();
+    if (selection_begin_ != selection_end_ && is_current_tab_) {
+      Vec2Si32 size1;
+      Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
+      Vec2Si32 size2;
+      const char *plast = text_.c_str()+selection_end_-1;
+      while (plast > text_.c_str()+selection_begin_) {
+        if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
+          break;
+        }
+        --plast;
+      }
+      Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
 
-    x1 = std::min(std::max(pos.x + border, x1 - skip_x),
-                  pos.x + border + displayable_width);
-    x2 = std::min(std::max(pos.x + border, x2 - skip_x),
-                  pos.x + border + displayable_width);
+      Si32 x1 = pos.x + border + pos1.x;
+      Si32 x2 = pos.x + border + pos2.x + size2.x;
+      Si32 y1 = pos.y + border;
+      Si32 y2 = pos.y + border + font_.FontInstance()->line_height_;
+      Sprite backbuffer = GetEngine()->GetBackbuffer();
 
-    DrawSelection(x1, y1, x2, y2, selection_mode_,
-                  selection_color_1_, selection_color_2_, backbuffer);
+      x1 = std::min(std::max(pos.x + border, x1 - skip_x),
+                    pos.x + border + displayable_width);
+      x2 = std::min(std::max(pos.x + border, x2 - skip_x),
+                    pos.x + border + displayable_width);
+
+      DrawSelection(x1, y1, x2, y2, selection_mode_,
+                    selection_color_1_, selection_color_2_, backbuffer);
+    }
   }
 
   Panel::Draw(parent_absolute_pos);
