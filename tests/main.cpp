@@ -31,6 +31,7 @@
 #include "engine/frustum3f.h"
 #include "engine/mesh.h"
 #include "engine/mesh_gen_mod_complex.h"
+#include "engine/gui.h"
 
 
 using namespace arctic;
@@ -2807,6 +2808,30 @@ void test_perspective_tiled_matches_perspective() {
       max_diff);
 }
 
+// Bug 62: Panel with top+bottom (or left+right) anchoring gets negative
+// size when the parent shrinks below the sum of anchor distances.
+void test_panel_anchor_no_negative_size() {
+  auto parent = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(400, 300));
+
+  auto child = std::make_shared<Panel>(1, Vec2Si32(20, 30), Vec2Si32(360, 240));
+  parent->AddChild(child);
+  child->SetAnchor(static_cast<AnchorKind>(kAnchorLeft | kAnchorRight |
+                                            kAnchorBottom | kAnchorTop));
+
+  // anchor_left_d_ = 20, anchor_right_d_ = 400 - 360 - 20 = 20
+  // anchor_bottom_d_ = 30, anchor_top_d_ = 300 - 240 - 30 = 30
+  // So sum of horizontal anchors = 40, sum of vertical anchors = 60.
+
+  // Shrink parent below the anchor distances.
+  parent->SetSize(Vec2Si32(30, 40));
+
+  Vec2Si32 sz = child->GetSize();
+  TEST_CHECK_(sz.x >= 0,
+      "Child width must not be negative after parent shrink, got %d", sz.x);
+  TEST_CHECK_(sz.y >= 0,
+      "Child height must not be negative after parent shrink, got %d", sz.y);
+}
+
 // Bug 35: Sprite::Reference on a zero-sized sprite must not produce
 // negative ref_pos_ (from.ref_size_.x - 1 == -1 when ref_size_ is 0).
 void test_sprite_reference_zero_size() {
@@ -3060,6 +3085,7 @@ TEST_LIST = {
   {"Translation transforms point correctly", test_translation_transforms_point},
   {"SetLookat produces orthonormal basis", test_lookat_orthonormal},
   {"SetLookat degenerate returns identity", test_lookat_degenerate_returns_identity},
+  {"Panel anchor: no negative size on parent shrink", test_panel_anchor_no_negative_size},
   {"SetPerspective y == cot(fovy/2)", test_perspective_y_equals_cot_half_fovy},
   {"SetPerspective matches SetFrustumPerspective", test_perspective_matches_frustum_perspective},
   {"SetPerspectiveTiled identity matches SetPerspective", test_perspective_tiled_matches_perspective},

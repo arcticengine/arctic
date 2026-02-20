@@ -95,7 +95,7 @@ void Panel::ParentSizeChanged(Vec2Si32 prev_size, Vec2Si32 cur_size) {
     Vec2Si32 new_size = size_;
     if ((anchor_ & kAnchorBottom) && (anchor_ & kAnchorTop)) {
       pos_.y = anchor_bottom_d_;
-      new_size.y = cur_size.y - pos_.y - anchor_top_d_;
+      new_size.y = std::max(0, cur_size.y - pos_.y - anchor_top_d_);
     } else if (anchor_ & kAnchorBottom) {
       pos_.y = anchor_bottom_d_;
     } else if (anchor_ & kAnchorTop) {
@@ -104,7 +104,7 @@ void Panel::ParentSizeChanged(Vec2Si32 prev_size, Vec2Si32 cur_size) {
 
     if ((anchor_ & kAnchorLeft) && (anchor_ & kAnchorRight)) {
       pos_.x = anchor_left_d_;
-      new_size.x = cur_size.x - pos_.x - anchor_right_d_;
+      new_size.x = std::max(0, cur_size.x - pos_.x - anchor_right_d_);
     } else if (anchor_ & kAnchorLeft) {
       pos_.x = anchor_left_d_;
     } else if (anchor_ & kAnchorRight) {
