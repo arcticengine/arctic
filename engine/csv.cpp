@@ -353,6 +353,9 @@ bool CsvRow::Set(const std::string &key, const std::string &value) {
   size_t pos = 0;
   for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
+      if (pos >= values_.size()) {
+        values_.resize(pos + 1);
+      }
       values_[pos] = value;
       return true;
     }
@@ -373,6 +376,9 @@ const std::string CsvRow::operator[](const std::string &key) const {
   size_t pos = 0;
   for (it = header_.begin(); it != header_.end(); ++it) {
     if (key == *it) {
+      if (pos >= values_.size()) {
+        return std::string();
+      }
       return values_[pos];
     }
     pos++;
