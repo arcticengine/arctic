@@ -106,6 +106,9 @@ template <class T>
 void RenderSound(SoundTask *sound, const SoundListenerHead &head, Si32 channel_idx,
                  T *dst_buffer, Si32 dst_stride, Si32 dst_size_samples, double dst_sample_rate,
                  float master_volume) {
+  if (!sound->sound.GetInstance()) {
+    return;
+  }
   const double sonic_speed = 343.0;
   const double safe_dst_sample_rate = std::max(512.0, dst_sample_rate);
   const double inv_dst_sample_rate = 1.0 / safe_dst_sample_rate;
