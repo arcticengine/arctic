@@ -1692,6 +1692,8 @@ Checkbox::Checkbox(Ui64 tag, std::shared_ptr<GuiTheme> theme)
   disabled_[1] = theme_->checkbox_checked_disabled_;
   text_ = std::make_shared<Text>(0, theme->text_);
   text_->SetPos(Vec2Si32(normal_[0].Size().x, 0));
+  text_->SetSize(Vec2Si32(0, normal_[0].Size().y));
+  text_->SetOrigin(kTextOriginCenter);
   text_->SetText("");
   Panel::AddChild(text_);
 }
@@ -1900,8 +1902,10 @@ bool Checkbox::IsChecked() {
 void Checkbox::SetText(std::string text) {
   if (text_) {
     text_->SetText(text);
+    Vec2Si32 text_eval = text_->EvaluateSize();
+    text_->SetSize(Vec2Si32(text_eval.x, normal_[0].Size().y));
     Vec2Si32 new_size = normal_[0].Size();
-    new_size.x += text_->EvaluateSize().x;
+    new_size.x += text_eval.x;
     SetSize(new_size);
   }
 }
