@@ -345,7 +345,7 @@ inline double Distance(Vec3D const &a, Vec3D const &b) {
 
 inline void BuildBase(const Vec3D &n, Vec3D *uu, Vec3D *vv) {
   Vec3D up;
-  if (std::abs(n.z) < 0.9f) {
+  if (std::abs(n.z) < 0.9) {
     up.x = 0.0;
     up.y = 0.0;
     up.z = 1.0;
