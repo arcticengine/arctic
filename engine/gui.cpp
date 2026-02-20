@@ -1263,7 +1263,7 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     std::string display_text = text_.substr(static_cast<size_t>(display_pos_),
                                             static_cast<size_t>(end_pos - display_pos_));
     Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
-    if (available_width) {
+    if (available_width > 0) {
       while (visible_width > displayable_width) {
         Si32 visible_len = (Si32)display_text.length();
         Si32 desired_len = Si32(Si64(visible_len) * Si64(displayable_width) / Si64(visible_width));
