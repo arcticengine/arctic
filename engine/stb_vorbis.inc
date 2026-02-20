@@ -573,7 +573,9 @@ enum STBVorbisError
 #endif
 
 #ifndef STB_VORBIS_NO_CRT
+   #ifndef _USE_MATH_DEFINES
    #define _USE_MATH_DEFINES
+   #endif
    #include <cmath>
    #include <stdlib.h>
    #include <cstring>
