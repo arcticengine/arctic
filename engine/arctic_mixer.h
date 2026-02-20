@@ -359,7 +359,9 @@ struct SoundMixerState {
           }
         }
         if (is_over) {
-          sound.sound.GetInstance()->DecPlaying();
+          if (sound.sound.GetInstance()) {
+            sound.sound.GetInstance()->DecPlaying();
+          }
           ReleaseBufferAt(idx);
           --idx;
         }
@@ -380,7 +382,9 @@ struct SoundMixerState {
         sound.next_position += size;
 
         if (size < buffer_samples_per_channel) {
-          sound.sound.GetInstance()->DecPlaying();
+          if (sound.sound.GetInstance()) {
+            sound.sound.GetInstance()->DecPlaying();
+          }
           ReleaseBufferAt(idx);
           --idx;
         }
