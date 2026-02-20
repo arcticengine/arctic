@@ -57,7 +57,6 @@ void GlFramebuffer::Create(GlTexture2D &texture) {
     ARCTIC_GL_CHECK_ERROR(glGenFramebuffers(1, &framebuffer_id_));
     Bind();
     ARCTIC_GL_CHECK_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture_id(), 0));
-    ARCTIC_GL_CHECK_ERROR(glCheckFramebufferStatus(GL_FRAMEBUFFER));
     auto code = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     switch(code) {
       case GL_FRAMEBUFFER_COMPLETE:
