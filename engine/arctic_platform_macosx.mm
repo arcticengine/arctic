@@ -730,17 +730,7 @@ void CreateMainWindow(SystemInfo *system_info) {
       [g_main_window toggleFullScreen: nil];
     }
 
-    NSArray *controllers = [GCController controllers];
-    NSLog(@"%d controllers found.", (int)controllers.count);
-
-    for (GCController *element in [GCController controllers]) {
-
-      if (element.extendedGamepad) {
-          element.extendedGamepad.valueChangedHandler=^(GCExtendedGamepad *gamepad, GCControllerElement *element) {
-              [g_main_view extendedGamepadAction:gamepad forElement:element];
-         };
-      }
-    }
+    NSLog(@"%d controllers found.", (int)[GCController controllers].count);
 
     NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
     system_info->screen_width = (arctic::Si32)rect.size.width;
