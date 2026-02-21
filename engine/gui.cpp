@@ -1086,9 +1086,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       if (message.keyboard.key == kKeyTab &&
           ((!allow_list_.empty() && allow_list_.find('\t') == allow_list_.end())
            || is_digits_)) {
-        return Panel::ApplyInput(parent_pos, message,
-                                 is_top_level, in_out_is_applied,
-                                 out_gui_messages, out_current_tab);
+        return;
       }
       if (message.keyboard.key_state == 1) {
         Ui32 key = message.keyboard.key;
