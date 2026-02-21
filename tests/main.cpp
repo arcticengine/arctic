@@ -3058,6 +3058,104 @@ void test_hw_sprite_subregion_draws_correctly() {
     REF_X, REF_Y, REF_W, REF_H, TEX_W, TEX_H);
 }
 
+static void test_ortho_symmetric_corners(void) {
+  float L = -5.f, R = 5.f, B = -3.f, T = 3.f, N = 1.f, F = 100.f;
+  Mat44F m = SetOrtho(L, R, B, T, N, F);
+
+  Vec3F lb_near = Transform(m, Vec3F(L, B, -N));
+  Vec3F rt_near = Transform(m, Vec3F(R, T, -N));
+  Vec3F lb_far  = Transform(m, Vec3F(L, B, -F));
+  Vec3F rt_far  = Transform(m, Vec3F(R, T, -F));
+
+  float eps = 1e-5f;
+  TEST_CHECK_(fabsf(lb_near.x - (-1.f)) < eps, "left-bottom-near x: got %f, want -1", lb_near.x);
+  TEST_CHECK_(fabsf(lb_near.y - (-1.f)) < eps, "left-bottom-near y: got %f, want -1", lb_near.y);
+  TEST_CHECK_(fabsf(lb_near.z - (-1.f)) < eps, "left-bottom-near z: got %f, want -1", lb_near.z);
+
+  TEST_CHECK_(fabsf(rt_near.x - 1.f) < eps, "right-top-near x: got %f, want 1", rt_near.x);
+  TEST_CHECK_(fabsf(rt_near.y - 1.f) < eps, "right-top-near y: got %f, want 1", rt_near.y);
+  TEST_CHECK_(fabsf(rt_near.z - (-1.f)) < eps, "right-top-near z: got %f, want -1", rt_near.z);
+
+  TEST_CHECK_(fabsf(lb_far.z - 1.f) < eps, "left-bottom-far z: got %f, want 1", lb_far.z);
+  TEST_CHECK_(fabsf(rt_far.z - 1.f) < eps, "right-top-far z: got %f, want 1", rt_far.z);
+}
+
+static void test_ortho_asymmetric_corners(void) {
+  float L = -2.f, R = 10.f, B = -3.f, T = 7.f, N = 1.f, F = 50.f;
+  Mat44F m = SetOrtho(L, R, B, T, N, F);
+
+  Vec3F bl = Transform(m, Vec3F(L, B, -N));
+  Vec3F tr = Transform(m, Vec3F(R, T, -F));
+  float cx = (L + R) * 0.5f;
+  float cy = (B + T) * 0.5f;
+  float cz = -(N + F) * 0.5f;
+  Vec3F mid = Transform(m, Vec3F(cx, cy, cz));
+
+  float eps = 1e-4f;
+  TEST_CHECK_(fabsf(bl.x - (-1.f)) < eps,
+    "bottom-left x: got %f, want -1", bl.x);
+  TEST_CHECK_(fabsf(bl.y - (-1.f)) < eps,
+    "bottom-left y: got %f, want -1", bl.y);
+  TEST_CHECK_(fabsf(bl.z - (-1.f)) < eps,
+    "bottom-left z: got %f, want -1", bl.z);
+
+  TEST_CHECK_(fabsf(tr.x - 1.f) < eps,
+    "top-right x: got %f, want 1", tr.x);
+  TEST_CHECK_(fabsf(tr.y - 1.f) < eps,
+    "top-right y: got %f, want 1", tr.y);
+  TEST_CHECK_(fabsf(tr.z - 1.f) < eps,
+    "top-right z: got %f, want 1", tr.z);
+
+  TEST_CHECK_(fabsf(mid.x) < eps,
+    "center x: got %f, want 0", mid.x);
+  TEST_CHECK_(fabsf(mid.y) < eps,
+    "center y: got %f, want 0", mid.y);
+  TEST_CHECK_(fabsf(mid.z) < eps,
+    "center z: got %f, want 0", mid.z);
+}
+
+static void test_ortho_center_maps_to_origin(void) {
+  float L = 10.f, R = 50.f, B = -20.f, T = 80.f, N = 1.f, F = 500.f;
+  Mat44F m = SetOrtho(L, R, B, T, N, F);
+
+  float cx = (L + R) * 0.5f;
+  float cy = (B + T) * 0.5f;
+  float cz = -(N + F) * 0.5f;
+  Vec3F center = Transform(m, Vec3F(cx, cy, cz));
+
+  float eps = 1e-4f;
+  TEST_CHECK_(fabsf(center.x) < eps,
+    "center of box x: got %f, want 0", center.x);
+  TEST_CHECK_(fabsf(center.y) < eps,
+    "center of box y: got %f, want 0", center.y);
+  TEST_CHECK_(fabsf(center.z) < eps,
+    "center of box z: got %f, want 0", center.z);
+}
+
+static void test_ortho_consistent_with_perspective(void) {
+  float N = 1.f, F = 100.f;
+  float aspect = 16.f / 9.f;
+  float fovy = 60.f * kPi / 180.f;
+  float half_h = N * tanf(fovy * 0.5f);
+  float half_w = half_h * aspect;
+
+  Mat44F ortho = SetOrtho(-half_w, half_w, -half_h, half_h, N, F);
+  Mat44F persp = SetPerspective(fovy * 180.f / kPi, aspect, N, F);
+
+  float eps = 1e-5f;
+  TEST_CHECK_(fabsf(ortho.m[0] - persp.m[0] / N) < eps,
+    "ortho x-scale should be persp x-scale / near: ortho=%f, persp/n=%f",
+    ortho.m[0], persp.m[0] / N);
+  TEST_CHECK_(fabsf(ortho.m[5] - persp.m[5] / N) < eps,
+    "ortho y-scale should be persp y-scale / near: ortho=%f, persp/n=%f",
+    ortho.m[5], persp.m[5] / N);
+
+  TEST_CHECK_(fabsf(ortho.m[3]) < eps,
+    "symmetric ortho x-translation should be 0: got %f", ortho.m[3]);
+  TEST_CHECK_(fabsf(ortho.m[7]) < eps,
+    "symmetric ortho y-translation should be 0: got %f", ortho.m[7]);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -3158,6 +3256,10 @@ TEST_LIST = {
   {"SetPerspective y == cot(fovy/2)", test_perspective_y_equals_cot_half_fovy},
   {"SetPerspective matches SetFrustumPerspective", test_perspective_matches_frustum_perspective},
   {"SetPerspectiveTiled identity matches SetPerspective", test_perspective_tiled_matches_perspective},
+  {"SetOrtho symmetric maps corners to NDC", test_ortho_symmetric_corners},
+  {"SetOrtho asymmetric maps corners to NDC", test_ortho_asymmetric_corners},
+  {"SetOrtho center maps to origin", test_ortho_center_maps_to_origin},
+  {"SetOrtho consistent with Perspective at z=near", test_ortho_consistent_with_perspective},
   {0}
 };
 

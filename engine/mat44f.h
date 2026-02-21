@@ -635,8 +635,8 @@ inline Mat44F SetOrtho(float left, float right, float bottom, float top,
 
   const float x = 2.0f / (right - left);
   const float y = 2.0f / (top - bottom);
-  const float a = (right + left) / (right - left);
-  const float b = (top + bottom) / (top - bottom);
+  const float a = -(right + left) / (right - left);
+  const float b = -(top + bottom) / (top - bottom);
   const float c = -2.0f / (zfar - znear);
   const float d = -(zfar + znear) / (zfar - znear);
 
