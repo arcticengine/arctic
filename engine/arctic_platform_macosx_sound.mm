@@ -120,9 +120,18 @@ OSStatus SoundRenderProc(void *inRefCon,
     AudioBufferList *ioData) {
   SoundPlayerImpl *mixer = (SoundPlayerImpl*)inRefCon;
   Si32 buffer_samples_per_channel = static_cast<Si32>(inNumberFrames);
-  Float32 *mix_l = (Float32*)ioData->mBuffers[0].mData;
-  Float32 *mix_r = (Float32*)ioData->mBuffers[1].mData;
-  Si32 mix_stride = 1;
+  Float32 *mix_l;
+  Float32 *mix_r;
+  Si32 mix_stride;
+  if (ioData->mNumberBuffers >= 2) {
+    mix_l = (Float32*)ioData->mBuffers[0].mData;
+    mix_r = (Float32*)ioData->mBuffers[1].mData;
+    mix_stride = 1;
+  } else {
+    mix_l = (Float32*)ioData->mBuffers[0].mData;
+    mix_r = mix_l + 1;
+    mix_stride = 2;
+  }
 
   if (mixer->tmp.size() < buffer_samples_per_channel * 2) {
     mixer->tmp.resize(buffer_samples_per_channel * 2);
