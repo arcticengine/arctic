@@ -190,7 +190,7 @@ Si32 Sound::DurationSamples() {
 
 Si32 Sound::StreamOut(Si32 offset, Si32 size,
   Si16 *out_buffer, Si32 out_buffer_samples) {
-  if (!sound_instance_) {
+  if (!sound_instance_ || offset < 0) {
     return 0;
   }
   switch (sound_instance_->GetFormat()) {

@@ -1059,8 +1059,8 @@ void Sprite::Reference(const Sprite &from, const Si32 from_x, const Si32 from_y,
     from.ref_pos_.y + std::min(std::max(from_y, 0), std::max(from.ref_size_.y - 1, 0)));
   const Vec2Si32 max_size = from.ref_pos_ + from.ref_size_ - ref_pos_;
   ref_size_ = Vec2Si32(
-    std::min(from_width, max_size.x),
-    std::min(from_height, max_size.y));
+    std::max(0, std::min(from_width, max_size.x)),
+    std::max(0, std::min(from_height, max_size.y)));
   pivot_ = Vec2Si32(0, 0);
   sprite_instance_ = from.sprite_instance_;
 }
@@ -1312,8 +1312,8 @@ void Sprite::Draw(const float to_x, const float to_y, float to_width, float to_h
   Vec2F pivot = Vec2F(to_x, to_y);
   float sin_a = sinf(angle_radians);
   float cos_a = cosf(angle_radians);
-  float w_mul = to_width / Width();
-  float h_mul = to_height / Height();
+  float w_mul = to_width / std::max(1, Width());
+  float h_mul = to_height / std::max(1, Height());
   Vec2F left = Vec2F(-cos_a, -sin_a) * static_cast<float>(pivot_.x) * w_mul;
   Vec2F right = Vec2F(cos_a, sin_a) *
     static_cast<float>(Width() - pivot_.x) * w_mul;

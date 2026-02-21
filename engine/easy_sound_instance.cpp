@@ -75,7 +75,7 @@ struct WaveHeader {
 SoundInstance::SoundInstance(Ui32 wav_samples) {
   format_ = kSoundDataWav;
   playing_count_ = 0;
-  data_.resize(wav_samples * 2 * sizeof(Si16));
+  data_.resize(Ui64(wav_samples) * 2 * sizeof(Si16));
 }
 
 SoundInstance::SoundInstance(std::vector<Ui8> vorbis_file) {

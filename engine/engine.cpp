@@ -303,9 +303,9 @@ void Engine::Draw2d() {
   }
   mesh_.ClearGeometry();
 
-  float aspect = static_cast<float>(window_width_) / static_cast<float>(window_height_);
-  float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
-    static_cast<float>(backbuffer_texture_.Height());
+  float aspect = static_cast<float>(std::max(1, window_width_)) / static_cast<float>(std::max(1, window_height_));
+  float back_aspect = static_cast<float>(std::max(1, backbuffer_texture_.Width())) /
+    static_cast<float>(std::max(1, backbuffer_texture_.Height()));
   float ratio = back_aspect / aspect;
   float x_aspect = aspect < back_aspect ? 1.f : ratio;
   float y_aspect = aspect < back_aspect ? 1.f / ratio : 1.f;
@@ -674,9 +674,9 @@ double Engine::GetRandomSD() {
 
 Vec2Si32 Engine::MouseToBackbuffer(Vec2F pos) const {
   Vec2F rel_pos = pos - Vec2F(0.5f, 0.5f);
-  float aspect = static_cast<float>(window_width_) / static_cast<float>(window_height_);
-  float back_aspect = static_cast<float>(backbuffer_texture_.Width()) /
-    static_cast<float>(backbuffer_texture_.Height());
+  float aspect = static_cast<float>(std::max(1, window_width_)) / static_cast<float>(std::max(1, window_height_));
+  float back_aspect = static_cast<float>(std::max(1, backbuffer_texture_.Width())) /
+    static_cast<float>(std::max(1, backbuffer_texture_.Height()));
   float ratio = back_aspect / aspect;
   float x_aspect = aspect < back_aspect ? 1.f : ratio;
   float y_aspect = aspect < back_aspect ? 1.f / ratio : 1.f;
