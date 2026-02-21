@@ -134,10 +134,9 @@ static GCController *g_controller = nil;
   } else {
     if (CGDisplayRelease(kCGDirectMainDisplay) != kCGErrorSuccess) {
       NSLog(@"Couldn't release the display(s)!");
-      [g_main_window setLevel: CGShieldingWindowLevel()];
-    } else {
-      [g_main_window setLevel:NSNormalWindowLevel];
+      return;
     }
+    [g_main_window setLevel:NSNormalWindowLevel];
     [g_main_window setStyleMask:
       NSWindowStyleMaskTitled |
         NSWindowStyleMaskClosable |
