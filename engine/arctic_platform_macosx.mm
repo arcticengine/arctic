@@ -74,11 +74,13 @@ namespace arctic {
   void PushInputKey(KeyCode key, bool is_down, std::string characters);
 }  // namespace arctic
 
-@interface ArcticAppDelegate : NSObject {
+@interface ArcticAppDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate> {
 }
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:
 (NSApplication *)theApplication;
 - (void) fullScreenToggle:(NSNotification *)notification;
+- (void) windowDidEnterFullScreen:(NSNotification *)notification;
+- (void) windowDidExitFullScreen:(NSNotification *)notification;
 @end
 
 @interface ArcticWindow : NSWindow {
@@ -112,42 +114,21 @@ static GCController *g_controller = nil;
 }
 - (void)applicationWillTerminate:(NSNotification *)notification {
   [g_main_window orderOut: self];
-
-  if (g_is_full_screen) {
-    if (CGDisplayRelease(kCGDirectMainDisplay) != kCGErrorSuccess) {
-      arctic::Fatal("Couldn't release the display(s)!", "");
-    }
-  }
-
   [[NSApplication sharedApplication] terminate:nil];
-//  exit(0);
 }
 - (void) fullScreenToggle:(NSNotification *)notification {
-  if (!g_is_full_screen) {
-    if (CGDisplayCapture( kCGDirectMainDisplay ) != kCGErrorSuccess) {
-      arctic::Fatal("Couldn't capture the main display!", "");
-    }
-    [g_main_window setLevel: CGShieldingWindowLevel()];
-    [g_main_window setStyleMask: NSWindowStyleMaskBorderless];
-    [g_main_window setFrame: [[NSScreen mainScreen] frame]
-      display: YES animate: NO];
-  } else {
-    if (CGDisplayRelease(kCGDirectMainDisplay) != kCGErrorSuccess) {
-      NSLog(@"Couldn't release the display(s)!");
-      return;
-    }
-    [g_main_window setLevel:NSNormalWindowLevel];
-    [g_main_window setStyleMask:
-      NSWindowStyleMaskTitled |
-        NSWindowStyleMaskClosable |
-        NSWindowStyleMaskMiniaturizable |
-        NSWindowStyleMaskResizable];
-    [g_main_window setFrame: [[NSScreen mainScreen] visibleFrame]
-      display: YES animate: NO];
-  }
-  [g_main_window makeFirstResponder: g_main_view];
-  g_is_full_screen = !g_is_full_screen;
-  
+  [g_main_window toggleFullScreen: nil];
+}
+- (void) windowDidEnterFullScreen:(NSNotification *)notification {
+  g_is_full_screen = true;
+  [[g_main_view openGLContext] update];
+  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+  arctic::GetEngine()->OnWindowResize(
+      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
+}
+- (void) windowDidExitFullScreen:(NSNotification *)notification {
+  g_is_full_screen = false;
+  [[g_main_view openGLContext] update];
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
   arctic::GetEngine()->OnWindowResize(
       (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
@@ -699,19 +680,7 @@ void CreateMainWindow(SystemInfo *system_info) {
     [NSApp finishLaunching];
 
 
-    if (g_is_full_screen) {
-      if (CGDisplayCapture(kCGDirectMainDisplay) != kCGErrorSuccess) {
-        arctic::Fatal("Couldn't capture the main display!", "");
-      }
-      int windowLevel = CGShieldingWindowLevel();
-      g_main_window = [[ArcticWindow alloc]
-        initWithContentRect: [[NSScreen mainScreen] frame]
-        styleMask: NSWindowStyleMaskBorderless
-        backing: NSBackingStoreBuffered
-        defer: NO
-        screen: [NSScreen mainScreen]];
-      [g_main_window setLevel: windowLevel];
-    } else {
+    {
       unsigned int winStyle =
         NSWindowStyleMaskTitled |
         NSWindowStyleMaskClosable |
@@ -722,6 +691,10 @@ void CreateMainWindow(SystemInfo *system_info) {
         styleMask: winStyle
         backing: NSBackingStoreBuffered
         defer: NO];
+      [g_main_window setCollectionBehavior:
+        NSWindowCollectionBehaviorFullScreenPrimary];
+      [g_main_window setDelegate:
+        ((id<NSWindowDelegate>)g_app_delegate)];
     }
 
     NSOpenGLPixelFormatAttribute format_attribute[] = {
@@ -745,6 +718,10 @@ void CreateMainWindow(SystemInfo *system_info) {
     [g_main_window makeMainWindow];
     [NSApp activateIgnoringOtherApps: YES];
 
+    if (g_is_full_screen) {
+      g_is_full_screen = false;
+      [g_main_window toggleFullScreen: nil];
+    }
 
     NSArray *controllers = [GCController controllers];
     NSLog(@"%d controllers found.", (int)controllers.count);
