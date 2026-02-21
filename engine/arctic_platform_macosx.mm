@@ -707,6 +707,10 @@ void CreateMainWindow(SystemInfo *system_info) {
       0};
     NSOpenGLPixelFormat *format =
       [[NSOpenGLPixelFormat alloc] initWithAttributes: format_attribute];
+    if (format == nil) {
+      arctic::Log("Failed to create NSOpenGLPixelFormat.",
+        " No matching pixel format for the requested attributes.");
+    }
 
     g_main_view = [[ArcticView alloc]
       initWithFrame: [g_main_window frame] pixelFormat: format];
@@ -746,10 +750,11 @@ void CreateMainWindow(SystemInfo *system_info) {
 
 void PumpMessages() {
 
-  NSArray *controllers = [GCController controllers];
+  NSArray<GCController *> *controllers = [GCController controllers];
   if (controllers.count) {
     for (Si32 controller_idx = 0; controller_idx < (Si32)controllers.count; ++controller_idx) {
-      if (controllers[controller_idx].playerIndex == -1) {
+      GCController *ctrl = controllers[controller_idx];
+      if (ctrl.playerIndex == -1) {
         std::map<Si32, Si32> player_to_idx;
         for (Si32 ci = 0; ci < (Si32)controllers.count; ++ci) {
           Si32 player = (Si32)controllers[ci].playerIndex;
@@ -759,13 +764,13 @@ void PumpMessages() {
         }
         for (Si32 player_idx = 0; player_idx < InputMessage::kControllerCount; ++player_idx) {
           if (player_to_idx.find(player_idx) == player_to_idx.end()) {
-            controllers[controller_idx].playerIndex = (GCControllerPlayerIndex)player_idx;
+            ctrl.playerIndex = (GCControllerPlayerIndex)player_idx;
             break;
           }
         }
       }
-      if (controllers[controller_idx].playerIndex != -1) {
-        GCExtendedGamepad *gamepad = controllers[controller_idx].extendedGamepad;
+      if (ctrl.playerIndex != -1) {
+        GCExtendedGamepad *gamepad = ctrl.extendedGamepad;
         if (gamepad != nil) {
           [g_main_view extendedGamepadAction:gamepad forElement: nil];
         }
