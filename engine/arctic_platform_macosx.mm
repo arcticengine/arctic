@@ -748,32 +748,31 @@ void PumpMessages() {
 
   NSArray *controllers = [GCController controllers];
   if (controllers.count) {
-    //NSLog(@"%d controllers found.", (int)controllers.count);
-    for (Si32 controller_idx = 0; controller_idx < controllers.count; ++controller_idx) {
-      if ([GCController controllers][controller_idx].playerIndex == -1) {
+    for (Si32 controller_idx = 0; controller_idx < (Si32)controllers.count; ++controller_idx) {
+      if (controllers[controller_idx].playerIndex == -1) {
         std::map<Si32, Si32> player_to_idx;
-        for (Si32 controller_idx = 0; controller_idx < controllers.count; ++controller_idx) {
-          Si32 player =(Si32)[GCController controllers][controller_idx].playerIndex;
+        for (Si32 ci = 0; ci < (Si32)controllers.count; ++ci) {
+          Si32 player = (Si32)controllers[ci].playerIndex;
           if (player != -1) {
-            player_to_idx[player] = controller_idx;
+            player_to_idx[player] = ci;
           }
         }
         for (Si32 player_idx = 0; player_idx < InputMessage::kControllerCount; ++player_idx) {
           if (player_to_idx.find(player_idx) == player_to_idx.end()) {
-            [GCController controllers][controller_idx].playerIndex = (GCControllerPlayerIndex)player_idx;
+            controllers[controller_idx].playerIndex = (GCControllerPlayerIndex)player_idx;
             break;
           }
         }
       }
-      if ([GCController controllers][controller_idx].playerIndex != -1) {
-        GCExtendedGamepad *gamepad = [GCController controllers][controller_idx].extendedGamepad;
+      if (controllers[controller_idx].playerIndex != -1) {
+        GCExtendedGamepad *gamepad = controllers[controller_idx].extendedGamepad;
         if (gamepad != nil) {
           [g_main_view extendedGamepadAction:gamepad forElement: nil];
         }
       }
     }
 
-    g_controller = [GCController controllers][0];
+    g_controller = controllers[0];
     if (@available(macOS 11.0, *)) {
       //NSLog(@"%d axes", (int)g_controller.physicalInputProfile.allAxes.count);
       //NSLog(@"axis[0]: %f", (float)g_controller.physicalInputProfile.allAxes.allObjects[0].value);
