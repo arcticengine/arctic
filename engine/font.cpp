@@ -513,20 +513,25 @@ void FontInstance::LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
   Si32 begin_x = 0;
   Utf32Reader reader;
   reader.Reset(utf8_letters);
-  for (Si32 x = 0; x < sprite.Width(); ++x) {
+  for (Si32 x = 0; x <= sprite.Width(); ++x) {
     bool is_empty = true;
-    for (Si32 y = 0; y < sprite.Height(); ++y) {
-      if (sprite.RgbaData()[x + y * sprite.StridePixels()].a != 0) {
-        is_empty = false;
+    if (x < sprite.Width()) {
+      for (Si32 y = 0; y < sprite.Height(); ++y) {
+        if (sprite.RgbaData()[x + y * sprite.StridePixels()].a != 0) {
+          is_empty = false;
+        }
       }
     }
     if (is_empty) {
       if (x != begin_x) {
+        Ui32 codepoint = reader.ReadOne();
+        if (codepoint == 0) {
+          break;
+        }
         Sprite letter;
         letter.Reference(sprite, begin_x, 0, x - begin_x, sprite.Height());
         Sprite ls;
         ls.Clone(letter);
-        Ui32 codepoint = reader.ReadOne();
         AddGlyph(codepoint, x - begin_x + 1, ls);
       }
       begin_x = x + 1;
