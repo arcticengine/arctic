@@ -310,23 +310,23 @@ isScroll: (bool)is_scroll {
 }
 
 - (void)scrollWheel:(NSEvent *)event {
-  [self mouseEvent: event key: arctic::kKeyCount state: 0 isScroll: true];
+  [self mouseEvent: event key: arctic::kKeyNone state: 0 isScroll: true];
 }
 
 - (void) mouseMoved: (NSEvent *)event {
-  [self mouseEvent: event key: arctic::kKeyCount state: 0 isScroll: false];
+  [self mouseEvent: event key: arctic::kKeyNone state: 0 isScroll: false];
 }
 
 - (void) mouseDragged: (NSEvent *)event {
-  [self mouseEvent: event key: arctic::kKeyCount state: 0 isScroll: false];
+  [self mouseEvent: event key: arctic::kKeyNone state: 0 isScroll: false];
 }
 
 - (void) rightMouseDragged: (NSEvent *)event {
-  [self mouseEvent: event key: arctic::kKeyCount state: 0 isScroll: false];
+  [self mouseEvent: event key: arctic::kKeyNone state: 0 isScroll: false];
 }
 
 - (void) otherMouseDragged: (NSEvent *)event {
-  [self mouseEvent: event key: arctic::kKeyCount state: 0 isScroll: false];
+  [self mouseEvent: event key: arctic::kKeyNone state: 0 isScroll: false];
 }
 
 - (void) mouseDown: (NSEvent *)event {

@@ -1064,14 +1064,16 @@ void ShowFrame() {
   g_input_messages.clear();
   while (PopInputMessage(&message)) {
     if (message.kind == InputMessage::kKeyboard) {
-      g_key_state[message.keyboard.key].OnStateChange(
-        message.keyboard.key_state == 1);
+      if (message.keyboard.key != kKeyNone && message.keyboard.key < kKeyCount) {
+        g_key_state[message.keyboard.key].OnStateChange(
+          message.keyboard.key_state == 1);
+      }
     } else if (message.kind == InputMessage::kMouse) {
       message.mouse.backbuffer_pos =
         GetEngine()->MouseToBackbuffer(message.mouse.pos);
       g_mouse_pos = message.mouse.backbuffer_pos;
       g_mouse_wheel_delta += message.mouse.wheel_delta;
-      if (message.keyboard.key != kKeyNone) {
+      if (message.keyboard.key != kKeyNone && message.keyboard.key < kKeyCount) {
         g_key_state[message.keyboard.key].OnStateChange(
           message.keyboard.key_state == 1);
       }
