@@ -108,22 +108,23 @@ struct TgaHeader {
         << sizeof(TgaHeader) << " is too small.";
       return sprite;
     }
-    const TgaHeader *tga = static_cast<const TgaHeader*>(
-        static_cast<const void*>(data));
+    TgaHeader tga_local;
+    memcpy(&tga_local, data, sizeof(TgaHeader));
 #ifdef BIGENDIAN
-    tga->image_width = ((tga->image_width & 255) << 8)
-      | (tga->image_width >> 8);
-    tga->image_height = ((tga->image_height & 255) << 8)
-      | (tga->image_height >> 8);
-    tga->color_map_origin = ((tga->color_map_origin & 255) << 8)
-      | (tga->color_map_origin >> 8);
-    tga->color_map_length = ((tga->color_map_length & 255) << 8)
-      | (tga->color_map_length >> 8);
-    tga->image_x_origin = ((tga->image_x_origin & 255) << 8)
-      | (tga->image_x_origin >> 8);
-    tga->image_y_origin = ((tga->image_y_origin & 255) << 8)
-      | (tga->image_y_origin >> 8);
+    tga_local.image_width = ((tga_local.image_width & 255) << 8)
+      | (tga_local.image_width >> 8);
+    tga_local.image_height = ((tga_local.image_height & 255) << 8)
+      | (tga_local.image_height >> 8);
+    tga_local.color_map_origin = ((tga_local.color_map_origin & 255) << 8)
+      | (tga_local.color_map_origin >> 8);
+    tga_local.color_map_length = ((tga_local.color_map_length & 255) << 8)
+      | (tga_local.color_map_length >> 8);
+    tga_local.image_x_origin = ((tga_local.image_x_origin & 255) << 8)
+      | (tga_local.image_x_origin >> 8);
+    tga_local.image_y_origin = ((tga_local.image_y_origin & 255) << 8)
+      | (tga_local.image_y_origin >> 8);
 #endif  // BIGENDIAN
+    const TgaHeader *tga = &tga_local;
     if (tga->image_width < 2) {
       *Log() << "Error in LoadTga, tga.xres: " << tga->image_width
         << " < 2 is too small.";
