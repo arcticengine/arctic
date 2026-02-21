@@ -1814,6 +1814,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       *out_current_tab = Panel::Invalid();
       is_current_tab_ = false;
       if (message.keyboard.state[kKeyMouseLeft] == 1) {
+        *in_out_is_applied = true;
         state_ = kDown;
       } else {
         state_ = kHovered;
@@ -1822,7 +1823,6 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       if (message.keyboard.key == kKeyMouseLeft &&
           message.keyboard.key_state == 2 &&
           prev_state == kDown) {
-        *in_out_is_applied = true;
         up_sound_.Play();
         value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
         if (out_gui_messages) {
