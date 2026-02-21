@@ -58,21 +58,26 @@ void GlFramebuffer::Create(GlTexture2D &texture) {
     Bind();
     ARCTIC_GL_CHECK_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture_id(), 0));
     auto code = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    switch(code) {
-      case GL_FRAMEBUFFER_COMPLETE:
-        break;
-      case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-        *Log() << "Bind() error: framebuffer is incomplete: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
-        break;
-      case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-        *Log() << "Bind() error: framebuffer is incomplete: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
-        break;
-      case GL_FRAMEBUFFER_UNSUPPORTED:
-        *Log() << "Bind() error: framebuffer is incomplete: GL_FRAMEBUFFER_UNSUPPORTED";
-        break;
-      default:
-        *Log() << "Bind() error: framebuffer is incomplete! Error code: " << code; 
-        break;
+    if (code != GL_FRAMEBUFFER_COMPLETE) {
+      current_framebuffer_id_ = 0;
+      ARCTIC_GL_CHECK_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+      ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
+      framebuffer_id_ = 0;
+      switch(code) {
+        case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+          Fatal("GlFramebuffer::Create failed: GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT");
+          break;
+        case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+          Fatal("GlFramebuffer::Create failed: GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT");
+          break;
+        case GL_FRAMEBUFFER_UNSUPPORTED:
+          Fatal("GlFramebuffer::Create failed: GL_FRAMEBUFFER_UNSUPPORTED");
+          break;
+        default:
+          Fatal("GlFramebuffer::Create failed, error code: ",
+            std::to_string(code).c_str());
+          break;
+      }
     }
 }
 
