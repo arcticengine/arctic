@@ -1498,7 +1498,7 @@ void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
     out.exceptions(std::ios_base::goodbit);
     out.write(reinterpret_cast<const char*>(data),
       static_cast<std::streamsize>(data_size));
-    Check(!(out.rdstate() & std::ios_base::badbit),
+    Check(!(out.rdstate() & (std::ios_base::badbit | std::ios_base::failbit)),
       "Error in WriteFile. Can't write the file, file_name: ",
       file_name);
     out.close();
