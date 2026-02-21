@@ -750,53 +750,39 @@ void CreateMainWindow(SystemInfo *system_info) {
 
 void PumpMessages() {
 
-  NSArray<GCController *> *controllers = [GCController controllers];
-  if (controllers.count) {
-    for (Si32 controller_idx = 0; controller_idx < (Si32)controllers.count; ++controller_idx) {
-      GCController *ctrl = controllers[controller_idx];
-      if (ctrl.playerIndex == -1) {
-        std::map<Si32, Si32> player_to_idx;
-        for (Si32 ci = 0; ci < (Si32)controllers.count; ++ci) {
-          Si32 player = (Si32)controllers[ci].playerIndex;
-          if (player != -1) {
-            player_to_idx[player] = ci;
+  @autoreleasepool {
+    NSArray<GCController *> *controllers = [GCController controllers];
+    if (controllers.count) {
+      for (Si32 controller_idx = 0; controller_idx < (Si32)controllers.count; ++controller_idx) {
+        GCController *ctrl = controllers[controller_idx];
+        if (ctrl.playerIndex == -1) {
+          std::map<Si32, Si32> player_to_idx;
+          for (Si32 ci = 0; ci < (Si32)controllers.count; ++ci) {
+            Si32 player = (Si32)controllers[ci].playerIndex;
+            if (player != -1) {
+              player_to_idx[player] = ci;
+            }
+          }
+          for (Si32 player_idx = 0; player_idx < InputMessage::kControllerCount; ++player_idx) {
+            if (player_to_idx.find(player_idx) == player_to_idx.end()) {
+              ctrl.playerIndex = (GCControllerPlayerIndex)player_idx;
+              break;
+            }
           }
         }
-        for (Si32 player_idx = 0; player_idx < InputMessage::kControllerCount; ++player_idx) {
-          if (player_to_idx.find(player_idx) == player_to_idx.end()) {
-            ctrl.playerIndex = (GCControllerPlayerIndex)player_idx;
-            break;
+        if (ctrl.playerIndex != -1) {
+          GCExtendedGamepad *gamepad = ctrl.extendedGamepad;
+          if (gamepad != nil) {
+            [g_main_view extendedGamepadAction:gamepad forElement: nil];
           }
         }
       }
-      if (ctrl.playerIndex != -1) {
-        GCExtendedGamepad *gamepad = ctrl.extendedGamepad;
-        if (gamepad != nil) {
-          [g_main_view extendedGamepadAction:gamepad forElement: nil];
-        }
-      }
-    }
 
-    g_controller = controllers[0];
-    if (@available(macOS 11.0, *)) {
-      //NSLog(@"%d axes", (int)g_controller.physicalInputProfile.allAxes.count);
-      //NSLog(@"axis[0]: %f", (float)g_controller.physicalInputProfile.allAxes.allObjects[0].value);
+      g_controller = controllers[0];
     } else {
-      // Fallback on earlier versions
+      g_controller = nil;
     }
-   /* NSLog(@"axis[0]: %f", (float)g_controller.extendedGamepad.leftThumbstick.xAxis.value);
-    NSLog(@"axis[1]: %f", (float)g_controller.extendedGamepad.leftThumbstick.yAxis.value);
-    NSLog(@"axis[2]: %f", (float)g_controller.extendedGamepad.rightThumbstick.xAxis.value);
-    NSLog(@"axis[3]: %f", (float)g_controller.extendedGamepad.rightThumbstick.yAxis.value);
-    NSLog(@"axis[4]: %f", (float)g_controller.extendedGamepad.leftTrigger.value);
-    NSLog(@"axis[5]: %f", (float)g_controller.extendedGamepad.rightTrigger.value);
-*/
-
-  } else {
-    g_controller = nil;
   }
-
-
 
   @autoreleasepool {
     while (true) {
