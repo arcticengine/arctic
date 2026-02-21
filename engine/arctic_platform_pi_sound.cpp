@@ -264,92 +264,96 @@ void StartSoundMixer(const char* output_device_name) {
   is_ok = is_ok && SoundCheck(err >= 0, "Can't get sound configuration space: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
   err = snd_pcm_hw_params_set_rate_resample(g_data.handle, hwparams, 1);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set sound resampling: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
   err = snd_pcm_hw_params_set_access(g_data.handle, hwparams,
       SND_PCM_ACCESS_RW_INTERLEAVED);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set access type for sound: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
   err = snd_pcm_hw_params_set_format(g_data.handle, hwparams,
       SND_PCM_FORMAT_S16);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set sample format for sound: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
   err = snd_pcm_hw_params_set_channels(g_data.handle, hwparams, 2);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set 2 channels for sound: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
-  unsigned int rate = 44100;
-  err = snd_pcm_hw_params_set_rate_near(g_data.handle, hwparams, &rate, 0);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't set 44100 Hz rate for sound: ",
-      snd_strerror(err));
-  is_ok = is_ok && SoundCheck(rate == 44100,
-      "Sound output rate doesn't match requested 44100 Hz.");
-  if (!is_ok) {
-    return;
+  {
+    unsigned int rate = 44100;
+    err = snd_pcm_hw_params_set_rate_near(g_data.handle, hwparams, &rate, 0);
+    is_ok = is_ok && SoundCheck(err >= 0, "Can't set 44100 Hz rate for sound: ",
+        snd_strerror(err));
+    is_ok = is_ok && SoundCheck(rate == 44100,
+        "Sound output rate doesn't match requested 44100 Hz.");
+    if (!is_ok) {
+      goto cleanup;
+    }
   }
-  int dir;
-  err = snd_pcm_hw_params_set_buffer_time_near(g_data.handle, hwparams,
-      &g_buffer_time_us, &dir);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't set buffer time for sound: ",
-      snd_strerror(err));
-  if (!is_ok) {
-    return;
+  {
+    int dir;
+    err = snd_pcm_hw_params_set_buffer_time_near(g_data.handle, hwparams,
+        &g_buffer_time_us, &dir);
+    is_ok = is_ok && SoundCheck(err >= 0, "Can't set buffer time for sound: ",
+        snd_strerror(err));
+    if (!is_ok) {
+      goto cleanup;
+    }
+    snd_pcm_uframes_t size;
+    err = snd_pcm_hw_params_get_buffer_size(hwparams, &size);
+    is_ok = is_ok && SoundCheck(err >= 0, "Can't get buffer size for sound: ",
+        snd_strerror(err));
+    if (!is_ok) {
+      goto cleanup;
+    }
+    g_data.buffer_size = size;
+    err = snd_pcm_hw_params_set_period_time_near(g_data.handle, hwparams,
+        &g_period_time_us, &dir);
+    is_ok = is_ok && SoundCheck(err >= 0, "Can't set period time for sound: ",
+        snd_strerror(err));
+    if (!is_ok) {
+      goto cleanup;
+    }
+    err = snd_pcm_hw_params_get_period_size(hwparams, &size, &dir);
+    is_ok = is_ok && SoundCheck(err >= 0, "Can't get period size for sound: ",
+        snd_strerror(err));
+    if (!is_ok) {
+      goto cleanup;
+    }
+    g_data.period_size = size;
   }
-  snd_pcm_uframes_t size;
-  err = snd_pcm_hw_params_get_buffer_size(hwparams, &size);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't get buffer size for sound: ",
-      snd_strerror(err));
-  if (!is_ok) {
-    return;
-  }
-  g_data.buffer_size = size;
-  err = snd_pcm_hw_params_set_period_time_near(g_data.handle, hwparams,
-      &g_period_time_us, &dir);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't set period time for sound: ",
-      snd_strerror(err));
-  if (!is_ok) {
-    return;
-  }
-  err = snd_pcm_hw_params_get_period_size(hwparams, &size, &dir);
-  is_ok = is_ok && SoundCheck(err >= 0, "Can't get period size for sound: ",
-      snd_strerror(err));
-  if (!is_ok) {
-    return;
-  }
-  g_data.period_size = size;
   err = snd_pcm_hw_params(g_data.handle, hwparams);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set hw params for sound: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
 
   err = snd_pcm_sw_params_current(g_data.handle, swparams);
   is_ok = is_ok && SoundCheck(err >= 0,
       "Can't determine current sw params for sound: ", snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
   err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams, 512);
   is_ok = is_ok && SoundCheck(err >= 0,
       "Can't set start threshold mode for sound: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
   err = snd_pcm_sw_params_set_avail_min(g_data.handle, swparams,
       512);
@@ -357,14 +361,14 @@ void StartSoundMixer(const char* output_device_name) {
       "Can't set avail min for sound: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
   err = snd_pcm_sw_params(g_data.handle, swparams);
   is_ok = is_ok && SoundCheck(err >= 0,
       "Can't set sw params for sound: ",
       snd_strerror(err));
   if (!is_ok) {
-    return;
+    goto cleanup;
   }
 
   // start sound
@@ -381,7 +385,7 @@ void StartSoundMixer(const char* output_device_name) {
         "Can't register async pcm handler for sound:",
         snd_strerror(err));
     if (!is_ok) {
-      return;
+      goto cleanup;
     }
     for (int count = 0; count < 3; count++) {
       err = snd_pcm_writei(g_data.handle, g_data.samples.data(),
@@ -391,7 +395,7 @@ void StartSoundMixer(const char* output_device_name) {
       is_ok = is_ok && SoundCheck(err == g_data.period_size,
           "Sound pcm write error: written != expected");
       if (!is_ok) {
-        return;
+        goto cleanup;
       }
     }
     if (snd_pcm_state(g_data.handle) == SND_PCM_STATE_PREPARED) {
@@ -399,26 +403,33 @@ void StartSoundMixer(const char* output_device_name) {
       is_ok = is_ok && SoundCheck(err >= 0, "Sound pcm start error: ",
           snd_strerror(err));
       if (!is_ok) {
-        return;
+        goto cleanup;
       }
     }
   }
+  return;
+
+cleanup:
+  snd_pcm_close(g_data.handle);
+  g_data.handle = nullptr;
 }
 
 void StopSoundMixer() {
-  if (!g_sound_mixer_state.do_quit) {
-    g_sound_mixer_state.do_quit.store(true);
-    if (is_sound_thread) {
-      sound_thread.join();
-      is_sound_thread = false;
-    }
+  g_sound_mixer_state.do_quit.store(true);
+  if (is_sound_thread) {
+    sound_thread.join();
+    is_sound_thread = false;
+  }
 
-    if (g_data.ahandler) {
-      int err = snd_async_del_handler(g_data.ahandler);
-      SoundCheck(err >= 0, "Can't delete async sound handler",
-          snd_strerror(err));
-    }
+  if (g_data.ahandler) {
+    int err = snd_async_del_handler(g_data.ahandler);
+    SoundCheck(err >= 0, "Can't delete async sound handler",
+        snd_strerror(err));
+    g_data.ahandler = nullptr;
+  }
+  if (g_data.handle) {
     snd_pcm_close(g_data.handle);
+    g_data.handle = nullptr;
   }
 }
 
