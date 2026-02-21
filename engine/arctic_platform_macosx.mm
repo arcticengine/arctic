@@ -114,7 +114,6 @@ static GCController *g_controller = nil;
 }
 - (void)applicationWillTerminate:(NSNotification *)notification {
   [g_main_window orderOut: self];
-  [[NSApplication sharedApplication] terminate:nil];
 }
 - (void) fullScreenToggle:(NSNotification *)notification {
   [g_main_window toggleFullScreen: nil];
