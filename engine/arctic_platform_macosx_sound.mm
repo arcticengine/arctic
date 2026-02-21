@@ -91,7 +91,8 @@ void CheckStatus(OSStatus status, const char *message) {
     return;
   }
   char code[20];
-  *(UInt32 *)(code + 1) = static_cast<Ui32>(ToBe(status));
+  Ui32 be = static_cast<Ui32>(ToBe(status));
+  memcpy(code + 1, &be, sizeof(be));
   if (isprint(code[1])
       && isprint(code[2])
       && isprint(code[3])
