@@ -160,6 +160,10 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 }
 
 - (void) windowDidResize: (NSNotification *)notification {
+  [[g_main_view openGLContext] update];
+  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+  arctic::GetEngine()->OnWindowResize(
+      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
 }
 
 - (void) windowWillClose: (NSNotification *)notification {
