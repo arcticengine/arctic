@@ -787,7 +787,10 @@ void PumpMessages() {
         }
       }
       if ([GCController controllers][controller_idx].playerIndex != -1) {
-        [g_main_view extendedGamepadAction:[GCController controllers][controller_idx].extendedGamepad forElement: nil];
+        GCExtendedGamepad *gamepad = [GCController controllers][controller_idx].extendedGamepad;
+        if (gamepad != nil) {
+          [g_main_view extendedGamepadAction:gamepad forElement: nil];
+        }
       }
     }
 
