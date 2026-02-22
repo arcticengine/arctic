@@ -178,6 +178,10 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 @end
 
 @implementation ArcticView
+- (BOOL)acceptsFirstResponder {
+  return YES;
+}
+
 - (void)viewDidChangeBackingProperties {
   [super viewDidChangeBackingProperties];
   [[self layer] setContentsScale: [[self window] backingScaleFactor]];
@@ -240,7 +244,8 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
     if (key == arctic::kKeyUnknown) {
       NSLog(@"Unknown character key_unicode: %d", key_unicode);
     }
-    PushInputKey(key, true, [[theEvent characters] UTF8String]);
+    NSString *typed = [theEvent characters];
+    PushInputKey(key, true, typed ? [typed UTF8String] : "");
   }
 }
 
@@ -349,8 +354,6 @@ isScroll: (bool)is_scroll {
     return;
   }
   arctic::Si32 controller_idx = (arctic::Si32)c.controller.playerIndex;
-
-  NSLog(@"%d controller idx.", (int)controller_idx);
 
   if (controller_idx < 0 || controller_idx >= arctic::InputMessage::kControllerCount) {
     return;
@@ -461,10 +464,10 @@ void Fatal(const char *message, const char *message_postfix) {
   [alert setAlertStyle: NSAlertStyleCritical];
   [alert runModal];
 #endif  // ARCTIC_NO_FATAL_MESSAGES
+  delete[] full_message;
 #ifndef ARCTIC_NO_HARD_EXIT
   exit(1);
 #else
-  delete[] full_message;
   longjmp(arctic_jmp_env, 1337);
 #endif  // ARCTIC_NO_HARD_EXIT
 }
@@ -800,9 +803,16 @@ void Swap() {
   [[g_main_view openGLContext] flushBuffer];
   PumpMessages();
 
+  static arctic::Si32 cached_width = 0;
+  static arctic::Si32 cached_height = 0;
   NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-  arctic::GetEngine()->OnWindowResize(
-      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
+  arctic::Si32 w = (arctic::Si32)rect.size.width;
+  arctic::Si32 h = (arctic::Si32)rect.size.height;
+  if (w != cached_width || h != cached_height) {
+    cached_width = w;
+    cached_height = h;
+    arctic::GetEngine()->OnWindowResize(w, h);
+  }
 }
 
 
