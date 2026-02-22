@@ -786,11 +786,11 @@ void PumpMessages() {
         dequeue: YES];
       if (event != nil) {
         [NSApp sendEvent: event];
-        [NSApp updateWindows];
       } else {
         break;
       }
     }
+    [NSApp updateWindows];
   }
 }
 
