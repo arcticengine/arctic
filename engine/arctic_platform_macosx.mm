@@ -70,7 +70,7 @@ namespace arctic {
     Si32 screen_width;
     Si32 screen_height;
   };
-  KeyCode TranslateKeyCode(Ui32 key_unicode);
+  KeyCode TranslateVirtualKeyCode(unsigned short vk);
   void PushInputKey(KeyCode key, bool is_down, std::string characters);
 }  // namespace arctic
 
@@ -237,25 +237,17 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 }
 
 - (void) keyDown: (NSEvent *)theEvent {
-  NSString *characters = [theEvent charactersIgnoringModifiers];
-  if ([characters length] > 0) {
-    unsigned key_unicode = [characters characterAtIndex: 0];
-    arctic::KeyCode key = arctic::TranslateKeyCode(key_unicode);
-    if (key == arctic::kKeyUnknown) {
-      NSLog(@"Unknown character key_unicode: %d", key_unicode);
-    }
-    NSString *typed = [theEvent characters];
-    PushInputKey(key, true, typed ? [typed UTF8String] : "");
+  arctic::KeyCode key = arctic::TranslateVirtualKeyCode([theEvent keyCode]);
+  if (key == arctic::kKeyUnknown) {
+    NSLog(@"Unknown virtual keyCode: %d", [theEvent keyCode]);
   }
+  NSString *typed = [theEvent characters];
+  PushInputKey(key, true, typed ? [typed UTF8String] : "");
 }
 
 - (void) keyUp: (NSEvent *)theEvent {
-  NSString *characters = [theEvent charactersIgnoringModifiers];
-  if ([characters length] > 0) {
-    unsigned key_unicode = [characters characterAtIndex: 0];
-    arctic::KeyCode key = arctic::TranslateKeyCode(key_unicode);
-    PushInputKey(key, false, "");
-  }
+  arctic::KeyCode key = arctic::TranslateVirtualKeyCode([theEvent keyCode]);
+  PushInputKey(key, false, "");
 }
 
 - (void) mouseEvent: (NSEvent *)event key: (int)key_code state: (int)state
@@ -486,148 +478,110 @@ void PushInputKey(KeyCode key, bool is_down, std::string characters) {
   PushInputMessage(msg);
 }
 
-KeyCode TranslateKeyCode(Ui32 key_unicode) {
-  if (key_unicode >= 'A' && key_unicode <= 'Z') {
-    return static_cast<KeyCode>(key_unicode - 'A' + kKeyA);
-  }
-  if (key_unicode >= 'a' && key_unicode <= 'z') {
-    return static_cast<KeyCode>(key_unicode - 'a' + kKeyA);
-  }
-  if (key_unicode >= '0' && key_unicode <= '9') {
-    return static_cast<KeyCode>(key_unicode - '0' + kKey0);
-  }
-  if (key_unicode >= 0xf704 && key_unicode <= 0xf70f) {
-    return static_cast<KeyCode>(key_unicode - 0xf704 + kKeyF1);
-  }
+KeyCode TranslateVirtualKeyCode(unsigned short vk) {
+  switch (vk) {
+    case 0x00: return kKeyA;
+    case 0x0B: return kKeyB;
+    case 0x08: return kKeyC;
+    case 0x02: return kKeyD;
+    case 0x0E: return kKeyE;
+    case 0x03: return kKeyF;
+    case 0x05: return kKeyG;
+    case 0x04: return kKeyH;
+    case 0x22: return kKeyI;
+    case 0x26: return kKeyJ;
+    case 0x28: return kKeyK;
+    case 0x25: return kKeyL;
+    case 0x2E: return kKeyM;
+    case 0x2D: return kKeyN;
+    case 0x1F: return kKeyO;
+    case 0x23: return kKeyP;
+    case 0x0C: return kKeyQ;
+    case 0x0F: return kKeyR;
+    case 0x01: return kKeyS;
+    case 0x11: return kKeyT;
+    case 0x20: return kKeyU;
+    case 0x09: return kKeyV;
+    case 0x0D: return kKeyW;
+    case 0x07: return kKeyX;
+    case 0x10: return kKeyY;
+    case 0x06: return kKeyZ;
 
-  switch (key_unicode) {
-    case 33:
-      return kKey1;
-    case 64:
-      return kKey2;
-    case 35:
-      return kKey3;
-    case 36:
-      return kKey4;
-    case 37:
-      return kKey5;
-    case 94:
-      return kKey6;
-    case 38:
-      return kKey7;
-    case 42:
-      return kKey8;
-    case 40:
-      return kKey9;
-    case 41:
-      return kKey0;
+    case 0x12: return kKey1;
+    case 0x13: return kKey2;
+    case 0x14: return kKey3;
+    case 0x15: return kKey4;
+    case 0x17: return kKey5;
+    case 0x16: return kKey6;
+    case 0x1A: return kKey7;
+    case 0x1C: return kKey8;
+    case 0x19: return kKey9;
+    case 0x1D: return kKey0;
 
-    case 0xf702:
-      return kKeyLeft;
-    case 0xf703:
-      return kKeyRight;
-    case 0xf700:
-      return kKeyUp;
-    case 0xf701:
-      return kKeyDown;
-    case 127:
-      return kKeyBackspace;
-    case 9:
-    case 25:
-      return kKeyTab;
-    case 3:
-    case 13:
-      return kKeyEnter;
-    case 0xF729:
-      return kKeyHome;
-    case 0xF72B:
-      return kKeyEnd;
-    case 0xF72C:
-      return kKeyPageUp;
-    case 0xF72D:
-      return kKeyPageDown;
-      /*    case VK_SHIFT:
-            return kKeyShift;
-            case VK_LSHIFT:
-            return kKeyLeftShift;
-            case VK_RSHIFT:
-            return kKeyRightShift;
-            case VK_CONTROL:
-            return kKeyControl;
-            case VK_LCONTROL:
-            return kKeyLeftControl;
-            case VK_RCONTROL:
-            return kKeyRightControl;
-            case VK_MENU:
-            return kKeyAlt;
-            case VK_LMENU:
-            return kKeyLeftAlt;
-            case VK_RMENU:
-            return kKeyRightAlt;*/
-    case 27:
-      return kKeyEscape;
-    case 32:
-      return kKeySpace;
-    case 0xF730:
-      return kKeyPause;
-      /*    case VK_NUMLOCK:
-            return kKeyNumLock;*/
-    case 0xF72F:
-      return kKeyScrollLock;
-      /*    case VK_CAPITAL:
-            return kKeyCapsLock;*/
-    case 0xF72E:
-      return kKeyPrintScreen;
-    case 0xF727:
-      return kKeyInsert;
-    case 0xF728:
-      return kKeyDelete;
-      /*    case VK_DIVIDE:
-            return kKeyNumpadSlash;
-            case VK_MULTIPLY:
-            return kKeyNumpadAsterisk;
-            case VK_SUBTRACT:
-            return kKeyNumpadMinus;
-            case VK_ADD:
-            return kKeyNumpadPlus;
-            case VK_DECIMAL:
-            return kKeyNumpadPeriod;*/
-    case 44:
-    case 60:
-      return kKeyComma;
-    case 46:
-    case 62:
-      return kKeyPeriod;
-    case 45:
-    case 95:
-      return kKeyMinus;
-    case 43:
-    case 61:
-      return kKeyEquals;
-    case 58:
-    case 59:
-      return kKeySemicolon;
-    case 47:
-    case 63:
-      return kKeySlash;
-    case 96:
-    case 126:
-      return kKeyGraveAccent;
-    case 91:
-    case 123:
-      return kKeyLeftSquareBracket;
-    case 92:
-    case 124:
-      return kKeyBackslash;
-    case 93:
-    case 125:
-      return kKeyRightSquareBracket;
-    case 34:
-    case 39:
-      return kKeyApostrophe;
-    case 167:
-    case 177:
-      return kKeySectionSign;
+    case 0x24: return kKeyEnter;
+    case 0x30: return kKeyTab;
+    case 0x31: return kKeySpace;
+    case 0x33: return kKeyBackspace;
+    case 0x35: return kKeyEscape;
+
+    case 0x7B: return kKeyLeft;
+    case 0x7C: return kKeyRight;
+    case 0x7D: return kKeyDown;
+    case 0x7E: return kKeyUp;
+
+    case 0x73: return kKeyHome;
+    case 0x77: return kKeyEnd;
+    case 0x74: return kKeyPageUp;
+    case 0x79: return kKeyPageDown;
+    case 0x72: return kKeyInsert;
+    case 0x75: return kKeyDelete;
+
+    case 0x7A: return kKeyF1;
+    case 0x78: return kKeyF2;
+    case 0x63: return kKeyF3;
+    case 0x76: return kKeyF4;
+    case 0x60: return kKeyF5;
+    case 0x61: return kKeyF6;
+    case 0x62: return kKeyF7;
+    case 0x64: return kKeyF8;
+    case 0x65: return kKeyF9;
+    case 0x6D: return kKeyF10;
+    case 0x67: return kKeyF11;
+    case 0x6F: return kKeyF12;
+
+    case 0x29: return kKeySemicolon;
+    case 0x27: return kKeyApostrophe;
+    case 0x2B: return kKeyComma;
+    case 0x2F: return kKeyPeriod;
+    case 0x2C: return kKeySlash;
+    case 0x2A: return kKeyBackslash;
+    case 0x21: return kKeyLeftSquareBracket;
+    case 0x1E: return kKeyRightSquareBracket;
+    case 0x32: return kKeyGraveAccent;
+    case 0x1B: return kKeyMinus;
+    case 0x18: return kKeyEquals;
+    case 0x0A: return kKeySectionSign;
+
+    case 0x47: return kKeyNumLock;
+    case 0x52: return kKeyNumpad0;
+    case 0x53: return kKeyNumpad1;
+    case 0x54: return kKeyNumpad2;
+    case 0x55: return kKeyNumpad3;
+    case 0x56: return kKeyNumpad4;
+    case 0x57: return kKeyNumpad5;
+    case 0x58: return kKeyNumpad6;
+    case 0x59: return kKeyNumpad7;
+    case 0x5B: return kKeyNumpad8;
+    case 0x5C: return kKeyNumpad9;
+    case 0x4B: return kKeyNumpadSlash;
+    case 0x43: return kKeyNumpadAsterisk;
+    case 0x4E: return kKeyNumpadMinus;
+    case 0x45: return kKeyNumpadPlus;
+    case 0x41: return kKeyNumpadPeriod;
+
+    case 0x71: return kKeyPause;
+    case 0x6B: return kKeyScrollLock;
+    case 0x69: return kKeyPrintScreen;
   }
   return kKeyUnknown;
 }
