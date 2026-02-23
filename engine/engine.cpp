@@ -582,6 +582,9 @@ Si64 Engine::GetRandom(Si64 min, Si64 max) {
   Ui64 range = static_cast<Ui64>(max - min) + 1ull;
   if (range < 0x1000) {
     if (range < 0x10) {
+      if (range == 0) {
+        return min;
+      }
       return min + static_cast<Si64>(rnd_8_() % range);
     } else {
       return min + static_cast<Si64>(rnd_16_() % range);
