@@ -243,6 +243,71 @@ std::shared_ptr<Button> MakeButton(Ui64 tag, Vec2Si32 pos,
   return button;
 }
 
+std::string WordWrap(const std::string &text, Si32 max_width) {
+  std::string result;
+  std::istringstream stream(text);
+  std::string line;
+  while (std::getline(stream, line)) {
+    if (!result.empty()) {
+      result += '\n';
+    }
+    if (line.empty()) {
+      continue;
+    }
+    std::string current_line;
+    std::istringstream words(line);
+    std::string word;
+    while (words >> word) {
+      std::string candidate = current_line.empty()
+        ? word : current_line + " " + word;
+      Si32 width = g_font.EvaluateSize(candidate.c_str(), false).x;
+      if (width > max_width && !current_line.empty()) {
+        result += current_line + '\n';
+        current_line = word;
+      } else {
+        current_line = candidate;
+      }
+    }
+    result += current_line;
+  }
+  return result;
+}
+
+void ShowResultDialog(bool is_success, const std::string &message) {
+  UpdateResolution();
+  const char *title = is_success
+    ? "Success"
+    : "Error";
+
+  Vec2Si32 box_size(640, 480);
+  std::shared_ptr<Panel> box(new Panel(0, Vec2Si32(0, 0),
+    box_size, 0, g_border.DrawExternalSize(box_size)));
+
+  Si32 text_area_width = box_size.x - 48;
+  std::string wrapped = WordWrap(message, text_area_width);
+  std::string full_text = std::string("The Snow Wizard\n\n")
+    + title + "\n\n" + wrapped;
+
+  Si32 y = box->GetSize().y - 32;
+  std::shared_ptr<Text> textbox(new Text(
+    0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x - 48, 0),
+    0, g_font, kTextOriginTop, g_palete, full_text, kTextAlignmentLeft));
+  box->AddChild(textbox);
+
+  const Ui64 kOkButton = 1;
+  std::shared_ptr<Button> ok_button = MakeButton(
+    kOkButton, Vec2Si32(32, 16), kKeyEnter,
+    1, "OK", Vec2Si32(box->GetSize().x - 64, 48));
+  box->AddChild(ok_button);
+
+  if (is_success) {
+    g_sound_jingle.Play();
+  } else {
+    g_sound_error.Play();
+  }
+  ShowModalDialogue(box);
+}
+
 bool GetOperationMode() {
   UpdateResolution();
 
@@ -578,8 +643,11 @@ void PatchAndCopyTemplateFile(std::string file_name) {
 
 bool ShowProgress() {
   Si32 step = 0;
+  bool has_error = false;
+  bool is_done = false;
+  std::string error_message;
   char text[1 << 20];
-  while (!IsKeyDownward(kKeyEscape)) {
+  while (!has_error && !is_done) {
     switch (step) {
     case 1:
     {
@@ -600,55 +668,38 @@ bool ShowProgress() {
         g_current_directory.append("/..");
       }
       if (is_ok) {
-        g_path = g_current_directory;
-        g_path.append("/..");
-        g_path.append("/");
-        g_path.append(g_project_name);
-        //g_progress.append((const char *)u8"Arctic Engine is detected.\n");
-      }
-      else {
-        g_progress.append((const char*)u8"\003Can't detect Arctic Engine. ERROR.\n");
-        step = 100500;
-        g_sound_error.Play();
+        g_path = CanonicalizePath(
+          (g_current_directory + "/..").c_str()) + "/" + g_project_name;
+      } else {
+        error_message = "Can't detect Arctic Engine.";
+        has_error = true;
       }
     }
     break;
     case 2:
       if (DoesDirectoryExist(g_path.c_str()) == 0) {
-        //g_progress.append((const char *)u8"Directory name is OK\n");
-      }
-      else {
-        g_progress.append((const char*)u8"\003A directory named \"");
-        g_progress.append(g_path);
-        g_progress.append((const char*)u8"\" already exists. ERROR. Use another name.\n");
-        step = 100500;
-        g_sound_error.Play();
+      } else {
+        error_message = "A directory named\n\""
+          + g_path + "\"\nalready exists. Use another name.";
+        has_error = true;
       }
       break;
     case 3:
       if (MakeDirectory(g_path.c_str())) {
-        // g_progress.append((const char *)u8"Directory is created OK\n");
         g_project_directory = g_path;
-      }
-      else {
-        g_progress.append((const char*)u8"\003Can't create directory \"");
-        g_progress.append(g_path);
-        g_progress.append((const char*)u8"\". ERROR.\n");
-        step = 100500;
-        g_sound_error.Play();
+      } else {
+        error_message = "Can't create directory\n\""
+          + g_path + "\".";
+        has_error = true;
       }
       break;
     case 4:
       g_template = g_current_directory + "/template_project_name";
       if (DoesDirectoryExist(g_template.c_str()) == 1) {
-        // g_progress.append((const char *)u8"Template found OK\n");
-      }
-      else {
-        g_progress.append((const char*)u8"\003Can't find template directory \"");
-        g_progress.append(g_template);
-        g_progress.append((const char*)u8"\". ERROR.\n");
-        step = 100500;
-        g_sound_error.Play();
+      } else {
+        error_message = "Can't find template directory\n\""
+          + g_template + "\".";
+        has_error = true;
       }
       break;
     case 5:
@@ -667,14 +718,10 @@ bool ShowProgress() {
         ReplaceAll("template_project_name", g_project_name, &name);
         bool is_ok = MakeDirectory((g_project_directory + "/" + name).c_str());
 
-        if (is_ok) {
-          //g_progress.append((const char*)u8"Project structure created OK\n");
-        } else {
-          g_progress.append((const char*)u8"\003Can't create directory \"");
-          g_progress.append((g_project_directory + "/" + name).c_str());
-          g_progress.append((const char*)u8"\". ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+        if (!is_ok) {
+          error_message = "Can't create directory\n\""
+            + g_project_directory + "/" + name + "\".";
+          has_error = true;
           break;
         }
       }
@@ -719,7 +766,6 @@ bool ShowProgress() {
           WriteFile((g_project_directory + "/" + name).c_str(),
               data.data(), data.size());
         }
-        //g_progress.append((const char *)u8"Data files copied OK\n");
       }
         break;
       case 7:
@@ -771,15 +817,9 @@ bool ShowProgress() {
             PatchAndCopyTemplateFile("main_hello.cpp", "main.cpp");
             break;
         }
-        // g_progress.append((const char *)u8"Project created OK\n");
-
-        if (!g_pause_when_done) {
-          return false;
-        }
+        is_done = true;
       }
         break;
-      case 9:
-        return true;
       default:
         break;
     }
@@ -790,27 +830,36 @@ bool ShowProgress() {
     const char *welcome = (const char *)u8"The Snow Wizard\n\n"
     "Creating project \"%s\"\n\n"
     "Current directory: %s\n"
-    "%s\n\n"
-    "Press ESC to leave the Snow Wizard";
+    "%s";
 
     snprintf(text, sizeof(text), welcome,
         g_project_name.c_str(), g_current_directory.c_str(),
         g_progress.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32,  kTextOriginTop, kTextAlignmentLeft,
-                kDrawBlendingModeColorize, kFilterNearest, g_palete);
+    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
+                kTextAlignmentLeft, kDrawBlendingModeColorize,
+                kFilterNearest, g_palete);
     ShowFrame();
   }
-  return false;
+  if (!g_pause_when_done) {
+    return !has_error;
+  }
+  if (has_error) {
+    ShowResultDialog(false, error_message);
+    return false;
+  }
+  return true;
 }
 
 bool ShowUpdateProgress() {
   std::vector<DirectoryEntry> engine_entries;
   Si32 step = 0;
+  bool has_error = false;
+  bool is_done = false;
+  std::string error_message;
   char text[1 << 20];
-  while (!IsKeyDownward(kKeyEscape)) {
+  while (!has_error && !is_done) {
     switch (step) {
       case 1: {
-        // Find Arctic Engine directory
         bool is_ok = false;
         for (Si32 i = 0; i < 10; ++i) {
           std::string file;
@@ -829,67 +878,50 @@ bool ShowUpdateProgress() {
           g_current_directory.append("/..");
           g_current_directory = CanonicalizePath(g_current_directory.c_str());
         }
-        if (is_ok) {
-          // g_progress.append((const char *)u8"Arctic Engine is detected.\n");
-        } else {
-          g_progress.append((const char *)u8"\003Can't detect Arctic Engine. ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+        if (!is_ok) {
+          error_message = "Can't detect Arctic Engine.";
+          has_error = true;
         }
       }
         break;
       case 2: {
-        // Find /engine directory
         g_engine = CanonicalizePath((g_current_directory + "/engine").c_str());
         if (DoesDirectoryExist(g_engine.c_str()) == 1) {
-          // List /engine files
           GetDirectoryEntries(g_engine.c_str(), &engine_entries);
-          g_progress.append((const char *)u8"Enigne found OK: \"");
+          g_progress.append("Engine found: \"");
           g_progress.append(g_engine);
-          g_progress.append((const char *)u8"\"\n");
+          g_progress.append("\"\n");
         } else {
-          g_progress.append((const char *)u8"\003Can't find engine directory \"");
-          g_progress.append(g_engine);
-          g_progress.append((const char *)u8"\". ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Can't find engine directory\n\""
+            + g_engine + "\".";
+          has_error = true;
         }
       }
         break;
       case 3: {
-        // find *.xcodeproj folder and *.vcxproj files, make sure that
-        // names match and there are no other xcodeproj and vcxproj pairs
         std::deque<std::string> candidates =
           GetDirectoryProjects(g_project_directory);
         Si32 candidate_count = (Si32)candidates.size();
         for (Si32 i = 0; i < candidate_count; ++i) {
-          g_progress.append((const char *)u8"Project name candidate \"");
+          g_progress.append("Project name candidate \"");
           g_progress.append(candidates[static_cast<size_t>(i)]);
-          g_progress.append((const char *)u8"\"\n");
+          g_progress.append("\"\n");
         }
 
-        // make sure that there are no other xcodeproj and vcxproj pairs
         if (candidate_count == 0) {
-          g_progress.append((const char *)u8"\003Can't find project files in\"");
-          g_progress.append(g_project_directory);
-          g_progress.append((const char *)u8"\". ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Can't find project files in\n\""
+            + g_project_directory + "\".";
+          has_error = true;
         } else if (candidate_count > 1) {
-          g_progress.append((const char *)u8"\003Multiple project files in\"");
-          g_progress.append(g_project_directory);
-          g_progress.append((const char *)u8"\". ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Multiple project files in\n\""
+            + g_project_directory + "\".";
+          has_error = true;
         } else {
           g_project_name = candidates[0];
         }
       }
         break;
       case 4: {
-        // update xcodeproj
-
-        // parse xcodeproj extracting the list of engine files
         std::unordered_set<std::string> existing_files;
         std::string name =
           "template_project_name.xcodeproj/project.pbxproj";
@@ -917,19 +949,15 @@ bool ShowUpdateProgress() {
           next++;
         }
         AppendDeprecated(&existing_files);
-        // find missing engine files
-        std::stringstream new_buildfiles;  // PBXBuildFile
-        std::stringstream new_files;  // PBXFileReference
-        std::stringstream new_engine_children;  // PBXGroup engine children
-        std::stringstream new_project_children;  // PBXGroup project children
-        std::stringstream new_buildphase;  // PBXSourcesBuildPhase
+        std::stringstream new_buildfiles;
+        std::stringstream new_files;
+        std::stringstream new_engine_children;
+        std::stringstream new_project_children;
+        std::stringstream new_buildphase;
         std::unordered_set<std::string> new_hashes;
 
-
         std::deque<FileToAdd> files_to_add;
-        // patch-in code.inc.h if needed
         if (g_project_kind == kProjectKindCodingForKids) {
-          //engine_entries.emplace_back(
           if (existing_files.find("code.inc.h") == existing_files.end()) {
             files_to_add.push_back({"code.inc.h", kFileToAddProject});
           }
@@ -943,28 +971,23 @@ bool ShowUpdateProgress() {
           }
         }
 
-
         for (Ui32 idx = 0; idx < files_to_add.size(); ++idx) {
           auto entry = files_to_add[idx];
 
           bool is_inserted = false;
           while (!is_inserted) {
-            // generate 2 random uids
             std::string uid_file = MakeUid();
             std::string uid_buildfile = MakeUid();
 
-            // make sure the uid is not used in the xcodeproj
             if (full_content.find(uid_file) == std::string::npos &&
                 new_hashes.find(uid_file) == new_hashes.end() &&
                 full_content.find(uid_buildfile) == std::string::npos &&
                 new_hashes.find(uid_buildfile) == new_hashes.end() &&
                 uid_file != uid_buildfile) {
               is_inserted = true;
-              // save hashes
               new_hashes.insert(uid_file);
               new_hashes.insert(uid_buildfile);
 
-              // add to PBXBuildFile
               if (EndsWith(entry.title, std::string(".cpp")) ||
                   EndsWith(entry.title, std::string(".c")) ||
                   EndsWith(entry.title, std::string(".mm"))) {
@@ -974,7 +997,6 @@ bool ShowUpdateProgress() {
                   << " /* " << entry.title << " */; };\n";
               }
 
-              // add to PBXFileReference
               new_files << "\t\t" << uid_file
                 << " /* " << entry.title << " */ = {"
                 << "isa = PBXFileReference; fileEncoding = 4;";
@@ -1007,38 +1029,32 @@ bool ShowUpdateProgress() {
 
               switch (entry.location) {
                 case kFileToAddEngine:
-                  // add to PBXGroup engine children
                   new_engine_children << "\n\t\t\t\t" << uid_file <<
                     " /* " << entry.title << " */,";
                   break;
                 case kFileToAddProject:
-                  // add to PBXGroup engine children
                   new_project_children << "\n\t\t\t\t" << uid_file <<
                     " /* " << entry.title << " */,";
                   break;
               }
 
-              // add to PBXSourcesBuildPhase
               if (EndsWith(entry.title, std::string(".cpp")) ||
                   EndsWith(entry.title, std::string(".c")) ||
                   EndsWith(entry.title, std::string(".mm"))) {
                 new_buildphase << "\n\t\t\t\t" << uid_buildfile
                   << " /* " << entry.title << " in Sources */,";
               }
-            }  // if ... uids are unique
-          }  // while (!is_inserted)
-        }  // for ... entries
+            }
+          }
+        }
 
-        // save the resulting file
         std::stringstream resulting_file;
         std::size_t cursor = 0;
         std::size_t next_item =
           full_content.find("/* End PBXBuildFile section */");
         if (next_item == std::string::npos) {
-          g_progress.append((const char *)
-            u8"\003No PBXBuildFile section in xcode project!\nERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "No PBXBuildFile section in Xcode project.";
+          has_error = true;
           break;
         }
         resulting_file << full_content.substr(cursor, next_item - cursor);
@@ -1047,84 +1063,63 @@ bool ShowUpdateProgress() {
         cursor = next_item;
         next_item = full_content.find("/* End PBXFileReference section */");
         if (next_item == std::string::npos) {
-          g_progress.append((const char *)
-            u8"\003No PBXFileReference section in xcode project!\nERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "No PBXFileReference section in Xcode project.";
+          has_error = true;
           break;
         }
         if (next_item < cursor) {
-          g_progress.append((const char *)
-            u8"\003Out of order PBXFileReference in xcode project!\nERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Out of order PBXFileReference in Xcode project.";
+          has_error = true;
           break;
         }
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_files.str();
 
-
         std::string main_group_entry("/* main.cpp */,");
         cursor = next_item;
         next_item = full_content.find(main_group_entry);
         if (next_item == std::string::npos) {
-          g_progress.append((const char *)
-            u8"\003No main_group_entry in xcode project!\nERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "No main_group_entry in Xcode project.";
+          has_error = true;
           break;
         }
         if (next_item < cursor) {
-          g_progress.append((const char *)
-            u8"\003Out of order main_group_entry in xcode project!\n"
-            u8"ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Out of order main_group_entry in Xcode project.";
+          has_error = true;
           break;
         }
         next_item += main_group_entry.size();
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_project_children.str();
 
-
         std::string engine_group_entry("/* engine.cpp */,");
         cursor = next_item;
         next_item = full_content.find(engine_group_entry);
         if (next_item == std::string::npos) {
-          g_progress.append((const char *)
-            u8"\003No engine_group_entry in xcode project!\nERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "No engine_group_entry in Xcode project.";
+          has_error = true;
           break;
         }
         if (next_item < cursor) {
-          g_progress.append((const char *)
-            u8"\003Out of order engine_group_entry in xcode project!\n"
-            u8"ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Out of order engine_group_entry in Xcode project.";
+          has_error = true;
           break;
         }
         next_item += engine_group_entry.size();
         resulting_file << full_content.substr(cursor, next_item - cursor);
         resulting_file << new_engine_children.str();
 
-
         std::string buildphase_entry("/* engine.cpp in Sources */,");
         cursor = next_item;
         next_item = full_content.find(buildphase_entry);
         if (next_item == std::string::npos) {
-          g_progress.append((const char *)
-            u8"\003No buildphase_entry in xcode project!\nERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "No buildphase_entry in Xcode project.";
+          has_error = true;
           break;
         }
         if (next_item < cursor) {
-          g_progress.append((const char *)
-            u8"\003Out of order buildphase_entry in xcode project!\nERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Out of order buildphase_entry in Xcode project.";
+          has_error = true;
           break;
         }
         next_item += buildphase_entry.size();
@@ -1137,13 +1132,9 @@ bool ShowUpdateProgress() {
         WriteFile(xcode_project_full_name.c_str(),
           reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
           resulting_file.str().size());
-        // g_progress.append((const char *)u8"XCode project updated OK\n");
       }
         break;
       case 5: {
-        // update vcxproj
-
-        // parse xcodeproj extracting the list of engine files
         std::unordered_set<std::string> existing_files;
         std::string name = "template_project_name.vcxproj";
         ReplaceAll("template_project_name", g_project_name, &name);
@@ -1198,7 +1189,6 @@ bool ShowUpdateProgress() {
           }
         }
         AppendDeprecated(&existing_files);
-        // find missing engine files
         std::stringstream new_h;
         std::stringstream new_cpp;
         std::stringstream new_filter_h;
@@ -1226,10 +1216,9 @@ bool ShowUpdateProgress() {
                 << "\n    </ClInclude>"
                 << "\n    <ClInclude Include=\"" << rel_path << "\">";
             }
-          }  // if .. entry is a file AND is missing from references
-        }  // for ... entries
+          }
+        }
         if (g_project_kind == kProjectKindCodingForKids) {
-          //engine_entries.emplace_back(
           if (existing_files.find("code.inc.h") == existing_files.end()) {
             new_h << "\n    <ClInclude Include=\"code.inc.h\" />";
           }
@@ -1242,7 +1231,6 @@ bool ShowUpdateProgress() {
           (g_project_directory).c_str(),
           (g_engine + "/engine.cpp").c_str());
 
-        // save the resulting file
         {
           std::string engine_h_pattern =
             "<ClInclude Include=\"" + rel_engine_h_path + "\" />";
@@ -1254,7 +1242,6 @@ bool ShowUpdateProgress() {
           std::size_t next_item =
             full_content.find(engine_h_pattern);
 
-
           if (next_item == std::string::npos) {
             ReplaceAll("/", "\\", &rel_engine_h_path);
             engine_h_pattern =
@@ -1263,9 +1250,8 @@ bool ShowUpdateProgress() {
           }
 
           if (next_item == std::string::npos) {
-            g_progress.append((const char *)u8"\003No engine.h in VS project!\nERROR.\n");
-            step = 100500;
-            g_sound_error.Play();
+            error_message = "No engine.h in VS project.";
+            has_error = true;
             break;
           }
           next_item += engine_h_pattern.size();
@@ -1282,16 +1268,13 @@ bool ShowUpdateProgress() {
           }
 
           if (next_item == std::string::npos) {
-            g_progress.append((const char *)u8"\003No engine.cpp in VS project!\nERROR.\n");
-            step = 100500;
-            g_sound_error.Play();
+            error_message = "No engine.cpp in VS project.";
+            has_error = true;
             break;
           }
           if (next_item < cursor) {
-            g_progress.append((const char *)
-              u8"\003Out of order engine.cpp in VS project!\nERROR.\n");
-            step = 100500;
-            g_sound_error.Play();
+            error_message = "Out of order engine.cpp in VS project.";
+            has_error = true;
             break;
           }
           next_item += engine_cpp_pattern.size();
@@ -1306,7 +1289,6 @@ bool ShowUpdateProgress() {
             resulting_file.str().size());
         }
 
-        // save the resulting filter file
         {
           std::string engine_h_pattern =
             "<ClInclude Include=\"" + rel_engine_h_path + "\">";
@@ -1318,10 +1300,8 @@ bool ShowUpdateProgress() {
           std::size_t next_item =
             full_filter_content.find(engine_cpp_pattern);
           if (next_item == std::string::npos) {
-            g_progress.append((const char *)u8"\003No engine.cpp in VS project filters!"
-                u8"\nERROR.\n");
-            step = 100500;
-            g_sound_error.Play();
+            error_message = "No engine.cpp in VS project filters.";
+            has_error = true;
             break;
           }
           next_item += engine_cpp_pattern.size();
@@ -1337,17 +1317,13 @@ bool ShowUpdateProgress() {
           }
 
           if (next_item == std::string::npos) {
-            g_progress.append((const char *)u8"\003No engine.h in VS project filters!\n"
-                u8"ERROR.\n");
-            step = 100500;
-            g_sound_error.Play();
+            error_message = "No engine.h in VS project filters.";
+            has_error = true;
             break;
           }
           if (next_item < cursor) {
-            g_progress.append((const char *)
-              u8"\003Out of order engine.h in VS project filters!\nERROR.\n");
-            step = 100500;
-            g_sound_error.Play();
+            error_message = "Out of order engine.h in VS project filters.";
+            has_error = true;
             break;
           }
           next_item += engine_h_pattern.size();
@@ -1363,31 +1339,21 @@ bool ShowUpdateProgress() {
             reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
             resulting_file.str().size());
         }
-        // g_progress.append((const char *)u8"Visual Studio project updated OK\n");
       }
         break;
       case 6:
         g_template = g_current_directory + "/template_project_name";
         if (DoesDirectoryExist(g_template.c_str()) == 1) {
-          // g_progress.append((const char *)u8"Template found OK\n");
         } else {
-          g_progress.append((const char *)u8"\003Can't find template directory \"");
-          g_progress.append(g_template);
-          g_progress.append((const char *)u8"\". ERROR.\n");
-          step = 100500;
-          g_sound_error.Play();
+          error_message = "Can't find template directory\n\""
+            + g_template + "\".";
+          has_error = true;
         }
         break;
       case 7: {
           PatchAndCopyTemplateFile("CMakeLists.txt");
-          // g_progress.append((const char *)u8"Latest CMakeLists.txt applied OK\n");
-          g_progress.append((const char *)u8"\nAll Done\n");
-          g_sound_jingle.Play();
-          if (!g_pause_when_done) {
-            return false;
-          }
+          is_done = true;
         }
-
         break;
       default:
         break;
@@ -1397,19 +1363,30 @@ bool ShowUpdateProgress() {
     UpdateResolution();
     Clear();
     const char *welcome = (const char *)u8"The Snow Wizard\n\n"
-    "Creating project \"%s\"\n"
+    "Updating project \"%s\"\n"
     "Current directory: %s\n"
-    "%s\n"
-    "Press ESC to leave the Snow Wizard";
+    "%s";
 
     snprintf(text, sizeof(text), welcome,
              g_project_name.c_str(), g_current_directory.c_str(),
              g_progress.c_str());
-    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop, kTextAlignmentLeft,
-                kDrawBlendingModeColorize, kFilterNearest, g_palete);
+    g_font.Draw(text, 32, ScreenSize().y - 32, kTextOriginTop,
+                kTextAlignmentLeft, kDrawBlendingModeColorize,
+                kFilterNearest, g_palete);
     ShowFrame();
   }
-  return false;
+  if (!g_pause_when_done) {
+    return !has_error;
+  }
+  if (has_error) {
+    ShowResultDialog(false, error_message);
+    return false;
+  }
+  const char *action = (g_mode_of_operation == kModeCreate)
+    ? "created" : "updated";
+  ShowResultDialog(true,
+    "Project \"" + g_project_name + "\" " + action + " successfully.");
+  return true;
 }
 
 void EasyMain() {
