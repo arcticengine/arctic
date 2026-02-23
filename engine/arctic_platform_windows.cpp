@@ -570,6 +570,13 @@ LRESULT CALLBACK InnerWndProc(HWND inner_window_handle, UINT message,
   case WM_MOUSEMOVE:
     arctic::OnMouse(kKeyNone, word_param, long_param, false);
     break;
+  case WM_SETCURSOR:
+    if (LOWORD(long_param) == HTCLIENT && !g_is_cursor_visible) {
+      SetCursor(NULL);
+      return TRUE;
+    }
+    return DefWindowProc(inner_window_handle, message,
+      word_param, long_param);
   case WM_MOUSEWHEEL:
     arctic::OnMouseWheel(word_param, long_param);
     break;
