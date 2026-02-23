@@ -63,9 +63,10 @@ template<class T> class Array2 {
 
   /// @brief Move constructor.
   /// @param original The Array2 to move from.
-  explicit Array2(Array2 &&original)
+  Array2(Array2 &&original)
     : size_(original.size_)
     , data_(std::move(original.data_)) {
+    original.size_ = Vec2Si32(0, 0);
   }
 
   /// @brief Copy assignment operator.
@@ -74,6 +75,16 @@ template<class T> class Array2 {
   Array2<T>& operator=(const Array2<T> &original) {
     size_ = original.size_;
     data_ = original.data_;
+    return *this;
+  }
+
+  /// @brief Move assignment operator.
+  /// @param original The Array2 to move from.
+  /// @return A reference to the assigned Array2.
+  Array2<T>& operator=(Array2<T> &&original) {
+    size_ = original.size_;
+    data_ = std::move(original.data_);
+    original.size_ = Vec2Si32(0, 0);
     return *this;
   }
 
