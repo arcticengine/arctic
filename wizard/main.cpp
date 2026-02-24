@@ -61,6 +61,8 @@ DecoratedFrame g_border;
 DecoratedFrame g_button_normal;
 DecoratedFrame g_button_hover;
 DecoratedFrame g_button_down;
+DecoratedFrame g_button_disabled;
+std::shared_ptr<GuiThemeScrollbar> g_v_scrollbar_theme;
 std::vector<Rgba> g_text_palete;
 
 
@@ -227,12 +229,12 @@ std::shared_ptr<Button> MakeButton(Ui64 tag, Vec2Si32 pos,
   Sprite button_normal = g_button_normal.DrawExternalSize(button_size);
   Sprite button_hover = g_button_hover.DrawExternalSize(button_size);
   Sprite button_down = g_button_down.DrawExternalSize(button_size);
+  Sprite button_disabled = g_button_disabled.DrawExternalSize(button_size);
 
-
-  Sound silent;
   std::shared_ptr<Button> button(new Button(tag, pos,
     button_normal, button_down, button_hover,
-    g_sound_button_down, g_sound_button_up, hotkey, tab_order));
+    g_sound_button_down, g_sound_button_up, hotkey, tab_order,
+    button_disabled));
   std::shared_ptr<Text> button_textbox(new Text(
     0, Vec2Si32(2, 8), Vec2Si32(button_size.x - 4, button_text_size.y),
     0, g_font, kTextOriginBottom, g_palete, text, kTextAlignmentCenter));
@@ -559,70 +561,253 @@ void GatherEntries(std::vector<DirectoryEntry> *in_out_entries) {
 
 bool SelectProject() {
   std::vector<DirectoryEntry> entries;
-  Ui32 selected_idx = 0;
-  g_project_directory = g_current_directory;
+  std::string search_dir = g_current_directory;
+  for (Si32 i = 0; i < 10; ++i) {
+    std::string marker = search_dir + "/arctic.engine";
+    std::vector<Ui8> data = ReadFile(marker.c_str(), true);
+    const char *expected = "arctic.engine";
+    if (data.size() >= std::strlen(expected)
+        && memcmp(data.data(), expected, std::strlen(expected)) == 0) {
+      std::string parent = CanonicalizePath(
+        (search_dir + "/..").c_str());
+      g_project_directory = parent;
+      break;
+    }
+    search_dir += "/..";
+  }
+  if (g_project_directory.empty()) {
+    g_project_directory = g_current_directory;
+  }
   GatherEntries(&entries);
-  bool is_done = false;
-  while (!IsKeyDownward(kKeyEscape)) {
-    UpdateResolution();
-    Clear();
-    if (IsKeyUpward(kKeyEnter)) {
-      if (selected_idx < entries.size()) {
-        if (entries[selected_idx].is_directory == kTrivalentTrue) {
-          std::stringstream new_dir;
-          new_dir << g_project_directory << "/" << entries[selected_idx].title;
-          g_project_directory = CanonicalizePath(new_dir.str().c_str());
-          GatherEntries(&entries);
-          selected_idx = 0;
+
+  const Si32 kVisibleRows = 10;
+  const Si32 kRowHeight = 36;
+  const Si32 kScrollbarWidth = 29;
+  const Si32 kBoxWidth = 720;
+  const Si32 kListWidth = kBoxWidth - 64 - kScrollbarWidth - 4;
+  const Si32 kHeaderHeight = 140;
+  const Si32 kBoxHeight = kHeaderHeight + kRowHeight * kVisibleRows + 64 + 8;
+
+  const Ui64 kTagSelectButton = 1;
+  const Ui64 kTagExitButton = 2;
+  const Ui64 kTagScrollbar = 3;
+  const Ui64 kTagPathText = 4;
+  const Ui64 kTagFilter = 5;
+  const Ui64 kTagEntryBase = 1000;
+
+  bool need_rebuild = true;
+  bool filter_dirty = true;
+  std::string filter_text;
+  std::vector<DirectoryEntry> filtered;
+
+  std::shared_ptr<Panel> box;
+  std::shared_ptr<Text> path_text;
+  std::shared_ptr<Scrollbar> scrollbar;
+  std::shared_ptr<Button> select_button;
+  std::shared_ptr<Editbox> filter_editbox;
+  std::vector<std::shared_ptr<Button>> row_buttons;
+  std::vector<std::shared_ptr<Text>> row_texts;
+
+  while (true) {
+    if (need_rebuild) {
+      need_rebuild = false;
+      row_buttons.clear();
+      row_texts.clear();
+
+      Vec2Si32 box_size(kBoxWidth, kBoxHeight);
+      box.reset(new Panel(0, Vec2Si32(0, 0),
+        box_size, 0, g_border.DrawExternalSize(box_size)));
+
+      Si32 y = box_size.y - 28;
+
+      std::shared_ptr<Text> title(new Text(
+        0, Vec2Si32(24, y), Vec2Si32(box_size.x - 48, 0),
+        0, g_font, kTextOriginTop, g_palete,
+        "The Snow Wizard",
+        kTextAlignmentLeft));
+      box->AddChild(title);
+
+      y -= 36;
+      std::string display_path = "Path: " + g_project_directory;
+      path_text.reset(new Text(
+        kTagPathText, Vec2Si32(24, y), Vec2Si32(box_size.x - 48, 0),
+        0, g_font, kTextOriginTop, g_palete,
+        display_path, kTextAlignmentLeft));
+      box->AddChild(path_text);
+
+      y -= 30;
+      Si32 filter_label_w = g_font.EvaluateSize("Filter:", false).x;
+      Si32 filter_x = 24 + filter_label_w + 8;
+      Si32 filter_w = 24 + kListWidth + kScrollbarWidth + 4 - filter_x;
+
+      const Si32 kFilterEditH = 36;
+      Si32 editbox_border = std::max(0,
+        (kFilterEditH - g_font.FontInstance()->line_height_) / 2);
+      std::shared_ptr<Text> filter_label(new Text(
+        0, Vec2Si32(24, y - kFilterEditH + editbox_border),
+        Vec2Si32(filter_label_w, 0),
+        0, g_font, kTextOriginBottom, g_palete,
+        "Filter:", kTextAlignmentLeft));
+      box->AddChild(filter_label);
+
+      Vec2Si32 filter_size(filter_w, kFilterEditH);
+      Sprite filter_n = g_button_normal.DrawExternalSize(filter_size);
+      Sprite filter_f = g_button_hover.DrawExternalSize(filter_size);
+      filter_editbox.reset(new Editbox(
+        kTagFilter, Vec2Si32(filter_x, y - filter_size.y), 1,
+        filter_n, filter_f,
+        g_font, kTextOriginBottom, Rgba(255, 255, 255, 255),
+        "", kTextAlignmentLeft));
+      box->AddChild(filter_editbox);
+
+      y -= 46;
+      Si32 list_top = y;
+
+      for (Si32 i = 0; i < kVisibleRows; ++i) {
+        Si32 row_y = list_top - i * kRowHeight;
+        Vec2Si32 btn_size(kListWidth, kRowHeight - 2);
+        Sprite btn_n = g_button_normal.DrawExternalSize(btn_size);
+        Sprite btn_h = g_button_hover.DrawExternalSize(btn_size);
+        Sprite btn_d = g_button_down.DrawExternalSize(btn_size);
+        std::shared_ptr<Text> btn_text;
+        std::shared_ptr<Button> btn(new Button(
+          kTagEntryBase + static_cast<Ui64>(i),
+          Vec2Si32(24, row_y - btn_size.y),
+          btn_n, btn_d, btn_h,
+          g_sound_button_down, g_sound_button_up,
+          kKeyNone, 0));
+        btn_text.reset(new Text(
+          0, Vec2Si32(8, 2),
+          Vec2Si32(btn_size.x - 16, btn_size.y - 4),
+          0, g_font, kTextOriginCenter, g_palete, "",
+          kTextAlignmentLeft));
+        btn->AddChild(btn_text);
+        box->AddChild(btn);
+        row_buttons.push_back(btn);
+        row_texts.push_back(btn_text);
+      }
+
+      scrollbar.reset(new Scrollbar(kTagScrollbar, g_v_scrollbar_theme));
+      Si32 scroll_h = kRowHeight * kVisibleRows;
+      scrollbar->SetPos(Vec2Si32(24 + kListWidth + 4,
+        list_top - scroll_h));
+      scrollbar->SetSize(Vec2Si32(kScrollbarWidth, scroll_h));
+      scrollbar->RegenerateSprites();
+      Si32 init_max = std::max(0,
+        static_cast<Si32>(entries.size()) - kVisibleRows);
+      scrollbar->SetMinValue(0);
+      scrollbar->SetMaxValue(init_max);
+      scrollbar->SetValue(init_max);
+      scrollbar->SetStep(1);
+      box->AddChild(scrollbar);
+
+      Si32 bottom_y = 16;
+      bool is_project_dir =
+        (GetDirectoryProjects(g_project_directory).size() == 1);
+      select_button = MakeButton(
+        kTagSelectButton, Vec2Si32(24, bottom_y), kKeyNone, 2,
+        "Select This Directory",
+        Vec2Si32((box_size.x - 64) / 2, 48));
+      select_button->SetEnabled(is_project_dir);
+      box->AddChild(select_button);
+
+      std::shared_ptr<Button> exit_button = MakeButton(
+        kTagExitButton,
+        Vec2Si32(24 + (box_size.x - 64) / 2 + 16, bottom_y),
+        kKeyEscape, 3, "Exit",
+        Vec2Si32((box_size.x - 64) / 2 - 16, 48));
+      box->AddChild(exit_button);
+
+      box->SwitchCurrentTab(true);
+      filter_dirty = true;
+    }
+
+    std::string current_filter = filter_editbox->GetText();
+    if (filter_dirty || current_filter != filter_text) {
+      filter_text = current_filter;
+      filtered.clear();
+      for (size_t j = 0; j < entries.size(); ++j) {
+        if (filter_text.empty() || entries[j].title == "..") {
+          filtered.push_back(entries[j]);
+        } else {
+          std::string lower_title = entries[j].title;
+          std::string lower_filter = filter_text;
+          for (auto &c : lower_title) {
+            c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+          }
+          for (auto &c : lower_filter) {
+            c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+          }
+          if (lower_title.find(lower_filter) != std::string::npos) {
+            filtered.push_back(entries[j]);
+          }
         }
       }
-    } else if (IsKeyUpward(kKeyUp)) {
-      if (selected_idx > 0) {
-        selected_idx--;
-      }
-    } else if (IsKeyUpward(kKeyDown)) {
-      if (selected_idx + 1 < entries.size()) {
-        selected_idx++;
-      }
-    } else if (IsKeyUpward("S")) {
-      is_done = true;
+      Si32 new_max = std::max(0,
+        static_cast<Si32>(filtered.size()) - kVisibleRows);
+      scrollbar->SetMaxValue(new_max);
+      scrollbar->SetValue(new_max);
+      filter_dirty = false;
     }
 
-
-    bool is_project_dir =
-      (GetDirectoryProjects(g_project_directory).size() == 1);
-    std::stringstream str;
-    str << "The Snow Wizard\n\n"
-    "Select an existing Arctic Engine project to update.\n\n"
-    "Press arrow keys and ENTER to navigate.\n"
-    "Press " << (is_project_dir ? "\001S\002" : "S")
-      << " while in a project directory to select it.\n"
-    "Press ESC to leave the Snow Wizard.\n\n";
-    str << "Path: " << g_project_directory << "\n\n";
-
-    Si32 begin_i = std::max(0, Si32(selected_idx) - 5);
-    for (Ui32 i = (Ui32)begin_i; i < entries.size(); ++i) {
-      if (selected_idx == i) {
-        str << "--> ";
+    Si32 max_scroll = std::max(0,
+      static_cast<Si32>(filtered.size()) - kVisibleRows);
+    Si32 scroll_offset = max_scroll - scrollbar->GetValue();
+    for (Si32 i = 0; i < kVisibleRows; ++i) {
+      Si32 entry_idx = scroll_offset + i;
+      if (entry_idx < static_cast<Si32>(filtered.size())) {
+        row_buttons[static_cast<size_t>(i)]->SetVisible(true);
+        std::string label;
+        if (filtered[static_cast<size_t>(entry_idx)].is_directory
+            == kTrivalentTrue) {
+          label = "\001" + filtered[static_cast<size_t>(entry_idx)].title
+            + "/\002";
+        } else {
+          label = filtered[static_cast<size_t>(entry_idx)].title;
+        }
+        row_texts[static_cast<size_t>(i)]->SetText(label);
       } else {
-        str << "    ";
+        row_buttons[static_cast<size_t>(i)]->SetVisible(false);
       }
-      if (entries[i].is_directory == kTrivalentTrue) {
-        str << "\x01";
-      }
-      str << entries[i].title;
-      str << "\x02";
-      str << "\n";
     }
 
-    g_font.Draw(str.str().c_str(), 32, ScreenSize().y - 32, kTextOriginTop, kTextAlignmentLeft,
-      kDrawBlendingModeColorize, kFilterNearest, g_palete);
+    UpdateResolution();
+    Clear();
+    box->SetPos((ScreenSize() - box->GetSize()) / 2);
+    box->Draw(Vec2Si32(0, 0));
     ShowFrame();
-    if (is_done) {
-      return true;
+
+    std::deque<GuiMessage> messages;
+    for (Si32 idx = 0; idx < InputMessageCount(); ++idx) {
+      box->ApplyInput(GetInputMessage(idx), &messages);
+    }
+    for (auto it = messages.begin(); it != messages.end(); ++it) {
+      if (it->kind == kGuiButtonClick) {
+        Ui64 tag = it->panel->GetTag();
+        if (tag == kTagExitButton) {
+          return false;
+        }
+        if (tag == kTagSelectButton) {
+          return true;
+        }
+        if (tag >= kTagEntryBase
+            && tag < kTagEntryBase + kVisibleRows) {
+          Si32 row = static_cast<Si32>(tag - kTagEntryBase);
+          Si32 entry_idx = scroll_offset + row;
+          if (entry_idx < static_cast<Si32>(filtered.size())) {
+            if (filtered[static_cast<size_t>(entry_idx)].is_directory
+                == kTrivalentTrue) {
+              std::string new_dir = g_project_directory + "/"
+                + filtered[static_cast<size_t>(entry_idx)].title;
+              g_project_directory = CanonicalizePath(new_dir.c_str());
+              GatherEntries(&entries);
+              need_rebuild = true;
+            }
+          }
+        }
+      }
     }
   }
-  return false;
 }
 
 void PatchAndCopyTemplateFile(std::string file_name, std::string target_name) {
@@ -1416,9 +1601,35 @@ void EasyMain() {
   Sprite button_down;
   button_down.Load("data/button_down.tga");
   g_button_down.Split(button_down, 12, true, true);
+  Sprite button_disabled;
+  button_disabled.Load("data/button_disabled.tga");
+  g_button_disabled.Split(button_disabled, 12, true, true);
 
   g_text_palete = {Rgba(255, 255, 255)};
 
+  {
+    g_v_scrollbar_theme = std::make_shared<GuiThemeScrollbar>();
+    g_v_scrollbar_theme->is_horizontal_ = false;
+    Sprite s;
+    s.Load("data/v_scroll_bg_normal.tga");
+    g_v_scrollbar_theme->normal_background_.Split(s, 9, true, true);
+    s.Load("data/v_scroll_bg_hover.tga");
+    g_v_scrollbar_theme->focused_background_.Split(s, 9, true, true);
+    s.Load("data/v_scroll_bg_disabled.tga");
+    g_v_scrollbar_theme->disabled_background_.Split(s, 9, true, true);
+    g_v_scrollbar_theme->normal_button_dec_.Load("data/v_scroll_dec_normal.tga");
+    g_v_scrollbar_theme->focused_button_dec_.Load("data/v_scroll_dec_hover.tga");
+    g_v_scrollbar_theme->down_button_dec_.Load("data/v_scroll_dec_down.tga");
+    g_v_scrollbar_theme->disabled_button_dec_.Load("data/v_scroll_dec_disabled.tga");
+    g_v_scrollbar_theme->normal_button_inc_.Load("data/v_scroll_inc_normal.tga");
+    g_v_scrollbar_theme->focused_button_inc_.Load("data/v_scroll_inc_hover.tga");
+    g_v_scrollbar_theme->down_button_inc_.Load("data/v_scroll_inc_down.tga");
+    g_v_scrollbar_theme->disabled_button_inc_.Load("data/v_scroll_inc_disabled.tga");
+    g_v_scrollbar_theme->normal_button_cur_.Load("data/v_scroll_cur_normal.tga");
+    g_v_scrollbar_theme->focused_button_cur_.Load("data/v_scroll_cur_hover.tga");
+    g_v_scrollbar_theme->down_button_cur_.Load("data/v_scroll_cur_down.tga");
+    g_v_scrollbar_theme->disabled_button_cur_.Load("data/v_scroll_cur_disabled.tga");
+  }
 
   CsvTable csv;
   csv.LoadFile("data/deprecations.csv");
