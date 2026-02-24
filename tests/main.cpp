@@ -1902,6 +1902,79 @@ void test_utf8_codepoint_sizes() {
   TEST_CHECK(cp.size == 0);
 }
 
+void test_is_utf8_continuation() {
+  for (Ui32 b = 0x00; b <= 0x7F; ++b) {
+    TEST_CHECK_(!IsUtf8Continuation(static_cast<Ui8>(b)),
+      "ASCII byte 0x%02X should not be continuation", b);
+  }
+  for (Ui32 b = 0x80; b <= 0xBF; ++b) {
+    TEST_CHECK_(IsUtf8Continuation(static_cast<Ui8>(b)),
+      "Byte 0x%02X should be continuation", b);
+  }
+  for (Ui32 b = 0xC0; b <= 0xFF; ++b) {
+    TEST_CHECK_(!IsUtf8Continuation(static_cast<Ui8>(b)),
+      "Leading byte 0x%02X should not be continuation", b);
+  }
+}
+
+void test_utf8_next_char_pos() {
+  // "Aй\xe2\x98\x83\xf0\x9f\x98\x80" = A(1) + й(2) + snowman(3) + grinning(4)
+  std::string s = "A\xD0\xB9\xE2\x98\x83\xF0\x9F\x98\x80";
+  TEST_CHECK_(s.length() == 10, "test string should be 10 bytes, got %d",
+    (int)s.length());
+
+  Si32 p = 0;
+  p = Utf8NextCharPos(s, p);
+  TEST_CHECK_(p == 1, "after A: expected 1, got %d", p);
+
+  p = Utf8NextCharPos(s, p);
+  TEST_CHECK_(p == 3, "after й: expected 3, got %d", p);
+
+  p = Utf8NextCharPos(s, p);
+  TEST_CHECK_(p == 6, "after snowman: expected 6, got %d", p);
+
+  p = Utf8NextCharPos(s, p);
+  TEST_CHECK_(p == 10, "after grinning: expected 10, got %d", p);
+
+  p = Utf8NextCharPos(s, p);
+  TEST_CHECK_(p == 10, "past end: expected 10, got %d", p);
+
+  std::string empty;
+  TEST_CHECK_(Utf8NextCharPos(empty, 0) == 0,
+    "empty string: expected 0, got %d", Utf8NextCharPos(empty, 0));
+}
+
+void test_utf8_prev_char_pos() {
+  std::string s = "A\xD0\xB9\xE2\x98\x83\xF0\x9F\x98\x80";
+
+  Si32 p = 10;
+  p = Utf8PrevCharPos(s, p);
+  TEST_CHECK_(p == 6, "before grinning: expected 6, got %d", p);
+
+  p = Utf8PrevCharPos(s, p);
+  TEST_CHECK_(p == 3, "before snowman: expected 3, got %d", p);
+
+  p = Utf8PrevCharPos(s, p);
+  TEST_CHECK_(p == 1, "before й: expected 1, got %d", p);
+
+  p = Utf8PrevCharPos(s, p);
+  TEST_CHECK_(p == 0, "before A: expected 0, got %d", p);
+
+  p = Utf8PrevCharPos(s, p);
+  TEST_CHECK_(p == 0, "at start: expected 0, got %d", p);
+
+  TEST_CHECK_(Utf8PrevCharPos(s, 8) == 6,
+    "mid-continuation of 4-byte char: expected 6, got %d",
+    Utf8PrevCharPos(s, 8));
+
+  TEST_CHECK_(Utf8PrevCharPos(s, 2) == 1,
+    "mid-continuation of 2-byte char: expected 1, got %d",
+    Utf8PrevCharPos(s, 2));
+
+  std::string empty;
+  TEST_CHECK_(Utf8PrevCharPos(empty, 0) == 0,
+    "empty string: expected 0, got %d", Utf8PrevCharPos(empty, 0));
+}
 
 // ---------------------------------------------------------------------------
 // Mesh bug regression tests
@@ -3219,6 +3292,9 @@ TEST_LIST = {
   {"Utf16ToUtf8 surrogate pair", test_utf16_to_utf8_surrogate},
   {"Utf32Reader round-trip", test_utf32_reader_roundtrip},
   {"Utf8Codepoint sizes", test_utf8_codepoint_sizes},
+  {"IsUtf8Continuation", test_is_utf8_continuation},
+  {"Utf8NextCharPos", test_utf8_next_char_pos},
+  {"Utf8PrevCharPos", test_utf8_prev_char_pos},
   {"Mesh PLY readline does not strip CRLF", test_mesh_ply_readline_crlf},
   {"Mesh vertex attrib write overflow", test_mesh_vertex_attrib_write_overflow},
   {"Mesh extrude face covers all edges", test_mesh_extrude_face_covers_all_edges},

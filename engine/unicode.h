@@ -103,6 +103,23 @@ std::string Utf32ToUtf8(const void* data);
 /// @result UTF-8 std::string.
 std::string Utf16ToUtf8(const void* data);
 
+/// @brief Checks if a byte is a UTF-8 continuation byte (10xxxxxx).
+/// @param byte The byte to check.
+/// @return True if the byte is a continuation byte (0x80-0xBF).
+bool IsUtf8Continuation(Ui8 byte);
+
+/// @brief Returns the byte position of the previous UTF-8 character.
+/// @param s The UTF-8 encoded string.
+/// @param pos Current byte position.
+/// @return Byte position of the start of the previous character, or 0 if at the beginning.
+Si32 Utf8PrevCharPos(const std::string &s, Si32 pos);
+
+/// @brief Returns the byte position of the next UTF-8 character.
+/// @param s The UTF-8 encoded string.
+/// @param pos Current byte position.
+/// @return Byte position of the start of the next character, or string length if at the end.
+Si32 Utf8NextCharPos(const std::string &s, Si32 pos);
+
 /// @}
 
 }  // namespace arctic

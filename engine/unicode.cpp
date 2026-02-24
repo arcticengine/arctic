@@ -241,4 +241,31 @@ std::string Utf16ToUtf8(const void* data) {
   return buf;
 }
 
+bool IsUtf8Continuation(Ui8 byte) {
+  return (byte & 0xC0) == 0x80;
+}
+
+Si32 Utf8PrevCharPos(const std::string &s, Si32 pos) {
+  if (pos <= 0) {
+    return 0;
+  }
+  pos--;
+  while (pos > 0 && IsUtf8Continuation(static_cast<Ui8>(s[static_cast<size_t>(pos)]))) {
+    pos--;
+  }
+  return pos;
+}
+
+Si32 Utf8NextCharPos(const std::string &s, Si32 pos) {
+  Si32 len = static_cast<Si32>(s.length());
+  if (pos >= len) {
+    return len;
+  }
+  pos++;
+  while (pos < len && IsUtf8Continuation(static_cast<Ui8>(s[static_cast<size_t>(pos)]))) {
+    pos++;
+  }
+  return pos;
+}
+
 }  // namespace arctic
