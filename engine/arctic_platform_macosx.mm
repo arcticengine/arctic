@@ -885,11 +885,40 @@ bool GetDirectoryEntries(const char *path,
 
 std::string CanonicalizePath(const char *path) {
   Check(path != nullptr, "CanonicalizePath error, path can't be nullptr");
-  char *canonic_path = realpath(path, nullptr);
-  std::string result;
-  if (canonic_path) {
-    result.assign(canonic_path);
-    free(canonic_path);
+  std::string p(path);
+  if (p.empty()) {
+    return std::string();
+  }
+  if (p[0] != '/') {
+    char cwd[1 << 20];
+    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+      return std::string();
+    }
+    p = std::string(cwd) + "/" + p;
+  }
+  std::vector<std::string> components;
+  size_t start = 1;
+  while (start <= p.size()) {
+    size_t end = p.find('/', start);
+    if (end == std::string::npos) {
+      end = p.size();
+    }
+    std::string comp = p.substr(start, end - start);
+    if (comp == "..") {
+      if (!components.empty()) {
+        components.pop_back();
+      }
+    } else if (!comp.empty() && comp != ".") {
+      components.push_back(comp);
+    }
+    start = end + 1;
+  }
+  std::string result = "/";
+  for (size_t i = 0; i < components.size(); i++) {
+    if (i > 0) {
+      result += "/";
+    }
+    result += components[i];
   }
   return result;
 }

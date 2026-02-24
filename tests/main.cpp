@@ -3229,6 +3229,71 @@ static void test_ortho_consistent_with_perspective(void) {
     "symmetric ortho y-translation should be 0: got %f", ortho.m[7]);
 }
 
+void test_canonicalize_nonexistent_path() {
+  std::string via_nonexistent =
+      arctic::CanonicalizePath("./nonexistent_dir_82736/../..");
+  std::string via_existing =
+      arctic::CanonicalizePath("./..");
+
+  TEST_CHECK_(!via_nonexistent.empty(),
+      "CanonicalizePath must not return empty for non-existent path");
+  TEST_CHECK_(!via_existing.empty(),
+      "CanonicalizePath must not return empty for existing path");
+  TEST_CHECK_(via_nonexistent == via_existing,
+      "Paths must match: '%s' vs '%s'",
+      via_nonexistent.c_str(), via_existing.c_str());
+
+  std::string with_dot = arctic::CanonicalizePath("./.");
+  std::string without_dot = arctic::CanonicalizePath(".");
+  TEST_CHECK_(with_dot == without_dot,
+      "Single dot must collapse: '%s' vs '%s'",
+      with_dot.c_str(), without_dot.c_str());
+
+  std::string with_dots = arctic::CanonicalizePath("././.");
+  TEST_CHECK_(with_dots == without_dot,
+      "Multiple dots must collapse: '%s' vs '%s'",
+      with_dots.c_str(), without_dot.c_str());
+
+  std::string into_and_back =
+      arctic::CanonicalizePath("./nonexistent_abc_99/..");
+  std::string just_here = arctic::CanonicalizePath(".");
+  TEST_CHECK_(into_and_back == just_here,
+      "Enter and exit dir must equal current: '%s' vs '%s'",
+      into_and_back.c_str(), just_here.c_str());
+
+  std::string deep_into_and_back =
+      arctic::CanonicalizePath("./aaa_fake/bbb_fake/../..");
+  TEST_CHECK_(deep_into_and_back == just_here,
+      "Enter two dirs and exit both must equal current: '%s' vs '%s'",
+      deep_into_and_back.c_str(), just_here.c_str());
+}
+
+void test_canonicalize_before_and_after_create() {
+  const char *filename = "./test_canon_tmpfile_93721";
+
+  std::remove(filename);
+
+  std::string before = arctic::CanonicalizePath(filename);
+  TEST_CHECK_(!before.empty(),
+      "CanonicalizePath must not return empty before file exists");
+
+  {
+    std::ofstream ofs(filename);
+    TEST_CHECK_(ofs.good(), "Failed to create temp file '%s'", filename);
+    ofs << "test";
+  }
+
+  std::string after = arctic::CanonicalizePath(filename);
+  TEST_CHECK_(!after.empty(),
+      "CanonicalizePath must not return empty after file exists");
+
+  TEST_CHECK_(before == after,
+      "Canonical path before ('%s') and after ('%s') file creation must match",
+      before.c_str(), after.c_str());
+
+  std::remove(filename);
+}
+
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
   {"Rgba", test_rgba},
@@ -3336,6 +3401,8 @@ TEST_LIST = {
   {"SetOrtho asymmetric maps corners to NDC", test_ortho_asymmetric_corners},
   {"SetOrtho center maps to origin", test_ortho_center_maps_to_origin},
   {"SetOrtho consistent with Perspective at z=near", test_ortho_consistent_with_perspective},
+  {"CanonicalizePath non-existent path", test_canonicalize_nonexistent_path},
+  {"CanonicalizePath before and after file create", test_canonicalize_before_and_after_create},
   {0}
 };
 
