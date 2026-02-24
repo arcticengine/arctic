@@ -1650,7 +1650,8 @@ bool ShowUpdateProgress() {
   const char *action = (g_mode_of_operation == kModeCreate)
     ? "created" : "updated";
   ShowResultDialog(true,
-    "Project \"" + g_project_name + "\" " + action + " successfully.");
+    "Project \"" + g_project_name + "\" " + action + " successfully.\n\n"
+    + g_project_directory);
   return true;
 }
 
