@@ -479,9 +479,10 @@ bool GetProjectName() {
     allow_list.insert(ch);
   }
   allow_list.insert('_');
+  Si32 editbox_y = y;
   std::shared_ptr<Editbox> editbox(new Editbox(
     kEditBox,
-    Vec2Si32(32, y),
+    Vec2Si32(32, editbox_y),
     1,
     button_normal, 
     button_hover,
@@ -494,12 +495,19 @@ bool GetProjectName() {
     allow_list));
   box->AddChild(editbox);
 
+  std::shared_ptr<Text> error_text(new Text(
+    0, Vec2Si32(32, editbox_y - 24), Vec2Si32(box->GetSize().x - 64, 0),
+    0, g_font, kTextOriginTop, Rgba(255, 80, 80),
+    "Enter a project name", kTextAlignmentLeft));
+  box->AddChild(error_text);
+
   y = 8 + 16 + 64 + 64;
   y -= 64;
   std::shared_ptr<Button> done_button = MakeButton(
     kDoneButton, Vec2Si32(32, y), kKeyNone,
     2, "Done",
     Vec2Si32(box->GetSize().x - 64, 48));
+  done_button->SetEnabled(false);
   box->AddChild(done_button);
   box->SwitchCurrentTab(true);
 
@@ -510,13 +518,69 @@ bool GetProjectName() {
     Vec2Si32(box->GetSize().x - 64, 48));
   box->AddChild(exit_button);
 
-
-  Ui64 action = ShowModalDialogue(box);
-  if (action == kDoneButton) {
-    g_project_name = editbox->GetText();
-    return true;
+  std::string base_dir;
+  {
+    std::string search_dir = g_current_directory;
+    for (Si32 i = 0; i < 10; ++i) {
+      std::string marker = search_dir + "/arctic.engine";
+      std::vector<Ui8> data = ReadFile(marker.c_str(), true);
+      const char *expected = "arctic.engine";
+      if (data.size() >= std::strlen(expected)
+          && memcmp(data.data(), expected, std::strlen(expected)) == 0) {
+        base_dir = CanonicalizePath((search_dir + "/..").c_str());
+        break;
+      }
+      search_dir += "/..";
+    }
+    if (base_dir.empty()) {
+      base_dir = CanonicalizePath(
+        (g_current_directory + "/..").c_str());
+    }
   }
-  return false;
+
+  std::string prev_name;
+  Ui64 clicked_button = Ui64(-1);
+  while (true) {
+    std::string name = editbox->GetText();
+    if (name != prev_name) {
+      prev_name = name;
+      if (name.empty()) {
+        done_button->SetEnabled(false);
+        error_text->SetText("Enter a project name");
+      } else {
+        std::string target_dir = base_dir + "/" + name;
+        if (DoesDirectoryExist(target_dir.c_str()) == kTrivalentTrue) {
+          done_button->SetEnabled(false);
+          error_text->SetText("Directory already exists: " + target_dir);
+        } else {
+          done_button->SetEnabled(true);
+          error_text->SetText("");
+        }
+      }
+    }
+
+    UpdateResolution();
+    Clear();
+    box->SetPos((ScreenSize() - box->GetSize()) / 2);
+    box->Draw(Vec2Si32(0, 0));
+    ShowFrame();
+    if (clicked_button != Ui64(-1)) {
+      if (clicked_button == kDoneButton) {
+        g_project_name = editbox->GetText();
+        return true;
+      }
+      return false;
+    }
+    std::deque<GuiMessage> messages;
+    for (Si32 idx = 0; idx < InputMessageCount(); ++idx) {
+      box->ApplyInput(GetInputMessage(idx), &messages);
+    }
+    for (auto it = messages.begin(); it != messages.end(); ++it) {
+      if (it->kind == kGuiButtonClick) {
+        clicked_button = it->panel->GetTag();
+      }
+    }
+  }
 }
 
 std::deque<std::string> GetDirectoryProjects(std::string project_directory) {
@@ -607,6 +671,7 @@ bool SelectProject() {
   std::shared_ptr<Editbox> filter_editbox;
   std::vector<std::shared_ptr<Button>> row_buttons;
   std::vector<std::shared_ptr<Text>> row_texts;
+  Si32 wheel_accum = 0;
 
   while (true) {
     if (need_rebuild) {
@@ -806,6 +871,21 @@ bool SelectProject() {
           }
         }
       }
+    }
+    wheel_accum += MouseWheelDelta();
+    const Si32 kWheelThreshold = 10;
+    if (std::abs(wheel_accum) >= kWheelThreshold) {
+      Si32 steps = wheel_accum / kWheelThreshold;
+      wheel_accum -= steps * kWheelThreshold;
+      Si32 cur = scrollbar->GetValue();
+      Si32 new_val = cur + steps;
+      if (new_val < scrollbar->GetMinValue()) {
+        new_val = scrollbar->GetMinValue();
+      }
+      if (new_val > scrollbar->GetMaxValue()) {
+        new_val = scrollbar->GetMaxValue();
+      }
+      scrollbar->SetValue(new_val);
     }
   }
 }
