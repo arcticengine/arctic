@@ -298,7 +298,7 @@ void Panel::FindNeighbors(Ui32 current_tab_order,
                           Panel **in_out_prev, Panel **in_out_next) {
   for (auto it = children_.begin(); it != children_.end(); ++it) {
     Ui32 order = (*it)->GetTabOrder();
-    if (order != 0 && current_tab_order != order) {
+    if (order != 0 && current_tab_order != order && (*it)->IsEnabled()) {
       if (*in_out_prev) {
         Ui32 prev = (*in_out_prev)->GetTabOrder();
         if (current_tab_order > prev) {  // prev .?. current
@@ -409,6 +409,10 @@ bool Panel::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
 }
 
 void Panel::SetEnabled(bool) {
+}
+
+bool Panel::IsEnabled() {
+  return true;
 }
 
 void Panel::SetEnabledByTag(Ui64 tag, bool is_enabled) {
@@ -522,6 +526,10 @@ void Button::SetEnabled(bool is_enabled) {
       return;
     }
   }
+}
+
+bool Button::IsEnabled() {
+  return state_ != Button::kDisabled && state_ != Button::kHidden;
 }
 
 void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,

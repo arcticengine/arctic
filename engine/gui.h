@@ -364,6 +364,10 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// @param is_enabled True to enable the panel, false to disable it.
   virtual void SetEnabled(bool is_enabled);
 
+  /// @brief Checks if the panel is enabled.
+  /// @return True if the panel is enabled, false otherwise.
+  virtual bool IsEnabled();
+
   /// @brief Checks if the panel is visible.
   /// @return True if the panel is visible, false otherwise.
   virtual bool IsVisible();
@@ -574,6 +578,10 @@ class Button : public Panel {
   /// @brief Sets the enabled status of the button panel.
   /// @param is_enabled True to enable the panel, false to disable it.
   void SetEnabled(bool is_enabled) override;
+
+  /// @brief Checks if the button panel is enabled.
+  /// @return True if the panel is enabled, false otherwise.
+  bool IsEnabled() override;
 
   /// @brief Checks if the button panel is visible.
   /// @return True if the panel is visible, false otherwise.
