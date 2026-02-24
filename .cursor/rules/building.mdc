@@ -1,0 +1,31 @@
+---
+description: Build instructions: in-source cmake/make commands, project directories, running tests on macOS
+globs: 
+alwaysApply: false
+---
+
+## Building Arctic Engine Projects
+
+All builds are in-source. Navigate into the project's directory and run CMake + Make there. Never create a `build/` subdirectory or use out-of-source builds.
+
+Buildable projects: `wizard/`, `tests/`, `benchmark/`, `filetest/`, `fuzz_tests/`, `antarctica_pyramids/`. Do not try to build `engine/` or `template_project_name/` directly -- they are not standalone targets.
+
+Always chain cmake/make/run in a single shell command using `&&` to avoid multiple permission prompts.
+
+First build (or after CMakeLists.txt changes / added/removed source files):
+
+```
+cd wizard && cmake . && make -j 8
+```
+
+Incremental rebuild (source edits only):
+
+```
+cd wizard && make -j 8
+```
+
+On macOS, executables are inside `.app` bundles. To build and run tests:
+
+```
+cd tests && make -j 8 && ./tests.app/Contents/MacOS/tests
+```
