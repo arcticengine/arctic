@@ -1,5 +1,5 @@
 ---
-description: Build instructions: in-source cmake/make commands, project directories, running tests on macOS
+description: Build instructions: cmake/make commands, project directories, running tests
 globs: 
 alwaysApply: false
 ---
