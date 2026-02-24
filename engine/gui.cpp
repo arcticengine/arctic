@@ -494,7 +494,11 @@ void Button::Draw(Vec2Si32 parent_absolute_pos) {
       down_.Draw(absolute_pos);
       break;
     case kDisabled:
-      disabled_.Draw(absolute_pos);
+      if (disabled_.Width() > 0) {
+        disabled_.Draw(absolute_pos);
+      } else {
+        normal_.Draw(absolute_pos);
+      }
       break;
   }
   Panel::Draw(parent_absolute_pos);
@@ -711,8 +715,6 @@ void Button::SetTextPos(Vec2Si32 pos) {
     text_->SetPos(pos);
   }
 }
-
-
 
 
 Text::Text(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
@@ -1099,8 +1101,10 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               selection_end_ = selection_begin_;
               cursor_pos_ = selection_begin_;
             } else if (cursor_pos_) {
-              text_.erase(static_cast<size_t>(cursor_pos_ - 1), 1);
-              cursor_pos_--;
+              Si32 prev = Utf8PrevCharPos(text_, cursor_pos_);
+              text_.erase(static_cast<size_t>(prev),
+                static_cast<size_t>(cursor_pos_ - prev));
+              cursor_pos_ = prev;
             }
           }
         } else if (key == kKeyDelete) {
@@ -1112,29 +1116,31 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               selection_end_ = selection_begin_;
               cursor_pos_ = selection_begin_;
             } else if (cursor_pos_ >= 0 && cursor_pos_ < (Si32)text_.length()) {
-              text_.erase(static_cast<size_t>(cursor_pos_), 1);
-              // cursor_pos_;
+              Si32 next = Utf8NextCharPos(text_, cursor_pos_);
+              text_.erase(static_cast<size_t>(cursor_pos_),
+                static_cast<size_t>(next - cursor_pos_));
             }
           }
         } else if (key == kKeyLeft) {
           *in_out_is_applied = true;
           if (message.keyboard.state[kKeyShift]) {
             if (cursor_pos_) {
+              Si32 prev = Utf8PrevCharPos(text_, cursor_pos_);
               if (selection_begin_ == selection_end_) {
                 selection_end_ = cursor_pos_;
-                cursor_pos_--;
+                cursor_pos_ = prev;
                 selection_begin_ = cursor_pos_;
               } else if (selection_begin_ == cursor_pos_) {
-                cursor_pos_--;
+                cursor_pos_ = prev;
                 selection_begin_ = cursor_pos_;
               } else if (selection_end_ == cursor_pos_) {
-                cursor_pos_--;
+                cursor_pos_ = prev;
                 selection_end_ = cursor_pos_;
               }
             }
           } else {
             if (cursor_pos_) {
-              cursor_pos_--;
+              cursor_pos_ = Utf8PrevCharPos(text_, cursor_pos_);
               selection_begin_ = cursor_pos_;
               selection_end_ = cursor_pos_;
             }
@@ -1143,21 +1149,22 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           *in_out_is_applied = true;
           if (message.keyboard.state[kKeyShift]) {
             if (cursor_pos_ < (Si32)text_.length()) {
+              Si32 next = Utf8NextCharPos(text_, cursor_pos_);
               if (selection_begin_ == selection_end_) {
                 selection_begin_ = cursor_pos_;
-                cursor_pos_++;
+                cursor_pos_ = next;
                 selection_end_ = cursor_pos_;
               } else if (selection_end_ == cursor_pos_) {
-                cursor_pos_++;
+                cursor_pos_ = next;
                 selection_end_ = cursor_pos_;
               } else if (selection_begin_ == cursor_pos_) {
-                cursor_pos_++;
+                cursor_pos_ = next;
                 selection_begin_ = cursor_pos_;
               }
             }
           } else {
             if (cursor_pos_ < (Si32)text_.length()) {
-              cursor_pos_++;
+              cursor_pos_ = Utf8NextCharPos(text_, cursor_pos_);
               selection_begin_ = cursor_pos_;
               selection_end_ = cursor_pos_;
             }
