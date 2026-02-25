@@ -29,6 +29,10 @@
 #include "engine/arctic_types.h"
 #include "engine/vec2si32.h"
 
+#ifndef __AVAILABILITY_INTERNAL_DEPRECATED
+#define __AVAILABILITY_INTERNAL_DEPRECATED
+#endif
+
 namespace arctic {
 
 /// @addtogroup global_input
