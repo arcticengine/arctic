@@ -249,31 +249,31 @@ const InputMessage& GetInputMessage(Si32 idx);
 /// @param key_code The key code to check
 /// @return True if the key is currently in the down state
 /// @deprecated Use IsKeyDown() instead
-bool IsKey(const KeyCode key_code);
+__AVAILABILITY_INTERNAL_DEPRECATED bool IsKey(const KeyCode key_code);
 
 /// Legacy function to check if any of the specified keys is currently being held down
 /// @param keys A C-string containing one or more key character codes to check
 /// @return True if any of the specified keys is currently in the down state
 /// @deprecated Use IsKeyDown() instead
-bool IsKey(const char *keys);
+__AVAILABILITY_INTERNAL_DEPRECATED bool IsKey(const char *keys);
 
 /// Legacy function to check if a specific key is currently being held down
 /// @param key The key character code to check
 /// @return True if the key is currently in the down state
 /// @deprecated Use IsKeyDown() instead
-bool IsKey(const char key);
+__AVAILABILITY_INTERNAL_DEPRECATED bool IsKey(const char key);
 
 /// Legacy function to check if a key is currently being held down
 /// @param key_code The integer key code to check
 /// @return True if the key is currently in the down state
 /// @deprecated Use IsKeyDown() instead
-bool IsKey(const Si32 key_code);
+__AVAILABILITY_INTERNAL_DEPRECATED bool IsKey(const Si32 key_code);
 
 /// Legacy function to check if any of the specified keys is currently being held down
 /// @param keys A string containing one or more key character codes to check
 /// @return True if any of the specified keys is currently in the down state
 /// @deprecated Use IsKeyDown() instead
-bool IsKey(const std::string &keys);
+__AVAILABILITY_INTERNAL_DEPRECATED bool IsKey(const std::string &keys);
 
 /// @}
 

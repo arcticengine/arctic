@@ -864,8 +864,7 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   if (!font_.FontInstance()) {
     return;
   }
-  Vec2Si32 size = font_.EvaluateSize(text_.c_str(), false);
-  Vec2Si32 offset;
+  Vec2Si32 offset(0, 0);
 
   switch (origin_) {
     case kTextOriginTop:
