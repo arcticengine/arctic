@@ -149,13 +149,15 @@ int MeshObj_Read(Mesh *me, const char *name, bool calcNormals) {
 
 
   if (calcNormals) {
-    const MeshVertexFormat vf = { 6*sizeof(float), 2, 0, {{3, kRMVEDT_Float, false},
-      {3, kRMVEDT_Float, false} } };
+    MeshVertexFormat vf;
+    vf.AddElement(3, kRMVEDT_Float, false);
+    vf.AddElement(3, kRMVEDT_Float, false);
     if (!me->Init(1, (int)vertices.size(), &vf, kRMVEDT_Polys, 1, (int)faces.size())) {
       return 0;
     }
   } else {
-    const MeshVertexFormat vf = { 3*sizeof(float), 1, 0, { {3, kRMVEDT_Float, false} } };
+    MeshVertexFormat vf;
+    vf.AddElement(3, kRMVEDT_Float, false);
     if (!me->Init(1, (int)vertices.size(), &vf, kRMVEDT_Polys, 1, (int)faces.size())) {
       return 0;
     }

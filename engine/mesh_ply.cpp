@@ -101,8 +101,9 @@ int MeshPly_Read(Mesh *me, const char *name, bool calcNormals) {
     return 0;
   }
 
-  const MeshVertexFormat vf = {6*sizeof(float), 2, 0,
-    {{3, kRMVEDT_Float, false}, {3, kRMVEDT_Float, false}}};
+  MeshVertexFormat vf;
+  vf.AddElement(3, kRMVEDT_Float, false);
+  vf.AddElement(3, kRMVEDT_Float, false);
   if (!me->Init(1, nv, &vf, kRMVEDT_Polys, 1, nf)) {
     fclose(fp);
     return 0;
