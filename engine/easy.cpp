@@ -530,7 +530,7 @@ void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
   Vec4F dcdy1;
   Vec4F dcdy2;
 
-  bool is_b_at_the_right_side = dxdy_ac < dxdy_ab;
+  bool is_b_at_the_right_side = (a.y == b.y) ? (b.x > a.x) : (dxdy_ac < dxdy_ab);
   if (is_b_at_the_right_side) {
       dxdy1 = dxdy_ac;
       dcdy1 = dcdy_ac;
