@@ -724,7 +724,7 @@ void DrawModel() {
         p0.x -= 3;
         p1.x -= 3;
       }
-      Vec2F pos(Lerp(p0.x, p1.x, part), Lerp(p0.y, p1.y, part));
+      Vec2F pos(Lerp(p0.x, p1.x, (float)part), Lerp(p0.y, p1.y, (float)part));
 
       bool is_valid = true;
       switch (packet.kind) {
