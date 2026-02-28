@@ -95,8 +95,10 @@ void GlFramebuffer::CreateDepthOnly(GlTexture2D &depth_texture) {
     ARCTIC_GL_CHECK_ERROR(glGenFramebuffers(1, &framebuffer_id_));
     Bind();
     ARCTIC_GL_CHECK_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture.texture_id(), 0));
+#if !defined(ARCTIC_PLATFORM_PI_ES_EGL) && !defined(ARCTIC_PLATFORM_WEB)
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+#endif
     auto code = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (code != GL_FRAMEBUFFER_COMPLETE) {
         current_framebuffer_id_ = 0;
