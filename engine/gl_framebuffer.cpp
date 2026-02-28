@@ -36,12 +36,15 @@ namespace arctic {
 GLuint GlFramebuffer::current_framebuffer_id_ = 0;
 
 GlFramebuffer::GlFramebuffer()
-    : framebuffer_id_(0) {
+    : framebuffer_id_(0), depth_renderbuffer_id_(0) {
 }
 
 GlFramebuffer::~GlFramebuffer() {
     if (current_framebuffer_id_ == framebuffer_id_) {
         current_framebuffer_id_ = 0;
+    }
+    if (depth_renderbuffer_id_ != 0) {
+        ARCTIC_GL_CHECK_ERROR(glDeleteRenderbuffers(1, &depth_renderbuffer_id_));
     }
     ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
 }
@@ -79,6 +82,43 @@ void GlFramebuffer::Create(GlTexture2D &texture) {
           break;
       }
     }
+}
+
+void GlFramebuffer::CreateDepthOnly(GlTexture2D &depth_texture) {
+    if (framebuffer_id_ != 0) {
+        if (current_framebuffer_id_ == framebuffer_id_) {
+            current_framebuffer_id_ = 0;
+        }
+        ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
+    }
+
+    ARCTIC_GL_CHECK_ERROR(glGenFramebuffers(1, &framebuffer_id_));
+    Bind();
+    ARCTIC_GL_CHECK_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture.texture_id(), 0));
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    auto code = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (code != GL_FRAMEBUFFER_COMPLETE) {
+        current_framebuffer_id_ = 0;
+        ARCTIC_GL_CHECK_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
+        framebuffer_id_ = 0;
+        Fatal("GlFramebuffer::CreateDepthOnly failed, error code: ",
+            std::to_string(code).c_str());
+    }
+}
+
+void GlFramebuffer::AttachDepthBuffer(Si32 width, Si32 height) {
+    if (depth_renderbuffer_id_ != 0) {
+        ARCTIC_GL_CHECK_ERROR(glDeleteRenderbuffers(1, &depth_renderbuffer_id_));
+        depth_renderbuffer_id_ = 0;
+    }
+    Bind();
+    ARCTIC_GL_CHECK_ERROR(glGenRenderbuffers(1, &depth_renderbuffer_id_));
+    ARCTIC_GL_CHECK_ERROR(glBindRenderbuffer(GL_RENDERBUFFER, depth_renderbuffer_id_));
+    ARCTIC_GL_CHECK_ERROR(glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, width, height));
+    ARCTIC_GL_CHECK_ERROR(glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_renderbuffer_id_));
+    ARCTIC_GL_CHECK_ERROR(glBindRenderbuffer(GL_RENDERBUFFER, 0));
 }
 
 void GlFramebuffer::Bind() {

@@ -77,6 +77,31 @@ void GlTexture2D::Create(Si32 w, Si32 h) {
         GL_UNSIGNED_BYTE, nullptr));
 }
 
+void GlTexture2D::CreateDepth(Si32 w, Si32 h) {
+    width_ = w;
+    height_ = h;
+
+    for (GLuint i = 0; i < max_textures_slots; ++i) {
+        if (current_texture_id_[i] == texture_id_) {
+            current_texture_id_[i] = 0;
+        }
+    }
+    ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
+
+    ARCTIC_GL_CHECK_ERROR(glGenTextures(1, &texture_id_));
+    Bind(0);
+    Check(glIsTexture(texture_id_), "no depth texture");
+
+    ARCTIC_GL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    ARCTIC_GL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    ARCTIC_GL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    ARCTIC_GL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    current_filter_mode_ = kFilterNearest;
+
+    ARCTIC_GL_CHECK_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+        w, h, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr));
+}
+
 void GlTexture2D::Bind(Ui32 slot) const {
     Check(slot < max_textures_slots, "invalid texture slot");
     if (current_texture_slot_ != slot) {

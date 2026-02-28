@@ -53,6 +53,7 @@ class GlTexture2D {
   ~GlTexture2D();
 
   void Create(Si32 w, Si32 h);
+  void CreateDepth(Si32 w, Si32 h);
   void Bind(Ui32 slot) const;
   void SetData(const void *data, Si32 w, Si32 h);
   void UpdateData(const void *data);
