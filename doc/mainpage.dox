@@ -57,25 +57,24 @@ Install XCode. Run XCode and select 'Souce Control -> Clone' menu option. Enter 
 Instructions for Linux and MacOS users on how to run an Arctic Engine game in a web browser:
 
 1. Install Emscripten following the instructions at https://emscripten.org/docs/getting_started/downloads.html
-
-  Don't forget to set the environment variables:
-  ~~~~~{.bash}
-  source ./emsdk_env.sh
-  ~~~~~
+    Don't forget to set the environment variables:
+    ~~~~~{.bash}
+    source ./emsdk_env.sh
+    ~~~~~
 2. Navigate to your game directory.
 3. Remove the CMake cache:
-  ~~~~~{.bash}
-  rm -f ./CMakeCache.txt
-  ~~~~~
+    ~~~~~{.bash}
+    rm -f ./CMakeCache.txt
+    ~~~~~
 4. Build the project:
-  ~~~~~{.bash}
-  emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8
-  ~~~~~
-5. Start the web server:
-  ~~~~~{.bash}
-  python3 ./webserver.py
-  ~~~~~
-6. Open the address http://127.0.0.1:8000/index.html in your browser
+    ~~~~~{.bash}
+    emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8
+    ~~~~~
+5. Start the web server (the `webserver.py` script is included in projects created from the template):
+    ~~~~~{.bash}
+    python3 ./webserver.py
+    ~~~~~
+6. Open the address http://127.0.0.1:8000/index.html in your browser.
 
 Sample project types
 --------------------
