@@ -146,9 +146,6 @@
     <ClCompile Include="..\engine\log.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\byte_array.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\dual_complex.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -415,9 +412,6 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\array2.h">
-      <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\byte_array.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\dual_complex.h">

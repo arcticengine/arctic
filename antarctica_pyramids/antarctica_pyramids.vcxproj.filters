@@ -11,9 +11,6 @@
     <ClCompile Include="..\engine\arctic_platform_windows.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\byte_array.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\easy.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -196,9 +193,6 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\bound3f.h">
-      <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\byte_array.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\easy.h">

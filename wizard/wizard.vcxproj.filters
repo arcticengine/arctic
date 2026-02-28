@@ -140,9 +140,6 @@
     <ClCompile Include="..\engine\bitstream.cpp">
       <Filter>engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\engine\byte_array.cpp">
-      <Filter>engine</Filter>
-    </ClCompile>
     <ClCompile Include="..\engine\mtq_fixed_block_queue.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -388,9 +385,6 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\bitstream.h">
-      <Filter>engine</Filter>
-    </ClInclude>
-    <ClInclude Include="..\engine\byte_array.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\decorated_frame.h">
