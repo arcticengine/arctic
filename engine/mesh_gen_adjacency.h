@@ -55,4 +55,4 @@ int MeshAdjacency_GetEdgeIDContainingVerts(MeshAdjacency *am, int a, int b);
 
 
 
-} // namespace piLibs
+} // namespace arctic
