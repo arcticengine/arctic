@@ -91,6 +91,8 @@ namespace arctic {
 @interface ArcticView : NSOpenGLView {
 }
 - (void) drawRect: (NSRect) bounds;
+- (void) captureMouse;
+- (void) releaseMouse;
 @end
 
 static arctic::Si32 g_exit_code = 0;
@@ -104,6 +106,7 @@ static bool g_is_full_screen = false;
 static bool g_is_cursor_desired_visible = true;
 static bool g_is_cursor_set_visible = true;
 static bool g_is_cursor_in_bounds = false;
+static bool g_is_mouse_captured = false;
 
 static GCController *g_controller = nil;
 
@@ -271,6 +274,7 @@ isScroll: (bool)is_scroll {
   arctic::SetCursorVisible(g_is_cursor_desired_visible);
 
   arctic::InputMessage msg;
+  msg.mouse.delta = arctic::Vec2F((float)[event deltaX], -(float)[event deltaY]);
   msg.kind = arctic::InputMessage::kMouse;
   msg.keyboard.key = static_cast<unsigned int>(key_code);
   msg.keyboard.characters[0] = '\0';
@@ -394,7 +398,25 @@ isScroll: (bool)is_scroll {
   PushInputMessage(msg);
 }
 
+- (void) captureMouse {
+  g_is_mouse_captured = true;
+  [self.window makeFirstResponder:self];
 
+  NSRect window_frame = [self.window frame];
+  CGFloat center_x = window_frame.origin.x + window_frame.size.width / 2;
+  CGFloat screen_height = [NSScreen mainScreen].frame.size.height;
+  CGFloat center_y = screen_height - (window_frame.origin.y + window_frame.size.height / 2);
+  CGWarpMouseCursorPosition(CGPointMake(center_x, center_y));
+
+  CGAssociateMouseAndMouseCursorPosition(false);
+  arctic::SetCursorVisible(g_is_cursor_desired_visible);
+}
+
+- (void) releaseMouse {
+  g_is_mouse_captured = false;
+  CGAssociateMouseAndMouseCursorPosition(true);
+  arctic::SetCursorVisible(g_is_cursor_desired_visible);
+}
 
 @end
 
@@ -803,7 +825,7 @@ bool IsCursorVisible() {
 void SetCursorVisible(bool is_enable) {
   g_is_cursor_desired_visible = is_enable;
   bool next_is_visible = (g_is_cursor_desired_visible ||
-    !g_is_cursor_in_bounds);
+    !g_is_cursor_in_bounds) && !g_is_mouse_captured;
   if (next_is_visible == g_is_cursor_set_visible) {
     return;
   }
@@ -813,9 +835,20 @@ void SetCursorVisible(bool is_enable) {
   } else {
     [NSCursor hide];
   }
-  
 }
-  
+
+void CaptureMouse() {
+  [g_main_view captureMouse];
+}
+
+void ReleaseMouse() {
+  [g_main_view releaseMouse];
+}
+
+bool IsMouseCaptured() {
+  return g_is_mouse_captured;
+}
+
 Trivalent DoesDirectoryExist(const char *path) {
   struct stat info;
   if (stat(path, &info) != 0) {

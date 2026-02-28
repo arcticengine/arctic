@@ -57,6 +57,7 @@ struct SystemInfo {
 
 static Si32 g_last_mouse_x = 0;
 static Si32 g_last_mouse_y = 0;
+static bool g_is_mouse_captured = false;
 Si32 g_window_width = 0;
 Si32 g_window_height = 0;
 Display *g_x_display;
@@ -237,6 +238,9 @@ EM_BOOL MouseCallback(int eventType, const EmscriptenMouseEvent* e, void* userDa
     msg.keyboard.key = key_code;
     msg.keyboard.key_state = (is_down ? 1 : 2);
     msg.keyboard.characters[0] = '\0';
+    msg.mouse.delta = Vec2F(
+        static_cast<float>(e->movementX),
+        -static_cast<float>(e->movementY));
     PushInputMessage(msg);
     return true;
   }
@@ -247,6 +251,9 @@ EM_BOOL MouseCallback(int eventType, const EmscriptenMouseEvent* e, void* userDa
     msg.kind = InputMessage::kMouse;
     msg.mouse.pos = pos;
     msg.mouse.wheel_delta = 0;
+    msg.mouse.delta = Vec2F(
+        static_cast<float>(e->movementX),
+        -static_cast<float>(e->movementY));
     PushInputMessage(msg);
     return true;
   }
@@ -376,6 +383,20 @@ void SetFullScreen(bool/* is_enable*/) {
 
 void SetCursorVisible(bool/* is_enable*/) {
   return;
+}
+
+void CaptureMouse() {
+  g_is_mouse_captured = true;
+  emscripten_request_pointerlock("#canvas", true);
+}
+
+void ReleaseMouse() {
+  g_is_mouse_captured = false;
+  emscripten_exit_pointerlock();
+}
+
+bool IsMouseCaptured() {
+  return g_is_mouse_captured;
 }
 
 std::string PrepareInitialPath() {

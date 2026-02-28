@@ -257,6 +257,8 @@ static Si32 g_window_width = 0;
 static Si32 g_window_height = 0;
 static std::atomic<bool> g_is_cursor_desired = true;
 static std::atomic<bool> g_is_cursor_visible = true;
+static bool g_is_mouse_captured = false;
+static POINT g_mouse_prev = {0, 0};
 
 KeyCode TranslateKeyCode(WPARAM word_param) {  //-V2008
   if (word_param >= 'A' && word_param <= 'Z') {
@@ -373,7 +375,8 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
   Check(g_window_width != 0, "Could not obtain window width in OnMouse");
   Check(g_window_height != 0, "Could not obtain window height in OnMouse");
   Si32 x = GET_X_LPARAM(long_param);
-  Si32 y = g_window_height - GET_Y_LPARAM(long_param);
+  Si32 y_raw = GET_Y_LPARAM(long_param);
+  Si32 y = g_window_height - y_raw;
   Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
     static_cast<float>(y) / static_cast<float>(g_window_height - 1));
   InputMessage msg;
@@ -383,6 +386,18 @@ void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
   msg.keyboard.characters[0] = '\0';
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = 0;
+  msg.mouse.delta = Vec2F(
+    static_cast<float>(x - g_mouse_prev.x),
+    -static_cast<float>(y_raw - g_mouse_prev.y));
+  g_mouse_prev = {x, y_raw};
+  if (g_is_mouse_captured) {
+    RECT rect;
+    GetClientRect(g_system_info.inner_window_handle, &rect);
+    POINT center = {(rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2};
+    g_mouse_prev = center;
+    ClientToScreen(g_system_info.inner_window_handle, &center);
+    SetCursorPos(center.x, center.y);
+  }
   PushInputMessage(msg);
   if (!g_is_cursor_visible) {
     SetCursor(NULL);
@@ -452,13 +467,34 @@ bool IsCursorVisible() {
 
 void SetCursorVisible(bool is_enable) {
   g_is_cursor_desired = is_enable;
-  if (g_is_cursor_visible != is_enable) {
-    ShowCursor(is_enable);
-    g_is_cursor_visible = is_enable;
+  bool next_visible = is_enable && !g_is_mouse_captured;
+  if (g_is_cursor_visible != next_visible) {
+    ShowCursor(next_visible);
+    g_is_cursor_visible = next_visible;
   }
   if (!g_is_cursor_visible) {
     SetCursor(NULL);
   }
+}
+
+void CaptureMouse() {
+  g_is_mouse_captured = true;
+  RECT rect;
+  GetClientRect(g_system_info.inner_window_handle, &rect);
+  POINT center = {(rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2};
+  g_mouse_prev = center;
+  ClientToScreen(g_system_info.inner_window_handle, &center);
+  SetCursorPos(center.x, center.y);
+  SetCursorVisible(g_is_cursor_desired);
+}
+
+void ReleaseMouse() {
+  g_is_mouse_captured = false;
+  SetCursorVisible(g_is_cursor_desired);
+}
+
+bool IsMouseCaptured() {
+  return g_is_mouse_captured;
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {

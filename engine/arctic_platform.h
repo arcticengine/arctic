@@ -83,6 +83,16 @@ bool IsCursorVisible();
 /// @param is_enable true makes the cursor visible, false hides it
 void SetCursorVisible(bool is_enable);
 
+/// @brief Captures the mouse
+void CaptureMouse();
+
+/// @brief Releases the mouse
+void ReleaseMouse();
+
+/// @brief Returns true if the mouse is captured
+/// @return true if the mouse is captured
+bool IsMouseCaptured();
+
 /// @}
 /// @addtogroup global_files
 /// @{

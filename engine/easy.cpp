@@ -1062,6 +1062,7 @@ void ShowFrame() {
   g_mouse_pos_prev = g_mouse_pos;
   g_mouse_wheel_delta = 0;
   g_input_messages.clear();
+  Vec2F accumulated_delta(0.0f, 0.0f);
   while (PopInputMessage(&message)) {
     if (message.kind == InputMessage::kKeyboard) {
       if (message.keyboard.key != kKeyNone && message.keyboard.key < kKeyCount) {
@@ -1073,6 +1074,7 @@ void ShowFrame() {
         GetEngine()->MouseToBackbuffer(message.mouse.pos);
       g_mouse_pos = message.mouse.backbuffer_pos;
       g_mouse_wheel_delta += message.mouse.wheel_delta;
+      accumulated_delta += message.mouse.delta;
       if (message.keyboard.key != kKeyNone && message.keyboard.key < kKeyCount) {
         g_key_state[message.keyboard.key].OnStateChange(
           message.keyboard.key_state == 1);
@@ -1094,7 +1096,11 @@ void ShowFrame() {
     }
     g_input_messages.push_back(message);
   }
-  g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
+  if (IsMouseCaptured()) {
+    g_mouse_move = Vec2Si32((Si32)accumulated_delta.x, (Si32)accumulated_delta.y);
+  } else {
+    g_mouse_move = g_mouse_pos - g_mouse_pos_prev;
+  }
 }
 
 bool IsKeyDownwardImpl(Ui32 key_code) {

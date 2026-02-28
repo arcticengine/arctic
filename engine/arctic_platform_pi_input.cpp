@@ -48,6 +48,8 @@ namespace arctic {
 
 static Si32 g_last_mouse_x = 0;
 static Si32 g_last_mouse_y = 0;
+static bool g_is_mouse_captured = false;
+static Cursor g_invisible_cursor = None;
 
 extern Display *g_x_display;
 extern Si32 g_window_width;
@@ -280,8 +282,6 @@ KeyCode TranslateKeyCode(KeySym ks) {
 void OnMouse(KeyCode key, Si32 mouse_x, Si32 mouse_y, bool is_down) {
   Check(g_window_width != 0, "Could not obtain window width in OnMouse");
   Check(g_window_height != 0, "Could not obtain window height in OnMouse");
-  g_last_mouse_x = mouse_x;
-  g_last_mouse_y = mouse_y;
   Si32 x = mouse_x;
   Si32 y = g_window_height - mouse_y;
   Vec2F pos(0.f, 0.f);
@@ -297,6 +297,18 @@ void OnMouse(KeyCode key, Si32 mouse_x, Si32 mouse_y, bool is_down) {
   msg.keyboard.key_state = (is_down ? 1 : 2);
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = 0;
+  msg.mouse.delta = Vec2F(
+    static_cast<float>(mouse_x - g_last_mouse_x),
+    -static_cast<float>(mouse_y - g_last_mouse_y));
+  g_last_mouse_x = mouse_x;
+  g_last_mouse_y = mouse_y;
+  if (g_is_mouse_captured) {
+    Si32 cx = g_window_width / 2;
+    Si32 cy = g_window_height / 2;
+    XWarpPointer(g_x_display, None, g_x_window, 0, 0, 0, 0, cx, cy);
+    g_last_mouse_x = cx;
+    g_last_mouse_y = cy;
+  }
   PushInputMessage(msg);
 }
 
@@ -421,6 +433,35 @@ void PumpMessages() {
   }
 
   return;
+}
+
+void CaptureMouse() {
+  g_is_mouse_captured = true;
+  Si32 cx = g_window_width / 2;
+  Si32 cy = g_window_height / 2;
+  XWarpPointer(g_x_display, None, g_x_window, 0, 0, 0, 0, cx, cy);
+  g_last_mouse_x = cx;
+  g_last_mouse_y = cy;
+  if (g_invisible_cursor == None) {
+    Pixmap blank = XCreatePixmap(g_x_display, g_x_window, 1, 1, 1);
+    XColor dummy;
+    memset(&dummy, 0, sizeof(dummy));
+    g_invisible_cursor = XCreatePixmapCursor(
+        g_x_display, blank, blank, &dummy, &dummy, 0, 0);
+    XFreePixmap(g_x_display, blank);
+  }
+  XDefineCursor(g_x_display, g_x_window, g_invisible_cursor);
+  XFlush(g_x_display);
+}
+
+void ReleaseMouse() {
+  g_is_mouse_captured = false;
+  XUndefineCursor(g_x_display, g_x_window);
+  XFlush(g_x_display);
+}
+
+bool IsMouseCaptured() {
+  return g_is_mouse_captured;
 }
 
 }  // namespace arctic
