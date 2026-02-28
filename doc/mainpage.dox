@@ -70,7 +70,7 @@ Instructions for Linux and MacOS users on how to run an Arctic Engine game in a 
     ~~~~~{.bash}
     emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8
     ~~~~~
-5. Start the web server (the `webserver.py` script is included in projects created from the template):
+5. Start the web server (the `webserver.py` script is included in projects created with the wizard):
     ~~~~~{.bash}
     python3 ./webserver.py
     ~~~~~
