@@ -104,24 +104,23 @@ bool GenerateNoise(int numInputs, const AudioSampleFrame *inputs,
                       void *userData) {
   SoundPlayerImpl *mixer = g_sound_player_impl;
   for(int i = 0; i < numOutputs; ++i) {
-    Si32 buffer_samples_per_channel = outputs[i].samplesPerChannel;
+    Si32 spc = outputs[i].samplesPerChannel;
     float *mix_l = &outputs[i].data[0];
-    float *mix_r = &outputs[i].data[1];
-    Si32 mix_stride = outputs[i].numberOfChannels;
-    if (mixer->tmp.size() < buffer_samples_per_channel * 2) {
-      mixer->tmp.resize(buffer_samples_per_channel * 2);
+    float *mix_r = &outputs[i].data[spc];
+    if (mixer->tmp.size() < spc * 2) {
+      mixer->tmp.resize(spc * 2);
     }
-    g_sound_mixer_state.MixSound(mix_l, mix_r, mix_stride, buffer_samples_per_channel, mixer->tmp.data());
+    g_sound_mixer_state.MixSound(mix_l, mix_r, 1, spc, mixer->tmp.data());
   }
 
-  return true; // Keep the graph output going
+  return true;
 }
 
 void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, bool success, void *userData){
   if (!success) {
     return; // Check browser console in a debug build for detailed errors
   }
-  int outputChannelCounts[1] = { 1 };
+  int outputChannelCounts[1] = { 2 };
   EmscriptenAudioWorkletNodeCreateOptions options = {
     .numberOfInputs = 0,
     .numberOfOutputs = 1,
