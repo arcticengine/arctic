@@ -142,6 +142,17 @@ SoundHandle Sound::Play(float volume) {
   return SoundHandle::Invalid();
 }
 
+SoundHandle Sound::PlayLooping() {
+  return PlayLooping(1.0f);
+}
+
+SoundHandle Sound::PlayLooping(float volume) {
+  if (sound_instance_) {
+    return arctic::StartSoundLooping(*this, volume);
+  }
+  return SoundHandle::Invalid();
+}
+
 void Sound::Stop() {
   if (sound_instance_) {
     arctic::StopSound(*this);

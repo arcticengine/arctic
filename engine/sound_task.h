@@ -64,11 +64,12 @@ struct SoundTask {
   Ui64 target_uid = kInvalidSoundTaskUid; ///< The target uid of the sound task.
   Sound sound; ///< The sound to play.
   float volume = 1.0f; ///< The volume of the sound.
-  Si32 next_position = 0; ///< The next position of the sound.
+  std::atomic<Si32> next_position{0}; ///< The next position of the sound.
   Transform3F location; ///< The location of the sound source.
   ChannelPlaybackState channel_playback_state[2]; ///< The playback state of the sound.
   SoundTaskAction action = SoundTaskAction::kStart; ///< The action to perform for the sound task.
   bool is_3d = false; ///< Whether the sound is 3D.
+  bool is_looping = false; ///< Whether the sound loops (ring-buffer mode).
   std::atomic<bool> is_playing = ATOMIC_VAR_INIT(false); ///< Whether the sound is playing.
     
   /// @brief Clears the sound task.
@@ -81,6 +82,7 @@ struct SoundTask {
     next_position = 0;
     action = SoundTaskAction::kStart;
     is_3d = false;
+    is_looping = false;
     is_playing = false;
   }
 };

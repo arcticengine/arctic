@@ -366,7 +366,12 @@ struct SoundMixerState {
           --idx;
         }
       } else {
-        Si32 size = sound.sound.StreamOut(sound.next_position,
+        Si32 duration = sound.sound.DurationSamples();
+        Si32 pos = sound.next_position.load(std::memory_order_relaxed);
+        if (sound.is_looping && duration > 0) {
+          pos = pos % duration;
+        }
+        Si32 size = sound.sound.StreamOut(pos,
             buffer_samples_per_channel,
             tmp,
             buffer_samples_per_channel * 2);
@@ -379,14 +384,32 @@ struct SoundMixerState {
           mix_r[mix_idx] += static_cast<float>(in_data[i * 2 + 1]) * volume;
           mix_idx += mix_stride;
         }
-        sound.next_position += size;
 
-        if (size < buffer_samples_per_channel) {
-          if (sound.sound.GetInstance()) {
-            sound.sound.GetInstance()->DecPlaying();
+        if (sound.is_looping && duration > 0) {
+          Si32 remaining = buffer_samples_per_channel - size;
+          if (remaining > 0) {
+            Si32 size2 = sound.sound.StreamOut(0,
+                remaining, tmp, remaining * 2);
+            in_data = tmp;
+            for (Si32 i = 0; i < size2; ++i) {
+              mix_l[mix_idx] += static_cast<float>(in_data[i * 2]) * volume;
+              mix_r[mix_idx] += static_cast<float>(in_data[i * 2 + 1]) * volume;
+              mix_idx += mix_stride;
+            }
+            size += size2;
           }
-          ReleaseBufferAt(idx);
-          --idx;
+          sound.next_position.store(
+              (pos + size) % duration, std::memory_order_relaxed);
+        } else {
+          sound.next_position.store(
+              pos + size, std::memory_order_relaxed);
+          if (size < buffer_samples_per_channel) {
+            if (sound.sound.GetInstance()) {
+              sound.sound.GetInstance()->DecPlaying();
+            }
+            ReleaseBufferAt(idx);
+            --idx;
+          }
         }
       }
     }

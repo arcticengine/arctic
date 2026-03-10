@@ -81,6 +81,15 @@ class Sound {
   /// @return A handle to the played sound
   SoundHandle Play(float volume);
 
+  /// @brief Plays the sound in looping mode (ring-buffer mode)
+  /// @return A handle to the played sound
+  SoundHandle PlayLooping();
+
+  /// @brief Plays the sound in looping mode with a specified volume
+  /// @param volume The volume to play the sound at, 1.0f is the default
+  /// @return A handle to the played sound
+  SoundHandle PlayLooping(float volume);
+
   /// @brief Stops the sound
   void Stop();
 

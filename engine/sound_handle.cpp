@@ -61,6 +61,22 @@ namespace arctic {
     return false;
   }
 
+  Si32 SoundHandle::GetPlayPosition() const {
+    if (IsValid()) {
+      Si32 pos = sound_task_->next_position.load(std::memory_order_relaxed);
+      if (IsValid()) {
+        return pos;
+      }
+    }
+    return 0;
+  }
+
+  void SoundHandle::SetVolume(float volume) {
+    if (IsValid()) {
+      sound_task_->volume = volume;
+    }
+  }
+
   bool SoundHandle::IsValid() const {
     return (sound_task_ != nullptr
             && uid_ != SoundTask::kInvalidSoundTaskUid

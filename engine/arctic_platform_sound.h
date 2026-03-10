@@ -76,6 +76,12 @@ class SoundPlayer {
 /// 0.f is silent, 1.f is the original record level.
 SoundHandle StartSound(Sound sound, float volume);
 
+/// @brief Starts looping playback of a sound (ring-buffer mode)
+/// @param sound Sound to play in a loop
+/// @param volume Volume to play the sound at.
+/// 0.f is silent, 1.f is the original record level.
+SoundHandle StartSoundLooping(Sound sound, float volume);
+
 /// @brief Stops playback of a sound
 /// @param sound Sound to play
 void StopSound(Sound sound);

@@ -49,6 +49,24 @@ SoundHandle StartSound(Sound sound, float volume) {
   return SoundHandle::Invalid();
 }
 
+SoundHandle StartSoundLooping(Sound sound, float volume) {
+  if (sound.GetInstance()) {
+    SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
+    if (buffer) {
+      SoundHandle handle(buffer);
+      buffer->sound = sound;
+      buffer->volume = volume;
+      buffer->is_looping = true;
+      buffer->sound.GetInstance()->IncPlaying();
+      buffer->action = SoundTaskAction::kStart;
+      buffer->is_playing = true;
+      g_sound_mixer_state.AddSoundTask(buffer);
+      return handle;
+    }
+  }
+  return SoundHandle::Invalid();
+}
+
 void StopSound(Sound sound) {
   if (sound.GetInstance()) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();

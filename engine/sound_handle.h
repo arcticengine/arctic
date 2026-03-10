@@ -61,6 +61,14 @@ class SoundHandle {
   /// @return True if the SoundHandle is valid, false otherwise.
   bool IsValid() const;
 
+  /// @brief Gets the current playback position of the sound in samples.
+  /// @return The current playback position, or 0 if the handle is invalid.
+  Si32 GetPlayPosition() const;
+
+  /// @brief Sets the volume of the sound.
+  /// @param volume The volume level, 0.0f is silent, 1.0f is original level.
+  void SetVolume(float volume);
+
   /// @brief Gets the unique identifier of the SoundHandle.
   /// @return The unique identifier.
   Ui64 GetUid() const {
