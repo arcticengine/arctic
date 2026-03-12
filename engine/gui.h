@@ -743,6 +743,10 @@ class Editbox: public Panel {
   /// @brief Selects all the text in the edit box panel.
   void SelectAll();
 
+  /// @brief Sets the cursor position in the edit box panel.
+  /// @param pos Byte offset in the text string. Clamped to [0, text.length()].
+  void SetCursorPos(Si32 pos);
+
   /// @brief Sets the text selection mode of the edit box panel.
   /// @param selection_mode Text selection mode.
   /// @param selection_color_1 First color for text selection.

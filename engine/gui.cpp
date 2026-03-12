@@ -1351,6 +1351,10 @@ void Editbox::SelectAll() {
   selection_end_ = (Si32)text_.length();
 }
 
+void Editbox::SetCursorPos(Si32 pos) {
+  cursor_pos_ = std::min(std::max(Si32(0), pos), (Si32)text_.length());
+}
+
 void Editbox::SetSelectionMode(TextSelectionMode selection_mode,
                                Rgba selection_color_1, Rgba selection_color_2) {
   selection_mode_ = selection_mode;
