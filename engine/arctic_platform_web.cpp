@@ -208,8 +208,16 @@ EM_BOOL KeyCallback(int eventType, const EmscriptenKeyboardEvent* e, void* userD
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = key_code;
   msg.keyboard.key_state = (is_down ? 1 : 2);
-  strncpy(msg.keyboard.characters, e->key, sizeof(msg.keyboard.characters));
-  msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
+  Utf32Reader probe;
+  probe.Reset(reinterpret_cast<const Ui8*>(e->key));
+  Ui32 first_cp = probe.ReadOne();
+  Ui32 second_cp = probe.ReadOne();
+  if (first_cp != 0 && second_cp == 0) {
+    strncpy(msg.keyboard.characters, e->key, sizeof(msg.keyboard.characters));
+    msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
+  } else {
+    msg.keyboard.characters[0] = '\0';
+  }
   PushInputMessage(msg);
   return true;
 }
