@@ -36,7 +36,7 @@ namespace arctic {
 GLuint GlFramebuffer::current_framebuffer_id_ = 0;
 
 GlFramebuffer::GlFramebuffer()
-    : framebuffer_id_(0), depth_renderbuffer_id_(0) {
+    : framebuffer_id_(0), depth_renderbuffer_id_(0), color_texture_id_(0) {
 }
 
 GlFramebuffer::~GlFramebuffer() {
@@ -57,9 +57,10 @@ void GlFramebuffer::Create(GlTexture2D &texture) {
         ARCTIC_GL_CHECK_ERROR(glDeleteFramebuffers(1, &framebuffer_id_));
     }
 
+    color_texture_id_ = texture.texture_id();
     ARCTIC_GL_CHECK_ERROR(glGenFramebuffers(1, &framebuffer_id_));
     Bind();
-    ARCTIC_GL_CHECK_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture_id(), 0));
+    ARCTIC_GL_CHECK_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_texture_id_, 0));
     auto code = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (code != GL_FRAMEBUFFER_COMPLETE) {
       current_framebuffer_id_ = 0;
@@ -127,6 +128,9 @@ void GlFramebuffer::Bind() {
     if (current_framebuffer_id_ != framebuffer_id_) {
         current_framebuffer_id_ = framebuffer_id_;
         ARCTIC_GL_CHECK_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id_));
+    }
+    if (color_texture_id_ != 0) {
+        GlTexture2D::InvalidateTextureId(color_texture_id_);
     }
 }
 

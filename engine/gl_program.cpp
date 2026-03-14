@@ -210,7 +210,8 @@ void GlProgram::SetUniform(const char *name, const Mat44F &value) {
 }
 
 void GlProgram::SetUniformTransposed(const char *name, const Mat44F &value) {
-    ARCTIC_GL_CHECK_ERROR(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_TRUE, value.m));
+    Mat44F transposed = Transpose(value);
+    ARCTIC_GL_CHECK_ERROR(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, transposed.m));
 }
 
 void GlProgram::CheckActiveUniforms(int required_count) {

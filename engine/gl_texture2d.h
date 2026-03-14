@@ -55,6 +55,7 @@ class GlTexture2D {
   void Create(Si32 w, Si32 h);
   void CreateDepth(Si32 w, Si32 h);
   void Bind(Ui32 slot) const;
+  static void InvalidateTextureId(GLuint texture_id);
   void SetData(const void *data, Si32 w, Si32 h);
   void UpdateData(const void *data);
 //  void ReadData(void *dst) const;

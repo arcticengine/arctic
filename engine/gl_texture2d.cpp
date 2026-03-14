@@ -114,6 +114,14 @@ void GlTexture2D::Bind(Ui32 slot) const {
     }
 }
 
+void GlTexture2D::InvalidateTextureId(GLuint texture_id) {
+    for (GLuint i = 0; i < max_textures_slots; ++i) {
+        if (current_texture_id_[i] == texture_id) {
+            current_texture_id_[i] = 0;
+        }
+    }
+}
+
 void GlTexture2D::SetData(const void *data, Si32 w, Si32 h) {
     width_ = w;
     height_ = h;

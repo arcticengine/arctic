@@ -41,6 +41,7 @@ private:
 
     GLuint framebuffer_id_;
     GLuint depth_renderbuffer_id_;
+    GLuint color_texture_id_;
 
     static GLuint current_framebuffer_id_;
 
@@ -52,7 +53,6 @@ private:
   void CreateDepthOnly(GlTexture2D &depth_texture);
   void AttachDepthBuffer(Si32 width, Si32 height);
   void Bind();
-
   static void BindDefault();
 };
 
