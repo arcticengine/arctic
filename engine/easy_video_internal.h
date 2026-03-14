@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2026 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,31 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_H_
-#define ENGINE_EASY_H_
+#ifndef ENGINE_EASY_VIDEO_INTERNAL_H_
+#define ENGINE_EASY_VIDEO_INTERNAL_H_
 
-#include "engine/arctic_input.h"
 #include "engine/arctic_types.h"
-#include "engine/csv.h"
-#include "engine/easy_advanced.h"
-#include "engine/easy_drawing.h"
-#include "engine/easy_files.h"
-#include "engine/easy_input.h"
-#include "engine/easy_sound.h"
-#include "engine/easy_sprite.h"
-#include "engine/easy_video.h"
-#include "engine/easy_util.h"
-#include "engine/engine.h"
-#include "engine/font.h"
-#include "engine/gui.h"
-#include "engine/localization.h"
-#include "engine/log.h"
-#include "engine/rgba.h"
-#include "engine/vec2si32.h"
-#include "engine/mat22f.h"
-#include "engine/scalar_math.h"
-#include "engine/unicode.h"
-#include "engine/transform2f.h"
+#include "engine/gl_texture2d.h"
+#include "engine/gl_program.h"
+#include "engine/gl_buffer.h"
 
+namespace arctic {
 
-#endif  // ENGINE_EASY_H_
+/// @brief Checks input for video skip (Escape, Space, left mouse click).
+/// @return true if the user wants to skip the video.
+bool CheckVideoSkipInput();
+
+/// @brief Draws a textured fullscreen quad with letterboxing.
+/// @param texture The GL texture containing the current video frame.
+/// @param program The shader program to use for drawing.
+/// @param vbo Vertex buffer object.
+/// @param ebo Element buffer object.
+/// @param video_width Width of the video in pixels.
+/// @param video_height Height of the video in pixels.
+void DrawVideoFrame(GlTexture2D &texture, GlProgram &program,
+    GlBuffer &vbo, GlBuffer &ebo,
+    Si32 video_width, Si32 video_height);
+
+}  // namespace arctic
+
+#endif  // ENGINE_EASY_VIDEO_INTERNAL_H_

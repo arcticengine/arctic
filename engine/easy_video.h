@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2017 - 2020 Huldra
+// Copyright (c) 2026 Huldra
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,30 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-#ifndef ENGINE_EASY_H_
-#define ENGINE_EASY_H_
+#ifndef ENGINE_EASY_VIDEO_H_
+#define ENGINE_EASY_VIDEO_H_
 
-#include "engine/arctic_input.h"
-#include "engine/arctic_types.h"
-#include "engine/csv.h"
-#include "engine/easy_advanced.h"
-#include "engine/easy_drawing.h"
-#include "engine/easy_files.h"
-#include "engine/easy_input.h"
-#include "engine/easy_sound.h"
-#include "engine/easy_sprite.h"
-#include "engine/easy_video.h"
-#include "engine/easy_util.h"
-#include "engine/engine.h"
-#include "engine/font.h"
-#include "engine/gui.h"
-#include "engine/localization.h"
-#include "engine/log.h"
-#include "engine/rgba.h"
-#include "engine/vec2si32.h"
-#include "engine/mat22f.h"
-#include "engine/scalar_math.h"
-#include "engine/unicode.h"
-#include "engine/transform2f.h"
+#include <string>
 
+namespace arctic {
 
-#endif  // ENGINE_EASY_H_
+/// @addtogroup global_utility
+/// @{
+
+/// @brief Plays a fullscreen video file with letterboxing.
+/// Blocks until the video ends or the user skips it (Escape, Space, or mouse click).
+/// @param file_name Path to the video file.
+/// @return true if the video played to completion, false if skipped by the user.
+bool PlayFullscreenVideo(const char *file_name);
+
+/// @brief Plays a fullscreen video file with letterboxing.
+/// Blocks until the video ends or the user skips it (Escape, Space, or mouse click).
+/// @param file_name Path to the video file.
+/// @return true if the video played to completion, false if skipped by the user.
+bool PlayFullscreenVideo(const std::string &file_name);
+
+/// @}
+
+}  // namespace arctic
+
+#endif  // ENGINE_EASY_VIDEO_H_

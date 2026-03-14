@@ -43,6 +43,9 @@ IF (APPLE)
   FIND_LIBRARY(COCOA Cocoa)
   FIND_LIBRARY(GAMECONTROLLER GameController)
   FIND_LIBRARY(OPENGL OpenGL)
+  FIND_LIBRARY(AVFOUNDATION AVFoundation)
+  FIND_LIBRARY(COREVIDEO CoreVideo)
+  FIND_LIBRARY(COREMEDIA CoreMedia)
 ELSE (APPLE)
   find_package(ALSA REQUIRED)
 
@@ -65,6 +68,13 @@ ELSE (APPLE)
 
   find_package(X11 REQUIRED)
   find_package(Threads REQUIRED)
+  find_package(PkgConfig QUIET)
+  if (PkgConfig_FOUND)
+    pkg_check_modules(GSTREAMER QUIET
+      gstreamer-1.0
+      gstreamer-app-1.0
+      gstreamer-video-1.0)
+  endif()
 ENDIF (APPLE)
 
 
@@ -91,6 +101,10 @@ ELSE (APPLE)
    -DGLX
    -DGL_GLEXT_PROTOTYPES
   )
+  if (GSTREAMER_FOUND)
+    add_definitions(-DARCTIC_HAS_GSTREAMER)
+    include_directories(${GSTREAMER_INCLUDE_DIRS})
+  endif()
 ENDIF (APPLE)
 
 include_directories(${CMAKE_SOURCE_DIR}/..)
@@ -174,6 +188,9 @@ target_link_libraries(
   ${COCOA}
   ${GAMECONTROLLER}
   ${OPENGL}
+  ${AVFOUNDATION}
+  ${COREVIDEO}
+  ${COREMEDIA}
 )
 ELSE (APPLE)
 target_link_libraries(
@@ -185,4 +202,8 @@ target_link_libraries(
   #  ${EGL_LIBRARY}
   #  ${GLES_LIBRARY}
 )
+if (GSTREAMER_FOUND)
+  target_link_libraries(${PROJECT_NAME} ${GSTREAMER_LIBRARIES})
+  target_link_directories(${PROJECT_NAME} PUBLIC ${GSTREAMER_LIBRARY_DIRS})
+endif()
 ENDIF (APPLE)
