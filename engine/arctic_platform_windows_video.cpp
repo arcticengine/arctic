@@ -81,6 +81,7 @@ static bool SetupVideoStream(IMFSourceReader *reader,
   IMFMediaType *mediaType = nullptr;
   HRESULT hr = MFCreateMediaType(&mediaType);
   if (FAILED(hr)) {
+    Log("SetupVideoStream: MFCreateMediaType failed");
     return false;
   }
   mediaType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
@@ -89,6 +90,10 @@ static bool SetupVideoStream(IMFSourceReader *reader,
       (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, nullptr, mediaType);
   mediaType->Release();
   if (FAILED(hr)) {
+    std::stringstream ss;
+    ss << "SetupVideoStream: SetCurrentMediaType(RGB32) failed, hr=0x"
+       << std::hex << static_cast<unsigned long>(hr);
+    Log(ss.str().c_str());
     return false;
   }
 
@@ -96,6 +101,7 @@ static bool SetupVideoStream(IMFSourceReader *reader,
   hr = reader->GetCurrentMediaType(
       (DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, &currentType);
   if (FAILED(hr)) {
+    Log("SetupVideoStream: GetCurrentMediaType failed");
     return false;
   }
 
@@ -135,11 +141,23 @@ static bool SetupAudioStream(IMFSourceReader *reader) {
   return SUCCEEDED(hr);
 }
 
+static HRESULT CreateSourceReader(const std::wstring &path,
+    IMFSourceReader **out_reader) {
+  IMFAttributes *attrs = nullptr;
+  HRESULT hr = MFCreateAttributes(&attrs, 1);
+  if (FAILED(hr)) {
+    return hr;
+  }
+  attrs->SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, TRUE);
+  hr = MFCreateSourceReaderFromURL(path.c_str(), attrs, out_reader);
+  attrs->Release();
+  return hr;
+}
+
 static Sound DecodeAudioTrack(const std::wstring &path) {
   Sound audio_sound;
   IMFSourceReader *audio_reader = nullptr;
-  HRESULT hr = MFCreateSourceReaderFromURL(
-      path.c_str(), nullptr, &audio_reader);
+  HRESULT hr = CreateSourceReader(path, &audio_reader);
   if (FAILED(hr) || !audio_reader) {
     return audio_sound;
   }
@@ -218,9 +236,12 @@ bool PlayFullscreenVideo(const char *file_name) {
   SoundHandle audio_handle = audio_sound.Play();
 
   IMFSourceReader *reader = nullptr;
-  hr = MFCreateSourceReaderFromURL(
-      resolved_path.c_str(), nullptr, &reader);
+  hr = CreateSourceReader(resolved_path, &reader);
   if (FAILED(hr) || !reader) {
+    std::stringstream ss;
+    ss << "PlayFullscreenVideo: CreateSourceReader failed, hr=0x"
+       << std::hex << static_cast<unsigned long>(hr);
+    Log(ss.str().c_str());
     audio_sound.Stop();
     MFShutdown();
     return false;
@@ -231,6 +252,7 @@ bool PlayFullscreenVideo(const char *file_name) {
   float video_fps = 30.f;
 
   if (!SetupVideoStream(reader, &video_width, &video_height, &video_fps)) {
+    Log("PlayFullscreenVideo: SetupVideoStream failed");
     audio_sound.Stop();
     reader->Release();
     MFShutdown();
@@ -275,7 +297,6 @@ void main() {
   bool skipped = false;
   bool finished = false;
 
-  std::vector<Ui8> row_buffer;
 
   while (!finished && !skipped) {
     DWORD streamIndex = 0;
@@ -317,16 +338,7 @@ void main() {
           Si32 expected_stride = video_width * 4;
           Si32 expected_size = expected_stride * video_height;
           if (static_cast<Si32>(length) >= expected_size) {
-            if (row_buffer.size() <
-                static_cast<size_t>(expected_size)) {
-              row_buffer.resize(static_cast<size_t>(expected_size));
-            }
-            for (Si32 y = 0; y < video_height; ++y) {
-              memcpy(row_buffer.data() + y * expected_stride,
-                  data + (video_height - 1 - y) * expected_stride,
-                  static_cast<size_t>(expected_stride));
-            }
-            texture.UpdateData(row_buffer.data());
+            texture.UpdateData(data);
           }
           buffer->Unlock();
         }
