@@ -35,6 +35,44 @@
 
 EM_ASYNC_JS(int, web_play_fullscreen_video, (const char *fname_ptr), {
   var fname = UTF8ToString(fname_ptr);
+
+  var overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.backgroundColor = 'black';
+  overlay.style.zIndex = '9999';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.cursor = 'pointer';
+  var label = document.createElement('div');
+  label.textContent = 'Click to play';
+  label.style.color = 'white';
+  label.style.fontSize = '2em';
+  label.style.fontFamily = 'sans-serif';
+  overlay.appendChild(label);
+  document.body.appendChild(overlay);
+
+  await new Promise(function(waitResolve) {
+    function onGesture() {
+      overlay.removeEventListener('click', onGesture);
+      document.removeEventListener('keydown', onGestureKey);
+      waitResolve();
+    }
+    function onGestureKey(e) {
+      if (e.key === ' ' || e.key === 'Enter') {
+        onGesture();
+      }
+    }
+    overlay.addEventListener('click', onGesture);
+    document.addEventListener('keydown', onGestureKey);
+  });
+
+  overlay.remove();
+
   return await new Promise(function(resolve) {
     var video = document.createElement('video');
     video.src = fname;
@@ -46,7 +84,6 @@ EM_ASYNC_JS(int, web_play_fullscreen_video, (const char *fname_ptr), {
     video.style.objectFit = 'contain';
     video.style.backgroundColor = 'black';
     video.style.zIndex = '9999';
-    video.autoplay = true;
     video.playsInline = true;
 
     var done = false;
@@ -72,6 +109,13 @@ EM_ASYNC_JS(int, web_play_fullscreen_video, (const char *fname_ptr), {
     });
 
     document.body.appendChild(video);
+
+    var playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(function() {
+        cleanup(false);
+      });
+    }
   });
 });
 
