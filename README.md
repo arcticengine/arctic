@@ -9,6 +9,26 @@ In the 80's and 90's it was possible for a programmer to make a game alone and i
 
 Arctic Engine returns the power to the C++ programmer and makes game development fun again.
 
+## Rendering architecture
+
+Arctic Engine provides two rendering paths that share a familiar API.
+
+**Sprite** is the software renderer. Pixel data lives in CPU memory and all drawing (`DrawLine`, `DrawTriangle`, `DrawRectangle`, `SetPixel`, etc.) is performed on the CPU. This is the default path you get through `#include "engine/easy.h"`. It is great for learning, pixel art, procedural generation, and any situation where you want direct per-pixel control.
+
+**HwSprite** is the hardware-accelerated renderer. Texture data lives on the GPU (OpenGL / OpenGL ES), and drawing is performed via GPU draw calls. The Draw() API mirrors Sprite, so switching from software to hardware rendering in most cases only requires replacing `Sprite` with `HwSprite` in your declarations. HwSprite is used in the `antarctica_pyramids` example project. It is available through `engine/easy_hw_sprite.h` (also reachable via `engine/engine.h`, which `easy.h` includes).
+
+## 3D and low-level GPU access
+
+Beyond 2D sprites, the engine ships with infrastructure for 3D rendering. These headers are not part of the `easy.h` convenience include and should be included directly as needed:
+
+**3D math** -- `Vec3F`, `Vec4F`, `Mat44F`, `QuaternionF`, `Frustum3F`, `Bound3F` (headers in `engine/`).
+
+**Mesh system** -- the `Mesh` class with multiple vertex streams, primitive generators (`Mesh_GeneratePlane`, `Mesh_GenerateCube`, `Mesh_GenerateTorus`, `Mesh_PatchedSphere`), and file loaders for OBJ and PLY formats.
+
+**OpenGL wrappers** -- `GlProgram` (shader programs), `GlBuffer` (vertex/index buffers), `GlTexture2D` (textures), `GlFramebuffer` (render targets). These give you direct but convenient access to the GPU pipeline for custom 3D rendering, shadow maps, post-processing, and anything else OpenGL can do.
+
+**Skeletal animation** -- `piSkeleton` for bone hierarchies and skeletal transforms.
+
 API documentation: https://seaice.gitlab.io/arctic/index.html
 
 Main discussion forum (in Russian): https://gamedev.ru/community/arctic/forum/
