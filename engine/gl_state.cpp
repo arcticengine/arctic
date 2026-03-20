@@ -43,6 +43,11 @@ void GlState::SetViewport(Si32 x, Si32 y, Si32 w, Si32 h) {
     }
 }
 
+void GlState::InvalidateCache() {
+    current_viewport_ = Vec4Si32(-1, -1, -1, -1);
+    current_blending_mode_ = static_cast<DrawBlendingMode>(-1);
+}
+
 void GlState::SetBlending(DrawBlendingMode mode) {
     if (current_blending_mode_ != mode) {
         current_blending_mode_ = mode;

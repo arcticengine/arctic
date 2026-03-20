@@ -52,6 +52,7 @@ private:
 
   void Create(const char *vs_src, const char *fs_src);
   void Bind();
+  static void InvalidateCache();
   void SetUniform(int id, int value);
   void SetUniform(int id, const Vec2Si32 &value);
   void SetUniform(int id, const Vec3Si32 &value);

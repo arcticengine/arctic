@@ -79,4 +79,8 @@ void GlBuffer::BindDefault(GLenum target) {
     }
 }
 
+void GlBuffer::InvalidateCache() {
+    current_buffer_id_ = 0;
+}
+
 }  // namespace arctic

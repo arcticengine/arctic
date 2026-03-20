@@ -141,6 +141,10 @@ void GlProgram::Bind() {
     }
 }
 
+void GlProgram::InvalidateCache() {
+    current_program_id_ = 0;
+}
+
 void GlProgram::SetUniform(int id, int value) {
     ARCTIC_GL_CHECK_ERROR(glUniform1i(id, value));
 }

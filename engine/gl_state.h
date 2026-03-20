@@ -48,6 +48,7 @@ class GlState {
  public:
   static void SetViewport(Si32 x, Si32 y, Si32 w, Si32 h);
   static void SetBlending(DrawBlendingMode mode);
+  static void InvalidateCache();
 };
 
 /// @}

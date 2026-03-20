@@ -63,6 +63,7 @@ class GlBuffer {
   }
 
   static void BindDefault(GLenum target);
+  static void InvalidateCache();
 };
 
 /// @}
