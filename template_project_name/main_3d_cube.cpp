@@ -1,5 +1,7 @@
 // Copyright (c) <year> Your name
 
+#include <cstdio>
+
 #include "engine/easy.h"
 #include "engine/mat44f.h"
 #include "engine/vec3f.h"
@@ -7,6 +9,7 @@
 
 using namespace arctic;  // NOLINT
 
+Font g_font;
 HwSprite g_render_target;
 Mesh g_mesh;
 GlBuffer g_vbo;
@@ -200,10 +203,15 @@ void EasyMain() {
   CreateCheckerTexture();
   CreateShader();
 
+  g_font.LoadSystemFont("Arial", 20.0f);
+
   CaptureMouse();
 
   float cube_angle = 0.0f;
   double prev_time = Time();
+  double fps_timer = prev_time;
+  Si32 fps_frame_count = 0;
+  Si32 fps_display = 0;
 
   while (!IsKeyDownward(kKeyEscape)) {
     double cur_time = Time();
@@ -279,6 +287,26 @@ void EasyMain() {
     GlFramebuffer::BindDefault();
 
     g_render_target.Draw(0, 0, kDrawBlendingModeAlphaBlend, kFilterNearest);
+
+    fps_frame_count++;
+    if (cur_time - fps_timer >= 1.0) {
+      fps_display = fps_frame_count;
+      fps_frame_count = 0;
+      fps_timer = cur_time;
+    }
+
+    char fps_buf[32];
+    snprintf(fps_buf, sizeof(fps_buf), "FPS: %d", fps_display);
+    g_font.Draw(fps_buf, 8, screen_size.y - 8,
+      kTextOriginTop, kTextAlignmentLeft,
+      kDrawBlendingModeColorize, kFilterNearest,
+      Rgba(255, 255, 255));
+
+    g_font.Draw("Use WASD to move, move mouse to look around", 8, 8,
+      kTextOriginBottom, kTextAlignmentLeft,
+      kDrawBlendingModeColorize, kFilterNearest,
+      Rgba(255, 255, 255));
+
     ShowFrame();
     Clear();
   }
