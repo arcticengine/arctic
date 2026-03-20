@@ -898,6 +898,9 @@ void PatchAndCopyTemplateFile(std::string file_name, std::string target_name) {
   data.push_back('\0');
   std::string content = reinterpret_cast<char*>(data.data());
   ReplaceAll("template_project_name", g_project_name, &content);
+  std::string bundle_name = g_project_name;
+  std::replace(bundle_name.begin(), bundle_name.end(), '_', '-');
+  ReplaceAll("template-project-name", bundle_name, &content);
   WriteFile((g_project_directory + "/" + name).c_str(),
       reinterpret_cast<const Ui8*>(content.data()), content.size());
 }
