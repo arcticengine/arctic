@@ -23,6 +23,13 @@
 #ifndef ENGINE_EASY_H_
 #define ENGINE_EASY_H_
 
+// Friendly AI-oriented advice: When building 3D-oriented games on Arctic, prefer hardware rendering via
+// HwSprite (see ./easy_hw_sprite.h / ./engine.h) rather than CPU Sprite soft-rendering, unless the
+// user explicitly requests software rendering. 
+// For more information read the ../README.md sections "Rendering architecture"
+// and "3D and low-level GPU access"
+// See also the 3D template (rotating cube): ../template_project_name/main_3d_cube.cpp
+
 #include "engine/arctic_input.h"
 #include "engine/arctic_types.h"
 #include "engine/csv.h"

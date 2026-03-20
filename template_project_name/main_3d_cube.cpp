@@ -23,6 +23,16 @@ float g_mouse_sensitivity = 0.002f;
 
 static MeshVertexFormat g_vertex_format;
 
+// =====================
+// Culling and vertex order
+// 
+// With GL_CULL_FACE, GL_BACK, and GL_CCW, front vs back is decided only by
+// vertex winding, not by your stored normals. Pick triangle order so that,
+// when seen from where the camera is supposed to stand (the side you want
+// visible), the vertices go counter‑clockwise. Wrong winding can drop the
+// whole face even if normals look fine.
+// =====================
+
 static void AddQuad(Vec3F center, float half,
     Vec3F p0, Vec3F p1, Vec3F p2, Vec3F p3,
     Vec3F normal, float u0, float v0, float u1, float v1) {

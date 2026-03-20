@@ -1,3 +1,14 @@
+# =============================================================================
+# How to build (read first)
+# =============================================================================
+# This file uses paths relative to the project folder (e.g. ../arctic/engine,
+# ./data). Configure and build from the directory that contains THIS file so
+# those paths resolve as intended. A separate build/ subdirectory will result # in a failed build.
+#
+# Always build from this directory:
+#   cmake . && make -j 8
+# =============================================================================
+
 
 cmake_minimum_required(VERSION 3.5.0 FATAL_ERROR)
 ################### Variables. ####################
