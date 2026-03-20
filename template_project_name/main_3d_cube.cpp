@@ -18,8 +18,9 @@ Vec3F g_camera_pos(0.0f, 1.5f, 4.0f);
 Vec3F g_camera_up(0.0f, 1.0f, 0.0f);
 float g_yaw = 3.14159f;
 float g_pitch = -0.3f;
-float g_camera_speed = 0.05f;
+float g_camera_speed = 3.0f;
 float g_mouse_sensitivity = 0.002f;
+float g_cube_rotation_speed = 0.6f;
 
 static MeshVertexFormat g_vertex_format;
 
@@ -202,8 +203,13 @@ void EasyMain() {
   CaptureMouse();
 
   float cube_angle = 0.0f;
+  double prev_time = Time();
 
   while (!IsKeyDownward(kKeyEscape)) {
+    double cur_time = Time();
+    float dt = static_cast<float>(cur_time - prev_time);
+    prev_time = cur_time;
+
     Vec2Si32 mouse_delta = MouseMove();
     if (mouse_delta.x != 0 || mouse_delta.y != 0) {
       g_yaw -= mouse_delta.x * g_mouse_sensitivity;
@@ -223,20 +229,21 @@ void EasyMain() {
       cosf(g_yaw) * cosf(g_pitch)));
     Vec3F right = Normalize(Cross(cam_dir, g_camera_up));
 
+    float move = g_camera_speed * dt;
     if (IsKeyDown(kKeyW)) {
-      g_camera_pos += cam_dir * g_camera_speed;
+      g_camera_pos += cam_dir * move;
     }
     if (IsKeyDown(kKeyS)) {
-      g_camera_pos -= cam_dir * g_camera_speed;
+      g_camera_pos -= cam_dir * move;
     }
     if (IsKeyDown(kKeyA)) {
-      g_camera_pos -= right * g_camera_speed;
+      g_camera_pos -= right * move;
     }
     if (IsKeyDown(kKeyD)) {
-      g_camera_pos += right * g_camera_speed;
+      g_camera_pos += right * move;
     }
 
-    cube_angle += 0.01f;
+    cube_angle += g_cube_rotation_speed * dt;
 
     g_render_target.sprite_instance()->framebuffer().Bind();
     screen_size = ScreenSize();
