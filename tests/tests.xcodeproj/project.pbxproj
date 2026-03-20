@@ -75,6 +75,7 @@
 		B10043EEBEA8AEF585B79AC8 /* mesh_obj.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81820AB97939C3DA6E77DB97 /* mesh_obj.cpp */; };
 		03469C703688DD61C16CA357 /* data_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BB9979A59FF21ACBDC26D5AD /* data_writer.cpp */; };
 		A86EF92855E7461E15633D55 /* mesh_gen_mod_complex.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E63C377281767AB9D976C7BF /* mesh_gen_mod_complex.cpp */; };
+		C1A2B3D4E5F60718293A4B5C /* localization.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D6E7F8091A2B3C4D5E6F7081 /* localization.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -244,6 +245,8 @@
 		81820AB97939C3DA6E77DB97 /* mesh_obj.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mesh_obj.cpp; path = ../engine/mesh_obj.cpp; sourceTree = SOURCE_ROOT; };
 		BB9979A59FF21ACBDC26D5AD /* data_writer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = data_writer.cpp; path = ../engine/data_writer.cpp; sourceTree = SOURCE_ROOT; };
 		E63C377281767AB9D976C7BF /* mesh_gen_mod_complex.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mesh_gen_mod_complex.cpp; path = ../engine/mesh_gen_mod_complex.cpp; sourceTree = SOURCE_ROOT; };
+		D6E7F8091A2B3C4D5E6F7081 /* localization.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = localization.cpp; path = ../engine/localization.cpp; sourceTree = SOURCE_ROOT; };
+		A3B4C5D6E7F80192A3B4C5D7 /* localization.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = localization.h; path = ../engine/localization.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -449,6 +452,8 @@
 				092D6E75B8F71F8EBE44865B /* glext.h */,
 				0E05C7D353AE97008458A753 /* gui.cpp */,
 				D9178036E2292EC425867840 /* gui.h */,
+				D6E7F8091A2B3C4D5E6F7081 /* localization.cpp */,
+				A3B4C5D6E7F80192A3B4C5D7 /* localization.h */,
 				346FB0DB201EA50000CAD8E5 /* log.cpp */,
 				346FB0DA201EA50000CAD8E5 /* log.h */,
 				34A37FCF1F68AD73005ACF7B /* mat22f.h */,
@@ -608,6 +613,7 @@
 				34A37FE21F68AD73005ACF7B /* easy_sound_instance.cpp in Sources */,
 				34A37FE51F68AD73005ACF7B /* arctic_input.cpp in Sources */,
 				34A37FE31F68AD73005ACF7B /* easy_sound.cpp in Sources */,
+				C1A2B3D4E5F60718293A4B5C /* localization.cpp in Sources */,
 				34C1597C20019B5C0029160F /* main.cpp in Sources */,
 				34A37FDD1F68AD73005ACF7B /* easy.cpp in Sources */,
 			);
