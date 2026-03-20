@@ -182,13 +182,18 @@ struct Glyph {
 /// @addtogroup global_drawing
 /// @{
 
-/// @brief The origin point used for rendering
+/// @brief The origin point used for rendering.
+///
+/// Determines which point of the text block is placed at the
+/// specified (x, y) screen coordinate. Use EvaluateSize() to
+/// obtain the exact pixel dimensions of the rendered text.
 enum TextOrigin {
-  kTextOriginBottom = 0,  ///< The bottom of the last text line
-  kTextOriginFirstBase = 1,  ///< The base of the first text line
-  kTextOriginLastBase = 2,  ///< The base of the last text line
-  kTextOriginTop = 3,  ///< The top of the first text line
-  kTextOriginCenter = 4 ///< The center between the top of the first and the bottom of the last text line
+  kTextOriginBottom = 0,     ///< y is at the descender bottom of the last line
+  kTextOriginFirstBase = 1,  ///< y is at the baseline of the first line
+  kTextOriginLastBase = 2,   ///< y is at the baseline of the last line
+  kTextOriginTop = 3,        ///< y is at the ascender top of the first line
+                             ///<   (baseline + base_to_top_)
+  kTextOriginCenter = 4      ///< y is at the vertical center of the text block
 };
 
 /// @brief Enumeration of text alignment options
@@ -203,10 +208,34 @@ class FontInstance {
 public:
   std::vector<Glyph*> codepoint_;
   std::list<Glyph> glyph_;
-  Si32 base_to_top_ = 0;
-  Si32 base_to_bottom_ = 0;
-  Si32 line_height_ = 0;
-  Si32 outline_ = 0;
+
+  /// Font metric fields define the vertical layout of text.
+  /// Invariant: line_height_ == base_to_top_ + base_to_bottom_.
+  ///
+  /// @code
+  ///   +--- top of line (baseline + base_to_top_)
+  ///   |
+  ///   |  Abcdefg   <- glyph body
+  ///   |  |
+  ///   +--+-------- baseline
+  ///      |
+  ///      gpq       <- descender
+  ///      |
+  ///   +--+-------- bottom of line (baseline - base_to_bottom_)
+  ///
+  ///   |<---------->|  line_height_ (= base_to_top_ + base_to_bottom_)
+  /// @endcode
+  ///
+  /// When drawn with kTextOriginTop at coordinate y (outline == 0):
+  ///   - top of line    = y
+  ///   - baseline       = y - base_to_top_
+  ///   - bottom of line = y - line_height_
+
+  Si32 base_to_top_ = 0;    ///< Distance from baseline up to the top of the line
+  Si32 base_to_bottom_ = 0; ///< Distance from baseline down to the bottom of the line
+  Si32 line_height_ = 0;    ///< Vertical step between consecutive lines
+                             ///<   (== base_to_top_ + base_to_bottom_)
+  Si32 outline_ = 0;        ///< Outline size in pixels; outline*2 is counted towards size
 
   FontInstance() {
   }
@@ -676,6 +705,25 @@ class Font {
                                    utf8_chars, font_index);
   }
 
+  /// @brief Evaluates the pixel size of the rendered text without drawing it
+  /// @param [in] text UTF-8 c-string to measure
+  /// @param [in] do_keep_xadvance If true, includes trailing xadvance in width;
+  ///   if false, uses the actual glyph width for the last character
+  /// @return Vec2Si32 with .x = width in pixels, .y = height in pixels
+  ///
+  /// The returned height equals (number_of_lines * line_height + outline * 2).
+  /// Use this method to calculate hit regions for clickable text, or to
+  /// pre-compute layout before drawing.
+  ///
+  /// Example:
+  /// @code
+  /// Vec2Si32 size = font.EvaluateSize("Click me", false);
+  /// // size.x = text width, size.y = text height
+  /// // Hit region when drawn with kTextOriginTop at (drawX, drawY):
+  /// //   x: [drawX, drawX + size.x]
+  /// //   y: [drawY - size.y, drawY]
+  /// @endcode
+  /// @see Draw
   Vec2Si32 EvaluateSize(const char *text, bool do_keep_xadvance) {
     Vec2Si32 size;
     Sprite empty;
@@ -809,6 +857,11 @@ class Font {
   ///   - kFilterBilinear: Smooth rendering (better for high-resolution text)
   /// @param [in] color The color used by some blending modes (for example,
   ///   the kDrawBlendingModeColorize blending mode).
+  ///
+  /// @note To calculate the bounding box of the drawn text (e.g. for mouse
+  ///   hit testing), use EvaluateSize() rather than estimating from a
+  ///   hardcoded line height constant.
+  /// @see EvaluateSize
   ///
   /// Example:
   /// @code
