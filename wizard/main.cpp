@@ -91,7 +91,8 @@ enum ProjectKind {
   kProjectKindSnake = 2,
   kProjectKindCodingForKids = 3,
   kProjectKindConquest = 4,
-  kProjectKindDiscreteEventSimButton = 5
+  kProjectKindDiscreteEventSimButton = 5,
+  kProjectKind3DCube = 6
 };
 
 enum MainMode {
@@ -362,13 +363,14 @@ bool GetProjectKind() {
   UpdateResolution();
 
   std::shared_ptr<Panel> box(new Panel(0, Vec2Si32(0, 0),
-    Vec2Si32(640, 480+64*2), 0, g_border.DrawExternalSize(Vec2Si32(640, 480+64*2))));
+    Vec2Si32(640, 480+64*3), 0, g_border.DrawExternalSize(Vec2Si32(640, 480+64*3))));
   const Ui64 kTetraminoButton = 1;
   const Ui64 kHelloButton = 2;
   const Ui64 kSnakeButton = 3;
   const Ui64 kCodingForKidsButton = 4;
   const Ui64 kConquestButton = 5;
   const Ui64 kDiscreteEventSimButton = 6;
+  const Ui64 k3DCubeButton = 7;
   const Ui64 kExitButton = 100;
 
   const char *welcome = (const char *)u8"The Snow Wizard\n\n"
@@ -380,7 +382,7 @@ bool GetProjectKind() {
     0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
     0, g_font, kTextOriginTop, g_palete, welcome, kTextAlignmentLeft));
   box->AddChild(textbox);
-  y = 8 + 16 + 64 + 64 + 64 + 64 + 64 + 64;
+  y = 8 + 16 + 64 + 64 + 64 + 64 + 64 + 64 + 64;
   std::shared_ptr<Button> tetramino_button = MakeButton(
     kTetraminoButton, Vec2Si32(32, y), kKeyR,
     1, "Tet\001r\002amino game project", Vec2Si32(box->GetSize().x - 64, 48));
@@ -416,6 +418,12 @@ bool GetProjectKind() {
       Vec2Si32(box->GetSize().x - 64, 48));
     box->AddChild(discrete_event_sim_button);
   y -= 64;
+  std::shared_ptr<Button> cube_3d_button = MakeButton(
+      k3DCubeButton, Vec2Si32(32, y), kKey3,
+      5, "\0013\002D Spinning Cube project",
+      Vec2Si32(box->GetSize().x - 64, 48));
+    box->AddChild(cube_3d_button);
+  y -= 64;
   std::shared_ptr<Button> exit_button = MakeButton(
     kExitButton, Vec2Si32(32, y), kKeyE,
     100, "\001E\002xit",
@@ -441,6 +449,9 @@ bool GetProjectKind() {
     return true;
   } else if (action == kDiscreteEventSimButton) {
     g_project_kind = kProjectKindDiscreteEventSimButton;
+    return true;
+  } else if (action == k3DCubeButton) {
+    g_project_kind = kProjectKind3DCube;
     return true;
   }
   return false;
@@ -1079,6 +1090,9 @@ bool ShowProgress() {
             break;
           case kProjectKindDiscreteEventSimButton:
             PatchAndCopyTemplateFile("main_discrete_event_sim.cpp", "main.cpp");
+            break;
+          case kProjectKind3DCube:
+            PatchAndCopyTemplateFile("main_3d_cube.cpp", "main.cpp");
             break;
           default:
           case kProjectKindHello:
