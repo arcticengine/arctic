@@ -43,6 +43,80 @@
 
 namespace arctic {
 
+namespace {
+
+constexpr Ui8 kGlyphBorderAlphaMinUi8 = 8;
+constexpr Ui32 kGlyphBorderLumaMinUi32 = 8;
+
+Ui32 GlyphSampleLuma(const Rgba& p) {
+  if (p.a < kGlyphBorderAlphaMinUi8) {
+    return 0;
+  }
+  return static_cast<Ui32>(
+    (77 * Si32(p.r) + 150 * Si32(p.g) + 29 * Si32(p.b)) * Si32(p.a) / 255);
+}
+
+Sprite AddBorderToGlyphSprite(Sprite& src, float width, Si32 pad_px,
+                              const Rgba& border_color) {
+  Si32 w = src.Width();
+  Si32 h = src.Height();
+  Vec2Si32 old_pivot = src.Pivot();
+  const float width_sq = width * width;
+  Si32 dw = w + 2 * pad_px;
+  Si32 dh = h + 2 * pad_px;
+  Sprite dst;
+  dst.Create(dw, dh);
+  dst.Clear(Rgba(0,0,0,0));
+  Rgba* dd = const_cast<Rgba*>(dst.RgbaData());
+  Si32 dstride = dst.StridePixels();
+  const Rgba* sd = src.RgbaData();
+  Si32 sstride = src.StridePixels();
+  for (Si32 ny = 0; ny < dh; ++ny) {
+    for (Si32 nx = 0; nx < dw; ++nx) {
+      if (dd[nx + ny * dstride].a != 0) {
+        continue;
+      }
+      Ui32 max_luma = 0;
+      Si32 min_gy = std::max(0, ny-pad_px - pad_px);
+      Si32 max_gy = std::min(h, ny-pad_px + pad_px+1);
+      Si32 min_gx = std::max(0, nx-pad_px - pad_px);
+      Si32 max_gx = std::min(w, nx-pad_px + pad_px+1);
+      for (Si32 gy = min_gy; gy < max_gy; ++gy) {
+        for (Si32 gx = min_gx; gx < max_gx; ++gx) {
+          const Rgba& sp = sd[gx + gy * sstride];
+          Ui32 lu = GlyphSampleLuma(sp);
+          if (lu == 0) {
+            continue;
+          }
+          float dx = static_cast<float>(pad_px + gx) - static_cast<float>(nx);
+          float dy = static_cast<float>(pad_px + gy) - static_cast<float>(ny);
+          float d2 = dx * dx + dy * dy;
+          if (d2 > width_sq) {
+            continue;
+          }
+          if (lu > max_luma) {
+            max_luma = lu;
+            if (max_luma > kGlyphBorderLumaMinUi32) {
+              break;
+            }
+          }
+        }
+      }
+      if (max_luma > kGlyphBorderLumaMinUi32) {
+        dd[nx + ny * dstride] = border_color;
+      }
+    }
+  }
+  src.Draw(dst, pad_px + old_pivot.x, pad_px + old_pivot.y,
+           kDrawBlendingModeAlphaBlend, kFilterNearest,
+           Rgba(255, 255, 255, 255));
+  dst.SetPivot(old_pivot + Vec2Si32(pad_px, pad_px));
+  dst.UpdateOpaqueSpans();
+  return dst;
+}
+
+}  // namespace
+
 void BmFontBinHeader::Log() const {
   *arctic::Log() << "header"
     << " bmf=" << ((b == 66 && m == 77 && f == 70) ? 1 : 0)
@@ -732,6 +806,25 @@ void FontInstance::LoadSystemFont(const char *font_name, float pixel_height,
     "Error in FontInstance::LoadSystemFont, system font not found: ",
     font_name);
   LoadTtf(path.c_str(), pixel_height, utf8_chars, font_index);
+}
+
+void FontInstance::AddBorder(float width, Rgba color) {
+  if (width <= 0.f) {
+    return;
+  }
+  Si32 pad_px = static_cast<Si32>(std::ceil(width));
+  if (pad_px <= 0) {
+    return;
+  }
+  for (auto& g : glyph_) {
+    Si32 gw = g.sprite.Width();
+    Si32 gh = g.sprite.Height();
+    if (gw <= 0 || gh <= 0) {
+      continue;
+    }
+    g.sprite = AddBorderToGlyphSprite(g.sprite, width, pad_px, color);
+  }
+  GenerateCodepointVector();
 }
 
 void FontInstance::DrawEvaluateSizeImpl(Sprite to_sprite,

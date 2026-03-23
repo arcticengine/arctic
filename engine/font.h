@@ -352,6 +352,16 @@ public:
   void LoadSystemFont(const char *font_name, float pixel_height,
                       const char *utf8_chars = nullptr, Si32 font_index = 0);
 
+  /// @brief Expands each glyph sprite by ceil(width) pixels per side, draws an outline
+  ///   within Euclidean distance width of glyph pixels (by luma/alpha), composites
+  ///   the original glyph on top, shifts pivot to keep the same anchor; does not
+  ///   change xadvance or font line metrics (base_to_top, line_height, outline, etc.).
+  ///   No-op if width <= 0. Calling again stacks another border layer; outline may
+  ///   extend past the original line box or overlap adjacent glyphs.
+  /// @param width Outline radius in pixels (float; canvas padding uses ceil(width))
+  /// @param color RGBA color for outline pixels
+  void AddBorder(float width, Rgba color);
+
   /// @brief Draws text or evaluates its size
   /// @param [in] to_sprite Sprite to draw on (can be empty for size evaluation)
   /// @param [in] text Text to draw or evaluate
@@ -703,6 +713,11 @@ class Font {
                       Si32 font_index = 0) {
     font_instance_->LoadSystemFont(font_name, pixel_height,
                                    utf8_chars, font_index);
+  }
+
+  /// @brief Adds a stroked border around each glyph; see FontInstance::AddBorder.
+  void AddBorder(float width, Rgba color) {
+    font_instance_->AddBorder(width, color);
   }
 
   /// @brief Evaluates the pixel size of the rendered text without drawing it
