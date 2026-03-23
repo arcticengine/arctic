@@ -1400,14 +1400,16 @@ Scrollbar::Scrollbar(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
 , focused_button_cur_(std::move(focused_button_cur))
 , down_button_cur_(std::move(down_button_cur))
 , step_(5)
+, line_step_(1)
 , min_value_(min_value)
 , max_value_(max_value)
 , value_(value)
 , dir_(kind) {
+  InitThumbDecoratedFrames();
 }
 
 Scrollbar::Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme)
-: Panel(tag, Vec2Si32(0, 0), (theme->is_horizontal_ ? Vec2Si32(150, 29) : Vec2Si32(29, 150)), Ui32(tag))
+  : Panel(tag, Vec2Si32(0, 0), (theme->is_horizontal_ ? Vec2Si32(150, 29) : Vec2Si32(29, 150)), Ui32(tag))
 , theme_(theme) {
   normal_background_ = theme_->normal_background_.DrawExternalSize(size_);
   focused_background_ = theme_->focused_background_.DrawExternalSize(size_);
@@ -1425,10 +1427,269 @@ Scrollbar::Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme)
   down_button_cur_ = theme_->down_button_cur_;
   disabled_button_cur_ = theme_->disabled_button_cur_;
   step_ = 5;
+  line_step_ = 1;
   min_value_ = 0;
   max_value_ = 100;
   value_ = 0;
   dir_ = (theme_->is_horizontal_ ? kScrollHorizontal : kScrollVertical);
+  InitThumbDecoratedFrames();
+}
+
+void Scrollbar::ApplyTheme(std::shared_ptr<GuiThemeScrollbar> theme) {
+  theme_ = theme;
+  if (!theme_) {
+    return;
+  }
+  dir_ = (theme_->is_horizontal_ ? kScrollHorizontal : kScrollVertical);
+  normal_button_dec_ = theme_->normal_button_dec_;
+  focused_button_dec_ = theme_->focused_button_dec_;
+  down_button_dec_ = theme_->down_button_dec_;
+  disabled_button_dec_ = theme_->disabled_button_dec_;
+  normal_button_inc_ = theme_->normal_button_inc_;
+  focused_button_inc_ = theme_->focused_button_inc_;
+  down_button_inc_ = theme_->down_button_inc_;
+  disabled_button_inc_ = theme_->disabled_button_inc_;
+  normal_button_cur_ = theme_->normal_button_cur_;
+  focused_button_cur_ = theme_->focused_button_cur_;
+  down_button_cur_ = theme_->down_button_cur_;
+  disabled_button_cur_ = theme_->disabled_button_cur_;
+  InitThumbDecoratedFrames();
+  RegenerateSprites();
+}
+
+void Scrollbar::InvalidateThumbCache() {
+  for (Si32 i = 0; i < 3; ++i) {
+    thumb_cache_[i].along = -1;
+    thumb_cache_[i].cross = -1;
+  }
+  thumb_cache_disabled_.along = -1;
+  thumb_cache_disabled_.cross = -1;
+}
+
+void Scrollbar::InitThumbDecoratedFrames() {
+  for (Si32 i = 0; i < 3; ++i) {
+    thumb_df_ok_[i] = false;
+  }
+  thumb_df_disabled_ok_ = false;
+  cur_hover_is_normal_ = false;
+  cur_down_is_normal_ = false;
+
+  auto try_split = [](const Sprite& sp, DecoratedFrame* df, bool* ok) {
+    *ok = false;
+    Si32 w = sp.Width();
+    Si32 h = sp.Height();
+    Si32 mn = std::min(w, h);
+    Si32 b = std::max(Si32(2), std::min(Si32(6), mn / 3));
+    if (mn >= b * 2 + 1) {
+      df->Split(sp, b, true, true);
+      *ok = true;
+    }
+  };
+
+  try_split(normal_button_cur_, &cur_frame_normal_, &thumb_df_ok_[0]);
+
+  if (focused_button_cur_.Width() > 0 && focused_button_cur_.Height() > 0) {
+    try_split(focused_button_cur_, &cur_frame_hover_, &thumb_df_ok_[1]);
+    cur_hover_is_normal_ = !thumb_df_ok_[1];
+  } else {
+    cur_hover_is_normal_ = true;
+    thumb_df_ok_[1] = false;
+  }
+
+  if (down_button_cur_.Width() > 0 && down_button_cur_.Height() > 0) {
+    try_split(down_button_cur_, &cur_frame_down_, &thumb_df_ok_[2]);
+    cur_down_is_normal_ = !thumb_df_ok_[2];
+  } else {
+    cur_down_is_normal_ = true;
+    thumb_df_ok_[2] = false;
+  }
+
+  try_split(disabled_button_cur_, &cur_frame_disabled_, &thumb_df_disabled_ok_);
+  InvalidateThumbCache();
+}
+
+Si32 Scrollbar::ThumbTrackInnerPx() const {
+  Si32 dec = normal_button_dec_.Size()[dir_];
+  Si32 inc = normal_button_inc_.Size()[dir_];
+  Si32 inner = size_[dir_] - dec - inc - 2;
+  if (inner < 1) {
+    return 1;
+  }
+  return inner;
+}
+
+Si32 Scrollbar::EffectiveThumbPx() const {
+  Si32 base = normal_button_cur_.Size()[dir_];
+  if (base < 1) {
+    base = 1;
+  }
+  Si32 raw;
+  if (thumb_extent_ > 0) {
+    raw = thumb_extent_;
+  } else {
+    raw = base;
+  }
+  Si32 cap = ThumbTrackInnerPx();
+  Si32 clamped = std::min(raw, cap);
+  if (clamped < 1) {
+    return 1;
+  }
+  return clamped;
+}
+
+Vec2Si32 Scrollbar::ThumbOuterPixelSize() const {
+  Si32 eth = EffectiveThumbPx();
+  Si32 cross = std::max(Si32(1), size_[1 - dir_] - 2);
+  if (dir_ == kScrollVertical) {
+    return Vec2Si32(cross, eth);
+  }
+  return Vec2Si32(eth, cross);
+}
+
+DecoratedFrame& Scrollbar::ThumbFrameForLayer(Si32 layer_idx) {
+  if (layer_idx == 1 && cur_hover_is_normal_) {
+    return cur_frame_normal_;
+  }
+  if (layer_idx == 2 && cur_down_is_normal_) {
+    return cur_frame_normal_;
+  }
+  if (layer_idx == 0) {
+    return cur_frame_normal_;
+  }
+  if (layer_idx == 1) {
+    return cur_frame_hover_;
+  }
+  return cur_frame_down_;
+}
+
+void Scrollbar::DrawThumbAt(Vec2Si32 cur_pos_abs, Si32 layer_idx) {
+  Vec2Si32 outer = ThumbOuterPixelSize();
+  Si32 along = outer[dir_];
+  Si32 cross = outer[1 - dir_];
+  bool df_ok = false;
+  if (layer_idx == 0) {
+    df_ok = thumb_df_ok_[0];
+  } else if (layer_idx == 1) {
+    df_ok = thumb_df_ok_[0] && (cur_hover_is_normal_ || thumb_df_ok_[1]);
+  } else {
+    df_ok = thumb_df_ok_[0] && (cur_down_is_normal_ || thumb_df_ok_[2]);
+  }
+
+  if (!df_ok) {
+    if (layer_idx == 0) {
+      normal_button_cur_.Draw(cur_pos_abs);
+    } else if (layer_idx == 1) {
+      if (cur_hover_is_normal_ || focused_button_cur_.Width() == 0) {
+        normal_button_cur_.Draw(cur_pos_abs);
+      } else {
+        focused_button_cur_.Draw(cur_pos_abs);
+      }
+    } else {
+      if (cur_down_is_normal_ || down_button_cur_.Width() == 0) {
+        normal_button_cur_.Draw(cur_pos_abs);
+      } else {
+        down_button_cur_.Draw(cur_pos_abs);
+      }
+    }
+    return;
+  }
+
+  ThumbRasterCache& c = thumb_cache_[layer_idx];
+  if (c.along != along || c.cross != cross) {
+    DecoratedFrame& df = ThumbFrameForLayer(layer_idx);
+    c.sprite = df.DrawExternalSize(outer);
+    c.along = along;
+    c.cross = cross;
+  }
+  c.sprite.Draw(cur_pos_abs, kDrawBlendingModeAlphaBlend, kFilterNearest,
+                Rgba(255, 255, 255, 255));
+}
+
+void Scrollbar::DrawDisabledThumbAt(Vec2Si32 cur_pos_abs) {
+  Vec2Si32 outer = ThumbOuterPixelSize();
+  Si32 along = outer[dir_];
+  Si32 cross = outer[1 - dir_];
+  if (!thumb_df_disabled_ok_) {
+    disabled_button_cur_.Draw(cur_pos_abs);
+    return;
+  }
+  ThumbRasterCache& c = thumb_cache_disabled_;
+  if (c.along != along || c.cross != cross) {
+    c.sprite = cur_frame_disabled_.DrawExternalSize(outer);
+    c.along = along;
+    c.cross = cross;
+  }
+  c.sprite.Draw(cur_pos_abs, kDrawBlendingModeAlphaBlend, kFilterNearest,
+                Rgba(255, 255, 255, 255));
+}
+
+void Scrollbar::UpdateHoverZone(Vec2Si32 relative_pos, Si32 s1, Si32 s2,
+                                Si32 s3, Si32 s4) {
+  Si32 p = relative_pos[dir_];
+  if (p < s1) {
+    hover_zone_ = ScrollHoverZone::kDec;
+  } else if (p < s2) {
+    hover_zone_ = ScrollHoverZone::kTrackBefore;
+  } else if (p < s3) {
+    hover_zone_ = ScrollHoverZone::kThumb;
+  } else if (p < s4) {
+    hover_zone_ = ScrollHoverZone::kTrackAfter;
+  } else {
+    hover_zone_ = ScrollHoverZone::kInc;
+  }
+}
+
+void Scrollbar::DrawDecButton(Vec2Si32 absolute_pos, Vec2Si32 button_offset) {
+  Vec2Si32 at = absolute_pos + button_offset;
+  if (state_ == kDecDown) {
+    down_button_dec_.Draw(at);
+  } else if (hover_zone_ == ScrollHoverZone::kDec &&
+             focused_button_dec_.Width() > 0 && focused_button_dec_.Height() > 0) {
+    focused_button_dec_.Draw(at);
+  } else {
+    normal_button_dec_.Draw(at);
+  }
+}
+
+void Scrollbar::DrawIncButton(Vec2Si32 inc_pos, Vec2Si32 button_offset) {
+  Vec2Si32 at = inc_pos + button_offset;
+  if (state_ == kIncDown) {
+    down_button_inc_.Draw(at);
+  } else if (hover_zone_ == ScrollHoverZone::kInc &&
+             focused_button_inc_.Width() > 0 && focused_button_inc_.Height() > 0) {
+    focused_button_inc_.Draw(at);
+  } else {
+    normal_button_inc_.Draw(at);
+  }
+}
+
+void Scrollbar::SetThumbExtent(Si32 extent) {
+  if (extent < 0) {
+    extent = 0;
+  }
+  if (thumb_extent_ == extent) {
+    return;
+  }
+  thumb_extent_ = extent;
+  InvalidateThumbCache();
+}
+
+Si32 Scrollbar::GetThumbExtent() const {
+  return thumb_extent_;
+}
+
+bool Scrollbar::IsThumbDragging() const {
+  return state_ == kMiddleDragged;
+}
+
+void Scrollbar::SetSize(Vec2Si32 size) {
+  InvalidateThumbCache();
+  Panel::SetSize(size);
+}
+
+void Scrollbar::SetSize(Si32 width, Si32 height) {
+  InvalidateThumbCache();
+  Panel::SetSize(width, height);
 }
 
 void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
@@ -1444,17 +1705,14 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         "ApplyInput must not be called with in_out_is_applied == nullptr");
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
                     out_gui_messages, out_current_tab);
-  //    s1    s2  s3    s4
-  // |--|-----|---|-----|--|
-  // |<<|     | @ |     |>>|
-  // |--|-----|---|-----|--|
+  Si32 eth = EffectiveThumbPx();
   Si32 s1 = 1 + normal_button_dec_.Size()[dir_];
   Si32 s4 = size_[dir_] - 1 - normal_button_inc_.Size()[dir_];
-  Si32 w = std::max(1, s4 - s1 - normal_button_cur_.Size()[dir_]);
+  Si32 w = std::max(1, s4 - s1 - eth);
   Si64 value_range = Si64(max_value_) - Si64(min_value_);
   Si32 s2 = Si32(Si64(s1) +
                  (value_range ? Si64(w) * (Si64(value_) - Si64(min_value_)) / value_range : 0));
-  Si32 s3 = s2 + normal_button_cur_.Size()[dir_];
+  Si32 s3 = s2 + eth;
 
   ScrollState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
@@ -1462,6 +1720,29 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
     bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
     relative_pos.x < size_.x && relative_pos.y < size_.y;
+
+    if (is_inside) {
+      UpdateHoverZone(relative_pos, s1, s2, s3, s4);
+    } else {
+      hover_zone_ = ScrollHoverZone::kNone;
+    }
+
+    if (is_inside && message.mouse.wheel_delta != 0) {
+      *in_out_is_applied = true;
+      Si64 dv = -Si64(message.mouse.wheel_delta) * Si64(step_) / 120;
+      if (dv == 0) {
+        if (message.mouse.wheel_delta > 0) {
+          dv = -1;
+        } else if (message.mouse.wheel_delta < 0) {
+          dv = 1;
+        }
+      }
+      value_ = Clamp(value_ + Si32(dv), min_value_, max_value_);
+      if (out_gui_messages) {
+        out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
+      }
+      OnScrollChange();
+    }
 
     if (!*in_out_is_applied &&
         message.keyboard.state[kKeyMouseLeft] == 1 &&
@@ -1502,7 +1783,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         } else if (relative_pos[dir_] < s1) {
           state_ = kDecDown;
           if (prev_state != state_) {
-            value_ = std::max(min_value_, value_ - 1);
+            value_ = std::max(min_value_, value_ - line_step_);
             if (out_gui_messages) {
               out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
             }
@@ -1535,7 +1816,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         } else {
           state_ = kIncDown;
           if (prev_state != state_) {
-            value_ = std::min(max_value_, value_ + 1);
+            value_ = std::min(max_value_, value_ + line_step_);
             if (out_gui_messages) {
               out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
             }
@@ -1556,13 +1837,13 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         KeyCode key_dec = (dir_ == kScrollVertical) ? kKeyDown : kKeyLeft;
         KeyCode key_inc = (dir_ == kScrollVertical) ? kKeyUp : kKeyRight;
         if (message.keyboard.key == key_dec) {
-          value_ = Clamp(value_ - 1, min_value_, max_value_);
+          value_ = Clamp(value_ - line_step_, min_value_, max_value_);
           if (out_gui_messages) {
             out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
           }
           OnScrollChange();
         } else if (message.keyboard.key == key_inc) {
-          value_ = Clamp(value_ + 1, min_value_, max_value_);
+          value_ = Clamp(value_ + line_step_, min_value_, max_value_);
           if (out_gui_messages) {
             out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
           }
@@ -1586,6 +1867,7 @@ void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
   }
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
   Vec2Si32 button_offset = Vec2Si32(1, 1);
+  Si32 eth = EffectiveThumbPx();
   if (state_ == kDisabled) {
     disabled_background_.Draw(absolute_pos);
     disabled_button_dec_.Draw(absolute_pos + button_offset);
@@ -1598,13 +1880,13 @@ void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
     (dir_
      ? button_offset.oy() + disabled_button_dec_.Size().oy()
      : button_offset.xo() + disabled_button_dec_.Size().xo());
-    Si32 length = inc_pos[dir_] - after_dec[dir_] - disabled_button_cur_.Size()[dir_] + 1;
+    Si32 length = inc_pos[dir_] - after_dec[dir_] - eth + 1;
     Si32 offset = 0;
     if (length > 0 && max_value_ != min_value_) {
       offset = Si32(Si64(length) * (Si64(value_) - Si64(min_value_)) / (Si64(max_value_) - Si64(min_value_)));
     }
     Vec2Si32 cur_pos = after_dec + (dir_ ? Vec2Si32(1, offset) : Vec2Si32(offset, 1));
-    disabled_button_cur_.Draw(cur_pos);
+    DrawDisabledThumbAt(cur_pos);
     Panel::Draw(parent_absolute_pos);
     return;
   }
@@ -1613,40 +1895,42 @@ void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
   } else {
     focused_background_.Draw(absolute_pos);
   }
-  if (state_ == kDecDown) {
-    down_button_dec_.Draw(absolute_pos + button_offset);
-  } else {
-    normal_button_dec_.Draw(absolute_pos + button_offset);
-  }
+  DrawDecButton(absolute_pos, button_offset);
   Vec2Si32 inc_pos = absolute_pos +
   (dir_
    ? size_.oy() - normal_button_inc_.Size().oy() + Vec2Si32(0, -2)
    : size_.xo() - normal_button_inc_.Size().xo() + Vec2Si32(-2, 0));
-  if (state_ == kIncDown) {
-    down_button_inc_.Draw(inc_pos + button_offset);
-  } else {
-    normal_button_inc_.Draw(inc_pos + button_offset);
-  }
+  DrawIncButton(inc_pos, button_offset);
   Vec2Si32 after_dec = absolute_pos +
   (dir_
    ? button_offset.oy() + normal_button_dec_.Size().oy()
    : button_offset.xo() + normal_button_dec_.Size().xo());
-  Si32 length = inc_pos[dir_] - after_dec[dir_] - normal_button_cur_.Size()[dir_] + 1;
+  Si32 length = inc_pos[dir_] - after_dec[dir_] - eth + 1;
   Si32 offset = 0;
   if (length > 0 && max_value_ != min_value_) {
     offset = Si32(Si64(length) * (Si64(value_) - Si64(min_value_)) / (Si64(max_value_) - Si64(min_value_)));
   }
   Vec2Si32 cur_pos = after_dec + (dir_ ? Vec2Si32(1, offset) : Vec2Si32(offset, 1));
+  Si32 thumb_layer = 0;
   if (state_ == kMiddleDragged) {
-    down_button_cur_.Draw(cur_pos);
-  } else {
-    normal_button_cur_.Draw(cur_pos);
+    thumb_layer = 2;
+  } else if (hover_zone_ == ScrollHoverZone::kThumb) {
+    thumb_layer = 1;
   }
+  DrawThumbAt(cur_pos, thumb_layer);
   Panel::Draw(parent_absolute_pos);
 }
 
 void Scrollbar::SetStep(Si32 step) {
   step_ = std::max(1, step);
+}
+
+void Scrollbar::SetLineStep(Si32 line_step) {
+  line_step_ = std::max(1, line_step);
+}
+
+Si32 Scrollbar::GetLineStep() const {
+  return line_step_;
 }
 
 void Scrollbar::SetValue(Si32 value) {
@@ -1678,6 +1962,7 @@ Si32 Scrollbar::GetMaxValue() const {
 }
 
 void Scrollbar::RegenerateSprites() {
+  InvalidateThumbCache();
   if (theme_) {
     normal_background_ = theme_->normal_background_.DrawExternalSize(size_);
     focused_background_ = theme_->focused_background_.DrawExternalSize(size_);

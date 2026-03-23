@@ -804,6 +804,7 @@ public:
   Sprite disabled_button_cur_;
 
   Si32 step_;
+  Si32 line_step_;
   Si32 min_value_;
   Si32 max_value_;
   Si32 value_;
@@ -812,6 +813,44 @@ public:
   Si32 start_value_ = 0;
   Si32 dir_ = 0; // 0 for horizontal, 1 for vertical
   std::shared_ptr<GuiThemeScrollbar> theme_;
+
+  Si32 thumb_extent_ = 0;
+  enum class ScrollHoverZone {
+    kNone,
+    kDec,
+    kInc,
+    kThumb,
+    kTrackBefore,
+    kTrackAfter
+  };
+  ScrollHoverZone hover_zone_ = ScrollHoverZone::kNone;
+  DecoratedFrame cur_frame_normal_;
+  DecoratedFrame cur_frame_hover_;
+  DecoratedFrame cur_frame_down_;
+  DecoratedFrame cur_frame_disabled_;
+  bool cur_hover_is_normal_ = false;
+  bool cur_down_is_normal_ = false;
+  bool thumb_df_ok_[3] = {false, false, false};
+  bool thumb_df_disabled_ok_ = false;
+  struct ThumbRasterCache {
+    Sprite sprite;
+    Si32 along = -1;
+    Si32 cross = -1;
+  };
+  ThumbRasterCache thumb_cache_[3];
+  ThumbRasterCache thumb_cache_disabled_;
+
+  void InvalidateThumbCache();
+  void InitThumbDecoratedFrames();
+  Si32 ThumbTrackInnerPx() const;
+  Si32 EffectiveThumbPx() const;
+  Vec2Si32 ThumbOuterPixelSize() const;
+  DecoratedFrame& ThumbFrameForLayer(Si32 layer_idx);
+  void DrawThumbAt(Vec2Si32 cur_pos_abs, Si32 layer_idx);
+  void DrawDisabledThumbAt(Vec2Si32 cur_pos_abs);
+  void UpdateHoverZone(Vec2Si32 relative_pos, Si32 s1, Si32 s2, Si32 s3, Si32 s4);
+  void DrawDecButton(Vec2Si32 absolute_pos, Vec2Si32 button_offset);
+  void DrawIncButton(Vec2Si32 inc_pos, Vec2Si32 button_offset);
 
  public:
   /// @brief Constructor for Scrollbar panel.
@@ -848,6 +887,9 @@ public:
   /// @param theme Scrollbar theme for the panel.
   Scrollbar(Ui64 tag, std::shared_ptr<GuiThemeScrollbar> theme);
 
+  /// @brief Replaces theme sprites and rebuilds thumb frames (e.g. after UI scale change).
+  void ApplyTheme(std::shared_ptr<GuiThemeScrollbar> theme);
+
   /// @brief Applies input to the scrollbar panel.
   /// @param parent_pos Position of the parent panel.
   /// @param message Input message to apply.
@@ -865,9 +907,17 @@ public:
   /// @param parent_absolute_pos Absolute position of the parent panel.
   void Draw(Vec2Si32 parent_absolute_pos) override;
 
-  /// @brief Sets the step value of the scrollbar.
-  /// @param step New step value.
+  /// @brief Sets the page step for track clicks and mouse wheel (not arrow keys).
+  /// @param step New step value (clamped to at least 1).
   void SetStep(Si32 step);
+
+  /// @brief Sets the line step for end-arrow clicks and keyboard when focused.
+  /// @param line_step New line step (clamped to at least 1).
+  void SetLineStep(Si32 line_step);
+
+  /// @brief Gets the line step for end arrows and keyboard.
+  /// @return Current line step.
+  Si32 GetLineStep() const;
 
   /// @brief Sets the current value of the scrollbar.
   /// @param value New current value.
@@ -903,6 +953,16 @@ public:
 
   /// @brief Regenerates the sprites of the scrollbar panel.
   void RegenerateSprites() override;
+
+  /// @brief Sets pixel extent of the thumb along the scroll direction (0 = use theme sprite size).
+  void SetThumbExtent(Si32 extent);
+  /// @brief Gets the configured thumb extent (0 means theme default at draw time).
+  Si32 GetThumbExtent() const;
+  /// @brief True while the user is dragging the thumb.
+  bool IsThumbDragging() const;
+
+  void SetSize(Vec2Si32 size);
+  void SetSize(Si32 width, Si32 height);
 
   std::function<void(void)> OnScrollChange = DoNothing;
 };
