@@ -25,6 +25,7 @@
 // IN THE SOFTWARE.
 
 #include <cstring>
+#include <memory>
 #include "engine/mesh_gen_adjacency.h"
 
 namespace arctic {
