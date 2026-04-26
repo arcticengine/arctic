@@ -36,6 +36,7 @@
 #include "engine/easy_util.h"
 #include "engine/unicode.h"
 #include "engine/arctic_platform.h"
+#include "engine/arctic_platform_sound.h"
 #include "engine/scalar_math.h"
 
 namespace arctic {
@@ -564,7 +565,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           message.keyboard.key_state == 2 &&
           prev_state == kDown) {
         *in_out_is_applied = true;
-        up_sound_.Play();
+        up_sound_.Play(GetGuiSoundVolume());
         if (out_gui_messages) {
           out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
         }
@@ -579,14 +580,14 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     }
     if (state_ != prev_state) {
       if (state_ == kDown) {
-        down_sound_.Play();
+        down_sound_.Play(GetGuiSoundVolume());
         if (out_gui_messages) {
           out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
         }
         OnButtonDown();
       }
       if (prev_state == kDown) {
-        up_sound_.Play();
+        up_sound_.Play(GetGuiSoundVolume());
       }
     }
   } else if (message.kind == InputMessage::kKeyboard) {
@@ -600,7 +601,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           if ((prev_state != kDown && is_hotkey) ||
               (prev_state == kHovered && is_tab_order_enter)) {
             *in_out_is_applied = true;
-            down_sound_.Play();
+            down_sound_.Play(GetGuiSoundVolume());
             state_ = kDown;
             if (is_hotkey && GetTabOrder() != 0) {
               *out_current_tab = shared_from_this();
@@ -613,7 +614,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         } else {
           if (prev_state == kDown) {
             *in_out_is_applied = true;
-            up_sound_.Play();
+            up_sound_.Play(GetGuiSoundVolume());
             if (out_gui_messages) {
               out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
             }
@@ -2124,7 +2125,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       if (message.keyboard.key == kKeyMouseLeft &&
           message.keyboard.key_state == 2 &&
           prev_state == kDown) {
-        up_sound_.Play();
+        up_sound_.Play(GetGuiSoundVolume());
         value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
         if (out_gui_messages) {
           out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
@@ -2140,7 +2141,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     }
     if (state_ != prev_state) {
       if (state_ == kDown) {
-        down_sound_.Play();
+        down_sound_.Play(GetGuiSoundVolume());
         *in_out_is_applied = true;
         if (out_gui_messages) {
           out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
@@ -2148,7 +2149,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         OnButtonDown();
       }
       if (prev_state == kDown) {
-        up_sound_.Play();
+        up_sound_.Play(GetGuiSoundVolume());
       }
     }
   } else if (message.kind == InputMessage::kKeyboard) {
@@ -2162,7 +2163,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           if ((prev_state != kDown && is_hotkey) ||
               (prev_state == kHovered && is_tab_order_enter)) {
             *in_out_is_applied = true;
-            down_sound_.Play();
+            down_sound_.Play(GetGuiSoundVolume());
             state_ = kDown;
             if (is_hotkey && GetTabOrder() != 0) {
               *out_current_tab = shared_from_this();
@@ -2175,7 +2176,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         } else {
           if (prev_state == kDown) {
             *in_out_is_applied = true;
-            up_sound_.Play();
+            up_sound_.Play(GetGuiSoundVolume());
             value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
             if (out_gui_messages) {
               out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);

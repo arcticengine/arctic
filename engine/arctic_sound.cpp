@@ -23,14 +23,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <algorithm>
 #include <cmath>
 #include "engine/arctic_mixer.h"
+#include "engine/arctic_pi.h"
 #include "engine/arctic_platform_sound.h"
-#include "engine/easy.h"
+#include "engine/easy_drawing.h"
+#include "engine/easy_util.h"
 
 namespace arctic {
 
 SoundMixerState g_sound_mixer_state;
+float g_gui_sound_volume = 1.0f;
 
 SoundHandle StartSound(Sound sound, float volume) {
   if (sound.GetInstance()) {
@@ -152,6 +156,14 @@ void SetMasterVolume(float volume) {
 
 float GetMasterVolume() {
   return g_sound_mixer_state.master_volume.load();
+}
+
+void SetGuiSoundVolume(float volume) {
+  g_gui_sound_volume = volume;
+}
+
+float GetGuiSoundVolume() {
+  return g_gui_sound_volume;
 }
 
 Sound BeepAsync(float duration_seconds, Si32 note) {

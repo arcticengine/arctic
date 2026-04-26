@@ -104,6 +104,14 @@ void SetMasterVolume(float volume);
 /// @return The master volume level
 float GetMasterVolume();
 
+/// @brief Sets the volume used by built-in GUI click sounds.
+/// @param volume Volume to set.
+void SetGuiSoundVolume(float volume);
+
+/// @brief Gets the volume used by built-in GUI click sounds.
+/// @return The GUI sound volume level.
+float GetGuiSoundVolume();
+
 /// @brief Plays asynchronously the note specified for the duration specified.
 /// @param duration_seconds Sound duration in seconds.
 /// @param note Index of the note to play, index of C4 is 0, index of C#4 is 1, etc.
