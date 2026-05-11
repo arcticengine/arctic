@@ -1179,7 +1179,9 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           }
         } else if (key == kKeyEnter) {
           // skip
-        } else if (is_digits_ ? (key >= kKey0 && key <= kKey9) : true) {
+        } else if (is_digits_ ? ((key >= kKey0 && key <= kKey9) ||
+            (message.keyboard.characters[0] >= '0' &&
+             message.keyboard.characters[0] <= '9')) : true) {
           // (key >= kKeySpace && key <= kKeyGraveAccent)) {
           *in_out_is_applied = true;
           if (!message.keyboard.characters[0]) {
