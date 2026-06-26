@@ -105,6 +105,8 @@ static Vec2Si32 g_mouse_pos = Vec2Si32(0, 0);
 static InputMessage::Controller g_controller_state[InputMessage::kControllerCount];
 static Vec2Si32 g_mouse_move = Vec2Si32(0, 0);
 static Si32 g_mouse_wheel_delta = 0;
+static Si32 g_mouse_wheel_delta_x = 0;
+static float g_mouse_zoom_delta = 0.0f;
 
 void DrawLine(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Rgba color) {
   DrawLine(to_sprite, a, b, color, color);
@@ -1061,6 +1063,8 @@ void ShowFrame() {
   InputMessage message;
   g_mouse_pos_prev = g_mouse_pos;
   g_mouse_wheel_delta = 0;
+  g_mouse_wheel_delta_x = 0;
+  g_mouse_zoom_delta = 0.0f;
   g_input_messages.clear();
   Vec2F accumulated_delta(0.0f, 0.0f);
   while (PopInputMessage(&message)) {
@@ -1074,6 +1078,8 @@ void ShowFrame() {
         GetEngine()->MouseToBackbuffer(message.mouse.pos);
       g_mouse_pos = message.mouse.backbuffer_pos;
       g_mouse_wheel_delta += message.mouse.wheel_delta;
+      g_mouse_wheel_delta_x += message.mouse.wheel_delta_x;
+      g_mouse_zoom_delta += message.mouse.zoom_delta;
       accumulated_delta += message.mouse.delta;
       if (message.keyboard.key != kKeyNone && message.keyboard.key < kKeyCount) {
         g_key_state[message.keyboard.key].OnStateChange(
@@ -1314,6 +1320,14 @@ Vec2Si32 MouseMove() {
 
 Si32 MouseWheelDelta() {
   return g_mouse_wheel_delta;
+}
+
+Si32 MouseWheelDeltaX() {
+  return g_mouse_wheel_delta_x;
+}
+
+float MouseZoomDelta() {
+  return g_mouse_zoom_delta;
 }
 
 // Size depends on OS window parameters and/or hardware

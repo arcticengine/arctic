@@ -275,6 +275,11 @@ EM_BOOL WheelCallback(int eventType, const EmscriptenWheelEvent* e, void* userDa
   msg.kind = InputMessage::kMouse;
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = e->deltaY;
+  msg.mouse.wheel_delta_x = static_cast<Si32>(e->deltaX);
+  // Trackpad pinch-zoom is delivered as a wheel event with ctrlKey set.
+  if (e->mouse.ctrlKey) {
+    msg.mouse.zoom_delta = -static_cast<float>(e->deltaY);
+  }
   PushInputMessage(msg);
   return true;
 }
@@ -405,6 +410,28 @@ void ReleaseMouse() {
 
 bool IsMouseCaptured() {
   return g_is_mouse_captured;
+}
+
+// The browser clipboard API is asynchronous and gated behind a user gesture,
+// so a synchronous read of another application's clipboard is not possible.
+// We keep an in-app mirror that always reflects the last text set from the
+// application, and additionally push writes to the system clipboard on a
+// best-effort basis. Reads return the in-app mirror.
+static std::string g_clipboard_text;
+
+void SetClipboardText(const std::string &text) {
+  g_clipboard_text = text;
+  EM_ASM({
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(UTF8ToString($0));
+      }
+    } catch (e) {}
+  }, text.c_str());
+}
+
+std::string GetClipboardText() {
+  return g_clipboard_text;
 }
 
 std::string PrepareInitialPath() {

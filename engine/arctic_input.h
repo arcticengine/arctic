@@ -280,7 +280,9 @@ struct InputMessage {
     struct Mouse {
         Vec2F pos = Vec2F(0.0f, 0.0f);                    ///< Mouse position in floating-point coordinates
         Vec2Si32 backbuffer_pos = Vec2Si32(0, 0);      ///< Mouse position in backbuffer coordinates (Not set by the engine)
-        Si32 wheel_delta = 0;         ///< Mouse wheel delta
+        Si32 wheel_delta = 0;         ///< Mouse wheel delta (vertical)
+        Si32 wheel_delta_x = 0;       ///< Horizontal mouse wheel delta (positive = scroll right)
+        float zoom_delta = 0.0f;      ///< Pinch/zoom delta (positive = zoom in)
         Vec2F delta = Vec2F(0.0f, 0.0f);  ///< Raw mouse movement delta from OS events
     };
 

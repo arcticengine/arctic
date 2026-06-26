@@ -424,6 +424,34 @@ void OnMouseWheel(WPARAM word_param, LPARAM long_param) {
   msg.keyboard.characters[0] = '\0';
   msg.mouse.pos = pos;
   msg.mouse.wheel_delta = z_delta;
+  // Ctrl+wheel is the conventional zoom gesture (also used by precision
+  // touchpad pinch on many drivers). Report it on the dedicated zoom channel
+  // while leaving wheel_delta intact for backward compatibility.
+  if (fw_keys & MK_CONTROL) {
+    msg.mouse.zoom_delta = static_cast<float>(z_delta) / 120.0f;
+  }
+  PushInputMessage(msg);
+}
+
+void OnMouseHWheel(WPARAM word_param, LPARAM long_param) {
+  Check(g_window_width != 0, "Could not obtain window width in OnMouseHWheel");
+  Check(g_window_height != 0,
+    "Could not obtain window height in OnMouseHWheel");
+
+  Si32 z_delta = GET_WHEEL_DELTA_WPARAM(word_param);
+
+  Si32 x = GET_X_LPARAM(long_param);
+  Si32 y = g_window_height - GET_Y_LPARAM(long_param);
+
+  Vec2F pos(static_cast<float>(x) / static_cast<float>(g_window_width - 1),
+    static_cast<float>(y) / static_cast<float>(g_window_height - 1));
+  InputMessage msg;
+  msg.kind = InputMessage::kMouse;
+  msg.keyboard.key = kKeyNone;
+  msg.keyboard.key_state = 0;
+  msg.keyboard.characters[0] = '\0';
+  msg.mouse.pos = pos;
+  msg.mouse.wheel_delta_x = z_delta;
   PushInputMessage(msg);
 }
 
@@ -615,6 +643,9 @@ LRESULT CALLBACK InnerWndProc(HWND inner_window_handle, UINT message,
       word_param, long_param);
   case WM_MOUSEWHEEL:
     arctic::OnMouseWheel(word_param, long_param);
+    break;
+  case WM_MOUSEHWHEEL:
+    arctic::OnMouseHWheel(word_param, long_param);
     break;
   default:
     return DefWindowProc(inner_window_handle, message,
@@ -1102,6 +1133,56 @@ std::string FindSystemFont(const char *font_name) {
     }
   }
   RegCloseKey(hKey);
+  return result;
+}
+
+void SetClipboardText(const std::string &text) {
+  if (!OpenClipboard(nullptr)) {
+    return;
+  }
+  EmptyClipboard();
+  int wlen = MultiByteToWideChar(CP_UTF8, 0, text.c_str(),
+      static_cast<int>(text.size()), nullptr, 0);
+  // Allocate room for the converted text plus a terminating NUL.
+  HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE,
+      (static_cast<SIZE_T>(wlen) + 1) * sizeof(wchar_t));
+  if (handle) {
+    wchar_t *dst = static_cast<wchar_t*>(GlobalLock(handle));
+    if (dst) {
+      if (wlen > 0) {
+        MultiByteToWideChar(CP_UTF8, 0, text.c_str(),
+            static_cast<int>(text.size()), dst, wlen);
+      }
+      dst[wlen] = L'\0';
+      GlobalUnlock(handle);
+      SetClipboardData(CF_UNICODETEXT, handle);
+    } else {
+      GlobalFree(handle);
+    }
+  }
+  CloseClipboard();
+}
+
+std::string GetClipboardText() {
+  if (!OpenClipboard(nullptr)) {
+    return std::string();
+  }
+  std::string result;
+  HANDLE handle = GetClipboardData(CF_UNICODETEXT);
+  if (handle) {
+    const wchar_t *src = static_cast<const wchar_t*>(GlobalLock(handle));
+    if (src) {
+      int len = WideCharToMultiByte(CP_UTF8, 0, src, -1,
+          nullptr, 0, nullptr, nullptr);
+      if (len > 1) {
+        result.resize(len - 1);  // len includes the terminating NUL
+        WideCharToMultiByte(CP_UTF8, 0, src, -1,
+            &result[0], len, nullptr, nullptr);
+      }
+      GlobalUnlock(handle);
+    }
+  }
+  CloseClipboard();
   return result;
 }
 

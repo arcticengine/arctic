@@ -228,6 +228,14 @@ Vec2Si32 MouseMove();
 /// @return The mouse wheel delta (positive for scrolling up, negative for scrolling down)
 Si32 MouseWheelDelta();
 
+/// Gets the horizontal mouse wheel rotation since the last frame
+/// @return The horizontal mouse wheel delta (positive for scrolling right, negative for scrolling left)
+Si32 MouseWheelDeltaX();
+
+/// Gets the accumulated pinch/zoom delta since the last frame
+/// @return The zoom delta (positive for zoom in, negative for zoom out)
+float MouseZoomDelta();
+
 /// @}
 
 /// @name Input Message Functions

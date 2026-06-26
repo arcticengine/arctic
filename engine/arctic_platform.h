@@ -93,6 +93,14 @@ void ReleaseMouse();
 /// @return true if the mouse is captured
 bool IsMouseCaptured();
 
+/// @brief Replaces the system clipboard contents with UTF-8 text
+/// @param [in] text UTF-8 encoded text to put into the clipboard
+void SetClipboardText(const std::string &text);
+
+/// @brief Returns the system clipboard contents as UTF-8 text
+/// @return UTF-8 encoded clipboard text, or an empty string if unavailable
+std::string GetClipboardText();
+
 /// @}
 /// @addtogroup global_files
 /// @{

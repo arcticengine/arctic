@@ -338,6 +338,32 @@ void OnMouseWheel(bool is_down) {
   PushInputMessage(msg);
 }
 
+void OnMouseHWheel(bool is_right) {
+  Check(g_window_width != 0, "Could not obtain window width in OnMouseHWheel");
+  Check(g_window_height != 0,
+      "Could not obtain window height in OnMouseHWheel");
+
+  Si32 z_delta = is_right ? 1 : -1;
+
+  Si32 x = g_last_mouse_x;
+  Si32 y = g_window_height - g_last_mouse_y;
+
+  Vec2F pos(0.f, 0.f);
+  if (g_window_width > 1) {
+    pos.x = static_cast<float>(x) / static_cast<float>(g_window_width - 1);
+  }
+  if (g_window_height > 1) {
+    pos.y = static_cast<float>(y) / static_cast<float>(g_window_height - 1);
+  }
+  InputMessage msg;
+  msg.kind = InputMessage::kMouse;
+  msg.keyboard.key = kKeyNone;
+  msg.keyboard.key_state = false;
+  msg.mouse.pos = pos;
+  msg.mouse.wheel_delta_x = z_delta;
+  PushInputMessage(msg);
+}
+
 void OnKey(KeyCode key, bool is_down, char *characters) {
   InputMessage msg;
   msg.kind = InputMessage::kKeyboard;
@@ -346,6 +372,143 @@ void OnKey(KeyCode key, bool is_down, char *characters) {
   strncpy(msg.keyboard.characters, characters, sizeof(msg.keyboard.characters));
   msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
   PushInputMessage(msg);
+}
+
+// ---- Clipboard (X11 CLIPBOARD selection) ----
+// The owner of the CLIPBOARD selection keeps the text in g_clipboard_text and
+// serves it to other clients on demand via SelectionRequest events handled in
+// PumpMessages. Reading pulls the text from whoever currently owns CLIPBOARD.
+static std::string g_clipboard_text;
+
+static Atom ClipboardSelectionAtom() {
+  static Atom a = None;
+  if (a == None) {
+    a = XInternAtom(g_x_display, "CLIPBOARD", False);
+  }
+  return a;
+}
+
+static Atom Utf8StringAtom() {
+  static Atom a = None;
+  if (a == None) {
+    a = XInternAtom(g_x_display, "UTF8_STRING", False);
+  }
+  return a;
+}
+
+static Atom TargetsAtom() {
+  static Atom a = None;
+  if (a == None) {
+    a = XInternAtom(g_x_display, "TARGETS", False);
+  }
+  return a;
+}
+
+static Atom ClipboardRecvPropAtom() {
+  static Atom a = None;
+  if (a == None) {
+    a = XInternAtom(g_x_display, "ARCTIC_CLIPBOARD_RECV", False);
+  }
+  return a;
+}
+
+static void HandleSelectionRequest(const XSelectionRequestEvent &req) {
+  // When a requestor passes property None it is an obsolete client; by
+  // convention the owner uses the target atom as the destination property.
+  Atom property = (req.property == None) ? req.target : req.property;
+
+  XSelectionEvent resp;
+  memset(&resp, 0, sizeof(resp));
+  resp.type = SelectionNotify;
+  resp.display = req.display;
+  resp.requestor = req.requestor;
+  resp.selection = req.selection;
+  resp.target = req.target;
+  resp.time = req.time;
+  resp.property = property;
+
+  Atom targets = TargetsAtom();
+  Atom utf8 = Utf8StringAtom();
+  if (req.target == targets) {
+    Atom supported[] = {targets, utf8, XA_STRING};
+    XChangeProperty(req.display, req.requestor, property,
+        XA_ATOM, 32, PropModeReplace,
+        reinterpret_cast<unsigned char*>(supported),
+        sizeof(supported) / sizeof(supported[0]));
+  } else if (req.target == utf8 || req.target == XA_STRING) {
+    XChangeProperty(req.display, req.requestor, property,
+        req.target, 8, PropModeReplace,
+        reinterpret_cast<const unsigned char*>(g_clipboard_text.data()),
+        static_cast<int>(g_clipboard_text.size()));
+  } else {
+    resp.property = None;  // unsupported target
+  }
+
+  XSendEvent(req.display, req.requestor, False, 0,
+      reinterpret_cast<XEvent*>(&resp));
+  XFlush(req.display);
+}
+
+void SetClipboardText(const std::string &text) {
+  g_clipboard_text = text;
+  if (g_x_display && g_x_window) {
+    XSetSelectionOwner(g_x_display, ClipboardSelectionAtom(),
+        g_x_window, CurrentTime);
+    XFlush(g_x_display);
+  }
+}
+
+std::string GetClipboardText() {
+  if (!g_x_display || !g_x_window) {
+    return g_clipboard_text;
+  }
+  Atom clip = ClipboardSelectionAtom();
+  Window owner = XGetSelectionOwner(g_x_display, clip);
+  if (owner == None) {
+    return std::string();
+  }
+  if (owner == g_x_window) {
+    return g_clipboard_text;  // we own the selection
+  }
+
+  Atom prop = ClipboardRecvPropAtom();
+  XConvertSelection(g_x_display, clip, Utf8StringAtom(), prop,
+      g_x_window, CurrentTime);
+  XFlush(g_x_display);
+
+  // Wait (bounded to ~1s) for the owner to answer with SelectionNotify.
+  XEvent ev;
+  bool got = false;
+  for (int i = 0; i < 200; ++i) {
+    if (True == XCheckTypedWindowEvent(g_x_display, g_x_window,
+          SelectionNotify, &ev)) {
+      got = true;
+      break;
+    }
+    usleep(5000);
+  }
+  if (!got || ev.xselection.property == None) {
+    return std::string();
+  }
+
+  Atom actual_type = None;
+  int actual_format = 0;
+  unsigned long nitems = 0;
+  unsigned long bytes_after = 0;
+  unsigned char *data = nullptr;
+  // delete=True removes the property once read. INCR (huge transfers) is not
+  // supported; ordinary clipboard text fits in a single property.
+  if (Success != XGetWindowProperty(g_x_display, g_x_window, prop, 0, (~0L),
+        True, AnyPropertyType, &actual_type, &actual_format,
+        &nitems, &bytes_after, &data)) {
+    return std::string();
+  }
+  std::string result;
+  if (data) {
+    result.assign(reinterpret_cast<char*>(data), nitems);
+    XFree(data);
+  }
+  return result;
 }
 
 void PumpMessages() {
@@ -383,6 +546,10 @@ void PumpMessages() {
         arctic::OnMouseWheel(false);  // up
       } else if (ev.xbutton.button == Button5) {
         arctic::OnMouseWheel(true);  // down
+      } else if (ev.xbutton.button == 6) {
+        arctic::OnMouseHWheel(false);  // left
+      } else if (ev.xbutton.button == 7) {
+        arctic::OnMouseHWheel(true);   // right
       } else {
         arctic::KeyCode key_code = kKeyNone;
         bool is_down = false;
@@ -430,6 +597,17 @@ void PumpMessages() {
   if (True == XCheckTypedWindowEvent(
         g_x_display, g_x_window, DestroyNotify, &ev)) {
     exit(0);
+  }
+
+  // Serve clipboard contents to other clients while we own the selection.
+  while (True == XCheckTypedWindowEvent(
+        g_x_display, g_x_window, SelectionRequest, &ev)) {
+    HandleSelectionRequest(ev.xselectionrequest);
+  }
+  // Another client took over the clipboard; we simply stop serving it.
+  if (True == XCheckTypedWindowEvent(
+        g_x_display, g_x_window, SelectionClear, &ev)) {
+    // Ownership lost; g_clipboard_text is no longer authoritative.
   }
 
   return;

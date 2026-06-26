@@ -207,13 +207,15 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
   static bool was_shift = false;
   static bool was_control = false;
   static bool was_option = false;
-  //static bool was_command = false;
+  static bool was_command = false;
 
   bool is_caps_lock = (modifier_flags & NSEventModifierFlagCapsLock) != 0;
-  bool is_shift = (modifier_flags & NSEventModifierFlagShift) != 0;
-  bool is_control = (modifier_flags & NSEventModifierFlagControl) != 0;
-  bool is_option = (modifier_flags & NSEventModifierFlagOption) != 0;
-  //bool is_command = (modifier_flags & NSEventModifierFlagCommand);
+  bool is_shift     = (modifier_flags & NSEventModifierFlagShift)    != 0;
+  bool is_control   = (modifier_flags & NSEventModifierFlagControl)  != 0;
+  bool is_option    = (modifier_flags & NSEventModifierFlagOption)   != 0;
+  // On macOS the Command key plays the role of Ctrl for application shortcuts
+  // (Cmd+C / Cmd+V / Cmd+Z etc.), so we report it as kKeyControl.
+  bool is_command   = (modifier_flags & NSEventModifierFlagCommand)  != 0;
 
   if (is_caps_lock != was_caps_lock) {
     arctic::PushInputKey(arctic::kKeyCapsLock, is_caps_lock, "");
@@ -221,21 +223,21 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
   if (is_shift != was_shift) {
     arctic::PushInputKey(arctic::kKeyShift, is_shift, "");
   }
-  if (is_control != was_control) {
-    arctic::PushInputKey(arctic::kKeyControl, is_control, "");
+  // Fire kKeyControl when either physical Control or Command changes.
+  bool ctrl_or_cmd     = is_control || is_command;
+  bool was_ctrl_or_cmd = was_control || was_command;
+  if (ctrl_or_cmd != was_ctrl_or_cmd) {
+    arctic::PushInputKey(arctic::kKeyControl, ctrl_or_cmd, "");
   }
   if (is_option != was_option) {
     arctic::PushInputKey(arctic::kKeyAlt, is_option, "");
   }
-  //    if (is_command != was_command) {
-  //        PushInputKey(kKeyControl, is_command);
-  //    }
 
   was_caps_lock = is_caps_lock;
-  was_shift = is_shift;
-  was_control = is_control;
-  was_option = is_option;
-  //was_command = is_command;
+  was_shift     = is_shift;
+  was_control   = is_control;
+  was_option    = is_option;
+  was_command   = is_command;
 
 }
 
@@ -283,11 +285,14 @@ isScroll: (bool)is_scroll {
   if (is_scroll) {
     if (event.hasPreciseScrollingDeltas) {
       msg.mouse.wheel_delta = (arctic::Si32)[event scrollingDeltaY];
+      msg.mouse.wheel_delta_x = (arctic::Si32)[event scrollingDeltaX];
     } else {
       msg.mouse.wheel_delta = (arctic::Si32)[event deltaY];
+      msg.mouse.wheel_delta_x = (arctic::Si32)[event deltaX];
     }
   } else {
     msg.mouse.wheel_delta = 0;
+    msg.mouse.wheel_delta_x = 0;
   }
 
   PushInputMessage(msg);
@@ -295,6 +300,27 @@ isScroll: (bool)is_scroll {
 
 - (void)scrollWheel:(NSEvent *)event {
   [self mouseEvent: event key: arctic::kKeyNone state: 0 isScroll: true];
+}
+
+- (void)magnifyWithEvent:(NSEvent *)event {
+  NSRect loc_rect = [self convertRectToBacking:
+    NSMakeRect([event locationInWindow].x,
+        [event locationInWindow].y, 0, 0)];
+  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+  arctic::Vec2F pos(0.0f, 0.0f);
+  if (rect.size.width != 0 && rect.size.height != 0) {
+    pos = arctic::Vec2F((float)loc_rect.origin.x / (float)rect.size.width,
+        (float)loc_rect.origin.y / (float)rect.size.height);
+  }
+
+  arctic::InputMessage msg;
+  msg.kind = arctic::InputMessage::kMouse;
+  msg.keyboard.key = arctic::kKeyNone;
+  msg.keyboard.characters[0] = '\0';
+  msg.keyboard.key_state = 0;
+  msg.mouse.pos = pos;
+  msg.mouse.zoom_delta = (float)[event magnification];
+  PushInputMessage(msg);
 }
 
 - (void) mouseMoved: (NSEvent *)event {
@@ -1083,6 +1109,31 @@ std::string FindSystemFont(const char *font_name) {
     return std::string();
   }
   return std::string(path);
+}
+
+void SetClipboardText(const std::string &text) {
+  @autoreleasepool {
+    NSString *s = [[NSString alloc] initWithBytes:text.data()
+        length:text.size() encoding:NSUTF8StringEncoding];
+    if (!s) {
+      s = @"";
+    }
+    NSPasteboard *pb = [NSPasteboard generalPasteboard];
+    [pb clearContents];
+    [pb setString:s forType:NSPasteboardTypeString];
+  }
+}
+
+std::string GetClipboardText() {
+  @autoreleasepool {
+    NSPasteboard *pb = [NSPasteboard generalPasteboard];
+    NSString *s = [pb stringForType:NSPasteboardTypeString];
+    if (!s) {
+      return std::string();
+    }
+    const char *utf8 = [s UTF8String];
+    return utf8 ? std::string(utf8) : std::string();
+  }
 }
 
 std::string PrepareInitialPath() {
