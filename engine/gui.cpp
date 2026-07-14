@@ -559,6 +559,9 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         *in_out_is_applied = true;
       } else {
         state_ = kHovered;
+        if (out_gui_messages) {
+          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonHover);
+        }
         *in_out_is_applied = true;
       }
       if (message.keyboard.key == kKeyMouseLeft &&
@@ -574,6 +577,9 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     } else {
       if (is_current_tab_) {
         state_ = kHovered;
+        if (out_gui_messages) {
+          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonHover);
+        }
       } else {
         state_ = kNormal;
       }
@@ -623,6 +629,9 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               state_ = kNormal;
             } else {
               state_ = kHovered;
+              if (out_gui_messages) {
+                out_gui_messages->emplace_back(shared_from_this(), kGuiButtonHover);
+              }
             }
           }
         }

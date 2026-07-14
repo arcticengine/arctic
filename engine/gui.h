@@ -48,6 +48,7 @@ enum GuiMessageKind {
   kGuiButtonDown,
   kGuiScrollChange,
   kGuiPanelLeftDown,
+  kGuiButtonHover,
 };
 
 /// @brief Enumeration of text selection modes.
