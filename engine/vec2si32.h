@@ -156,6 +156,12 @@ inline Vec2Si32 operator-(Vec2Si32  const &a, Vec2Si32  const &b) {
 inline Vec2Si32 operator*(Vec2Si32  const &v, Si32 const &s) {
   return Vec2Si32(v.x * s, v.y * s);
 }
+inline Vec2Si32 operator*(Vec2Si32  const& v, float const& s) {
+  return Vec2Si32(Si32(v.x * s), Si32(v.y * s));
+}
+inline Vec2Si32 operator*(Vec2Si32  const& v, double const& s) {
+  return Vec2Si32(Si32(v.x * s), Si32(v.y * s));
+}
 inline Vec2Si32 operator*(Si32 const &s, Vec2Si32  const &v) {
   return Vec2Si32(s * v.x, s * v.y);
 }
@@ -164,6 +170,12 @@ inline Vec2Si32 operator*(Vec2Si32 const &a, Vec2Si32 const &b) {
 }
 inline Vec2Si32 operator/(Vec2Si32 const &v, Si32 const &s) {
   return Vec2Si32(v.x / s, v.y / s);
+}
+inline Vec2Si32 operator/(Vec2Si32 const& v, float const& s) {
+  return Vec2Si32(Si32(v.x / s), Si32(v.y / s));
+}
+inline Vec2Si32 operator/(Vec2Si32 const& v, double const& s) {
+  return Vec2Si32(Si32(v.x / s), Si32(v.y / s));
 }
 inline Vec2Si32 operator/(Si32 const &s, Vec2Si32  const &v) {
   return Vec2Si32(s / v.x, s / v.y);
