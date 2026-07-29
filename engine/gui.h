@@ -54,7 +54,11 @@ enum GuiMessageKind {
 /// @brief Enumeration of text selection modes.
 enum TextSelectionMode {
   kTextSelectionModeInvert,
-  kTextSelectionModeSwapColors
+  kTextSelectionModeSwapColors,
+  /// Alpha-blends selection_color_1 over the pixels under the selection,
+  /// producing a translucent highlight rectangle behind the text (the
+  /// selection color's alpha channel controls the strength).
+  kTextSelectionModeBlend
 };
 
 /// @brief Enumeration of anchor types for GUI elements.
@@ -691,6 +695,105 @@ class Editbox: public Panel {
   std::unordered_set<Ui32> allow_list_;
   std::shared_ptr<GuiTheme> theme_;
 
+  // Multiline support (single-line by default, like WinForms TextBox.Multiline).
+  bool is_multiline_ = false;
+  // Wraps overlong multiline text at word / hyphen boundaries when set.
+  bool word_wrap_ = false;
+  // When false, Enter is left to the host even in multiline mode (the same idea
+  // as TextBox.AcceptsReturn in Windows Forms).
+  bool accepts_return_ = true;
+  // Vertical step between multiline rows; 0 means the font's own line height.
+  Si32 line_spacing_ = 0;
+  // Inset of multiline text from the box edges, in pixels.
+  Si32 multiline_padding_ = 2;
+  Si32 first_visible_line_ = 0;
+  // Maximum number of bytes allowed in the text (0 = unlimited).
+  Si32 max_length_ = 0;
+  // True while the left mouse button drags a selection inside the box.
+  bool is_dragging_ = false;
+  // Time the caret last moved or the text last changed. The caret stays lit
+  // instead of blinking for a short while after that, so it stays readable
+  // while typing or walking through the text.
+  double caret_touch_time_ = 0.0;
+
+  // Coalescing groups for the local undo/redo history.
+  enum EditGroup {
+    kEditGroupNone = 0,
+    kEditGroupType = 1,
+    kEditGroupDelete = 2,
+    kEditGroupDiscrete = 3
+  };
+  // A single point in the editbox text history.
+  struct EditSnapshot {
+    std::string text;
+    Si32 cursor = 0;
+    Si32 sel_begin = 0;
+    Si32 sel_end = 0;
+  };
+  std::vector<EditSnapshot> undo_;
+  std::vector<EditSnapshot> redo_;
+  Si32 edit_group_ = kEditGroupNone;
+
+  // Pushes the current text state onto the undo stack before a mutation.
+  // Consecutive edits sharing a non-discrete group collapse into one step.
+  void SnapshotBefore(Si32 group);
+  // Restores the previous / next text state from the undo / redo stack.
+  void Undo();
+  void Redo();
+  // Moves the caret to a byte offset, extending the selection when shift is
+  // held or collapsing it otherwise. Keeps the engine selection invariant.
+  void MoveCursorTo(Si32 target, bool shift);
+  // A single visual line of multiline text. `text` is what gets drawn and never
+  // contains the '\n'. [start, end) is the source byte range the line owns, so
+  // end is where the next visual line begins: the ranges are contiguous and
+  // every caret offset maps to exactly one line.
+  struct VisualLine {
+    std::string text;
+    Si32 start = 0;
+    Si32 end = 0;
+  };
+  // Splits text_ into visual lines, always breaking at '\n' and additionally at
+  // word / hyphen boundaries when word_wrap_ is on.
+  std::vector<VisualLine> WrapVisualLines();
+  // Vertical step between two multiline rows.
+  Si32 LineStep() const;
+  // Index of the visual line owning the caret offset pos. At a line boundary
+  // the later line wins, so a caret right after a break reads as the next line.
+  static Si32 VisualLineIndex(const std::vector<VisualLine> &lines, Si32 pos);
+  // Pixel width of the first `bytes` bytes of `line`. Keeps the advance of
+  // trailing spaces, so the caret stays put after a trailing space instead of
+  // snapping back onto the last visible glyph.
+  Si32 PrefixWidth(const std::string &line, Si32 bytes);
+  // Largest caret offset that still renders on visual line li. A soft-wrapped
+  // line ends where the next one starts, so the offset past its trailing space
+  // would draw a line lower; this stops before that space instead.
+  Si32 VisualLineCaretLimit(const std::vector<VisualLine> &lines, Si32 li) const;
+  // Width available for text inside the box in multiline mode.
+  Si32 MultilineInnerWidth() const;
+  // Byte offset of the start / end of the visual line containing pos.
+  Si32 LineStart(Si32 pos);
+  Si32 LineEnd(Si32 pos);
+  // Byte offset of the previous / next word boundary from pos (Ctrl+Left/Right).
+  Si32 PrevWordPos(Si32 pos) const;
+  Si32 NextWordPos(Si32 pos) const;
+  // Moves the caret one line up (dir=-1) or down (dir=+1) in multiline mode.
+  void MoveCursorVertical(Si32 dir, bool shift);
+  // Maps a point relative to the box (y-up, 0 at bottom-left) to a caret byte
+  // offset, honoring horizontal scroll (single line) or line layout (multiline).
+  Si32 CaretFromPoint(Vec2Si32 relative_pos);
+  // Draws the text, caret and selection in multiline mode. pos is the absolute
+  // bottom-left corner of the box.
+  void DrawMultiline(Vec2Si32 pos);
+  // Restarts the "caret is solid" cooldown; call it whenever the caret moves.
+  void TouchCaret();
+  // True when the caret should be drawn: solid during the cooldown after it
+  // last moved, blinking afterwards.
+  bool IsCaretVisible() const;
+  // Deletes the current selection (if any) and collapses the caret to its start.
+  void EraseSelection();
+  // Applies is_digits_ / allow_list_ filters to a string in place.
+  void FilterAllowedInPlace(std::string *s) const;
+
  public:
   /// @brief Constructor for Editbox panel.
   /// @param tag Unique tag for the panel.
@@ -748,6 +851,21 @@ class Editbox: public Panel {
   /// @param pos Byte offset in the text string. Clamped to [0, text.length()].
   void SetCursorPos(Si32 pos);
 
+  /// @brief Gets the cursor position as a byte offset in the text.
+  Si32 GetCursorPos() const;
+
+  /// @brief Gets the first byte offset of the selection (== end when empty).
+  Si32 GetSelectionBegin() const;
+
+  /// @brief Gets the byte offset just past the selection (== begin when empty).
+  Si32 GetSelectionEnd() const;
+
+  /// @brief Selects the range between two byte offsets, in any order.
+  /// Does not move the caret; call SetCursorPos to place it on either edge.
+  /// @param begin One edge of the selection.
+  /// @param end The other edge of the selection.
+  void SetSelection(Si32 begin, Si32 end);
+
   /// @brief Sets the text selection mode of the edit box panel.
   /// @param selection_mode Text selection mode.
   /// @param selection_color_1 First color for text selection.
@@ -763,6 +881,48 @@ class Editbox: public Panel {
   /// @brief Sets the flag indicating if the edit box only accepts digits.
   /// @param is_digits Flag indicating if the edit box only accepts digits.
   void SetIsDigits(bool is_digits);
+
+  /// @brief Enables or disables multiline editing (like TextBox.Multiline).
+  /// In multiline mode Enter inserts a newline, Up/Down move between lines,
+  /// Home/End act on the current line and the view scrolls vertically.
+  /// @param is_multiline True to allow multiple lines, false for single line.
+  void SetMultiline(bool is_multiline);
+
+  /// @brief Returns true when the edit box is in multiline mode.
+  bool IsMultiline() const;
+
+  /// @brief Enables or disables word wrapping of overlong multiline text.
+  /// With wrapping on, a line too wide for the box continues on the next visual
+  /// line, breaking after a space or hyphen; the caret, selection, Up/Down and
+  /// Home/End all follow the visual lines. Only meaningful in multiline mode.
+  /// @param word_wrap True to wrap long lines, false to let them overflow.
+  void SetWordWrap(bool word_wrap);
+
+  /// @brief Returns true when word wrapping is enabled.
+  bool IsWordWrap() const;
+
+  /// @brief Chooses who handles Enter in multiline mode (default: the widget).
+  /// With false, Enter never inserts a newline and the host can use it to
+  /// accept the edit, like TextBox.AcceptsReturn = false in Windows Forms.
+  /// @param accepts_return True to insert a newline, false to leave Enter alone.
+  void SetAcceptsReturn(bool accepts_return);
+
+  /// @brief Returns true when Enter inserts a newline in multiline mode.
+  bool AcceptsReturn() const;
+
+  /// @brief Sets the vertical step between multiline rows.
+  /// Use it to match the line spacing of surrounding text drawn by the host,
+  /// so switching a field between display and editing does not shift the text.
+  /// @param line_spacing Step in pixels, or 0 to use the font's line height.
+  void SetLineSpacing(Si32 line_spacing);
+
+  /// @brief Sets the inset of multiline text from the box edges (default 2).
+  /// @param padding Inset in pixels, applied on all four sides.
+  void SetMultilinePadding(Si32 padding);
+
+  /// @brief Sets the maximum text length in bytes (0 = unlimited).
+  /// @param max_length Maximum number of bytes allowed in the text.
+  void SetMaxLength(Si32 max_length);
 };
 
 /// @brief Class representing a scrollbar panel.

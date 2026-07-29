@@ -848,6 +848,20 @@ void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2,
         }
       }
       break;
+    case kTextSelectionModeBlend: {
+      Si32 a = c1.a;
+      Si32 inv = 255 - a;
+      for (Si32 y = y1; y < y2; ++y) {
+        Rgba *p = backbuffer.RgbaData() + backbuffer.StridePixels() * y;
+        for (Si32 x = x1; x < x2; ++x) {
+          Rgba &c = p[x];
+          c.r = (Ui8)((c1.r * a + c.r * inv) / 255);
+          c.g = (Ui8)((c1.g * a + c.g * inv) / 255);
+          c.b = (Ui8)((c1.b * a + c.b * inv) / 255);
+        }
+      }
+      break;
+    }
   }
 }
 
@@ -1088,6 +1102,12 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
                          std::shared_ptr<Panel> *out_current_tab) {
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
                     out_gui_messages, out_current_tab);
+  // Remembered so that any caret / text / selection change made below can
+  // restart the "caret is solid" cooldown from a single place.
+  const Si32 cursor_was = cursor_pos_;
+  const Si32 selection_begin_was = selection_begin_;
+  const Si32 selection_end_was = selection_end_;
+  const size_t length_was = text_.length();
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
@@ -1097,6 +1117,24 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       *out_current_tab = shared_from_this();
       is_current_tab_ = true;
       *in_out_is_applied = true;
+      // Left-button press positions the caret and starts a drag selection.
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1 && font_.FontInstance()) {
+        Si32 caret = CaretFromPoint(relative_pos);
+        MoveCursorTo(caret, message.keyboard.state[kKeyShift] != 0);
+        is_dragging_ = true;
+        edit_group_ = kEditGroupNone;
+      }
+    }
+    // While the button stays down, extend the selection to the pointer.
+    if (is_dragging_ && font_.FontInstance()) {
+      if (message.keyboard.state[kKeyMouseLeft] == 1) {
+        Si32 caret = CaretFromPoint(relative_pos);
+        MoveCursorTo(caret, true);
+        *in_out_is_applied = true;
+      } else {
+        is_dragging_ = false;
+      }
     }
   }
   if (!*in_out_is_applied && is_current_tab_) {
@@ -1109,15 +1147,89 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       }
       if (message.keyboard.key_state == 1) {
         Ui32 key = message.keyboard.key;
-        if (key == kKeyBackspace) {
+        bool ctrl = message.keyboard.state[kKeyControl] != 0;
+        bool shift = message.keyboard.state[kKeyShift] != 0;
+        if (ctrl && key == kKeyZ && !shift) {
+          *in_out_is_applied = true;
+          Undo();
+        } else if (ctrl && (key == kKeyY || (key == kKeyZ && shift))) {
+          *in_out_is_applied = true;
+          Redo();
+        } else if (ctrl && key == kKeyA) {
+          *in_out_is_applied = true;
+          selection_begin_ = 0;
+          selection_end_ = (Si32)text_.length();
+          cursor_pos_ = (Si32)text_.length();
+          edit_group_ = kEditGroupNone;
+        } else if (ctrl && key == kKeyC) {
+          *in_out_is_applied = true;
+          if (selection_begin_ != selection_end_) {
+            SetClipboardText(text_.substr(
+                static_cast<size_t>(selection_begin_),
+                static_cast<size_t>(selection_end_ - selection_begin_)));
+          }
+          edit_group_ = kEditGroupNone;
+        } else if (ctrl && key == kKeyX) {
+          *in_out_is_applied = true;
+          if (selection_begin_ != selection_end_) {
+            SetClipboardText(text_.substr(
+                static_cast<size_t>(selection_begin_),
+                static_cast<size_t>(selection_end_ - selection_begin_)));
+            SnapshotBefore(kEditGroupDiscrete);
+            EraseSelection();
+          }
+        } else if (ctrl && key == kKeyV) {
+          *in_out_is_applied = true;
+          std::string paste = GetClipboardText();
+          std::string norm;
+          norm.reserve(paste.size());
+          for (size_t i = 0; i < paste.size(); ++i) {
+            char c = paste[i];
+            if (c == '\r' || c == '\n') {
+              // A field that does not take newlines from the keyboard should not
+              // take them from the clipboard either: turn them into spaces so
+              // that words are not glued together.
+              if (is_multiline_ && accepts_return_) {
+                norm += '\n';
+              } else {
+                norm += ' ';
+              }
+              if (c == '\r' && i + 1 < paste.size() && paste[i + 1] == '\n') {
+                ++i;
+              }
+            } else {
+              norm += c;
+            }
+          }
+          paste.swap(norm);
+          FilterAllowedInPlace(&paste);
+          if (max_length_ > 0) {
+            Si32 room = max_length_ - ((Si32)text_.length() -
+                (selection_end_ - selection_begin_));
+            if (room < 0) {
+              room = 0;
+            }
+            if ((Si32)paste.length() > room) {
+              paste.resize(static_cast<size_t>(room));
+            }
+          }
+          if (!paste.empty()) {
+            SnapshotBefore(kEditGroupDiscrete);
+            if (selection_begin_ != selection_end_) {
+              EraseSelection();
+            }
+            text_.insert(static_cast<size_t>(cursor_pos_), paste);
+            cursor_pos_ += (Si32)paste.length();
+          }
+          edit_group_ = kEditGroupNone;
+        } else if (key == kKeyBackspace) {
           *in_out_is_applied = true;
           if (text_.length()) {
             if (selection_begin_ != selection_end_) {
-              text_.erase(static_cast<size_t>(selection_begin_),
-                          static_cast<size_t>(selection_end_ - selection_begin_));
-              selection_end_ = selection_begin_;
-              cursor_pos_ = selection_begin_;
+              SnapshotBefore(kEditGroupDelete);
+              EraseSelection();
             } else if (cursor_pos_) {
+              SnapshotBefore(kEditGroupDelete);
               Si32 prev = Utf8PrevCharPos(text_, cursor_pos_);
               text_.erase(static_cast<size_t>(prev),
                 static_cast<size_t>(cursor_pos_ - prev));
@@ -1128,11 +1240,10 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           *in_out_is_applied = true;
           if (text_.length()) {
             if (selection_begin_ != selection_end_) {
-              text_.erase(static_cast<size_t>(selection_begin_),
-                          static_cast<size_t>(selection_end_ - selection_begin_));
-              selection_end_ = selection_begin_;
-              cursor_pos_ = selection_begin_;
+              SnapshotBefore(kEditGroupDelete);
+              EraseSelection();
             } else if (cursor_pos_ >= 0 && cursor_pos_ < (Si32)text_.length()) {
+              SnapshotBefore(kEditGroupDelete);
               Si32 next = Utf8NextCharPos(text_, cursor_pos_);
               text_.erase(static_cast<size_t>(cursor_pos_),
                 static_cast<size_t>(next - cursor_pos_));
@@ -1140,7 +1251,10 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           }
         } else if (key == kKeyLeft) {
           *in_out_is_applied = true;
-          if (message.keyboard.state[kKeyShift]) {
+          edit_group_ = kEditGroupNone;
+          if (ctrl) {
+            MoveCursorTo(PrevWordPos(cursor_pos_), shift);
+          } else if (message.keyboard.state[kKeyShift]) {
             if (cursor_pos_) {
               Si32 prev = Utf8PrevCharPos(text_, cursor_pos_);
               if (selection_begin_ == selection_end_) {
@@ -1164,7 +1278,10 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           }
         } else if (key == kKeyRight) {
           *in_out_is_applied = true;
-          if (message.keyboard.state[kKeyShift]) {
+          edit_group_ = kEditGroupNone;
+          if (ctrl) {
+            MoveCursorTo(NextWordPos(cursor_pos_), shift);
+          } else if (message.keyboard.state[kKeyShift]) {
             if (cursor_pos_ < (Si32)text_.length()) {
               Si32 next = Utf8NextCharPos(text_, cursor_pos_);
               if (selection_begin_ == selection_end_) {
@@ -1186,12 +1303,42 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               selection_end_ = cursor_pos_;
             }
           }
+        } else if (key == kKeyHome) {
+          *in_out_is_applied = true;
+          edit_group_ = kEditGroupNone;
+          Si32 target = is_multiline_ ? LineStart(cursor_pos_) : 0;
+          MoveCursorTo(target, shift);
+        } else if (key == kKeyEnd) {
+          *in_out_is_applied = true;
+          edit_group_ = kEditGroupNone;
+          Si32 target = is_multiline_ ?
+            LineEnd(cursor_pos_) : (Si32)text_.length();
+          MoveCursorTo(target, shift);
+        } else if (key == kKeyUp || key == kKeyDown) {
+          if (is_multiline_) {
+            *in_out_is_applied = true;
+            edit_group_ = kEditGroupNone;
+            MoveCursorVertical(key == kKeyUp ? -1 : 1, shift);
+          }
         } else if (key == kKeyEnter) {
-          // skip
-        } else if (is_digits_ ? ((key >= kKey0 && key <= kKey9) ||
+          if (is_multiline_ && accepts_return_ && !ctrl) {
+            *in_out_is_applied = true;
+            if (max_length_ <= 0 || (Si32)text_.length() -
+                (selection_end_ - selection_begin_) < max_length_) {
+              SnapshotBefore(kEditGroupDiscrete);
+              if (selection_begin_ != selection_end_) {
+                EraseSelection();
+              }
+              text_.insert(static_cast<size_t>(cursor_pos_), "\n");
+              cursor_pos_ += 1;
+              selection_begin_ = cursor_pos_;
+              selection_end_ = cursor_pos_;
+            }
+          }
+          // Single line, or AcceptsReturn off: Enter is left to the host.
+        } else if (!ctrl && (is_digits_ ? ((key >= kKey0 && key <= kKey9) ||
             (message.keyboard.characters[0] >= '0' &&
-             message.keyboard.characters[0] <= '9')) : true) {
-          // (key >= kKeySpace && key <= kKeyGraveAccent)) {
+             message.keyboard.characters[0] <= '9')) : true)) {
           *in_out_is_applied = true;
           if (!message.keyboard.characters[0]) {
             if (key >= kKeyA && key <= kKeyZ) {
@@ -1199,12 +1346,6 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
                 key = key - kKeyA + Ui32('a');
               }
             }
-          }
-          if (selection_begin_ != selection_end_) {
-            text_.erase(static_cast<size_t>(selection_begin_),
-                        static_cast<size_t>(selection_end_ - selection_begin_));
-            cursor_pos_ = selection_begin_;
-            selection_end_ = selection_begin_;
           }
           if (message.keyboard.characters[0]) {
             bool do_insert = true;
@@ -1218,15 +1359,24 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
                 do_insert = false;
               }
             }
+            Si32 add_len =
+              static_cast<Si32>(strlen(message.keyboard.characters));
+            if (do_insert && max_length_ > 0) {
+              Si32 cur_len = (Si32)text_.length() -
+                (selection_end_ - selection_begin_);
+              if (cur_len + add_len > max_length_) {
+                do_insert = false;
+              }
+            }
             if (do_insert) {
+              SnapshotBefore(kEditGroupType);
+              if (selection_begin_ != selection_end_) {
+                EraseSelection();
+              }
               text_.insert(static_cast<size_t>(cursor_pos_),
                            message.keyboard.characters);
-              cursor_pos_ += static_cast<Si32>(strlen(
-                                                      message.keyboard.characters));
+              cursor_pos_ += add_len;
             }
-          } else {
-            // text_.insert(cursor_pos_, 1, static_cast<char>(key));
-            // cursor_pos_++;
           }
         }
       }
@@ -1236,6 +1386,11 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   selection_begin_ = std::min(std::max(0, selection_begin_),
                               (Si32)text_.length());
   selection_end_ = std::min(std::max(0, selection_end_), (Si32)text_.length());
+  if (cursor_pos_ != cursor_was || text_.length() != length_was ||
+      selection_begin_ != selection_begin_was ||
+      selection_end_ != selection_end_was) {
+    TouchCaret();
+  }
 }
 
 void Editbox::SetText(std::string text) {
@@ -1243,7 +1398,519 @@ void Editbox::SetText(std::string text) {
   selection_begin_ = 0;
   selection_end_ = 0;
   display_pos_ = 0;
+  first_visible_line_ = 0;
   text_ = text;
+  // A programmatic text change starts a fresh edit history.
+  undo_.clear();
+  redo_.clear();
+  edit_group_ = kEditGroupNone;
+  TouchCaret();
+}
+
+void Editbox::SetMultiline(bool is_multiline) {
+  is_multiline_ = is_multiline;
+}
+
+bool Editbox::IsMultiline() const {
+  return is_multiline_;
+}
+
+void Editbox::SetWordWrap(bool word_wrap) {
+  word_wrap_ = word_wrap;
+}
+
+bool Editbox::IsWordWrap() const {
+  return word_wrap_;
+}
+
+void Editbox::SetAcceptsReturn(bool accepts_return) {
+  accepts_return_ = accepts_return;
+}
+
+bool Editbox::AcceptsReturn() const {
+  return accepts_return_;
+}
+
+void Editbox::SetLineSpacing(Si32 line_spacing) {
+  line_spacing_ = std::max(0, line_spacing);
+}
+
+void Editbox::SetMultilinePadding(Si32 padding) {
+  multiline_padding_ = std::max(0, padding);
+}
+
+Si32 Editbox::LineStep() const {
+  if (line_spacing_ > 0) {
+    return line_spacing_;
+  }
+  if (!font_.FontInstance()) {
+    return 1;
+  }
+  return std::max(1, font_.FontInstance()->line_height_);
+}
+
+void Editbox::SetMaxLength(Si32 max_length) {
+  max_length_ = std::max(0, max_length);
+}
+
+// Seconds the caret stays solid after it moves, before it resumes blinking.
+static const double kEditboxCaretSolidSeconds = 0.6;
+
+void Editbox::TouchCaret() {
+  caret_touch_time_ = Time();
+}
+
+bool Editbox::IsCaretVisible() const {
+  double now = Time();
+  if (now - caret_touch_time_ < kEditboxCaretSolidSeconds) {
+    return true;
+  }
+  return fmod(now, 0.6) < 0.3;
+}
+
+void Editbox::EraseSelection() {
+  if (selection_begin_ == selection_end_) {
+    return;
+  }
+  text_.erase(static_cast<size_t>(selection_begin_),
+              static_cast<size_t>(selection_end_ - selection_begin_));
+  cursor_pos_ = selection_begin_;
+  selection_end_ = selection_begin_;
+}
+
+void Editbox::FilterAllowedInPlace(std::string *s) const {
+  if (is_digits_) {
+    std::string out;
+    for (char c : *s) {
+      if (c >= '0' && c <= '9') {
+        out += c;
+      }
+    }
+    *s = out;
+    return;
+  }
+  if (!allow_list_.empty()) {
+    std::string out;
+    Si32 i = 0;
+    Si32 n = (Si32)s->size();
+    while (i < n) {
+      Si32 nxt = Utf8NextCharPos(*s, i);
+      std::string ch = s->substr(static_cast<size_t>(i),
+                                 static_cast<size_t>(nxt - i));
+      Utf32Reader reader;
+      reader.Reset(reinterpret_cast<const Ui8*>(ch.c_str()));
+      Ui32 cp = reader.ReadOne();
+      if (allow_list_.find(cp) != allow_list_.end()) {
+        out += ch;
+      }
+      i = nxt;
+    }
+    *s = out;
+  }
+}
+
+void Editbox::SnapshotBefore(Si32 group) {
+  if (group != kEditGroupDiscrete && group == edit_group_) {
+    return;
+  }
+  EditSnapshot snap;
+  snap.text = text_;
+  snap.cursor = cursor_pos_;
+  snap.sel_begin = selection_begin_;
+  snap.sel_end = selection_end_;
+  undo_.push_back(snap);
+  const size_t kMaxSteps = 128;
+  if (undo_.size() > kMaxSteps) {
+    undo_.erase(undo_.begin());
+  }
+  redo_.clear();
+  edit_group_ = (group == kEditGroupDiscrete) ? kEditGroupNone : group;
+}
+
+void Editbox::Undo() {
+  if (undo_.empty()) {
+    return;
+  }
+  EditSnapshot cur;
+  cur.text = text_;
+  cur.cursor = cursor_pos_;
+  cur.sel_begin = selection_begin_;
+  cur.sel_end = selection_end_;
+  redo_.push_back(cur);
+  EditSnapshot snap = undo_.back();
+  undo_.pop_back();
+  text_ = snap.text;
+  cursor_pos_ = std::min(std::max(0, snap.cursor), (Si32)text_.length());
+  selection_begin_ = std::min(std::max(0, snap.sel_begin),
+                              (Si32)text_.length());
+  selection_end_ = std::min(std::max(0, snap.sel_end), (Si32)text_.length());
+  edit_group_ = kEditGroupNone;
+}
+
+void Editbox::Redo() {
+  if (redo_.empty()) {
+    return;
+  }
+  EditSnapshot cur;
+  cur.text = text_;
+  cur.cursor = cursor_pos_;
+  cur.sel_begin = selection_begin_;
+  cur.sel_end = selection_end_;
+  undo_.push_back(cur);
+  EditSnapshot snap = redo_.back();
+  redo_.pop_back();
+  text_ = snap.text;
+  cursor_pos_ = std::min(std::max(0, snap.cursor), (Si32)text_.length());
+  selection_begin_ = std::min(std::max(0, snap.sel_begin),
+                              (Si32)text_.length());
+  selection_end_ = std::min(std::max(0, snap.sel_end), (Si32)text_.length());
+  edit_group_ = kEditGroupNone;
+}
+
+void Editbox::MoveCursorTo(Si32 target, bool shift) {
+  target = std::min(std::max(0, target), (Si32)text_.length());
+  if (shift) {
+    Si32 anchor;
+    if (selection_begin_ == selection_end_) {
+      anchor = cursor_pos_;
+    } else if (cursor_pos_ == selection_end_) {
+      anchor = selection_begin_;
+    } else {
+      anchor = selection_end_;
+    }
+    cursor_pos_ = target;
+    selection_begin_ = std::min(anchor, target);
+    selection_end_ = std::max(anchor, target);
+  } else {
+    cursor_pos_ = target;
+    selection_begin_ = target;
+    selection_end_ = target;
+  }
+}
+
+Si32 Editbox::MultilineInnerWidth() const {
+  return std::max(1, size_.x - multiline_padding_ * 2);
+}
+
+Si32 Editbox::PrefixWidth(const std::string &line, Si32 bytes) {
+  if (bytes <= 0) {
+    return 0;
+  }
+  if (bytes >= (Si32)line.size()) {
+    return font_.EvaluateSize(line.c_str(), true).x;
+  }
+  return font_.EvaluateSize(
+      line.substr(0, static_cast<size_t>(bytes)).c_str(), true).x;
+}
+
+std::vector<Editbox::VisualLine> Editbox::WrapVisualLines() {
+  std::vector<VisualLine> lines;
+  const Si32 n = (Si32)text_.length();
+  if (n == 0) {
+    lines.push_back(VisualLine());
+    return lines;
+  }
+  const Si32 max_width = word_wrap_ ? MultilineInnerWidth() : 0;
+
+  // Split the text into segments that each carry their trailing hyphen or
+  // whitespace run, so breaking between two segments loses no bytes. A '\n' is
+  // a segment of its own and always forces a break.
+  std::vector<std::pair<Si32, Si32>> segs;
+  std::vector<bool> seg_hard_break;
+  Si32 i = 0;
+  while (i < n) {
+    if (text_[static_cast<size_t>(i)] == '\n') {
+      segs.push_back(std::make_pair(i, i + 1));
+      seg_hard_break.push_back(true);
+      ++i;
+      continue;
+    }
+    Si32 seg_start = i;
+    while (i < n && text_[static_cast<size_t>(i)] != '-'
+           && text_[static_cast<size_t>(i)] != ' '
+           && text_[static_cast<size_t>(i)] != '\t'
+           && text_[static_cast<size_t>(i)] != '\n') {
+      ++i;
+    }
+    if (i < n && text_[static_cast<size_t>(i)] == '-') {
+      ++i;  // keep the hyphen at the end of the segment
+    } else {
+      while (i < n && (text_[static_cast<size_t>(i)] == ' '
+                       || text_[static_cast<size_t>(i)] == '\t')) {
+        ++i;
+      }
+    }
+    segs.push_back(std::make_pair(seg_start, i));
+    seg_hard_break.push_back(false);
+  }
+
+  Si32 line_start = 0;
+  std::string buf;
+  for (size_t si = 0; si < segs.size(); ++si) {
+    if (seg_hard_break[si]) {
+      VisualLine ln;
+      ln.text = buf;
+      ln.start = line_start;
+      // The '\n' byte belongs to this line's range but not to its text, so a
+      // caret right after the newline maps to the start of the next line.
+      ln.end = segs[si].second;
+      lines.push_back(ln);
+      line_start = segs[si].second;
+      buf.clear();
+      continue;
+    }
+    std::string seg_text = text_.substr(
+        static_cast<size_t>(segs[si].first),
+        static_cast<size_t>(segs[si].second - segs[si].first));
+    std::string candidate = buf + seg_text;
+    if (!buf.empty() && max_width > 0 &&
+        font_.EvaluateSize(candidate.c_str(), false).x > max_width) {
+      VisualLine ln;
+      ln.text = buf;
+      ln.start = line_start;
+      ln.end = segs[si].first;
+      lines.push_back(ln);
+      line_start = segs[si].first;
+      buf = seg_text;
+    } else {
+      buf = candidate;
+    }
+  }
+  VisualLine last;
+  last.text = buf;
+  last.start = line_start;
+  last.end = n;
+  lines.push_back(last);
+  return lines;
+}
+
+Si32 Editbox::VisualLineIndex(const std::vector<VisualLine> &lines, Si32 pos) {
+  for (size_t i = 0; i + 1 < lines.size(); ++i) {
+    if (pos < lines[i].end) {
+      return (Si32)i;
+    }
+  }
+  return (Si32)lines.size() - 1;
+}
+
+Si32 Editbox::VisualLineCaretLimit(const std::vector<VisualLine> &lines,
+                                   Si32 li) const {
+  const VisualLine &ln = lines[static_cast<size_t>(li)];
+  Si32 end = ln.start + (Si32)ln.text.size();
+  if (li + 1 < (Si32)lines.size() && ln.end == end) {
+    while (end > ln.start) {
+      char c = text_[static_cast<size_t>(end - 1)];
+      if (c != ' ' && c != '\t') {
+        break;
+      }
+      --end;
+    }
+  }
+  return end;
+}
+
+Si32 Editbox::LineStart(Si32 pos) {
+  std::vector<VisualLine> lines = WrapVisualLines();
+  Si32 li = VisualLineIndex(lines, std::min(std::max(0, pos),
+                                            (Si32)text_.length()));
+  return lines[static_cast<size_t>(li)].start;
+}
+
+Si32 Editbox::LineEnd(Si32 pos) {
+  std::vector<VisualLine> lines = WrapVisualLines();
+  Si32 li = VisualLineIndex(lines, std::min(std::max(0, pos),
+                                            (Si32)text_.length()));
+  return VisualLineCaretLimit(lines, li);
+}
+
+Si32 Editbox::PrevWordPos(Si32 pos) const {
+  Si32 i = std::min(std::max(0, pos), (Si32)text_.length());
+  auto is_space = [](char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+  };
+  while (i > 0 && is_space(text_[static_cast<size_t>(i - 1)])) {
+    --i;
+  }
+  while (i > 0 && !is_space(text_[static_cast<size_t>(i - 1)])) {
+    --i;
+  }
+  return i;
+}
+
+Si32 Editbox::NextWordPos(Si32 pos) const {
+  Si32 n = (Si32)text_.length();
+  Si32 i = std::min(std::max(0, pos), n);
+  auto is_space = [](char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+  };
+  while (i < n && !is_space(text_[static_cast<size_t>(i)])) {
+    ++i;
+  }
+  while (i < n && is_space(text_[static_cast<size_t>(i)])) {
+    ++i;
+  }
+  return i;
+}
+
+void Editbox::MoveCursorVertical(Si32 dir, bool shift) {
+  if (!font_.FontInstance()) {
+    return;
+  }
+  std::vector<VisualLine> lines = WrapVisualLines();
+  Si32 cur_line = VisualLineIndex(lines, cursor_pos_);
+  Si32 target_line = cur_line + dir;
+  if (target_line < 0 || target_line >= (Si32)lines.size()) {
+    return;  // already on the first / last visual line
+  }
+  const VisualLine &cl = lines[static_cast<size_t>(cur_line)];
+  Si32 byte_in_line = std::min(cursor_pos_ - cl.start, (Si32)cl.text.size());
+  Si32 target_x = PrefixWidth(cl.text, byte_in_line);
+
+  // Walk the target line and keep the offset whose left edge is closest to the
+  // caret's current pixel column.
+  const VisualLine &tl = lines[static_cast<size_t>(target_line)];
+  Si32 best = 0;
+  Si32 best_dist = std::abs(target_x);
+  Si32 i = 0;
+  while (i < (Si32)tl.text.size()) {
+    Si32 nxt = Utf8NextCharPos(tl.text, i);
+    Si32 px = PrefixWidth(tl.text, nxt);
+    Si32 dist = std::abs(target_x - px);
+    if (dist < best_dist) {
+      best_dist = dist;
+      best = nxt;
+    }
+    i = nxt;
+  }
+  MoveCursorTo(std::min(tl.start + best,
+                        VisualLineCaretLimit(lines, target_line)), shift);
+}
+
+Si32 Editbox::CaretFromPoint(Vec2Si32 relative_pos) {
+  if (!font_.FontInstance()) {
+    return cursor_pos_;
+  }
+  if (is_multiline_) {
+    Si32 line_step = LineStep();
+    Si32 pad = multiline_padding_;
+    // Lines are stacked from the top; line 0 shown is first_visible_line_.
+    Si32 from_top = (size_.y - pad) - relative_pos.y;
+    Si32 line_offset = from_top / line_step;
+    if (line_offset < 0) {
+      line_offset = 0;
+    }
+    std::vector<VisualLine> lines = WrapVisualLines();
+    Si32 target_line = first_visible_line_ + line_offset;
+    if (target_line >= (Si32)lines.size()) {
+      target_line = (Si32)lines.size() - 1;
+    }
+    const VisualLine &ln = lines[static_cast<size_t>(target_line)];
+    Si32 want_x = relative_pos.x - pad;
+    Si32 best = 0;
+    Si32 best_dist = std::abs(want_x);
+    Si32 i = 0;
+    while (i < (Si32)ln.text.size()) {
+      Si32 nxt = Utf8NextCharPos(ln.text, i);
+      Si32 px = PrefixWidth(ln.text, nxt);
+      Si32 dist = std::abs(want_x - px);
+      if (dist < best_dist) {
+        best_dist = dist;
+        best = nxt;
+      }
+      i = nxt;
+    }
+    return std::min(ln.start + best,
+                    VisualLineCaretLimit(lines, target_line));
+  }
+  // Single line: the character at display_pos_ is drawn at the left border.
+  Si32 border = std::max(0,
+      (normal_.Height() - font_.FontInstance()->line_height_) / 2);
+  Si32 want_x = relative_pos.x - border;
+  Si32 best = display_pos_;
+  Si32 best_dist = std::abs(want_x);
+  Si32 i = display_pos_;
+  while (i < (Si32)text_.length()) {
+    Si32 nxt = Utf8NextCharPos(text_, i);
+    std::string part = text_.substr(static_cast<size_t>(display_pos_),
+                                    static_cast<size_t>(nxt - display_pos_));
+    Si32 px = font_.EvaluateSize(part.c_str(), false).x;
+    Si32 dist = std::abs(want_x - px);
+    if (dist < best_dist) {
+      best_dist = dist;
+      best = nxt;
+    }
+    i = nxt;
+  }
+  return best;
+}
+
+void Editbox::DrawMultiline(Vec2Si32 pos) {
+  // line_height is the glyph box used for the caret and selection rectangles;
+  // line_step is the distance between two rows, which the host can override to
+  // match its own text layout.
+  Si32 line_height = std::max(1, font_.FontInstance()->line_height_);
+  Si32 line_step = LineStep();
+  Si32 pad = multiline_padding_;
+
+  std::vector<VisualLine> lines = WrapVisualLines();
+  Si32 total_lines = (Si32)lines.size();
+  Si32 caret_line = VisualLineIndex(lines, cursor_pos_);
+
+  Si32 visible_lines = std::max(1, (size_.y - pad * 2) / line_step);
+  if (caret_line < first_visible_line_) {
+    first_visible_line_ = caret_line;
+  }
+  if (caret_line >= first_visible_line_ + visible_lines) {
+    first_visible_line_ = caret_line - visible_lines + 1;
+  }
+  if (first_visible_line_ > total_lines - visible_lines) {
+    first_visible_line_ = total_lines - visible_lines;
+  }
+  if (first_visible_line_ < 0) {
+    first_visible_line_ = 0;
+  }
+
+  Sprite backbuffer = GetEngine()->GetBackbuffer();
+  Si32 last_line = std::min(total_lines, first_visible_line_ + visible_lines);
+  for (Si32 li = first_visible_line_; li < last_line; ++li) {
+    const VisualLine &ln = lines[static_cast<size_t>(li)];
+    Si32 row = li - first_visible_line_;
+    Si32 top_y = pos.y + size_.y - pad - row * line_step;
+
+    if (selection_begin_ != selection_end_ && is_current_tab_) {
+      Si32 seg_b = std::max(selection_begin_, ln.start);
+      Si32 seg_e = std::min(selection_end_, ln.end);
+      if (seg_b < seg_e) {
+        Si32 ax1 = pos.x + pad + PrefixWidth(ln.text, seg_b - ln.start);
+        Si32 ax2 = pos.x + pad + PrefixWidth(ln.text, seg_e - ln.start);
+        if (ax2 > ax1) {
+          DrawSelection(ax1, top_y - line_height, ax2, top_y, selection_mode_,
+                        selection_color_1_, selection_color_2_, backbuffer);
+        }
+      }
+    }
+
+    font_.Draw(ln.text.c_str(), pos.x + pad, top_y,
+               kTextOriginTop, kTextAlignmentLeft,
+               kDrawBlendingModeColorize, kFilterNearest, color_);
+  }
+
+  if (is_current_tab_ && IsCaretVisible() &&
+      caret_line >= first_visible_line_ && caret_line < last_line) {
+    const VisualLine &ln = lines[static_cast<size_t>(caret_line)];
+    Si32 byte_in_line = std::min(cursor_pos_ - ln.start, (Si32)ln.text.size());
+    Si32 caret_x = PrefixWidth(ln.text, byte_in_line);
+    Si32 row = caret_line - first_visible_line_;
+    Si32 top_y = pos.y + size_.y - pad - row * line_step;
+    Si32 cx = pos.x + pad + caret_x;
+    Vec2Si32 a(cx, top_y - line_height + 1);
+    Vec2Si32 b(cx, top_y);
+    for (Si32 dx = 0; dx < 2; ++dx) {
+      DrawLine(a, b, color_);
+      a.x++;
+      b.x++;
+    }
+  }
 }
 
 void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
@@ -1252,6 +1919,11 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
     focused_.Draw(pos);
   } else {
     normal_.Draw(pos);
+  }
+  if (is_multiline_ && font_.FontInstance()) {
+    DrawMultiline(pos);
+    Panel::Draw(parent_absolute_pos);
+    return;
   }
   if (font_.FontInstance()) {
     Si32 border = std::max(0,
@@ -1301,28 +1973,14 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
       }
     }
 
-    font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
-               origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
+    Si32 skip_x = PrefixWidth(text_, display_pos_);
 
-    Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
-    std::string left_part = text_.substr(0, static_cast<size_t>(cursor_pos));
-    Si32 cursor_x = font_.EvaluateSize(left_part.c_str(), false).x;
-
-    Si32 skip_x = font_.EvaluateSize(
-                                     text_.substr(0, static_cast<size_t>(display_pos_)).c_str(), false).x;
-
-    Vec2Si32 a(pos.x + border + cursor_x + 1, pos.y + border);
-    a.x = std::max(pos.x + border, a.x - skip_x);
-    Vec2Si32 b(a.x + space_width - 1, a.y);
-    if (fmod(Time(), 0.6) < 0.3 && is_current_tab_) {
-      for (Si32 y = 0; y < 3; ++y) {
-        DrawLine(a, b, color_);
-        a.y++;
-        b.y++;
-      }
-    }
-
-    if (selection_begin_ != selection_end_ && is_current_tab_) {
+    // Compute the selection rectangle up front so a blend highlight can be
+    // drawn behind the text (like tentacle's name field), while invert/swap
+    // modes keep their original behavior of drawing over the text.
+    bool has_sel = (selection_begin_ != selection_end_) && is_current_tab_;
+    Si32 sel_x1 = 0, sel_x2 = 0, sel_y1 = 0, sel_y2 = 0;
+    if (has_sel) {
       Vec2Si32 size1;
       Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
       Vec2Si32 size2;
@@ -1335,18 +1993,46 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
       }
       Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
 
-      Si32 x1 = pos.x + border + pos1.x;
-      Si32 x2 = pos.x + border + pos2.x + size2.x;
-      Si32 y1 = pos.y + border;
-      Si32 y2 = pos.y + border + font_.FontInstance()->line_height_;
+      sel_x1 = pos.x + border + pos1.x;
+      sel_x2 = pos.x + border + pos2.x + size2.x;
+      sel_y1 = pos.y + border;
+      sel_y2 = pos.y + border + font_.FontInstance()->line_height_;
+
+      sel_x1 = std::min(std::max(pos.x + border, sel_x1 - skip_x),
+                    pos.x + border + displayable_width);
+      sel_x2 = std::min(std::max(pos.x + border, sel_x2 - skip_x),
+                    pos.x + border + displayable_width);
+    }
+
+    if (has_sel && selection_mode_ == kTextSelectionModeBlend) {
       Sprite backbuffer = GetEngine()->GetBackbuffer();
+      DrawSelection(sel_x1, sel_y1, sel_x2, sel_y2, selection_mode_,
+                    selection_color_1_, selection_color_2_, backbuffer);
+    }
 
-      x1 = std::min(std::max(pos.x + border, x1 - skip_x),
-                    pos.x + border + displayable_width);
-      x2 = std::min(std::max(pos.x + border, x2 - skip_x),
-                    pos.x + border + displayable_width);
+    font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
+               origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
 
-      DrawSelection(x1, y1, x2, y2, selection_mode_,
+    Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
+    Si32 cursor_x = PrefixWidth(text_, cursor_pos);
+
+    // A vertical bar spanning the text line, matching the multiline caret.
+    if (is_current_tab_ && IsCaretVisible()) {
+      Si32 cx = pos.x + border + cursor_x - skip_x;
+      cx = std::min(cx, pos.x + border + displayable_width - 1);
+      cx = std::max(cx, pos.x + border);
+      Vec2Si32 a(cx, pos.y + border);
+      Vec2Si32 b(cx, pos.y + border + font_.FontInstance()->line_height_ - 1);
+      for (Si32 dx = 0; dx < 2; ++dx) {
+        DrawLine(a, b, color_);
+        a.x++;
+        b.x++;
+      }
+    }
+
+    if (has_sel && selection_mode_ != kTextSelectionModeBlend) {
+      Sprite backbuffer = GetEngine()->GetBackbuffer();
+      DrawSelection(sel_x1, sel_y1, sel_x2, sel_y2, selection_mode_,
                     selection_color_1_, selection_color_2_, backbuffer);
     }
   }
@@ -1365,6 +2051,29 @@ void Editbox::SelectAll() {
 
 void Editbox::SetCursorPos(Si32 pos) {
   cursor_pos_ = std::min(std::max(Si32(0), pos), (Si32)text_.length());
+  TouchCaret();
+}
+
+Si32 Editbox::GetCursorPos() const {
+  return cursor_pos_;
+}
+
+Si32 Editbox::GetSelectionBegin() const {
+  return selection_begin_;
+}
+
+Si32 Editbox::GetSelectionEnd() const {
+  return selection_end_;
+}
+
+void Editbox::SetSelection(Si32 begin, Si32 end) {
+  Si32 length = (Si32)text_.length();
+  Si32 a = std::min(std::max(0, begin), length);
+  Si32 b = std::min(std::max(0, end), length);
+  selection_begin_ = std::min(a, b);
+  selection_end_ = std::max(a, b);
+  edit_group_ = kEditGroupNone;
+  TouchCaret();
 }
 
 void Editbox::SetSelectionMode(TextSelectionMode selection_mode,
