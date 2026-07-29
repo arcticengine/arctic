@@ -62,6 +62,9 @@ IF (APPLE)
   FIND_LIBRARY(AVFOUNDATION AVFoundation)
   FIND_LIBRARY(COREVIDEO CoreVideo)
   FIND_LIBRARY(COREMEDIA CoreMedia)
+  # Keychain access: engine/httplib.h reads the trusted roots from there once
+  # HTTPS is enabled below.
+  FIND_LIBRARY(SECURITY Security)
 ELSE (APPLE)
 
   IF (EMSCRIPTEN)
@@ -96,6 +99,33 @@ ELSE (APPLE)
 
   find_package(Threads REQUIRED)
 ENDIF (APPLE)
+
+# HTTPS for engine/httplib.h is optional, so OpenSSL is looked up but never
+# required: with it the HTTP client and server speak TLS, without it they are
+# limited to plain HTTP and nothing else in the engine is affected. Emscripten is
+# skipped because the browser terminates TLS itself.
+IF (NOT EMSCRIPTEN)
+  IF (APPLE AND NOT OPENSSL_ROOT_DIR)
+    # Homebrew installs OpenSSL outside the default search path, so hint the
+    # common locations before find_package.
+    foreach(cand /opt/homebrew/opt/openssl@3 /usr/local/opt/openssl@3
+                 /opt/homebrew/opt/openssl /usr/local/opt/openssl)
+      if(EXISTS "${cand}")
+        set(OPENSSL_ROOT_DIR "${cand}")
+        break()
+      endif()
+    endforeach()
+  ENDIF ()
+  find_package(OpenSSL QUIET)
+  if (OPENSSL_FOUND)
+    message(STATUS "OpenSSL found: httplib HTTPS enabled.")
+    add_definitions(-DCPPHTTPLIB_OPENSSL_SUPPORT)
+  else ()
+    message(STATUS "OpenSSL not found: httplib is limited to plain HTTP. "
+                   "Install OpenSSL (libssl-dev / brew install openssl) to "
+                   "enable HTTPS.")
+  endif ()
+ENDIF (NOT EMSCRIPTEN)
 
 
 
@@ -265,6 +295,13 @@ ELSE (APPLE)
     endif()
   ENDIF (EMSCRIPTEN)
 ENDIF (APPLE)
+
+if (OPENSSL_FOUND)
+  target_link_libraries(${PROJECT_NAME} OpenSSL::SSL OpenSSL::Crypto)
+  IF (APPLE)
+    target_link_libraries(${PROJECT_NAME} ${SECURITY})
+  ENDIF (APPLE)
+endif ()
 
 IF (EMSCRIPTEN)
   set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "--preload-file data")

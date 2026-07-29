@@ -5,6 +5,7 @@ Copyright (c) 2013 - 2021 Mikle
 Copyright (c) 2020 - 2021 The Lasting Curator
 Copyright (c) 2021 Vlad2001_MFS
 Copyright (c) 2006 - 2020 Arseny Kapoulkine <arseny.kapoulkine@gmail.com>
+Copyright (c) 2026 Yuji Hirose
 Copyright (c) 2020 Asyc
 Copyright (c) 2020 Luke de Oliveira <lukedeo@ldo.io>
 Copyright (c) 2019 Juan Carlos

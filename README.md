@@ -29,6 +29,27 @@ Beyond 2D sprites, the engine ships with infrastructure for 3D rendering. These 
 
 **Skeletal animation** -- `piSkeleton` for bone hierarchies and skeletal transforms.
 
+## Networking
+
+**Sockets** -- `engine/arctic_platform_tcpip.h` gives you TCP and UDP sockets over IPv4 and IPv6 with a single API across the supported platforms, for protocols of your own.
+
+**HTTP** -- `engine/httplib.h` is a vendored copy of cpp-httplib, a header-only HTTP/HTTPS library: `httplib::Client` makes requests, `httplib::Server` serves them. The whole library is one large header, so include it directly (it is not part of `easy.h`) and in as few translation units as you can, to keep compile times sane.
+
+HTTPS additionally requires OpenSSL. A project made from the template wires it up on its own in the CMake build: `CMakeLists.txt` looks for OpenSSL, and when it is installed the build defines `CPPHTTPLIB_OPENSSL_SUPPORT` and links `OpenSSL::SSL`, `OpenSSL::Crypto` and (on macOS, for the keychain roots) the `Security` framework, so `httplib::SSLClient` just works. OpenSSL is never required: without it the build says so and only plain HTTP is available. Install it with `apt-get install libssl-dev` or `brew install openssl` and reconfigure to turn HTTPS on.
+
+The bundled Visual Studio and Xcode projects leave TLS off, because they cannot test whether OpenSSL is installed the way a CMake configure step can, and enabling it unconditionally would break every generated project on a machine without OpenSSL. Plain HTTP works there out of the box. Turning TLS on is a matter of four settings, which in Xcode look like this:
+
+```
+GCC_PREPROCESSOR_DEFINITIONS  = $(inherited) CPPHTTPLIB_OPENSSL_SUPPORT
+HEADER_SEARCH_PATHS           = ... /opt/homebrew/opt/openssl@3/include /usr/local/opt/openssl@3/include
+LIBRARY_SEARCH_PATHS          = $(inherited) /opt/homebrew/opt/openssl@3/lib /usr/local/opt/openssl@3/lib
+OTHER_LDFLAGS                 = $(inherited) -lssl -lcrypto -framework Security
+```
+
+Listing both prefixes covers Homebrew on Apple Silicon and on Intel, and a path that does not exist is simply ignored. Visual Studio needs the same four things, with the paths pointing at wherever OpenSSL is installed on that machine.
+
+Nothing has to be added to those projects for the library itself: like every other engine header, `engine/httplib.h` is found through the include path, and the wizard's update mode picks it up when it refreshes the engine file list of an existing project.
+
 API documentation: https://seaice.gitlab.io/arctic/index.html
 
 Main discussion forum (in Russian): https://gamedev.ru/community/arctic/forum/
@@ -73,6 +94,7 @@ See License.txt for details.
 * Sound mixing function proposed by Mikle
 * pugixml. Light-weight, simple and fast XML parser for C++ with XPath support. Copyright (c) 2006 - 2020 Arseny Kapoulkine ([https://pugixml.org/](https://pugixml.org/))
 * SocketSys. Modular C++17 Socket Wrapper that supports multiple operating systems. Copyright (c) 2020 Asyc ([https://github.com/Asyc/SocketSys](https://github.com/Asyc/SocketSys))
+* cpp-httplib 0.50.1. A C++ header-only cross platform HTTP/HTTPS library. Copyright (c) 2026 Yuji Hirose ([https://github.com/yhirose/cpp-httplib](https://github.com/yhirose/cpp-httplib))
 * option-parser. A Lightweight, header-only CLI option parser for C++ Copyright (c) 2020 Luke de Oliveira <lukedeo@ldo.io>, Copyright (c) 2017 Romain Sylvian ([https://github.com/lukedeo/option-parser](https://github.com/lukedeo/option-parser))
 * easing function collection Copyright (c) 2019 Juan Carlos, Copyright (c) 2001 Robert Penner
 * Acutest -- Another C/C++ Unit Test facility. Copyright (c) 2013 - 2017 Martin Mitas ([http://github.com/mity/acutest](http://github.com/mity/acutest))
@@ -123,7 +145,7 @@ See License.txt for details.
 Just execute the following commands in terminal line by line to install all the required libraries and tools, clone the repository to ~/arctic, build and run the demo project: 
 
 ```bash
-sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libgles2-mesa-dev
+sudo apt-get install git cmake clang libasound2-dev libglu1-mesa-dev freeglut3-dev libgles2-mesa-dev libssl-dev
 cd ~
 git clone https://gitlab.com/seaice/arctic.git
 cd ~/arctic
