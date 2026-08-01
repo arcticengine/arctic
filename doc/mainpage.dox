@@ -362,6 +362,14 @@ Arctic Engine provides a simple yet powerful GUI system for creating interactive
     #include "engine/easy.h"
     #include "engine/gui.h"
     using namespace arctic;
+
+    Rgba g_backgroundColor = Rgba(0, 0, 50);
+
+    /// @brief Callback invoked when the button is clicked.
+    void OnClick() {
+      *Log() << "Button was clicked!";
+      g_backgroundColor = Rgba(Random8(), Random8(), Random8());
+    }
     
     Ui32 EasyMain() {
       ResizeScreen(1280, 720);
@@ -381,22 +389,15 @@ Arctic Engine provides a simple yet powerful GUI system for creating interactive
       button->SetPos(Vec2Si32(100, 100));
       button->SetSize(Vec2Si32(200, 50));
       button->SetText("Click Me!");
-      
+      button->OnButtonClick = OnClick;
+
       // Add the button to the root panel
       gui->AddChild(button);
       
-      // Declare a variable to use in the button click callback
-      Rgba someVariable = Rgba(0, 0, 50);
-
-      // Set button click callback
-      button->OnButtonClick = [&someVariable]() {
-        *Log() << "Button was clicked!";
-        someVariable = Rgba(Random8(), Random8(), Random8());
-      };
       
       // Game loop
       while (!IsKeyDown(kKeyEscape)) {
-        Clear(someVariable);
+        Clear(g_backgroundColor);
         
         // Process input for GUI
         bool isInputHandled = false;
