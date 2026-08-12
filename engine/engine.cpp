@@ -112,7 +112,17 @@ void Engine::HeadlessInit() {
   math_tables_.Init();
 }
 
+void Engine::InitHeadlessScreen(Si32 width, Si32 height) {
+  window_width_ = width;
+  window_height_ = height;
+  is_headless_ = true;
+  is_software_only_ = true;
+  backbuffer_texture_.Create(width, height);
+  HeadlessInit();
+}
+
 void Engine::Init(Si32 window_width, Si32 window_height) {
+  is_software_only_ = false;
   window_width_ = window_width;
   window_height_ = window_height;
 
@@ -550,6 +560,10 @@ void Engine::Draw2d() {
 }
 
 void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {
+  if (is_software_only_) {
+    backbuffer_texture_.Create(width, height);
+    return;
+  }
   hw_backbuffer_texture_.Create(width, height);
   backbuffer_texture_.Create(width, height);
 

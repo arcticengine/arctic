@@ -1055,7 +1055,9 @@ void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
 }
 
 void ShowFrame() {
-  GetEngine()->Draw2d();
+  if (!GetEngine()->IsSoftwareOnly()) {
+    GetEngine()->Draw2d();
+  }
 
   for (Si32 i = 0; i < kKeyCount; ++i) {
     g_key_state[i].OnShowFrame();
@@ -1368,12 +1370,16 @@ void SetInverseY(bool is_inverse) {
 
 void Clear() {
   GetEngine()->GetBackbuffer().Clear();
-  GetEngine()->GetHwBackbuffer().Clear();
+  if (!GetEngine()->IsSoftwareOnly()) {
+    GetEngine()->GetHwBackbuffer().Clear();
+  }
 }
 
 void Clear(Rgba color) {
   GetEngine()->GetBackbuffer().Clear(color);
-  GetEngine()->GetHwBackbuffer().Clear(color);
+  if (!GetEngine()->IsSoftwareOnly()) {
+    GetEngine()->GetHwBackbuffer().Clear(color);
+  }
 }
 
 double Time() {

@@ -726,9 +726,15 @@ void CreateMainWindow(SystemInfo *system_info) {
 
     [g_main_window setContentView: g_main_view];
     [g_main_window makeFirstResponder: g_main_view];
-    [g_main_window makeKeyAndOrderFront: nil];
-    [g_main_window makeMainWindow];
-    [NSApp activateIgnoringOtherApps: YES];
+    if (std::getenv("ARCTIC_HEADLESS") == nullptr) {
+      [g_main_window makeKeyAndOrderFront: nil];
+      [g_main_window makeMainWindow];
+      [NSApp activateIgnoringOtherApps: YES];
+    } else {
+      // Keep the NSOpenGLContext alive for headless hardware rendering, but
+      // never present the native window to the user.
+      [g_main_window orderOut: nil];
+    }
 
     if (g_is_full_screen) {
       g_is_full_screen = false;
@@ -1156,11 +1162,29 @@ namespace arctic {
 int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
+  const bool headless = std::getenv("ARCTIC_HEADLESS") != nullptr;
+  const bool disable_hw = std::getenv("ARCTIC_DISABLE_HW") != nullptr;
+
+  if (headless && disable_hw) {
+    arctic::GetEngine()->SetArgcArgv(argc, const_cast<const char **>(argv));
+    arctic::GetEngine()->SetInitialPath(".");
+    arctic::GetEngine()->InitHeadlessScreen(1920, 1080);
+    arctic::PrepareForTheEasyMainCall();
+    EasyMain();
+    return g_exit_code;
+  }
+
   std::string initial_path = arctic::PrepareInitialPath();
   arctic::StartLogger();
-  g_mixer = new arctic::SoundPlayer;
-  g_mixer->Initialize();
+  if (std::getenv("ARCTIC_DISABLE_AUDIO") == nullptr) {
+    g_mixer = new arctic::SoundPlayer;
+    g_mixer->Initialize();
+  }
   arctic::CreateMainWindow(&system_info);
+  if (headless) {
+    [g_main_window orderOut: nil];
+    arctic::GetEngine()->SetHeadless(true);
+  }
   arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
 

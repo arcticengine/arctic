@@ -80,6 +80,8 @@ class Engine {
 
   bool is_inverse_y_ = false;
   bool is_sw_renderer_enabled_ = true;
+  bool is_headless_ = false;
+  bool is_software_only_ = false;
 
   MathTables math_tables_;
 
@@ -131,6 +133,17 @@ class Engine {
 
   /// @brief Initializes the engine for headless mode.
   void HeadlessInit();
+
+  // Initializes a software backbuffer and input state without creating a
+  // native window, OpenGL context or audio device.  This is the explicit
+  // software-only path (ARCTIC_HEADLESS + ARCTIC_DISABLE_HW).
+  void InitHeadlessScreen(Si32 width, Si32 height);
+
+  bool IsHeadless() const { return is_headless_; }
+
+  // Suppresses presentation while retaining the hardware rendering path.
+  void SetHeadless(bool value) { is_headless_ = value; }
+  bool IsSoftwareOnly() const { return is_software_only_; }
 
   /// @brief Initializes the engine with the specified width and height.
   /// @param width The width of the engine window.
