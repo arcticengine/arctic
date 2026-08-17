@@ -596,7 +596,7 @@ void PumpMessages() {
 
   if (True == XCheckTypedWindowEvent(
         g_x_display, g_x_window, DestroyNotify, &ev)) {
-    exit(0);
+    arctic::ExitProgram(0);
   }
 
   // Serve clipboard contents to other clients while we own the selection.
