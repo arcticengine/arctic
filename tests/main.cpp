@@ -1,5 +1,4 @@
 #include "engine/test_main.h"
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -14,6 +13,11 @@
 #include "engine/arctic_pi.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_platform_def.h"
+
+#ifndef ARCTIC_PLATFORM_WINDOWS
+#include <unistd.h>  // chdir, for the argv path test
+#endif
+
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
 #include "engine/easy_hw_sprite.h"
@@ -345,6 +349,122 @@ void test_file_operations() {
   bool isok = GetDirectoryEntries(arctic_engine_dir.c_str(), &list);
   TEST_CHECK(isok);
   TEST_CHECK(list.size() > 0);
+}
+
+// The engine deliberately offers no way to move the current directory, so the
+// test does it by hand to prove that the argv helper ignores such a move.
+bool ChangeCurrentDirectory(const char *path) {
+#ifdef _WIN32
+  return SetCurrentDirectoryA(path) != 0;
+#else
+  return chdir(path) == 0;
+#endif
+}
+
+// A path from argv means "relative to where the user was standing", and the
+// current directory is not that place: on macOS the engine makes the resources
+// folder of the bundle current before EasyMain. So the helper must resolve
+// against the startup directory and must keep doing that after the current
+// directory moves again.
+void test_canonicalize_argv_path() {
+  const std::string startup = arctic::GetStartupDirectory();
+  TEST_CHECK_(!startup.empty(),
+      "the startup directory was not remembered");
+  TEST_CHECK_(startup == arctic::CanonicalizePath(startup.c_str()),
+      "the startup directory is not canonical: '%s'", startup.c_str());
+
+  const std::string relative = arctic::CanonicalizeArgvPath("snaps/world.dcs");
+  const std::string expected = arctic::CanonicalizePath(
+      arctic::GluePath(startup.c_str(), "snaps/world.dcs").c_str());
+  TEST_CHECK_(relative == expected,
+      "relative argv path resolved to '%s', expected '%s'",
+      relative.c_str(), expected.c_str());
+
+  // An absolute path is nobody's business but its own.
+  const std::string absolute = arctic::CanonicalizeArgvPath(
+      arctic::GluePath(startup.c_str(), "snaps/world.dcs").c_str());
+  TEST_CHECK_(absolute == expected,
+      "absolute argv path changed to '%s', expected '%s'",
+      absolute.c_str(), expected.c_str());
+
+  // Empty in, empty out: the caller can tell "no path given" from a path.
+  TEST_CHECK(arctic::CanonicalizeArgvPath("").empty());
+  TEST_CHECK(arctic::CanonicalizeArgvPath(nullptr).empty());
+
+  // The whole point: the answer does not follow the current directory. This is
+  // the situation a bundled application is in from the very first line of
+  // EasyMain, and the reason CanonicalizePath alone is not enough.
+  std::string current_before;
+  TEST_CHECK(arctic::GetCurrentPath(&current_before));
+  const std::string parent = arctic::CanonicalizePath(
+      arctic::GluePath(current_before.c_str(), "..").c_str());
+  if (parent != current_before && parent != startup) {
+    TEST_CHECK(ChangeCurrentDirectory(parent.c_str()));
+    const std::string moved = arctic::CanonicalizeArgvPath("snaps/world.dcs");
+    const std::string plain = arctic::CanonicalizePath("snaps/world.dcs");
+    TEST_CHECK(ChangeCurrentDirectory(current_before.c_str()));
+    TEST_CHECK_(moved == expected,
+        "after a chdir the same argv path resolved to '%s', expected '%s'",
+        moved.c_str(), expected.c_str());
+    TEST_CHECK_(plain != expected,
+        "CanonicalizePath happened to give the same answer, so this test "
+        "proves nothing: '%s'", plain.c_str());
+  }
+}
+
+// "The file does not exist" is not a diagnosis. Whatever else the description
+// says, it has to name the path as given and the absolute path behind it, and it
+// has to point at the startup directory when the file is sitting right there.
+void test_describe_file_path() {
+  const std::string missing =
+      arctic::DescribeFilePath("data/no_such_file_41287.tga");
+  TEST_CHECK_(missing.find("data/no_such_file_41287.tga") != std::string::npos,
+      "the description lost the path as given: '%s'", missing.c_str());
+  const std::string absolute =
+      arctic::CanonicalizePath("data/no_such_file_41287.tga");
+  TEST_CHECK_(missing.find(absolute) != std::string::npos,
+      "the description lost the absolute path '%s': '%s'",
+      absolute.c_str(), missing.c_str());
+
+  std::string current;
+  TEST_CHECK(arctic::GetCurrentPath(&current));
+  TEST_CHECK_(missing.find(current) != std::string::npos,
+      "the description does not say what a relative path was resolved "
+      "against: '%s'", missing.c_str());
+
+  // An absolute path needs no directory to be resolved against, so the current
+  // directory would only be noise there.
+  const std::string absolute_missing = arctic::DescribeFilePath(
+      arctic::GluePath(current.c_str(), "no_such_file_41287.tga").c_str());
+  TEST_CHECK_(absolute_missing.find("current directory") == std::string::npos,
+      "an absolute path was described through the current directory: '%s'",
+      absolute_missing.c_str());
+
+  const std::string deep =
+      arctic::DescribeFilePath("no_such_dir_41287/file.txt");
+  TEST_CHECK_(deep.find("does not exist") != std::string::npos,
+      "a missing parent directory was not reported: '%s'", deep.c_str());
+
+  // The trap the description exists for: the file is where the user typed it,
+  // and the engine looked for it next to the assets.
+  const std::string startup = arctic::GetStartupDirectory();
+  if (!startup.empty() && startup != current) {
+    const char *name = "test_startup_hint_41287.txt";
+    const std::string in_startup =
+        arctic::GluePath(startup.c_str(), name);
+    {
+      std::ofstream ofs(in_startup.c_str());
+      TEST_CHECK_(ofs.good(), "failed to create '%s'", in_startup.c_str());
+      ofs << "test";
+    }
+    const std::string hinted = arctic::DescribeFilePath(name);
+    std::remove(in_startup.c_str());
+    TEST_CHECK_(hinted.find(in_startup) != std::string::npos,
+        "the description does not mention the file in the startup directory: "
+        "'%s'", hinted.c_str());
+    TEST_CHECK_(hinted.find("CanonicalizeArgvPath") != std::string::npos,
+        "the description does not name the way out: '%s'", hinted.c_str());
+  }
 }
 
 void test_tga_oom() {
@@ -3403,6 +3523,8 @@ TEST_LIST = {
   {"SetOrtho consistent with Perspective at z=near", test_ortho_consistent_with_perspective},
   {"CanonicalizePath non-existent path", test_canonicalize_nonexistent_path},
   {"CanonicalizePath before and after file create", test_canonicalize_before_and_after_create},
+  {"CanonicalizeArgvPath uses the startup directory", test_canonicalize_argv_path},
+  {"DescribeFilePath explains a missing file", test_describe_file_path},
   {0}
 };
 

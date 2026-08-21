@@ -143,6 +143,120 @@ bool EndsWith(std::string const &longer_string, std::string const &ending) {
   }
 }
 
+bool IsCompilableSourceName(const std::string &title) {
+  return EndsWith(title, std::string(".cpp")) ||
+         EndsWith(title, std::string(".c")) ||
+         EndsWith(title, std::string(".mm"));
+}
+
+bool IsHeaderSourceName(const std::string &title) {
+  return EndsWith(title, std::string(".h")) ||
+         EndsWith(title, std::string(".hpp")) ||
+         EndsWith(title, std::string(".hh")) ||
+         EndsWith(title, std::string(".inc"));
+}
+
+bool IsProjectSourceName(const std::string &title) {
+  return IsCompilableSourceName(title) || IsHeaderSourceName(title);
+}
+
+// True if path is a direct child of project_directory (no subfolders).
+bool IsProjectRootRelativeFile(const std::string &project_directory,
+                               const std::string &full_path,
+                               std::string *out_basename) {
+  std::string rel = RelativePathFromTo(
+      (project_directory + "/").c_str(), full_path.c_str());
+  if (rel.empty() || rel[0] == '.') {
+    // Accept "./name" / ".\\name" from RelativePathFromTo for same-dir files.
+    if (rel.size() >= 2 && rel[0] == '.' &&
+        (rel[1] == '/' || rel[1] == '\\')) {
+      rel = rel.substr(2);
+    } else {
+      return false;
+    }
+  }
+  if (rel.find('/') != std::string::npos ||
+      rel.find('\\') != std::string::npos) {
+    return false;
+  }
+  if (rel.empty()) {
+    return false;
+  }
+  if (out_basename) {
+    *out_basename = rel;
+  }
+  return true;
+}
+
+void AppendMissingProjectSources(
+    const std::string &project_directory,
+    const std::unordered_set<std::string> &existing_project_files,
+    std::deque<FileToAdd> *files_to_add,
+    std::string *progress) {
+  std::vector<DirectoryEntry> project_entries;
+  GetDirectoryEntries(project_directory.c_str(), &project_entries);
+  for (Ui32 idx = 0; idx < project_entries.size(); ++idx) {
+    const DirectoryEntry &entry = project_entries[idx];
+    if (entry.is_file != kTrivalentTrue) {
+      continue;
+    }
+    if (!IsProjectSourceName(entry.title)) {
+      continue;
+    }
+    if (existing_project_files.find(entry.title) !=
+        existing_project_files.end()) {
+      continue;
+    }
+    files_to_add->push_back({entry.title, kFileToAddProject});
+    if (progress) {
+      progress->append("Project source: \"");
+      progress->append(entry.title);
+      progress->append("\"\n");
+    }
+  }
+}
+
+void NoteExistingProjectPath(std::string path,
+    std::unordered_set<std::string> *in_out_existing_files,
+    std::unordered_set<std::string> *in_out_existing_project_files) {
+  Check(in_out_existing_files, "Unexpected in_out_existing_files = nullptr");
+  Check(in_out_existing_project_files,
+    "Unexpected in_out_existing_project_files = nullptr");
+  ReplaceAll("\\", "/", &path);
+  std::string full_path =
+    CanonicalizePath((g_project_directory + "/" + path).c_str());
+  std::string rel_path = RelativePathFromTo(
+    (g_engine + "/").c_str(), full_path.c_str());
+  if (rel_path.size() && rel_path[0] != '.') {
+    in_out_existing_files->insert(rel_path);
+  }
+  std::string project_basename;
+  if (IsProjectRootRelativeFile(g_project_directory, full_path,
+                                &project_basename)) {
+    in_out_existing_project_files->insert(project_basename);
+  }
+}
+
+bool InsertAfterAnchor(const std::string &anchor, const std::string &payload,
+    std::string *in_out_text) {
+  Check(in_out_text, "Unexpected in_out_text = nullptr");
+  if (payload.empty()) {
+    return true;
+  }
+  std::string matched = anchor;
+  std::size_t pos = in_out_text->find(matched);
+  if (pos == std::string::npos) {
+    matched = anchor;
+    ReplaceAll("/", "\\", &matched);
+    pos = in_out_text->find(matched);
+  }
+  if (pos == std::string::npos) {
+    return false;
+  }
+  in_out_text->insert(pos + matched.size(), payload);
+  return true;
+}
+
 void SplitString(std::string const &full_string, std::string const &splitter,
     std::string *out_prefix, std::string *out_suffix) {
   std::size_t found = full_string.find(splitter);
@@ -1205,6 +1319,7 @@ bool ShowUpdateProgress() {
         break;
       case 4: {
         std::unordered_set<std::string> existing_files;
+        std::unordered_set<std::string> existing_project_files;
         std::string name =
           "template_project_name.xcodeproj/project.pbxproj";
         ReplaceAll("template_project_name", g_project_name, &name);
@@ -1228,6 +1343,11 @@ bool ShowUpdateProgress() {
           if (rel_path.size() && rel_path[0] != '.') {
             existing_files.insert(rel_path);
           }
+          std::string project_basename;
+          if (IsProjectRootRelativeFile(g_project_directory, full_path,
+                                        &project_basename)) {
+            existing_project_files.insert(project_basename);
+          }
           next++;
         }
         AppendDeprecated(&existing_files);
@@ -1239,12 +1359,6 @@ bool ShowUpdateProgress() {
         std::unordered_set<std::string> new_hashes;
 
         std::deque<FileToAdd> files_to_add;
-        if (g_project_kind == kProjectKindCodingForKids) {
-          if (existing_files.find("code.inc.h") == existing_files.end()) {
-            files_to_add.push_back({"code.inc.h", kFileToAddProject});
-          }
-        }
-
         for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
           if (entry.is_file == kTrivalentTrue
@@ -1252,6 +1366,8 @@ bool ShowUpdateProgress() {
             files_to_add.push_back({entry.title, kFileToAddEngine});
           }
         }
+        AppendMissingProjectSources(g_project_directory, existing_project_files,
+                                    &files_to_add, &g_progress);
 
         for (Ui32 idx = 0; idx < files_to_add.size(); ++idx) {
           auto entry = files_to_add[idx];
@@ -1270,9 +1386,7 @@ bool ShowUpdateProgress() {
               new_hashes.insert(uid_file);
               new_hashes.insert(uid_buildfile);
 
-              if (EndsWith(entry.title, std::string(".cpp")) ||
-                  EndsWith(entry.title, std::string(".c")) ||
-                  EndsWith(entry.title, std::string(".mm"))) {
+              if (IsCompilableSourceName(entry.title)) {
                 new_buildfiles << "\t\t" << uid_buildfile
                   << " /* " << entry.title << " in Sources */ = {"
                   << "isa = PBXBuildFile; fileRef = " << uid_file
@@ -1282,7 +1396,7 @@ bool ShowUpdateProgress() {
               new_files << "\t\t" << uid_file
                 << " /* " << entry.title << " */ = {"
                 << "isa = PBXFileReference; fileEncoding = 4;";
-              if (EndsWith(entry.title, std::string(".h"))) {
+              if (IsHeaderSourceName(entry.title)) {
                 new_files << " lastKnownFileType = sourcecode.c.h;";
               } else if (EndsWith(entry.title, std::string(".mm"))) {
                 new_files << " lastKnownFileType = sourcecode.cpp.objcpp;";
@@ -1297,9 +1411,8 @@ bool ShowUpdateProgress() {
                       (g_engine + "/" + entry.title).c_str());
                   break;
                 case kFileToAddProject:
-                  rel_path = RelativePathFromTo(
-                      g_project_directory.c_str(),
-                      (g_project_directory + "/" + entry.title).c_str());
+                  // Match existing main.cpp style: bare filename, no "./".
+                  rel_path = entry.title;
                   break;
               }
 
@@ -1320,9 +1433,7 @@ bool ShowUpdateProgress() {
                   break;
               }
 
-              if (EndsWith(entry.title, std::string(".cpp")) ||
-                  EndsWith(entry.title, std::string(".c")) ||
-                  EndsWith(entry.title, std::string(".mm"))) {
+              if (IsCompilableSourceName(entry.title)) {
                 new_buildphase << "\n\t\t\t\t" << uid_buildfile
                   << " /* " << entry.title << " in Sources */,";
               }
@@ -1418,6 +1529,7 @@ bool ShowUpdateProgress() {
         break;
       case 5: {
         std::unordered_set<std::string> existing_files;
+        std::unordered_set<std::string> existing_project_files;
         std::string name = "template_project_name.vcxproj";
         ReplaceAll("template_project_name", g_project_name, &name);
         std::string vs_project_full_name = g_project_directory + "/" + name;
@@ -1435,46 +1547,37 @@ bool ShowUpdateProgress() {
           reinterpret_cast<char*>(filter_data.data()));
 
         {
-          std::regex include_path_regex("<ClInclude Include=\"(.*)\" />");
+          std::regex include_path_regex("<ClInclude Include=\"(.*?)\"\\s*/>");
           std::sregex_iterator next(full_content.begin(),
             full_content.end(), include_path_regex);
           std::sregex_iterator end;
           while (next != end) {
-            std::string path = next->str(1).c_str();
-            ReplaceAll("\\", "/", &path);
-            std::string full_path =
-              CanonicalizePath((g_project_directory + "/" + path).c_str());
-            std::string rel_path = RelativePathFromTo(
-              (g_engine + "/").c_str(), full_path.c_str());
-            if (rel_path.size() && rel_path[0] != '.') {
-              existing_files.insert(rel_path);
-            }
+            NoteExistingProjectPath(next->str(1), &existing_files,
+                                    &existing_project_files);
             next++;
           }
         }
         {
-          std::regex compile_path_regex("<ClCompile Include=\"(.*)\" />");
+          std::regex compile_path_regex(
+              "<ClCompile Include=\"(.*?)\"(?:\\s*/>|\\s*>)");
           std::sregex_iterator next(full_content.begin(),
             full_content.end(), compile_path_regex);
           std::sregex_iterator end;
           while (next != end) {
-            std::string path = next->str(1).c_str();
-            ReplaceAll("\\", "/", &path);
-            std::string full_path =
-            CanonicalizePath((g_project_directory + "/" + path).c_str());
-            std::string rel_path = RelativePathFromTo(
-              (g_engine + "/").c_str(), full_path.c_str());
-            if (rel_path.size() && rel_path[0] != '.') {
-              existing_files.insert(rel_path);
-            }
+            NoteExistingProjectPath(next->str(1), &existing_files,
+                                    &existing_project_files);
             next++;
           }
         }
         AppendDeprecated(&existing_files);
         std::stringstream new_h;
         std::stringstream new_cpp;
+        std::stringstream new_project_h;
+        std::stringstream new_project_cpp;
         std::stringstream new_filter_h;
         std::stringstream new_filter_cpp;
+        std::stringstream new_filter_project_h;
+        std::stringstream new_filter_project_cpp;
         for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
           if (entry.is_file != kTrivalentFalse
@@ -1483,16 +1586,14 @@ bool ShowUpdateProgress() {
               (g_project_directory).c_str(),
               (g_engine + "/" + entry.title).c_str());
             ReplaceAll("/", "\\", &rel_path);
-            if (EndsWith(entry.title, std::string(".cpp")) ||
-              EndsWith(entry.title, std::string(".c"))) {
+            if (IsCompilableSourceName(entry.title) &&
+                !EndsWith(entry.title, std::string(".mm"))) {
               new_cpp << "\n    <ClCompile Include=\"" << rel_path << "\" />";
               new_filter_cpp << "\n      <Filter>engine</Filter>"
                 << "\n    </ClCompile>"
                 << "\n    <ClCompile Include=\"" << rel_path << "\">";
-            } else if (EndsWith(entry.title, std::string(".h")) ||
-                     EndsWith(entry.title, std::string(".inc")) ||
-                     EndsWith(entry.title, std::string(".mm")) ||
-                     EndsWith(entry.title, std::string(".hpp"))) {
+            } else if (IsHeaderSourceName(entry.title) ||
+                       EndsWith(entry.title, std::string(".mm"))) {
               new_h << "\n    <ClInclude Include=\"" << rel_path << "\" />";
               new_filter_h << "\n      <Filter>engine</Filter>"
                 << "\n    </ClInclude>"
@@ -1500,9 +1601,37 @@ bool ShowUpdateProgress() {
             }
           }
         }
-        if (g_project_kind == kProjectKindCodingForKids) {
-          if (existing_files.find("code.inc.h") == existing_files.end()) {
-            new_h << "\n    <ClInclude Include=\"code.inc.h\" />";
+
+        {
+          std::vector<DirectoryEntry> project_entries;
+          GetDirectoryEntries(g_project_directory.c_str(), &project_entries);
+          for (Ui32 idx = 0; idx < project_entries.size(); ++idx) {
+            const DirectoryEntry &entry = project_entries[idx];
+            if (entry.is_file != kTrivalentTrue) {
+              continue;
+            }
+            if (!IsProjectSourceName(entry.title)) {
+              continue;
+            }
+            if (existing_project_files.find(entry.title) !=
+                existing_project_files.end()) {
+              continue;
+            }
+            g_progress.append("Project source: \"");
+            g_progress.append(entry.title);
+            g_progress.append("\"\n");
+            if (IsCompilableSourceName(entry.title) &&
+                !EndsWith(entry.title, std::string(".mm"))) {
+              new_project_cpp << "    <ClCompile Include=\""
+                << entry.title << "\" />\n";
+              new_filter_project_cpp << "\n    <ClCompile Include=\""
+                << entry.title << "\" />";
+            } else if (IsHeaderSourceName(entry.title)) {
+              new_project_h << "    <ClInclude Include=\""
+                << entry.title << "\" />\n";
+              new_filter_project_h << "\n    <ClInclude Include=\""
+                << entry.title << "\" />";
+            }
           }
         }
 
@@ -1518,6 +1647,8 @@ bool ShowUpdateProgress() {
             "<ClInclude Include=\"" + rel_engine_h_path + "\" />";
           std::string engine_cpp_pattern =
             "<ClCompile Include=\"" + rel_engine_cpp_path + "\" />";
+          std::string main_cpp_pattern = "<ClCompile Include=\"main.cpp\">";
+          std::string resource_h_pattern = "<ClInclude Include=\"resource.h\" />";
 
           std::stringstream resulting_file;
           std::size_t cursor = 0;
@@ -1541,10 +1672,25 @@ bool ShowUpdateProgress() {
           resulting_file << new_h.str();
 
           cursor = next_item;
+          next_item = full_content.find(resource_h_pattern);
+          if (next_item == std::string::npos) {
+            error_message = "No resource.h in VS project.";
+            has_error = true;
+            break;
+          }
+          if (next_item < cursor) {
+            error_message = "Out of order resource.h in VS project.";
+            has_error = true;
+            break;
+          }
+          resulting_file << full_content.substr(cursor, next_item - cursor);
+          resulting_file << new_project_h.str();
+
+          cursor = next_item;
           next_item = full_content.find(engine_cpp_pattern);
           if (next_item == std::string::npos) {
             ReplaceAll("/", "\\", &rel_engine_cpp_path);
-            std::string engine_cpp_pattern =
+            engine_cpp_pattern =
               "<ClCompile Include=\"" + rel_engine_cpp_path + "\" />";
             next_item = full_content.find(engine_cpp_pattern);
           }
@@ -1564,6 +1710,21 @@ bool ShowUpdateProgress() {
           resulting_file << new_cpp.str();
 
           cursor = next_item;
+          next_item = full_content.find(main_cpp_pattern);
+          if (next_item == std::string::npos) {
+            error_message = "No main.cpp in VS project.";
+            has_error = true;
+            break;
+          }
+          if (next_item < cursor) {
+            error_message = "Out of order main.cpp in VS project.";
+            has_error = true;
+            break;
+          }
+          resulting_file << full_content.substr(cursor, next_item - cursor);
+          resulting_file << new_project_cpp.str();
+
+          cursor = next_item;
           resulting_file << full_content.substr(cursor, std::string::npos);
 
           WriteFile(vs_project_full_name.c_str(),
@@ -1572,54 +1733,49 @@ bool ShowUpdateProgress() {
         }
 
         {
+          // Insertions go into a working copy, and each one looks its anchor
+          // up in that copy anew, so they do not disturb each other and their
+          // order does not matter. The engine anchors are opening tags with
+          // children, "<ClCompile Include=\"..\arctic\engine\engine.cpp\">",
+          // because the payload closes the tag and opens the next entry; the
+          // project's own files are listed as self-closed tags.
           std::string engine_h_pattern =
             "<ClInclude Include=\"" + rel_engine_h_path + "\">";
           std::string engine_cpp_pattern =
             "<ClCompile Include=\"" + rel_engine_cpp_path + "\">";
+          std::string main_cpp_filter = "<ClCompile Include=\"main.cpp\" />";
+          std::string resource_h_filter = "<ClInclude Include=\"resource.h\" />";
 
-          std::stringstream resulting_file;
-          std::size_t cursor = 0;
-          std::size_t next_item =
-            full_filter_content.find(engine_cpp_pattern);
-          if (next_item == std::string::npos) {
+          std::string filters = full_filter_content;
+
+          if (!InsertAfterAnchor(engine_cpp_pattern, new_filter_cpp.str(),
+                                 &filters)) {
             error_message = "No engine.cpp in VS project filters.";
             has_error = true;
             break;
           }
-          next_item += engine_cpp_pattern.size();
-          resulting_file << full_filter_content.substr(cursor,
-              next_item - cursor);
-          resulting_file << new_filter_cpp.str();
-
-          cursor = next_item;
-          next_item = full_filter_content.find(engine_h_pattern);
-          if (next_item == std::string::npos) {
-            ReplaceAll("/", "\\", &engine_h_pattern);
-            next_item = full_content.find(engine_h_pattern);
-          }
-
-          if (next_item == std::string::npos) {
+          if (!InsertAfterAnchor(engine_h_pattern, new_filter_h.str(),
+                                 &filters)) {
             error_message = "No engine.h in VS project filters.";
             has_error = true;
             break;
           }
-          if (next_item < cursor) {
-            error_message = "Out of order engine.h in VS project filters.";
+          if (!InsertAfterAnchor(main_cpp_filter,
+                                 new_filter_project_cpp.str(), &filters)) {
+            error_message = "No main.cpp in VS project filters.";
             has_error = true;
             break;
           }
-          next_item += engine_h_pattern.size();
-          resulting_file << full_filter_content.substr(cursor,
-              next_item - cursor);
-          resulting_file << new_filter_h.str();
-
-          cursor = next_item;
-          resulting_file << full_filter_content.substr(cursor,
-              std::string::npos);
+          if (!InsertAfterAnchor(resource_h_filter,
+                                 new_filter_project_h.str(), &filters)) {
+            error_message = "No resource.h in VS project filters.";
+            has_error = true;
+            break;
+          }
 
           WriteFile(vs_filter_full_name.c_str(),
-            reinterpret_cast<const Ui8 *>(resulting_file.str().c_str()),
-            resulting_file.str().size());
+            reinterpret_cast<const Ui8 *>(filters.c_str()),
+            filters.size());
         }
       }
         break;
@@ -1760,7 +1916,11 @@ void EasyMain() {
       is_mode_of_operation_set = true;
 
       if (strlen(GetEngine()->GetArgv()[2]) > 0) {
-        g_project_directory.assign(GetEngine()->GetArgv()[2]);
+        // Read through the argv helper: the current directory is the resources
+        // folder of the wizard's own bundle, so "update ../mygame" would point
+        // inside the wizard instead of at the user's project.
+        g_project_directory.assign(
+          CanonicalizeArgvPath(GetEngine()->GetArgv()[2]));
         // TODO(Huldra): validate g_project_directory
         is_project_directory_set = true;
         g_pause_when_done = false;

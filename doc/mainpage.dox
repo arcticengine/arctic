@@ -139,6 +139,65 @@ Project examples cover a wide range of functionalities, including basic graphic 
 Quick Tutorials
 --------------
 
+### Command Line Arguments and File Paths
+
+The current directory of a running Arctic application is not the directory the
+user started it from. On macOS the engine makes `<bundle>/Contents/Resources`
+current before `EasyMain` is called, so that an application can load its assets
+by relative paths without knowing where the bundle was copied to:
+
+~~~~~{.cpp}
+    Sprite hero;
+    hero.Load("data/hero.tga");  // relative to the bundle resources
+~~~~~
+
+That is what you want for assets, and exactly what you do not want for a path
+the user typed. `mygame open level.txt` would look for `level.txt` inside the
+bundle rather than in the shell's directory. Pass every path that comes from the
+command line through `CanonicalizeArgvPath()`:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+
+    void EasyMain() {
+      if (GetEngine()->GetArgc() >= 2) {
+        // Absolute paths are kept as they are; a relative one is resolved
+        // against the directory the program was started from, not against the
+        // current one. Works the same way on every platform.
+        const std::string path =
+            CanonicalizeArgvPath(GetEngine()->GetArgv()[1]);
+        std::vector<Ui8> data = ReadFile(path.c_str(), true);
+        if (data.empty()) {
+          *Log() << "can not read " << path;  // says which path was tried
+        }
+      }
+    }
+~~~~~
+
+Key path functions:
+- `CanonicalizeArgvPath(path)`: absolute canonical form of a path that came from
+  argv, resolved against the startup directory
+- `GetStartupDirectory()`: the directory the process was started from, captured
+  before anything changed the current one; empty on the web
+- `GetEngine()->GetInitialPath()`: where the application itself lives (on macOS
+  the directory containing the bundle, elsewhere the startup directory) — the
+  right base for files that belong to the application
+- `CanonicalizePath(path)`: canonical form resolved against the *current*
+  directory, which is the resources folder inside a macOS bundle
+- `GluePath(dir, name)`, `ParentPath(path)`, `RelativePathFromTo(from, to)`:
+  string-level path arithmetic that touches no filesystem state
+- `DescribeFilePath(path)`: one line naming both spellings of a path and the
+  likely reason it could not be opened, for error messages and logs
+
+Two more consequences of the same rule are worth remembering. A relative path
+opened for writing lands inside the bundle on macOS, where a rebuild replaces
+it, so anything the application saves for the user should be written under a
+path of its own choosing rather than a bare relative name. And a custom `main`
+built with `ARCTIC_NO_MAIN` never runs the engine's startup code, so it should
+call `SetStartupDirectory()` itself if it wants argv paths to resolve;
+otherwise `CanonicalizeArgvPath()` falls back to the current directory.
+
 ### Drawing Text
 
 Text rendering in Arctic Engine is handled by the `Font` class. Here's a simple example of how to load a font and draw text:

@@ -245,6 +245,10 @@ void SetCursorVisible(bool/* is_enable*/) {
 std::string PrepareInitialPath() {
   std::string initial_path;
   arctic::GetCurrentPath(&initial_path);
+  // Nothing here changes the current directory, so it still is the directory the
+  // process was started from. Remembered all the same, so that argv paths are
+  // read the same way on every platform: see CanonicalizeArgvPath.
+  arctic::SetStartupDirectory(initial_path);
   return initial_path;
 }
 

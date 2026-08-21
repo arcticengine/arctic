@@ -134,7 +134,75 @@ bool GetDirectoryEntries(const char *path,
 /// @brief Transforms the path into it's canonical form
 /// @param [in] path Path to transform
 /// @return The canonical form of the path specified
+///
+/// A relative path is resolved against the *current* directory, which is not
+/// necessarily the directory the process was started from: on macOS the engine
+/// makes the Resources folder of the bundle current before EasyMain is called,
+/// so that assets can be loaded by their relative paths. Use
+/// CanonicalizeArgvPath for a path that came from the command line.
 std::string CanonicalizePath(const char *path);
+
+/// @brief Returns the directory the process was started from
+/// @return Absolute path of the startup directory, or an empty string if the
+///   platform has no such notion (the web) or the startup code never ran
+///   (headless use through ARCTIC_NO_MAIN)
+///
+/// Captured once, before anything changes the current directory, and never
+/// modified afterwards, so it is safe to read from any thread.
+std::string GetStartupDirectory();
+
+/// @brief Remembers the directory the process was started from
+/// @param [in] path Absolute path of the startup directory
+///
+/// Called by the platform startup code (PrepareInitialPath) before the current
+/// directory is changed. An application normally has no reason to call this;
+/// it is public so that a custom main (ARCTIC_NO_MAIN) can do what the engine's
+/// own main does.
+void SetStartupDirectory(const std::string &path);
+
+/// @brief Turns a path taken from the command line into an absolute one
+/// @param [in] path Path exactly as it was typed by the user, absolute or
+///   relative to the directory the program was started from
+/// @return The canonical absolute form of the path, or an empty string if path
+///   is null or empty
+///
+/// The current directory of an Arctic application is not the directory the user
+/// started it from: on macOS the engine makes `<bundle>/Contents/Resources`
+/// current before EasyMain, so that `Sprite::Load("data/hero.tga")` works
+/// wherever the bundle was copied to. That is right for assets and wrong for
+/// arguments: `mygame open level.txt` would look for the level inside the
+/// bundle, fail, and say nothing useful about why. Resolve every path that came
+/// from argv through this function and the shell's meaning is preserved, on
+/// every platform, whether or not that platform changes the directory.
+///
+/// Example:
+/// @code
+/// void EasyMain() {
+///   if (GetEngine()->GetArgc() >= 2) {
+///     const std::string path =
+///         CanonicalizeArgvPath(GetEngine()->GetArgv()[1]);
+///     std::vector<Ui8> data = ReadFile(path.c_str(), true);
+///     ...
+///   }
+/// }
+/// @endcode
+std::string CanonicalizeArgvPath(const char *path);
+
+/// @brief Describes a file path for an error message
+/// @param [in] path Path of the file that could not be opened
+/// @return A one line description of the path
+///
+/// "The file does not exist" is a useless complaint when the reader cannot tell
+/// which file was looked for. The description always names the path as it was
+/// given and the absolute path it resolved to, and adds what usually explains
+/// the failure: the current directory a relative path was resolved against, a
+/// parent directory that does not exist, and the fact that the file does exist
+/// under the startup directory, which means the path came from the command line
+/// and should have been read through CanonicalizeArgvPath.
+///
+/// ReadFile and WriteFile report failures this way already; call this directly
+/// when reporting a file your own code failed to open.
+std::string DescribeFilePath(const char *path);
 
 /// @brief Creates a relative path to a file or directory
 /// The path is transformed into a relative form so that

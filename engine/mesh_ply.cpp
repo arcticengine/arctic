@@ -27,6 +27,8 @@
 #include <cstring>
 #include <stdlib.h>
 #include <stdio.h>
+#include "engine/arctic_platform.h"
+#include "engine/log.h"
 #include "engine/mesh_ply.h"
 
 namespace arctic {
@@ -68,6 +70,8 @@ int MeshPly_Read(Mesh *me, const char *name, bool calcNormals) {
 
   FILE *fp = fopen(name, "rt");
   if (!fp) {
+    // Same reason as in MeshObj_Read: an empty scene explains nothing by itself.
+    Log("MeshPly_Read can't open ", DescribeFilePath(name).c_str());
     return 0;
   }
 

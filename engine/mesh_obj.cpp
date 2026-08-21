@@ -30,6 +30,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include "engine/arctic_platform.h"
+#include "engine/log.h"
 #include "engine/mesh.h"
 #include "engine/vec3f.h"
 
@@ -54,6 +56,9 @@ int MeshObj_Read(Mesh *me, const char *name, bool calcNormals) {
 
   std::ifstream ifile(name);
   if (!ifile.is_open()) {
+    // A mesh that silently fails to load is a puzzle for whoever gets an empty
+    // scene, so at least say which file was looked for and where.
+    Log("MeshObj_Read can't open ", DescribeFilePath(name).c_str());
     return 0;
   }
   std::deque<std::string> original_file;

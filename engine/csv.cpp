@@ -31,6 +31,7 @@
 
 #include "engine/csv.h"
 #include "engine/arctic_types.h"
+#include "engine/arctic_platform.h"
 #include "engine/arctic_platform_fatal.h"
 
 namespace arctic {
@@ -111,7 +112,8 @@ bool CsvTable::LoadFile(const std::string &filename, char sep) {
     is_ok = is_ok && ParseContent();
     return is_ok;
   } else {
-    error_description = std::string("Failed to open ").append(file_);
+    error_description = std::string("Failed to open ")
+      .append(DescribeFilePath(file_.c_str()));
     return false;
   }
 }

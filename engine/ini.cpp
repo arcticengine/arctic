@@ -27,6 +27,8 @@
 #include <algorithm>
 #include <cctype>
 
+#include "engine/arctic_platform.h"
+
 namespace arctic {
 
 // IniSection implementation
@@ -140,7 +142,8 @@ bool IniFile::LoadFile(const std::string &filename) {
   
   std::ifstream file(filename);
   if (!file.is_open()) {
-    error_description_ = "Cannot open file: " + filename;
+    error_description_ = "Cannot open file: "
+      + DescribeFilePath(filename.c_str());
     return false;
   }
   

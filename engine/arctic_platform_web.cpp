@@ -435,6 +435,9 @@ std::string GetClipboardText() {
 }
 
 std::string PrepareInitialPath() {
+  // A page has no directory it was started from, so the startup directory stays
+  // empty and CanonicalizeArgvPath falls back to CanonicalizePath, which is all
+  // the browser filesystem can offer anyway.
   return "";
 }
 

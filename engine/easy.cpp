@@ -28,10 +28,13 @@
 #include <deque>
 #include <fstream>
 #include <limits>
+#include <sstream>
+#include <string>
 #include <thread>  // NOLINT
 #include <utility>
 
 #include "engine/arctic_platform.h"
+#include "engine/arctic_platform_def.h"
 #include "engine/easy_advanced.h"
 #include "engine/easy_drawing.h"
 #include "engine/easy_files.h"
@@ -100,6 +103,7 @@ static KeyState g_key_state[kKeyCount];
 static std::deque<InputMessage> g_input_messages;
 
 static Engine *g_engine = nullptr;
+static std::string g_startup_directory;
 static Vec2Si32 g_mouse_pos_prev = Vec2Si32(0, 0);
 static Vec2Si32 g_mouse_pos = Vec2Si32(0, 0);
 static InputMessage::Controller g_controller_state[InputMessage::kControllerCount];
@@ -1451,8 +1455,11 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
     if (is_bulletproof) {
       return data;
     }
-    Fatal("Error in ReadFile. Can't open the file, file_name: ",
-      file_name);
+    // Both spellings of the path and everything else that explains the failure:
+    // "no such file" is of no help when the reader can not tell which file the
+    // engine went looking for.
+    Fatal("Error in ReadFile. Can't open the file: ",
+      DescribeFilePath(file_name).c_str());
   }
   in.exceptions(std::ios_base::goodbit);
   in.seekg(0, std::ios_base::end);
@@ -1461,8 +1468,8 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
       in.close();
       return data;
     }
-    Fatal("Error in ReadFile. Can't seek to the end, file_name: ",
-      file_name);
+    Fatal("Error in ReadFile. Can't seek to the end, file: ",
+      DescribeFilePath(file_name).c_str());
   }
     std::streampos pos = in.tellg();
   if (pos == std::streampos(-1)) {
@@ -1471,8 +1478,8 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
       return data;
     }
     Fatal("Error in ReadFile."
-      " Can't determine file size via tellg, file_name: ",
-      file_name);
+      " Can't determine file size via tellg, file: ",
+      DescribeFilePath(file_name).c_str());
   }
   in.seekg(0, std::ios_base::beg);
   if (in.rdstate() & std::ios_base::failbit) {
@@ -1480,8 +1487,8 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
       in.close();
       return data;
     }
-    Fatal("Error in ReadFile. Can't seek to the beg, file_name: ",
-      file_name);
+    Fatal("Error in ReadFile. Can't seek to the beg, file: ",
+      DescribeFilePath(file_name).c_str());
   }
 
   if (static_cast<Ui64>(pos) > 0ull) {
@@ -1493,44 +1500,158 @@ std::vector<Ui8> ReadFile(const char *file_name, bool is_bulletproof) {
         data.clear();
         return data;
       }
+      const std::string where = DescribeFilePath(file_name);
       Check((in.rdstate() & (std::ios_base::failbit | std::ios_base::eofbit))
           != (std::ios_base::failbit | std::ios_base::eofbit),
         "Error in ReadFile."
-        " Can't read the data, eofbit is set, file_name: ",
-        file_name);
+        " Can't read the data, eofbit is set, file: ",
+        where.c_str());
       Check(!(in.rdstate() & std::ios_base::badbit),
         "Error in ReadFile."
-        " Can't read the data, badbit is set, file_name: ",
-        file_name);
+        " Can't read the data, badbit is set, file: ",
+        where.c_str());
       Check(in.rdstate() == std::ios_base::goodbit,
         "Error in ReadFile."
-        " Can't read the data, non-goodbit, file_name: ",
-        file_name);
+        " Can't read the data, non-goodbit, file: ",
+        where.c_str());
     }
   }
   in.close();
-  Check(!(in.rdstate() & std::ios_base::failbit) || is_bulletproof,
-    "Error in ReadFile. Can't close the file, file_name: ",
-    file_name);
+  if ((in.rdstate() & std::ios_base::failbit) && !is_bulletproof) {
+    Fatal("Error in ReadFile. Can't close the file: ",
+      DescribeFilePath(file_name).c_str());
+  }
   return data;
 }
 
 void WriteFile(const char *file_name, const Ui8 *data, const Ui64 data_size) {
     std::ofstream out(file_name,
       std::ios_base::binary | std::ios_base::out | std::ios_base::trunc);
-    Check(!(out.rdstate() & std::ios_base::failbit),
-      "Error in WriteFile. Can't create/open the file, file_name: ",
-      file_name);
+    if (out.rdstate() & std::ios_base::failbit) {
+      // A write usually fails because the directory is missing rather than the
+      // file, and the description says which directory that is.
+      Fatal("Error in WriteFile. Can't create/open the file: ",
+        DescribeFilePath(file_name).c_str());
+    }
     out.exceptions(std::ios_base::goodbit);
     out.write(reinterpret_cast<const char*>(data),
       static_cast<std::streamsize>(data_size));
-    Check(!(out.rdstate() & (std::ios_base::badbit | std::ios_base::failbit)),
-      "Error in WriteFile. Can't write the file, file_name: ",
-      file_name);
+    if (out.rdstate() & (std::ios_base::badbit | std::ios_base::failbit)) {
+      Fatal("Error in WriteFile. Can't write the file: ",
+        DescribeFilePath(file_name).c_str());
+    }
     out.close();
-    Check(!(out.rdstate() & std::ios_base::failbit),
-      "Error in WriteFile. Can't close the file, file_name: ",
-      file_name);
+    if (out.rdstate() & std::ios_base::failbit) {
+      Fatal("Error in WriteFile. Can't close the file: ",
+        DescribeFilePath(file_name).c_str());
+    }
+}
+
+namespace {
+
+// True for a path the filesystem can follow on its own, without being told what
+// directory to start from.
+bool IsAbsolutePathString(const char *path) {
+  if (!path || *path == 0) {
+    return false;
+  }
+  if (path[0] == '/' || path[0] == '\\') {
+    return true;
+  }
+#ifdef ARCTIC_PLATFORM_WINDOWS
+  // "C:\dir\file" and the drive-relative "C:file" both name a drive, and neither
+  // may be glued behind a directory that could be on another one.
+  if (path[1] == ':') {
+    return true;
+  }
+#endif
+  return false;
+}
+
+// Only for explaining a failure, so a directory that happens to open is fine.
+bool FileCanBeOpened(const std::string &path) {
+  if (path.empty()) {
+    return false;
+  }
+  std::ifstream probe(path.c_str(),
+    std::ios_base::in | std::ios_base::binary);
+  return !(probe.rdstate() & std::ios_base::failbit);
+}
+
+}  // namespace
+
+void SetStartupDirectory(const std::string &path) {
+  g_startup_directory = path;
+}
+
+std::string GetStartupDirectory() {
+  return g_startup_directory;
+}
+
+std::string CanonicalizeArgvPath(const char *path) {
+  if (!path || *path == 0) {
+    return std::string();
+  }
+  // An absolute path already says everything, and with no startup directory
+  // remembered (the web, or a custom main that never set it) the current
+  // directory is the best guess there is.
+  if (IsAbsolutePathString(path) || g_startup_directory.empty()) {
+    return CanonicalizePath(path);
+  }
+  // Glued first, canonicalized second: the glued path is absolute, so the
+  // current directory (which may well be the Resources folder of a bundle)
+  // does not take part in resolving it.
+  return CanonicalizePath(
+    GluePath(g_startup_directory.c_str(), path).c_str());
+}
+
+std::string DescribeFilePath(const char *path) {
+  if (!path || *path == 0) {
+    return std::string("\"\" (an empty file name)");
+  }
+  std::stringstream str;
+  str << "\"" << path << "\"";
+  const std::string absolute = CanonicalizePath(path);
+  if (absolute.empty()) {
+    str << " (the absolute path can not be determined)";
+    return str.str();
+  }
+  const bool is_relative = !IsAbsolutePathString(path);
+  std::string current;
+  if (is_relative && GetCurrentPath(&current)) {
+    // One sentence rather than three separate paths: the absolute path is the
+    // current directory with the given path behind it, and putting it this way
+    // names the base that a relative path silently depends on.
+    str << " resolved against the current directory \"" << current
+        << "\" to \"" << absolute << "\"";
+  } else if (absolute != path) {
+    str << ", absolute \"" << absolute << "\"";
+  }
+  std::string parent = ParentPath(absolute.c_str());
+  while (parent.size() > 1
+         && (parent[parent.size() - 1] == '/'
+             || parent[parent.size() - 1] == '\\')) {
+    parent.erase(parent.size() - 1);
+  }
+  if (!parent.empty() && parent != absolute
+      && DoesDirectoryExist(parent.c_str()) == kTrivalentFalse) {
+    str << "; the directory \"" << parent << "\" does not exist";
+  }
+  // The usual reason a relative path fails is that it was resolved against the
+  // wrong directory, and the file itself is where the user meant it to be.
+  if (is_relative && !FileCanBeOpened(absolute)) {
+    const std::string startup = GetStartupDirectory();
+    if (!startup.empty() && startup != current) {
+      const std::string in_startup =
+        CanonicalizePath(GluePath(startup.c_str(), path).c_str());
+      if (FileCanBeOpened(in_startup)) {
+        str << "; the file does exist at \"" << in_startup
+            << "\", so this path was meant to be read relative to the startup"
+               " directory: resolve it with CanonicalizeArgvPath";
+      }
+    }
+  }
+  return str.str();
 }
 
 Engine *GetEngine() {

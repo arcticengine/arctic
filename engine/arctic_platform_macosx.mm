@@ -1143,9 +1143,23 @@ std::string GetClipboardText() {
 }
 
 std::string PrepareInitialPath() {
+  // Remembered before the chdir below takes it away, and it is the only chance:
+  // once the current directory is the Resources folder, nothing in the process
+  // knows where the user was standing when they typed the command. Every path
+  // that comes from argv has to be read through CanonicalizeArgvPath, which is
+  // what this value is for.
+  std::string startup_directory;
+  if (arctic::GetCurrentPath(&startup_directory)) {
+    arctic::SetStartupDirectory(startup_directory);
+  }
   std::string initial_path([[[NSBundle mainBundle] bundlePath] UTF8String]);
   initial_path += "/..";
   initial_path = arctic::CanonicalizePath(initial_path.c_str());
+  // Resources of the bundle become the current directory so that an application
+  // can load "data/hero.tga" without knowing where it was installed. The price
+  // is that a relative path typed on the command line no longer means what the
+  // shell meant by it, and that relative writes land inside the bundle, which a
+  // rebuild replaces; see CanonicalizeArgvPath in arctic_platform.h.
   [[NSFileManager defaultManager] changeCurrentDirectoryPath:
     [NSString stringWithFormat:@"%@/Contents/Resources",
     [[NSBundle mainBundle] bundlePath]]];
