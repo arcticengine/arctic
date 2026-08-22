@@ -855,10 +855,14 @@ void EngineThreadFunction(SystemInfo system_info) {
   arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
-  ExitProcess(0);  //-V2014
+  // Returning from EasyMain means the same as ExitProgram(0).
+  ExitProgram(0);
 }
 
 void ExitProgram(Si32 exit_code) {
+  // The log is written by a thread of its own, and ExitProcess would cut it off
+  // in the middle of the last messages, which are the interesting ones.
+  StopLogger();
   ExitProcess(exit_code);  //-V2014
 }
 
@@ -924,6 +928,17 @@ Trivalent DoesDirectoryExist(const char *path) {
   }
 }
 
+Trivalent DoesFileExist(const char *path) {
+  struct stat info;
+  if (stat(path, &info) != 0) {
+    return kTrivalentFalse;
+  } else if ((info.st_mode & S_IFMT) == S_IFREG) {
+    return kTrivalentTrue;
+  } else {
+    return kTrivalentUnknown;
+  }
+}
+
 bool MakeDirectory(const char *path) {
   BOOL is_ok = CreateDirectory(path, NULL);
   return is_ok;
@@ -937,6 +952,13 @@ bool GetCurrentPath(std::string *out_dir) {
     return true;
   }
   return false;
+}
+
+bool ChangeCurrentDirectory(const char *path) {
+  if (!path || *path == 0) {
+    return false;
+  }
+  return SetCurrentDirectoryA(path) != 0;
 }
 
 bool GetDirectoryEntries(const char *path,
@@ -1232,15 +1254,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   // not-so OS-specific stuff
   std::string initial_path = arctic::PrepareInitialPath();
+  arctic::GetEngine()->SetArgcArgvW(num_args,
+    const_cast<const wchar_t **>(args));
+  LocalFree(args);
+  arctic::GetEngine()->SetInitialPath(initial_path);
+
+  // Asked before the window, the GL context and the sound device are created, so
+  // that a console subcommand of a GUI binary can run without any of them. The
+  // command line is already in the engine for the decider to read, see
+  // SetHeadlessDecider in arctic_platform.h.
+  if (arctic::IsHeadlessStartupRequested()) {
+    arctic::StartLogger();
+    arctic::GetEngine()->InitHeadlessScreen(1920, 1080);
+    arctic::PrepareForTheEasyMainCall();
+    EasyMain();
+    arctic::StopLogger();
+    return 0;
+  }
+
   arctic::StartLogger();
   arctic::SoundPlayer soundPlayer;
   soundPlayer.Initialize();
   arctic::CreateMainWindow(&arctic::g_system_info);
-  arctic::GetEngine()->SetArgcArgvW(num_args,
-    const_cast<const wchar_t **>(args));
-  LocalFree(args);
-
-  arctic::GetEngine()->SetInitialPath(initial_path);
 
   std::thread engine_thread(arctic::EngineThreadFunction,
     arctic::g_system_info);

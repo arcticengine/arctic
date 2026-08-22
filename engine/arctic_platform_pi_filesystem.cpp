@@ -53,6 +53,17 @@ Trivalent DoesDirectoryExist(const char *path) {
   }
 }
 
+Trivalent DoesFileExist(const char *path) {
+  struct stat info;
+  if (stat(path, &info) != 0) {
+    return kTrivalentFalse;
+  } else if ((info.st_mode & S_IFMT) == S_IFREG) {
+    return kTrivalentTrue;
+  } else {
+    return kTrivalentUnknown;
+  }
+}
+
 bool MakeDirectory(const char *path) {
   Si32 result = mkdir(path,
       S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IXOTH);
@@ -66,6 +77,13 @@ bool GetCurrentPath(std::string *out_dir) {
     return true;
   }
   return false;
+}
+
+bool ChangeCurrentDirectory(const char *path) {
+  if (!path || *path == 0) {
+    return false;
+  }
+  return chdir(path) == 0;
 }
 
 bool GetDirectoryEntries(const char *path,

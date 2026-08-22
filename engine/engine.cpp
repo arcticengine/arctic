@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <cstdlib>
 #include <cstring>
 #include <sstream>
 
@@ -43,6 +44,34 @@ thread_local std::independent_bits_engine<std::mt19937_64, 32, Ui64> Engine::rnd
 thread_local std::independent_bits_engine<std::mt19937_64, 16, Ui64> Engine::rnd_16_;
 thread_local std::independent_bits_engine<std::mt19937_64, 8, Ui64> Engine::rnd_8_;
 thread_local bool Engine::is_rng_initialized_ = false;
+
+namespace {
+
+// Set before main runs, from a global of the application, see
+// ARCTIC_HEADLESS_DECIDER. Read once from the startup code of the platform,
+// which is single-threaded at that point.
+HeadlessDecider g_headless_decider = nullptr;
+
+}  // namespace
+
+bool SetHeadlessDecider(HeadlessDecider decider) {
+  g_headless_decider = decider;
+  return true;
+}
+
+bool IsHeadlessStartupRequested() {
+  // The environment says it from outside, for a binary that knows nothing about
+  // headless runs; both variables are needed, as ARCTIC_HEADLESS alone means the
+  // older "window is created but hidden" mode.
+  if (std::getenv("ARCTIC_HEADLESS") != nullptr &&
+      std::getenv("ARCTIC_DISABLE_HW") != nullptr) {
+    return true;
+  }
+  if (g_headless_decider != nullptr) {
+    return g_headless_decider();
+  }
+  return false;
+}
 
 void MathTables::Init() {
   circle_16_16_size = 4097;

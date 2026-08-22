@@ -21,6 +21,12 @@ Look how easy it is to use:
     }
 ~~~~~
 
+The entry point is `void EasyMain()`, the engine links exactly this signature, so
+it can't return an exit code. An application that has one to report (a command
+line tool built on the engine, for example) calls
+`ExitProgram(exit_code)`, see @ref ExitProgram. Returning from `EasyMain` is the
+same as `ExitProgram(0)`.
+
 Features
 --------
 
@@ -181,7 +187,7 @@ Key path functions:
 - `GetStartupDirectory()`: the directory the process was started from, captured
   before anything changed the current one; empty on the web
 - `GetEngine()->GetInitialPath()`: where the application itself lives (on macOS
-  the directory containing the bundle, elsewhere the startup directory) — the
+  the directory containing the bundle, elsewhere the startup directory), the
   right base for files that belong to the application
 - `CanonicalizePath(path)`: canonical form resolved against the *current*
   directory, which is the resources folder inside a macOS bundle
@@ -189,6 +195,10 @@ Key path functions:
   string-level path arithmetic that touches no filesystem state
 - `DescribeFilePath(path)`: one line naming both spellings of a path and the
   likely reason it could not be opened, for error messages and logs
+- `DoesFileExist(path)`, `DoesDirectoryExist(path)`: what is at the path, if
+  anything; a directory answers `kTrivalentUnknown` to the file question
+- `ChangeCurrentDirectory(path)`, `GetCurrentPath(&dir)`: read and move the
+  current directory, remembering that relative asset paths follow it
 
 Two more consequences of the same rule are worth remembering. A relative path
 opened for writing lands inside the bundle on macOS, where a rebuild replaces
@@ -198,6 +208,49 @@ built with `ARCTIC_NO_MAIN` never runs the engine's startup code, so it should
 call `SetStartupDirectory()` itself if it wants argv paths to resolve;
 otherwise `CanonicalizeArgvPath()` falls back to the current directory.
 
+### Console Subcommands and Exit Codes
+
+A subcommand like `mygame convert a.png b.tga` has nothing to draw, and a window
+that opens and closes right away is worse than no window at all, on a machine
+with a display or without one. The engine asks before it creates the window, the
+GL context and the sound device, and the answer comes from a function of yours
+registered before `main` runs:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+
+    namespace {
+
+    bool WantsHeadlessRun() {
+      Engine *engine = GetEngine();  // the command line is already here
+      return engine->GetArgc() >= 2 &&
+             std::string(engine->GetArgv()[1]) == "convert";
+    }
+
+    }  // namespace
+
+    ARCTIC_HEADLESS_DECIDER(WantsHeadlessRun)
+
+    void EasyMain() {
+      if (GetEngine()->IsHeadless()) {
+        ExitProgram(Convert(CanonicalizeArgvPath(GetEngine()->GetArgv()[2])));
+      }
+      ResizeScreen(1280, 720);
+      ...
+    }
+~~~~~
+
+Everything else about such a run is the same as usual: the same current
+directory, the same log, the same argv rules, and the backbuffer is a piece of
+memory nothing presents. Setting both `ARCTIC_HEADLESS` and `ARCTIC_DISABLE_HW`
+in the environment asks for it from outside, without a decider.
+
+`ExitProgram(code)` is how a subcommand reports its verdict: the code reaches the
+shell, the log is flushed and the sound device is released on the way out. Never
+`std::exit` or `std::_Exit` instead, and remember that `EasyMain` is `void` and
+can not return a value; returning from it means `ExitProgram(0)`.
+
 ### Drawing Text
 
 Text rendering in Arctic Engine is handled by the `Font` class. Here's a simple example of how to load a font and draw text:
@@ -206,7 +259,7 @@ Text rendering in Arctic Engine is handled by the `Font` class. Here's a simple 
     #include "engine/easy.h"
     using namespace arctic;
     
-    Ui32 EasyMain() {
+    void EasyMain() {
       // Create and load a font
       Font gameFont;
       gameFont.Load("data/arctic_one_bmf.fnt");
@@ -229,8 +282,6 @@ Text rendering in Arctic Engine is handled by the `Font` class. Here's a simple 
         
         ShowFrame();
       }
-      
-      return 0;
     }
 ~~~~~
 
@@ -238,6 +289,32 @@ Key points for text rendering:
 - Use `kDrawBlendingModeColorize` for best results with colored text
 - Text origin options: `kTextOriginTop`, `kTextOriginBottom`, `kTextOriginCenter`, `kTextOriginFirstBase`
 - Text alignment options: `kTextAlignmentLeft`, `kTextAlignmentCenter`, `kTextAlignmentRight`
+- `BaseToTop()`, `BaseToBottom()` and `LineHeight()` are the vertical metrics for
+  code that places lines itself instead of drawing a multiline string
+
+Text over a picture is unreadable without an outline, and an outline does not
+have to cost several Draw calls. Ask for it when loading the font and it is baked
+into the glyphs once:
+
+~~~~~{.cpp}
+    Font hudFont;
+    // two pixel black outline around white glyphs
+    hudFont.LoadTtf("data/fonts/MyFont.ttf", 16.0f, nullptr, 0, 2.0f,
+                    Rgba(0, 0, 0, 255));
+
+    hudFont.Draw("Readable over noise", 20, 20, kTextOriginBottom,
+                 kTextAlignmentLeft, kDrawBlendingModeColorize, kFilterNearest,
+                 Rgba(255, 255, 0));
+~~~~~
+
+`kDrawBlendingModeColorize` multiplies every glyph pixel by the color passed to
+`Draw`, so the white body of the glyph takes that color while the black outline
+stays black, whatever color the text is. An outline of some other color would be
+tinted by the text color the same way, so bake the text color into the glyphs and
+draw with `kDrawBlendingModeAlphaBlend`, which ignores the `Draw` color, when both
+colors have to survive exactly. `AddBorder()` does the same to an already loaded
+font, and note that a `Font` is a shared handle: bordering one copy borders every
+copy made from the same load.
 
 ### Processing Mouse Input
 
@@ -247,7 +324,7 @@ Arctic Engine makes it easy to handle mouse input. Here's how to track mouse pos
     #include "engine/easy.h"
     using namespace arctic;
     
-    Ui32 EasyMain() {
+    void EasyMain() {
       Font gameFont;
       gameFont.Load("data/arctic_one_bmf.fnt");
       
@@ -292,8 +369,6 @@ Arctic Engine makes it easy to handle mouse input. Here's how to track mouse pos
                      kFilterNearest, Rgba(255, 255, 255));
         ShowFrame();
       }
-      
-      return 0;
     }
 ~~~~~
 
@@ -313,15 +388,13 @@ Arctic Engine provides a convenient streaming interface for logging. Here's how 
     #include "engine/easy.h"
     using namespace arctic;
     
-    Ui32 EasyMain() {
+    void EasyMain() {
       // Simple message logging
       *Log() << "Game started!";
       
       // Logging variable value
       float score = 42.5f;
       *Log() << "New high score achieved: " << score;
-      
-      return 0;
     }
 ~~~~~
 
@@ -329,6 +402,25 @@ Key logging features:
 - Uses convenient streaming syntax similar to std::cout
 - Thread-safe non-blocking lightning-fast logging
 - Automatically adds newline at the end of each log message
+
+The streaming form needs a complete `std::ostringstream`. Including
+`"engine/easy.h"` gives it to you, but `"engine/log.h"` alone does not: that
+header names the stream through `<iosfwd>` to stay cheap to include. A file that
+includes only the logger has to ask for the stream explicitly:
+
+~~~~~{.cpp}
+    #include <sstream>
+    #include "engine/log.h"
+~~~~~
+
+Without `<sstream>` the compiler complains about the `<<` operator with a message
+like "invalid operands to binary expression ('std::basic_ostringstream<char>'
+and 'const char[13]')". Code that would rather keep its includes light can use
+the plain overloads instead, they need no streams at all:
+
+~~~~~{.cpp}
+    Log("MeshObj_Read can't open ", file_name);
+~~~~~
 
 ### Random Number Generation
 
@@ -375,7 +467,7 @@ Arctic Engine makes it easy to load and play sound effects and music. Here's how
     #include "engine/easy.h"
     using namespace arctic;
     
-    Ui32 EasyMain() {
+    void EasyMain() {
       // Load sound effects
       Sound explosionSound;
       explosionSound.Load("data/explosion.wav");
@@ -402,8 +494,6 @@ Arctic Engine makes it easy to load and play sound effects and music. Here's how
         
         ShowFrame();
       }
-      
-      return 0;
     }
 ~~~~~
 
@@ -430,7 +520,7 @@ Arctic Engine provides a simple yet powerful GUI system for creating interactive
       g_backgroundColor = Rgba(Random8(), Random8(), Random8());
     }
     
-    Ui32 EasyMain() {
+    void EasyMain() {
       ResizeScreen(1280, 720);
       
       // Create GUI factory
@@ -469,8 +559,6 @@ Arctic Engine provides a simple yet powerful GUI system for creating interactive
         
         ShowFrame();
       }
-      
-      return 0;
     }
 ~~~~~
 
@@ -482,6 +570,31 @@ Key GUI features:
 - Process input with `ApplyInput()` method
 - Draw GUI elements with `Draw()` method
 
+An application with hotkeys of its own has one more thing to do: the keys must
+not fire while the user is typing into a field. Ask the root panel whether the
+focus is inside something that reads the keyboard, and follow an edit box through
+its callbacks rather than by polling `GetText()`:
+
+~~~~~{.cpp}
+    std::shared_ptr<Editbox> rate = guiFactory.MakeEditbox();
+    rate->OnTextChange = OnRateTyped;   // typing, deleting, pasting, undo, redo
+    rate->OnEditDone = OnRateAccepted;  // Enter, or the focus went elsewhere
+    gui->AddChild(rate);
+
+    // ... in the game loop, after ApplyInput:
+    if (!gui->IsKeyboardCaptured()) {
+      if (IsKeyDownward(kKeySpace)) {
+        TogglePause();
+      }
+    }
+~~~~~
+
+`Panel::IsFocused()` answers the same question about one particular panel, and
+the queue passed to `ApplyInput` carries `kGuiEditboxTextChange` and
+`kGuiEditboxEditDone` for a host that prefers messages to callbacks. The
+callbacks run in the middle of input handling, so they must not add or remove
+panels; remember what to do and do it after the input loop.
+
 ### Localization
 
 Arctic Engine provides an ICU MessageFormat-compatible localization system for multi-language game support:
@@ -491,7 +604,7 @@ Arctic Engine provides an ICU MessageFormat-compatible localization system for m
     #include "engine/localization.h"
     using namespace arctic;
     
-    Ui32 EasyMain() {
+    void EasyMain() {
       // Load localization strings from CSV file
       // CSV format: id,en,ru,de (or id,en for single language)
       Localization::Instance().Load("data/strings.csv");
@@ -520,8 +633,6 @@ Arctic Engine provides an ICU MessageFormat-compatible localization system for m
         
         ShowFrame();
       }
-      
-      return 0;
     }
 ~~~~~
 

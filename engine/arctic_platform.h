@@ -47,7 +47,79 @@ struct DirectoryEntry {
 
 /// @brief Exits the program
 /// @param exit_code Exit code returned to the OS
+///
+/// The process ends with the code given, and the code is what the shell sees,
+/// so a console subcommand can report a failure the usual way. The log is
+/// flushed and the sound device is released on the way out, which is why this
+/// is the way to leave and std::exit or std::_Exit are not.
+///
+/// EasyMain can not return a value (it is void), so returning from it is the
+/// same as ExitProgram(0). Note that global destructors do run, as they do for
+/// any exit, so a global that outlives EasyMain must be able to destruct.
 void ExitProgram(Si32 exit_code = 0);
+
+/// @brief Type of the function that answers "start without a window?"
+using HeadlessDecider = bool (*)();
+
+/// @brief Registers the function the engine asks before it creates the window
+/// @param decider Function returning true to start without a window, or nullptr
+/// @return true always, so that a global can be initialized with the call
+///
+/// A GUI application often has console subcommands: `mygame convert a.png b.tga`
+/// has no business opening a window, and a window that opens and closes right
+/// away is worse than none on a machine with no display at all. The engine asks
+/// the decider before it creates the window, the GL context and the sound
+/// device; when it answers true, none of the three is created, the backbuffer is
+/// a plain piece of memory, and GetEngine()->IsHeadless() stays true for the
+/// whole run.
+///
+/// The catch is the timing: the decision is needed before EasyMain is called, so
+/// the registration has to happen before main runs. That is what the
+/// ARCTIC_HEADLESS_DECIDER macro is for. The command line is already there to
+/// look at, through GetEngine()->GetArgc() and GetEngine()->GetArgv().
+///
+/// @code
+/// bool IsConsoleSubcommand() {
+///   Engine *engine = GetEngine();
+///   for (Si32 i = 1; i < engine->GetArgc(); ++i) {
+///     const std::string arg = engine->GetArgv()[i];
+///     if (arg == "convert" || arg == "test") {
+///       return true;
+///     }
+///   }
+///   return false;
+/// }
+/// ARCTIC_HEADLESS_DECIDER(IsConsoleSubcommand)
+///
+/// void EasyMain() {
+///   if (GetEngine()->IsHeadless()) {
+///     RunTheSubcommand();  // draws nothing, ends with ExitProgram(code)
+///     return;
+///   }
+///   ...
+/// }
+/// @endcode
+///
+/// Setting both the ARCTIC_HEADLESS and the ARCTIC_DISABLE_HW environment
+/// variables asks for the same thing from outside, without a decider.
+bool SetHeadlessDecider(HeadlessDecider decider);
+
+/// @brief Registers a headless decider before main runs
+///
+/// Put it at namespace scope in one of the translation units of the application,
+/// next to the decider itself. See SetHeadlessDecider.
+#define ARCTIC_HEADLESS_DECIDER(decider_function)                    \
+  namespace {                                                        \
+  const bool g_arctic_headless_decider_registered =                  \
+      ::arctic::SetHeadlessDecider(decider_function);                 \
+  }  // namespace
+
+/// @brief Asks the registered decider and the environment about the window
+/// @return true if this run must have no window, no GL context and no sound
+///
+/// Called by the engine startup code before it creates anything; an application
+/// asks GetEngine()->IsHeadless() instead, at any time after EasyMain begins.
+bool IsHeadlessStartupRequested();
 
 #ifdef ARCTIC_NO_MAIN
 /// @brief Initializes the platform code for headless-mode use
@@ -113,6 +185,17 @@ std::string GetClipboardText();
 /// whether the direcotry exists.
 Trivalent DoesDirectoryExist(const char *path);
 
+/// @brief Checks if a filesystem file exists
+/// @param [in] path Path to a file
+/// @return kTrivalentFalse if nothing exists at the path,
+/// kTrivalentTrue if a regular file exists there,
+/// kTrivalentUnknown if the path leads to something that is not a regular file
+/// (a directory or a device), or the application can not determine what it is.
+///
+/// An existing file is not necessarily a readable one, so a program that is
+/// about to read the file may just as well open it and handle the failure.
+Trivalent DoesFileExist(const char *path);
+
 /// @brief Create a directory
 /// @param [in] path Path to a directory to create
 /// @return true on success
@@ -122,6 +205,17 @@ bool MakeDirectory(const char *path);
 /// @param [out] out_dir Address of an std::string to fill with the path
 /// @return true if the path is successfuly detected, false otherwise
 bool GetCurrentPath(std::string *out_dir);
+
+/// @brief Makes the directory specified current
+/// @param [in] path Path to the directory to make current
+/// @return true if the current directory is changed, false otherwise
+///
+/// The engine may have made a directory of its own choice current before
+/// EasyMain is called (the Resources folder of the bundle on macOS), and assets
+/// are loaded by paths relative to it, so an application that moves the current
+/// directory elsewhere should either move it back or load its assets by
+/// absolute paths built from GetEngine()->GetInitialPath().
+bool ChangeCurrentDirectory(const char *path);
 
 /// @brief List directory entries
 /// @param [in] path Path to a direcotry

@@ -351,6 +351,24 @@ void Panel::SetCurrentTab(bool is_current_tab) {
   is_current_tab_ = is_current_tab;
 }
 
+bool Panel::IsFocused() const {
+  return is_current_tab_;
+}
+
+bool Panel::IsKeyboardCapturing() const {
+  return false;
+}
+
+bool Panel::IsKeyboardCaptured() {
+  if (is_current_tab_ && IsVisible() && IsKeyboardCapturing()) {
+    return true;
+  }
+  Panel *tab = FindCurrentTab();
+  // A panel hidden while it had the focus keeps the flag, and it can not be
+  // typed into, so it does not hold the keyboard either.
+  return tab != nullptr && tab->IsVisible() && tab->IsKeyboardCapturing();
+}
+
 void Panel::AddChild(std::shared_ptr<Panel> child) {
   Check(!!child, "AddChild called with child == nullptr");
   Check(child.get() != this, "AddChild called with child == this");
@@ -1108,6 +1126,15 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   const Si32 selection_begin_was = selection_begin_;
   const Si32 selection_end_was = selection_end_;
   const size_t length_was = text_.length();
+  // The text only changes when the keyboard talks to a focused box, and that is
+  // the only case worth copying the text for. A paste can replace a selection
+  // with a string of the same length, so the length alone is not an answer.
+  const bool may_change_text =
+    is_current_tab_ && message.kind == InputMessage::kKeyboard;
+  std::string text_was;
+  if (may_change_text) {
+    text_was = text_;
+  }
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
@@ -1334,8 +1361,15 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
               selection_begin_ = cursor_pos_;
               selection_end_ = cursor_pos_;
             }
+          } else {
+            // Single line, or AcceptsReturn off: Enter ends the editing and is
+            // still left to the host, which may have a use of its own for it.
+            if (out_gui_messages) {
+              out_gui_messages->emplace_back(shared_from_this(),
+                                             kGuiEditboxEditDone);
+            }
+            OnEditDone();
           }
-          // Single line, or AcceptsReturn off: Enter is left to the host.
         } else if (!ctrl && (is_digits_ ? ((key >= kKey0 && key <= kKey9) ||
             (message.keyboard.characters[0] >= '0' &&
              message.keyboard.characters[0] <= '9')) : true)) {
@@ -1390,6 +1424,29 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       selection_begin_ != selection_begin_was ||
       selection_end_ != selection_end_was) {
     TouchCaret();
+  }
+  if (may_change_text && text_ != text_was) {
+    if (out_gui_messages) {
+      out_gui_messages->emplace_back(shared_from_this(),
+                                     kGuiEditboxTextChange);
+    }
+    OnTextChange();
+  }
+}
+
+bool Editbox::IsKeyboardCapturing() const {
+  return true;
+}
+
+void Editbox::SetCurrentTab(bool is_current_tab) {
+  const bool was_current_tab = is_current_tab_;
+  Panel::SetCurrentTab(is_current_tab);
+  if (was_current_tab && !is_current_tab) {
+    // Whatever the mouse was doing in the box is over, and the next edit starts
+    // its own undo step rather than continuing the abandoned one.
+    is_dragging_ = false;
+    edit_group_ = kEditGroupNone;
+    OnEditDone();
   }
 }
 

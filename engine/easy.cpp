@@ -1568,16 +1568,6 @@ bool IsAbsolutePathString(const char *path) {
   return false;
 }
 
-// Only for explaining a failure, so a directory that happens to open is fine.
-bool FileCanBeOpened(const std::string &path) {
-  if (path.empty()) {
-    return false;
-  }
-  std::ifstream probe(path.c_str(),
-    std::ios_base::in | std::ios_base::binary);
-  return !(probe.rdstate() & std::ios_base::failbit);
-}
-
 }  // namespace
 
 void SetStartupDirectory(const std::string &path) {
@@ -1639,12 +1629,12 @@ std::string DescribeFilePath(const char *path) {
   }
   // The usual reason a relative path fails is that it was resolved against the
   // wrong directory, and the file itself is where the user meant it to be.
-  if (is_relative && !FileCanBeOpened(absolute)) {
+  if (is_relative && DoesFileExist(absolute.c_str()) != kTrivalentTrue) {
     const std::string startup = GetStartupDirectory();
     if (!startup.empty() && startup != current) {
       const std::string in_startup =
         CanonicalizePath(GluePath(startup.c_str(), path).c_str());
-      if (FileCanBeOpened(in_startup)) {
+      if (DoesFileExist(in_startup.c_str()) == kTrivalentTrue) {
         str << "; the file does exist at \"" << in_startup
             << "\", so this path was meant to be read relative to the startup"
                " directory: resolve it with CanonicalizeArgvPath";

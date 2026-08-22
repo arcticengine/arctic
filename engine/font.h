@@ -289,21 +289,40 @@ public:
   ///
   /// For TrueType fonts (.ttf), use LoadTtf() instead.
   ///
+  /// Every loader takes an optional border, applied to the glyphs right after
+  /// they are loaded, exactly as a following AddBorder call would. Zero width,
+  /// the default, leaves the glyphs alone. See AddBorder for what the border does
+  /// to the glyphs and which blending mode draws them the way you meant.
+  ///
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  ///
   /// @throws Fatal error if the file extension is not recognized or the file cannot be loaded
-  void Load(const char *file_name);
+  void Load(const char *file_name, float border_width = 0.0f,
+            Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads a font from an XML file
   /// @param [in] file_name Path to the XML font file
-  void LoadXml(const char *file_name);
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  void LoadXml(const char *file_name, float border_width = 0.0f,
+               Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads an ASCII square font from a file
   /// @param [in] file_name Path to the font file
   /// @param [in] is_dense Whether the font is densely packed
-  void LoadAsciiSquare(const char *file_name, bool is_dense);
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  void LoadAsciiSquare(const char *file_name, bool is_dense,
+                       float border_width = 0.0f,
+                       Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads a binary BMFont file
   /// @param [in] file_name Path to the binary BMFont file
-  void LoadBinaryFnt(const char *file_name);
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  void LoadBinaryFnt(const char *file_name, float border_width = 0.0f,
+                     Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads a font from a horizontal stripe of glyphs
   /// @param [in] sprite Sprite containing the glyph stripe
@@ -311,8 +330,12 @@ public:
   /// @param [in] base_to_top Distance from baseline to top of the font
   /// @param [in] line_height Height of a line of text
   /// @param [in] space_width Width of the space character
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
-                            Si32 base_to_top, Si32 line_height, Si32 space_width);
+                            Si32 base_to_top, Si32 line_height, Si32 space_width,
+                            float border_width = 0.0f,
+                            Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads a font from a table of glyphs
   /// @param [in] sprite Sprite containing the glyph table
@@ -323,16 +346,23 @@ public:
   /// @param [in] line_height Height of a line of text
   /// @param [in] space_width Width of the space character
   /// @param [in] left_offset Left offset of glyphs within cells
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadTable(Sprite sprite, const char* utf8_letters,
                  Si32 cell_width, Si32 cell_height,
                  Si32 base_to_top, Si32 line_height, Si32 space_width,
-                 Si32 left_offset);
+                 Si32 left_offset, float border_width = 0.0f,
+                 Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads a font from an array of Letter structures
   /// @param [in] in_letters Array of Letter structures
   /// @param [in] base_to_top Distance from baseline to top of the font
   /// @param [in] line_height Height of a line of text
-  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height);
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height,
+                      float border_width = 0.0f,
+                      Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads a TrueType font from a .ttf or .ttc file and rasterizes glyphs
   /// @param [in] file_name Path to the .ttf or .ttc font file
@@ -340,8 +370,12 @@ public:
   /// @param [in] utf8_chars UTF-8 string of characters to rasterize.
   ///   If nullptr, a default set of ASCII + Cyrillic characters is used.
   /// @param [in] font_index Index of the font within a .ttc collection (0 by default)
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadTtf(const char *file_name, float pixel_height,
-               const char *utf8_chars = nullptr, Si32 font_index = 0);
+               const char *utf8_chars = nullptr, Si32 font_index = 0,
+               float border_width = 0.0f,
+               Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Loads a system font by name and rasterizes glyphs
   /// @param [in] font_name Name of the system font (e.g. "Arial", "Helvetica")
@@ -349,8 +383,12 @@ public:
   /// @param [in] utf8_chars UTF-8 string of characters to rasterize.
   ///   If nullptr, a default set of ASCII + Cyrillic characters is used.
   /// @param [in] font_index Index of the font within a .ttc collection (0 by default)
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadSystemFont(const char *font_name, float pixel_height,
-                      const char *utf8_chars = nullptr, Si32 font_index = 0);
+                      const char *utf8_chars = nullptr, Si32 font_index = 0,
+                      float border_width = 0.0f,
+                      Rgba border_color = Rgba(0, 0, 0, 255));
 
   /// @brief Expands each glyph sprite by ceil(width) pixels per side, draws an outline
   ///   within Euclidean distance width of glyph pixels (by luma/alpha), composites
@@ -360,6 +398,44 @@ public:
   ///   extend past the original line box or overlap adjacent glyphs.
   /// @param width Outline radius in pixels (float; canvas padding uses ceil(width))
   /// @param color RGBA color for outline pixels
+  ///
+  /// The border is baked into the glyph sprites once, so drawing bordered text
+  /// costs exactly one Draw call, and every later Draw of this font is bordered.
+  /// A font is a shared handle: AddBorder changes the glyphs every Font copy made
+  /// from the same load sees. Load the font twice (or see the border_width
+  /// parameter of the loaders) when both a bordered and a plain version are
+  /// needed.
+  ///
+  /// The blending mode passed to Draw decides what happens to the two colors now
+  /// sitting in the glyph sprites:
+  ///
+  /// - kDrawBlendingModeColorize multiplies every glyph pixel by the color given
+  ///   to Draw, channel by channel. Rasterized glyphs are white, so the body of
+  ///   the text takes the color asked for, while a black border keeps its color,
+  ///   because zero times anything is zero. This is the combination to use for
+  ///   white-or-any-color text in a black outline, and it is what the glyphs
+  ///   produced by LoadTtf and LoadSystemFont are made for.
+  /// - A border of any other color is tinted by the Draw color the same way, so
+  ///   asking for a red text over a green border gives a black border (red times
+  ///   green is zero in every channel). To keep both colors exactly as baked,
+  ///   draw with kDrawBlendingModeAlphaBlend, which ignores the Draw color and
+  ///   composites the glyph pixels as they are. The text color then has to be
+  ///   baked as well: rasterize the glyphs in the final color, or draw the text
+  ///   in white over a colored border and accept the white.
+  ///
+  /// Drawing the same string several times with small offsets is the other way to
+  /// get an outline, and it costs as many Draw calls as offsets, so prefer the
+  /// baked border unless the outline color has to change at runtime.
+  ///
+  /// Example, white text with a two pixel black outline in one Draw call:
+  /// @code
+  /// Font font;
+  /// font.LoadSystemFont("Helvetica", 24.0f, nullptr, 0, 2.0f,
+  ///                     Rgba(0, 0, 0, 255));
+  /// font.Draw("Readable over noise", 20, 20, kTextOriginBottom,
+  ///           kTextAlignmentLeft, kDrawBlendingModeColorize, kFilterNearest,
+  ///           Rgba(255, 255, 255));
+  /// @endcode
   void AddBorder(float width, Rgba color);
 
   /// @brief Draws text or evaluates its size
@@ -558,6 +634,37 @@ class Font {
     return font_instance_->outline_;
   }
 
+  /// @brief Returns the distance from the baseline up to the top of the line
+  ///
+  /// The vertical metrics of the font, in pixels, needed by any code that lays
+  /// out lines by itself instead of letting Draw place a multiline string:
+  /// LineHeight() is the step from one baseline to the next, BaseToTop() and
+  /// BaseToBottom() say how far the line box reaches above and below the
+  /// baseline, and LineHeight() == BaseToTop() + BaseToBottom().
+  ///
+  /// Example, a HUD that draws its own lines downwards from the top:
+  /// @code
+  /// Si32 y = ScreenSize().y - font.BaseToTop();
+  /// for (const std::string &line : lines) {
+  ///   font.Draw(line.c_str(), 8, y, kTextOriginFirstBase, kTextAlignmentLeft,
+  ///             kDrawBlendingModeColorize, kFilterNearest, color);
+  ///   y -= font.LineHeight();
+  /// }
+  /// @endcode
+  Si32 BaseToTop() const {
+    return font_instance_->base_to_top_;
+  }
+
+  /// @brief Returns the distance from the baseline down to the bottom of the line
+  Si32 BaseToBottom() const {
+    return font_instance_->base_to_bottom_;
+  }
+
+  /// @brief Returns the vertical step between consecutive baselines
+  Si32 LineHeight() const {
+    return font_instance_->line_height_;
+  }
+
   /// @brief Creates an empty font with no glyphs
   /// @param [in] base_to_top Glyph height from base to top.
   /// @param [in] line_height Line height for the font.
@@ -602,28 +709,45 @@ class Font {
   ///
   /// For TrueType fonts (.ttf), use LoadTtf() instead.
   ///
+  /// A non-zero border_width outlines the glyphs right after loading, see
+  /// AddBorder for the details and for the blending mode to draw them with.
+  ///
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  ///
   /// @throws Fatal error if the file extension is not recognized or the file cannot be loaded
-  void Load(const char *file_name) {
-    font_instance_->Load(file_name);
+  void Load(const char *file_name, float border_width = 0.0f,
+      Rgba border_color = Rgba(0, 0, 0, 255)) {
+    font_instance_->Load(file_name, border_width, border_color);
   }
 
   /// @brief Loads a font from an XML file
   /// @param [in] file_name Path to the XML font file
-  void LoadXml(const char *file_name) {
-    font_instance_->LoadXml(file_name);
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  void LoadXml(const char *file_name, float border_width = 0.0f,
+      Rgba border_color = Rgba(0, 0, 0, 255)) {
+    font_instance_->LoadXml(file_name, border_width, border_color);
   }
 
   /// @brief Loads an ASCII square font from a file
   /// @param [in] file_name Path to the font file
   /// @param [in] is_dense Whether the font is densely packed
-  void LoadAsciiSquare(const char *file_name, bool is_dense) {
-    font_instance_->LoadAsciiSquare(file_name, is_dense);
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  void LoadAsciiSquare(const char *file_name, bool is_dense,
+      float border_width = 0.0f, Rgba border_color = Rgba(0, 0, 0, 255)) {
+    font_instance_->LoadAsciiSquare(file_name, is_dense, border_width,
+                                    border_color);
   }
 
   /// @brief Loads a binary BMFont file
   /// @param [in] file_name Path to the binary BMFont file
-  void LoadBinaryFnt(const char *file_name) {
-    font_instance_->LoadBinaryFnt(file_name);
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
+  void LoadBinaryFnt(const char *file_name, float border_width = 0.0f,
+      Rgba border_color = Rgba(0, 0, 0, 255)) {
+    font_instance_->LoadBinaryFnt(file_name, border_width, border_color);
   }
 
   /// @brief Loads a font from a horizontal stripe of glyphs
@@ -632,9 +756,14 @@ class Font {
   /// @param [in] base_to_top Distance from baseline to top of the font
   /// @param [in] line_height Height of a line of text
   /// @param [in] space_width Width of the space character
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
-      Si32 base_to_top, Si32 line_height, Si32 space_width) {
-    font_instance_->LoadHorizontalStripe(sprite, utf8_letters, base_to_top, line_height, space_width);
+      Si32 base_to_top, Si32 line_height, Si32 space_width,
+      float border_width = 0.0f, Rgba border_color = Rgba(0, 0, 0, 255)) {
+    font_instance_->LoadHorizontalStripe(sprite, utf8_letters, base_to_top,
+                                         line_height, space_width, border_width,
+                                         border_color);
   }
 
   /// @brief Loads a font from a table of glyphs
@@ -646,16 +775,22 @@ class Font {
   /// @param [in] line_height Height of a line of text
   /// @param [in] space_width Width of the space character
   /// @param [in] left_offset Left offset of glyphs within cells
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadTable(Sprite sprite, const char* utf8_letters,
       Si32 cell_width, Si32 cell_height,
       Si32 base_to_top, Si32 line_height, Si32 space_width,
-      Si32 left_offset) {
+      Si32 left_offset, float border_width = 0.0f,
+      Rgba border_color = Rgba(0, 0, 0, 255)) {
     font_instance_->LoadTable(sprite, utf8_letters, cell_width, cell_height,
-                              base_to_top, line_height, space_width, left_offset);
+                              base_to_top, line_height, space_width, left_offset,
+                              border_width, border_color);
   }
 
-  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height) {
-    font_instance_->LoadLetterBits(in_letters, base_to_top, line_height);
+  void LoadLetterBits(Letter *in_letters, Si32 base_to_top, Si32 line_height,
+      float border_width = 0.0f, Rgba border_color = Rgba(0, 0, 0, 255)) {
+    font_instance_->LoadLetterBits(in_letters, base_to_top, line_height,
+                                   border_width, border_color);
   }
 
   /// @brief Loads a TrueType font and rasterizes glyphs at the specified size
@@ -683,10 +818,20 @@ class Font {
   /// Font boldFont;
   /// boldFont.LoadTtf("/System/Library/Fonts/Helvetica.ttc", 32.0f,
   ///                   nullptr, 1);
+  ///
+  /// // Ready to be readable over anything, in a single Draw call:
+  /// Font hudFont;
+  /// hudFont.LoadTtf("data/fonts/MyFont.ttf", 16.0f, nullptr, 0, 1.0f,
+  ///                 Rgba(0, 0, 0, 255));
   /// @endcode
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadTtf(const char *file_name, float pixel_height,
-               const char *utf8_chars = nullptr, Si32 font_index = 0) {
-    font_instance_->LoadTtf(file_name, pixel_height, utf8_chars, font_index);
+               const char *utf8_chars = nullptr, Si32 font_index = 0,
+               float border_width = 0.0f,
+               Rgba border_color = Rgba(0, 0, 0, 255)) {
+    font_instance_->LoadTtf(file_name, pixel_height, utf8_chars, font_index,
+                            border_width, border_color);
   }
 
   /// @brief Loads a system font by name and rasterizes glyphs
@@ -708,11 +853,15 @@ class Font {
   ///             kTextAlignmentLeft, kDrawBlendingModeColorize,
   ///             kFilterNearest, Rgba(255, 255, 255));
   /// @endcode
+  /// @param [in] border_width Outline radius in pixels, 0 for no outline
+  /// @param [in] border_color RGBA color for outline pixels
   void LoadSystemFont(const char *font_name, float pixel_height,
                       const char *utf8_chars = nullptr,
-                      Si32 font_index = 0) {
+                      Si32 font_index = 0, float border_width = 0.0f,
+                      Rgba border_color = Rgba(0, 0, 0, 255)) {
     font_instance_->LoadSystemFont(font_name, pixel_height,
-                                   utf8_chars, font_index);
+                                   utf8_chars, font_index, border_width,
+                                   border_color);
   }
 
   /// @brief Adds a stroked border around each glyph; see FontInstance::AddBorder.

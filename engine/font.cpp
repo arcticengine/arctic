@@ -304,21 +304,23 @@ void FontInstance::GenerateCodepointVector() {
   }
 }
 
-void FontInstance::Load(const char *file_name) {
+void FontInstance::Load(const char *file_name, float border_width,
+    Rgba border_color) {
   Check(!!file_name, "Error in FontInstance::Load, file_name is nullptr.");
   const char *last_dot = strrchr(file_name, '.');
   if (!last_dot || StrCaseCmp(last_dot, ".fnt") == 0) {
-    LoadBinaryFnt(file_name);
+    LoadBinaryFnt(file_name, border_width, border_color);
     return;
   }
   if (StrCaseCmp(last_dot, ".xml") == 0) {
-    LoadXml(file_name);
+    LoadXml(file_name, border_width, border_color);
     return;
   }
   Fatal("Error in FontInstance::Load, file_name has an unknown extension: ", file_name);
 }
 
-void FontInstance::LoadXml(const char *file_name) {
+void FontInstance::LoadXml(const char *file_name, float border_width,
+    Rgba border_color) {
   pugi::XmlDocument doc;
   pugi::XmlParseResult parse_result = doc.load_file(file_name);
   if (parse_result.status != pugi::status_ok) {
@@ -339,7 +341,8 @@ void FontInstance::LoadXml(const char *file_name) {
     // 16x16 square of ASCII letters
     const char* font_sprite_path = doc.child("font").attribute("path").as_string(nullptr);
     bool is_dense = doc.child("font").attribute("is_dense").as_bool(false);
-    LoadAsciiSquare(GluePath(parent_path.c_str(), font_sprite_path).c_str(), is_dense);
+    LoadAsciiSquare(GluePath(parent_path.c_str(), font_sprite_path).c_str(),
+      is_dense, border_width, border_color);
   } else {
     std::stringstream str;
     str << "Error loading " << file_name << " FontInstance, font type " << font_type_str << " is unknown";;
@@ -347,7 +350,8 @@ void FontInstance::LoadXml(const char *file_name) {
   }
 }
 
-void FontInstance::LoadAsciiSquare(const char *file_name, bool is_dense) {
+void FontInstance::LoadAsciiSquare(const char *file_name, bool is_dense,
+    float border_width, Rgba border_color) {
   Sprite sprites;
   sprites.Load(file_name);
   Check(sprites.Width() >= 32 && sprites.Height() >= 32,
@@ -414,9 +418,11 @@ void FontInstance::LoadAsciiSquare(const char *file_name, bool is_dense) {
       space_sprite_w, space_sprite_h);
     codepoint_[32]->xadvance = space_xadvance;
   }
+  AddBorder(border_width, border_color);
 }
 
-void FontInstance::LoadBinaryFnt(const char *file_name) {
+void FontInstance::LoadBinaryFnt(const char *file_name, float border_width,
+    Rgba border_color) {
   codepoint_.clear();
   glyph_.clear();
 
@@ -579,10 +585,12 @@ void FontInstance::LoadBinaryFnt(const char *file_name) {
   }
 
   GenerateCodepointVector();
+  AddBorder(border_width, border_color);
 }
 
 void FontInstance::LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
-    Si32 base_to_top, Si32 line_height, Si32 space_width) {
+    Si32 base_to_top, Si32 line_height, Si32 space_width,
+    float border_width, Rgba border_color) {
   CreateEmpty(base_to_top, line_height);
   Si32 begin_x = 0;
   Utf32Reader reader;
@@ -613,12 +621,13 @@ void FontInstance::LoadHorizontalStripe(Sprite sprite, const char* utf8_letters,
   }
   Sprite space;
   AddGlyph(32, space_width, space);
+  AddBorder(border_width, border_color);
 }
 
 void FontInstance::LoadTable(Sprite sprite, const char* utf8_letters,
     Si32 cell_width, Si32 cell_height,
     Si32 base_to_top, Si32 line_height, Si32 space_width,
-    Si32 left_offset) {
+    Si32 left_offset, float border_width, Rgba border_color) {
   std::string vec(utf8_letters);
   CreateEmpty(base_to_top, line_height);
   Sprite space;
@@ -643,11 +652,12 @@ void FontInstance::LoadTable(Sprite sprite, const char* utf8_letters,
     AddGlyph(codepoint, space_width, cs);
     ++idx;
   }
-
+  AddBorder(border_width, border_color);
 }
 
 void FontInstance::LoadLetterBits(Letter *in_letters,
-    Si32 base_to_top, Si32 line_height) {
+    Si32 base_to_top, Si32 line_height,
+    float border_width, Rgba border_color) {
   CreateEmpty(base_to_top, line_height);
   if (!in_letters) {
     return;
@@ -676,10 +686,12 @@ void FontInstance::LoadLetterBits(Letter *in_letters,
   }
   Sprite space;
   AddGlyph(32, 4, space);
+  AddBorder(border_width, border_color);
 }
 
 void FontInstance::LoadTtf(const char *file_name, float pixel_height,
-                           const char *utf8_chars, Si32 font_index) {
+                           const char *utf8_chars, Si32 font_index,
+                           float border_width, Rgba border_color) {
   Check(!!file_name,
     "Error in FontInstance::LoadTtf, file_name is nullptr.");
   Check(pixel_height > 0.0f,
@@ -795,17 +807,20 @@ void FontInstance::LoadTtf(const char *file_name, float pixel_height,
 
     AddGlyph(cp, xadvance, glyph_sprite);
   }
+  AddBorder(border_width, border_color);
 }
 
 void FontInstance::LoadSystemFont(const char *font_name, float pixel_height,
-                                  const char *utf8_chars, Si32 font_index) {
+                                  const char *utf8_chars, Si32 font_index,
+                                  float border_width, Rgba border_color) {
   Check(!!font_name,
     "Error in FontInstance::LoadSystemFont, font_name is nullptr.");
   std::string path = FindSystemFont(font_name);
   Check(!path.empty(),
     "Error in FontInstance::LoadSystemFont, system font not found: ",
     font_name);
-  LoadTtf(path.c_str(), pixel_height, utf8_chars, font_index);
+  LoadTtf(path.c_str(), pixel_height, utf8_chars, font_index, border_width,
+    border_color);
 }
 
 void FontInstance::AddBorder(float width, Rgba color) {

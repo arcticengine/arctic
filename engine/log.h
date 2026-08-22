@@ -45,6 +45,21 @@ namespace arctic {
 ///   *Log() << "Value: " << 42;
 ///   *Log() << "Position: " << x << ", " << y;
 /// @endcode
+/// 
+/// @warning This header declares std::ostringstream through <iosfwd> only, so it
+/// stays cheap to include. The streaming form above needs the complete type, so
+/// a translation unit that uses it has to include <sstream> itself:
+/// @code
+///   #include <sstream>
+///   #include "engine/log.h"
+/// @endcode
+/// Including "engine/easy.h" is enough as well, it pulls <sstream> in already.
+/// Without either of them the compiler reports something like
+/// "invalid operands to binary expression
+/// ('std::basic_ostringstream<char>' and 'const char[13]')"
+/// on the line with the << operator. The Log(const char *) overloads below need
+/// no streams at all, so they are a good fit for code that wants to keep its
+/// includes light.
 std::unique_ptr<std::ostringstream, void(*)(std::ostringstream *str)> Log();
 
 /// @brief Writes message text to log

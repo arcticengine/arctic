@@ -49,6 +49,8 @@ enum GuiMessageKind {
   kGuiScrollChange,
   kGuiPanelLeftDown,
   kGuiButtonHover,
+  kGuiEditboxTextChange,
+  kGuiEditboxEditDone,
 };
 
 /// @brief Enumeration of text selection modes.
@@ -348,6 +350,36 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// @brief Finds the current tab panel.
   /// @return Pointer to the current tab panel, or nullptr if not found.
   Panel *FindCurrentTab();
+
+  /// @brief Checks if the panel holds the input focus (is the current tab)
+  /// @return True if this very panel is the current tab, false otherwise.
+  ///
+  /// Handy for a host that has to know whether the user is working in a
+  /// particular field: `if (my_editbox->IsFocused()) { ... }` says it without
+  /// comparing the pointer FindCurrentTab returned against every field.
+  bool IsFocused() const;
+
+  /// @brief Tells whether the keyboard belongs to this panel while it is focused
+  /// @return True for a panel that reads keystrokes as text, false otherwise.
+  ///
+  /// Panels that turn keystrokes into their own state, an Editbox above all,
+  /// return true. The base implementation returns false.
+  virtual bool IsKeyboardCapturing() const;
+
+  /// @brief Checks whether the focused panel in this subtree eats the keyboard
+  /// @return True if the focus is inside a visible panel that reads keystrokes.
+  ///
+  /// An application usually has hotkeys of its own, and they must not fire while
+  /// the user is typing a value into a field. Ask the root panel about it once
+  /// per frame instead of keeping a list of the fields that can hold the focus:
+  /// @code
+  /// if (!gui_root->IsKeyboardCaptured()) {
+  ///   if (IsKeyDownward(kKeySpace)) {
+  ///     TogglePause();
+  ///   }
+  /// }
+  /// @endcode
+  bool IsKeyboardCaptured();
 
   /// @brief Sets the current tab status of the panel.
   /// @param is_current_tab True if the panel is the current tab, false otherwise.
@@ -923,6 +955,41 @@ class Editbox: public Panel {
   /// @brief Sets the maximum text length in bytes (0 = unlimited).
   /// @param max_length Maximum number of bytes allowed in the text.
   void SetMaxLength(Si32 max_length);
+
+  /// @brief Keystrokes are text while the box has the focus.
+  bool IsKeyboardCapturing() const override;
+
+  /// @brief Notices the loss of focus, which ends the editing.
+  /// @param is_current_tab True if the panel becomes the current tab.
+  void SetCurrentTab(bool is_current_tab) override;
+
+  /// @brief Called whenever the text changes because of user input
+  ///
+  /// Typing, deleting, pasting, undo and redo all end up here, so a host can
+  /// follow the field instead of comparing GetText() against a remembered copy
+  /// every frame. A kGuiEditboxTextChange message is queued as well when the
+  /// input is applied through the ApplyInput overload that takes a message
+  /// queue. SetText() is a change made by the host itself and does not call it.
+  ///
+  /// Example:
+  /// @code
+  /// rate_box->OnTextChange = [&]() { ... };  // or a free function
+  /// @endcode
+  ///
+  /// @warning The callbacks run in the middle of input handling, so they must not
+  /// add or remove panels; remember what to do and do it after ApplyInput.
+  std::function<void(void)> OnTextChange = DoNothing;
+
+  /// @brief Called when the user finishes editing the text
+  ///
+  /// Two things end the editing: Enter in a field that does not take newlines
+  /// (a single line box, or a multiline one with AcceptsReturn off), and the loss
+  /// of focus, by Tab or by a click elsewhere. This is the moment to accept the
+  /// value the user typed, or to put the old one back when it makes no sense.
+  /// Enter is not consumed, so a host that uses it for something of its own
+  /// keeps seeing it. A kGuiEditboxEditDone message is queued for the Enter case,
+  /// where a message queue is at hand; the loss of focus only calls the callback.
+  std::function<void(void)> OnEditDone = DoNothing;
 };
 
 /// @brief Class representing a scrollbar panel.

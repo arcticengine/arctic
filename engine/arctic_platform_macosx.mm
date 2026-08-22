@@ -102,6 +102,17 @@ static NSApplication *g_app = nil;
 static ArcticAppDelegate *g_app_delegate = nil;
 static arctic::SoundPlayer *g_mixer = nil;
 
+// Releases the sound device and flushes the log. Every way out of the program
+// goes through it, so it has to survive being called twice.
+static void ShutdownEnginePlatform() {
+  if (g_mixer) {
+    g_mixer->Deinitialize();
+    delete g_mixer;
+    g_mixer = nil;
+  }
+  arctic::StopLogger();
+}
+
 static bool g_is_full_screen = false;
 static bool g_is_cursor_desired_visible = true;
 static bool g_is_cursor_set_visible = true;
@@ -170,12 +181,7 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 }
 
 - (void) windowWillClose: (NSNotification *)notification {
-  if (g_mixer) {
-    g_mixer->Deinitialize();
-    delete g_mixer;
-    g_mixer = nil;
-  }
-  arctic::StopLogger();
+  ShutdownEnginePlatform();
   exit(g_exit_code);
 }
 @end
@@ -804,7 +810,13 @@ void PumpMessages() {
 
 void ExitProgram(Si32 exit_code) {
   g_exit_code = exit_code;
-  [g_app terminate: nil];  // It will stop the logger
+  // EasyMain runs on the main thread with no NSApp run loop of its own, so
+  // asking AppKit to terminate would only queue the request and the call would
+  // return to a caller that believes the program is over. The shutdown is done
+  // here instead, in the same order the normal end of main does it, and the code
+  // reaches the shell through exit().
+  ShutdownEnginePlatform();
+  exit(exit_code);
 }
 
 void Swap() {
@@ -892,6 +904,17 @@ Trivalent DoesDirectoryExist(const char *path) {
   }
 }
 
+Trivalent DoesFileExist(const char *path) {
+  struct stat info;
+  if (stat(path, &info) != 0) {
+    return kTrivalentFalse;
+  } else if ((info.st_mode & S_IFMT) == S_IFREG) {
+    return kTrivalentTrue;
+  } else {
+    return kTrivalentUnknown;
+  }
+}
+
 bool MakeDirectory(const char *path) {
   Si32 result = mkdir(path,
       S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IXOTH);
@@ -905,6 +928,13 @@ bool GetCurrentPath(std::string *out_dir) {
     return true;
   }
   return false;
+}
+
+bool ChangeCurrentDirectory(const char *path) {
+  if (!path || *path == 0) {
+    return false;
+  }
+  return chdir(path) == 0;
 }
 
 bool GetDirectoryEntries(const char *path,
@@ -1177,14 +1207,20 @@ int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   const bool headless = std::getenv("ARCTIC_HEADLESS") != nullptr;
-  const bool disable_hw = std::getenv("ARCTIC_DISABLE_HW") != nullptr;
 
-  if (headless && disable_hw) {
-    arctic::GetEngine()->SetArgcArgv(argc, const_cast<const char **>(argv));
-    arctic::GetEngine()->SetInitialPath(".");
+  // The command line is handed to the engine first, so that a decider
+  // registered with ARCTIC_HEADLESS_DECIDER can read it and tell a console
+  // subcommand from a normal run before anything is created.
+  arctic::GetEngine()->SetArgcArgv(argc, const_cast<const char **>(argv));
+  if (arctic::IsHeadlessStartupRequested()) {
+    // No window, no GL context, no sound device: the backbuffer is memory and
+    // nothing here needs a display to be attached to the machine.
+    arctic::GetEngine()->SetInitialPath(arctic::PrepareInitialPath());
+    arctic::StartLogger();
     arctic::GetEngine()->InitHeadlessScreen(1920, 1080);
     arctic::PrepareForTheEasyMainCall();
     EasyMain();
+    ShutdownEnginePlatform();
     return g_exit_code;
   }
 
@@ -1199,8 +1235,6 @@ int main(int argc, char **argv) {
     [g_main_window orderOut: nil];
     arctic::GetEngine()->SetHeadless(true);
   }
-  arctic::GetEngine()->SetArgcArgv(argc,
-    const_cast<const char **>(argv));
 
   arctic::GetEngine()->SetInitialPath(initial_path);
   arctic::GetEngine()->Init(system_info.screen_width,
@@ -1211,8 +1245,10 @@ int main(int argc, char **argv) {
   arctic::PrepareForTheEasyMainCall();
   EasyMain();
 
-  [g_app terminate: nil];  // It will stop the logger
-  return 0;
+  // Returning from EasyMain means the same as ExitProgram(0), unless something
+  // asked for another code on the way out.
+  ShutdownEnginePlatform();
+  return g_exit_code;
 }
 #endif // ARCTIC_NO_MAIN
 

@@ -14,10 +14,6 @@
 #include "engine/arctic_platform.h"
 #include "engine/arctic_platform_def.h"
 
-#ifndef ARCTIC_PLATFORM_WINDOWS
-#include <unistd.h>  // chdir, for the argv path test
-#endif
-
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
 #include "engine/easy_hw_sprite.h"
@@ -351,16 +347,6 @@ void test_file_operations() {
   TEST_CHECK(list.size() > 0);
 }
 
-// The engine deliberately offers no way to move the current directory, so the
-// test does it by hand to prove that the argv helper ignores such a move.
-bool ChangeCurrentDirectory(const char *path) {
-#ifdef _WIN32
-  return SetCurrentDirectoryA(path) != 0;
-#else
-  return chdir(path) == 0;
-#endif
-}
-
 // A path from argv means "relative to where the user was standing", and the
 // current directory is not that place: on macOS the engine makes the resources
 // folder of the bundle current before EasyMain. So the helper must resolve
@@ -399,10 +385,10 @@ void test_canonicalize_argv_path() {
   const std::string parent = arctic::CanonicalizePath(
       arctic::GluePath(current_before.c_str(), "..").c_str());
   if (parent != current_before && parent != startup) {
-    TEST_CHECK(ChangeCurrentDirectory(parent.c_str()));
+    TEST_CHECK(arctic::ChangeCurrentDirectory(parent.c_str()));
     const std::string moved = arctic::CanonicalizeArgvPath("snaps/world.dcs");
     const std::string plain = arctic::CanonicalizePath("snaps/world.dcs");
-    TEST_CHECK(ChangeCurrentDirectory(current_before.c_str()));
+    TEST_CHECK(arctic::ChangeCurrentDirectory(current_before.c_str()));
     TEST_CHECK_(moved == expected,
         "after a chdir the same argv path resolved to '%s', expected '%s'",
         moved.c_str(), expected.c_str());
@@ -465,6 +451,153 @@ void test_describe_file_path() {
     TEST_CHECK_(hinted.find("CanonicalizeArgvPath") != std::string::npos,
         "the description does not name the way out: '%s'", hinted.c_str());
   }
+}
+
+// DoesFileExist has to tell a file from a directory and from nothing at all,
+// because "it exists" and "it is a file I can read" are different answers.
+// ChangeCurrentDirectory is checked together with it: a test that moves the
+// current directory has to be able to move it back.
+void test_file_existence_and_current_directory() {
+  std::string current;
+  TEST_CHECK(arctic::GetCurrentPath(&current));
+
+  TEST_CHECK(arctic::DoesFileExist("data/no_such_file_41287.tga")
+      == kTrivalentFalse);
+  // A directory is not a file, and saying "false" here would hide the reason a
+  // read of such a path fails.
+  TEST_CHECK(arctic::DoesFileExist(current.c_str()) == kTrivalentUnknown);
+
+  const std::string temp = arctic::GluePath(current.c_str(),
+      "test_file_exists_41287.txt");
+  {
+    std::ofstream ofs(temp.c_str());
+    TEST_CHECK_(ofs.good(), "failed to create '%s'", temp.c_str());
+    ofs << "test";
+  }
+  const Trivalent created = arctic::DoesFileExist(temp.c_str());
+  std::remove(temp.c_str());
+  TEST_CHECK_(created == kTrivalentTrue,
+      "a file that was just created is not seen at '%s'", temp.c_str());
+  TEST_CHECK(arctic::DoesFileExist(temp.c_str()) == kTrivalentFalse);
+
+  TEST_CHECK(!arctic::ChangeCurrentDirectory(""));
+  TEST_CHECK(!arctic::ChangeCurrentDirectory(nullptr));
+  TEST_CHECK(!arctic::ChangeCurrentDirectory("no_such_dir_41287"));
+
+  const std::string parent = arctic::CanonicalizePath(
+      arctic::GluePath(current.c_str(), "..").c_str());
+  if (parent != current) {
+    TEST_CHECK(arctic::ChangeCurrentDirectory(parent.c_str()));
+    std::string moved;
+    TEST_CHECK(arctic::GetCurrentPath(&moved));
+    TEST_CHECK(arctic::ChangeCurrentDirectory(current.c_str()));
+    TEST_CHECK_(moved == parent,
+        "the current directory moved to '%s', expected '%s'",
+        moved.c_str(), parent.c_str());
+    std::string back;
+    TEST_CHECK(arctic::GetCurrentPath(&back));
+    TEST_CHECK_(back == current,
+        "the current directory was left at '%s', expected '%s'",
+        back.c_str(), current.c_str());
+  }
+}
+
+// The documented recipe for readable text: bake a black border into the glyphs
+// and draw with kDrawBlendingModeColorize. The border has to survive the
+// colorize (black times any color is black) while the white body of the glyph
+// takes the color asked for. If this ever stops being true, the advice in
+// font.h and in the manual is wrong and text has to be drawn several times
+// again.
+void test_font_border_survives_colorize() {
+  Sprite dot;
+  dot.Create(1, 1);
+  const_cast<Rgba*>(dot.RgbaData())[0] = Rgba(255, 255, 255, 255);
+  dot.UpdateOpaqueSpans();
+
+  Font font;
+  font.CreateEmpty(4, 5);
+  font.AddGlyph(static_cast<Ui32>('a'), 3, dot);
+  TEST_CHECK(font.BaseToTop() == 4);
+  TEST_CHECK(font.LineHeight() == 5);
+  TEST_CHECK(font.BaseToTop() + font.BaseToBottom() == font.LineHeight());
+  font.AddBorder(1.0f, Rgba(0, 0, 0, 255));
+
+  Sprite target;
+  target.Create(16, 16);
+  target.Clear();
+  font.Draw(target, "a", 8, 8, kTextOriginFirstBase, kTextAlignmentLeft,
+      kDrawBlendingModeColorize, kFilterNearest, Rgba(255, 0, 0));
+
+  Si32 body_count = 0;
+  Si32 border_count = 0;
+  Vec2Si32 body(0, 0);
+  const Rgba *pixels = target.RgbaData();
+  const Si32 stride = target.StridePixels();
+  for (Si32 y = 0; y < target.Height(); ++y) {
+    for (Si32 x = 0; x < target.Width(); ++x) {
+      const Rgba p = pixels[x + y * stride];
+      if (p.a == 0) {
+        continue;
+      }
+      if (p.r == 255 && p.g == 0 && p.b == 0) {
+        ++body_count;
+        body = Vec2Si32(x, y);
+      } else if (p.r == 0 && p.g == 0 && p.b == 0) {
+        ++border_count;
+      } else {
+        TEST_CHECK_(false, "unexpected pixel %d,%d,%d at (%d, %d)",
+            (int)p.r, (int)p.g, (int)p.b, (int)x, (int)y);
+      }
+    }
+  }
+  TEST_CHECK_(body_count == 1,
+      "the glyph body was drawn as %d colorized pixels, expected 1",
+      (int)body_count);
+  TEST_CHECK_(border_count > 0,
+      "the baked border did not survive the colorize blending");
+
+  // The border has to be around the body, not somewhere else on the sprite.
+  Si32 neighbours = 0;
+  for (Si32 dy = -1; dy <= 1; ++dy) {
+    for (Si32 dx = -1; dx <= 1; ++dx) {
+      if (dx == 0 && dy == 0) {
+        continue;
+      }
+      const Si32 x = body.x + dx;
+      const Si32 y = body.y + dy;
+      if (x < 0 || y < 0 || x >= target.Width() || y >= target.Height()) {
+        continue;
+      }
+      const Rgba p = pixels[x + y * stride];
+      if (p.a != 0 && p.r == 0 && p.g == 0 && p.b == 0) {
+        ++neighbours;
+      }
+    }
+  }
+  TEST_CHECK_(neighbours > 0, "the border is not adjacent to the glyph body");
+}
+
+// The same border, asked for at load time instead of by a separate call. The
+// loaders that take a sprite are the ones a test can use without a font file.
+void test_font_loads_with_border() {
+  Sprite stripe;
+  stripe.Create(3, 3);
+  stripe.Clear();
+  Rgba *data = const_cast<Rgba*>(stripe.RgbaData());
+  data[1 + 1 * stripe.StridePixels()] = Rgba(255, 255, 255, 255);
+  stripe.UpdateOpaqueSpans();
+
+  Font plain;
+  plain.LoadHorizontalStripe(stripe, "a", 3, 4, 2);
+  Font bordered;
+  bordered.LoadHorizontalStripe(stripe, "a", 3, 4, 2, 1.0f,
+      Rgba(0, 0, 0, 255));
+
+  const Vec2Si32 plain_size = plain.EvaluateSize("a", false);
+  const Vec2Si32 bordered_size = bordered.EvaluateSize("a", false);
+  TEST_CHECK_(bordered_size.x > plain_size.x,
+      "the border did not widen the glyphs: %d vs %d",
+      (int)bordered_size.x, (int)plain_size.x);
 }
 
 void test_tga_oom() {
@@ -3092,6 +3225,119 @@ void test_panel_anchor_no_negative_size() {
       "Child height must not be negative after parent shrink, got %d", sz.y);
 }
 
+// An editbox has to tell its host what happened to it: that the text changed,
+// and that the editing is over. Without it the host is left comparing GetText()
+// against a remembered copy every frame, which is what deca used to do.
+void test_editbox_reports_text_change_and_edit_done() {
+  Font font;
+  font.CreateEmpty(4, 5);
+  Sprite normal;
+  normal.Create(60, 12);
+  Sprite focused;
+  focused.Create(60, 12);
+
+  auto root = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(200, 100));
+  auto box = std::make_shared<Editbox>(1, Vec2Si32(10, 10), 1, normal, focused,
+      font, kTextOriginBottom, Rgba(255, 255, 255), std::string());
+  root->AddChild(box);
+  auto other = std::make_shared<Editbox>(2, Vec2Si32(10, 40), 2, normal,
+      focused, font, kTextOriginBottom, Rgba(255, 255, 255), std::string());
+  root->AddChild(other);
+
+  Si32 changes = 0;
+  Si32 dones = 0;
+  box->OnTextChange = [&changes]() { ++changes; };
+  box->OnEditDone = [&dones]() { ++dones; };
+
+  // Nothing is focused yet, so nothing holds the keyboard.
+  TEST_CHECK(!root->IsKeyboardCaptured());
+  TEST_CHECK(!box->IsFocused());
+
+  box->SetCurrentTab(true);
+  TEST_CHECK(box->IsFocused());
+  TEST_CHECK_(root->IsKeyboardCaptured(),
+      "a focused editbox must hold the keyboard");
+
+  std::deque<GuiMessage> messages;
+  InputMessage typed;
+  typed.kind = InputMessage::kKeyboard;
+  typed.keyboard.key = kKeyA;
+  typed.keyboard.key_state = 1;
+  typed.keyboard.characters[0] = 'a';
+  bool is_applied = false;
+  std::shared_ptr<Panel> current_tab;
+  box->ApplyInput(Vec2Si32(0, 0), typed, true, &is_applied, &messages,
+      &current_tab);
+  TEST_CHECK_(box->GetText() == std::string("a"),
+      "the keystroke did not reach the text: '%s'", box->GetText().c_str());
+  TEST_CHECK_(changes == 1, "OnTextChange fired %d times, expected 1",
+      (int)changes);
+  TEST_CHECK_(dones == 0, "the editing is not over yet");
+  Si32 change_messages = 0;
+  for (const GuiMessage &m : messages) {
+    if (m.kind == kGuiEditboxTextChange) {
+      ++change_messages;
+    }
+  }
+  TEST_CHECK_(change_messages == 1,
+      "%d text change messages were queued, expected 1", (int)change_messages);
+
+  // A keystroke that leaves the text alone is not a change.
+  InputMessage arrow;
+  arrow.kind = InputMessage::kKeyboard;
+  arrow.keyboard.key = kKeyLeft;
+  arrow.keyboard.key_state = 1;
+  is_applied = false;
+  box->ApplyInput(Vec2Si32(0, 0), arrow, true, &is_applied, &messages,
+      &current_tab);
+  TEST_CHECK_(changes == 1, "moving the caret counted as a text change");
+
+  // Enter ends the editing in a single line box and is left for the host.
+  InputMessage enter;
+  enter.kind = InputMessage::kKeyboard;
+  enter.keyboard.key = kKeyEnter;
+  enter.keyboard.key_state = 1;
+  is_applied = false;
+  box->ApplyInput(Vec2Si32(0, 0), enter, true, &is_applied, &messages,
+      &current_tab);
+  TEST_CHECK_(dones == 1, "OnEditDone fired %d times on Enter, expected 1",
+      (int)dones);
+  TEST_CHECK_(!is_applied, "Enter must be left to the host");
+
+  // Losing the focus ends the editing as well.
+  root->SwitchCurrentTab(true);
+  TEST_CHECK_(!box->IsFocused(), "the focus did not move away");
+  TEST_CHECK_(dones == 2,
+      "OnEditDone fired %d times after losing the focus, expected 2",
+      (int)dones);
+
+  // A hidden field can not be typed into, so it does not hold the keyboard.
+  TEST_CHECK(other->IsFocused());
+  TEST_CHECK(root->IsKeyboardCaptured());
+  other->SetVisible(false);
+  TEST_CHECK_(!root->IsKeyboardCaptured(),
+      "a hidden editbox still claims the keyboard");
+}
+
+// The decision to start without a window is taken before main gets going, from a
+// function the application registers. The registration is the only part of it a
+// test can reach; the startup code that asks the question runs once, before this.
+void test_headless_decider() {
+  const bool env_asks =
+      std::getenv("ARCTIC_HEADLESS") != nullptr &&
+      std::getenv("ARCTIC_DISABLE_HW") != nullptr;
+  if (!env_asks) {
+    TEST_CHECK_(!arctic::IsHeadlessStartupRequested(),
+        "a binary with no decider asked for a headless run");
+  }
+  TEST_CHECK(arctic::SetHeadlessDecider([]() { return true; }));
+  TEST_CHECK(arctic::IsHeadlessStartupRequested());
+  arctic::SetHeadlessDecider(nullptr);
+  if (!env_asks) {
+    TEST_CHECK(!arctic::IsHeadlessStartupRequested());
+  }
+}
+
 // Bug 35: Sprite::Reference on a zero-sized sprite must not produce
 // negative ref_pos_ (from.ref_size_.x - 1 == -1 when ref_size_ is 0).
 void test_sprite_reference_zero_size() {
@@ -3525,6 +3771,11 @@ TEST_LIST = {
   {"CanonicalizePath before and after file create", test_canonicalize_before_and_after_create},
   {"CanonicalizeArgvPath uses the startup directory", test_canonicalize_argv_path},
   {"DescribeFilePath explains a missing file", test_describe_file_path},
+  {"DoesFileExist and ChangeCurrentDirectory", test_file_existence_and_current_directory},
+  {"Font border survives colorize", test_font_border_survives_colorize},
+  {"Font loaders apply the border", test_font_loads_with_border},
+  {"Editbox reports text change and edit done", test_editbox_reports_text_change_and_edit_done},
+  {"Headless decider is asked at startup", test_headless_decider},
   {0}
 };
 
