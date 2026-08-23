@@ -23,6 +23,9 @@
 #ifndef ENGINE_EASY_UTIL_H_
 #define ENGINE_EASY_UTIL_H_
 
+#include <random>
+#include <string>
+
 #include "engine/arctic_types.h"
 #include "engine/vec2si32.h"
 
@@ -76,8 +79,54 @@ double Time();
 /// a seed set here holds for the calling thread only, and a thread that was
 /// never seeded starts from the clock. Seeding the same value again replays the
 /// same sequence of numbers, which is what a reproducible level generator or a
-/// test needs.
+/// test needs. A seed starts a sequence from its beginning; to leave a sequence
+/// and come back to the very number it was about to give, use GetRandomState and
+/// SetRandomState instead.
 void SetRandomSeed(Ui64 seed);
+
+/// @brief Everything the random number generators of one thread are about to give
+/// @details The Random functions draw from four generators, one per width, and a
+/// state holds all four of them at once, so a state put back restores every
+/// Random function to the number it was about to return. The state is a value:
+/// copy it, keep several of them side by side and switch between them to run
+/// independent sequences on one thread, or hand one to another thread.
+///
+/// A state is about ten kilobytes of numbers and copying it is a copy of those
+/// numbers and nothing else, so switching sequences per chunk or per entity is
+/// cheap. For a save file there is ToString, some twenty five kilobytes of text,
+/// and a state read back with FromString continues where it was taken, in
+/// another run of the program as well.
+class RandomState {
+ public:
+  /// @brief Writes the state as text
+  /// @return The state as a line of numbers, suitable for a save file
+  std::string ToString() const;
+
+  /// @brief Reads a state written by ToString
+  /// @param text The text to read
+  /// @return true if the text was a state; the state is left as it was if not
+  bool FromString(const std::string &text);
+
+ private:
+  friend class Engine;
+
+  std::independent_bits_engine<std::mt19937_64, 64, Ui64> rnd_64_;
+  std::independent_bits_engine<std::mt19937_64, 32, Ui64> rnd_32_;
+  std::independent_bits_engine<std::mt19937_64, 16, Ui64> rnd_16_;
+  std::independent_bits_engine<std::mt19937_64, 8, Ui64> rnd_8_;
+};
+
+/// @brief Returns the state of the random number generators of the calling thread
+/// @return The state, to be put back with SetRandomState
+/// @details A thread that never drew a number and was never seeded is seeded
+/// from the clock here, so the state returned is always a usable one.
+RandomState GetRandomState();
+
+/// @brief Puts a state returned by GetRandomState back
+/// @param state The state to continue from
+/// @details The generators of the calling thread continue from the state, which
+/// need not come from this thread or even from this run of the program.
+void SetRandomState(const RandomState &state);
 
 /// @brief Returns a random number in range [min,max]
 /// @param min The minimum value of the range (inclusive)

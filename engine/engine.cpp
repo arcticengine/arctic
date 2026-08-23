@@ -159,6 +159,26 @@ void Engine::SetRandomSeed(Ui64 seed) {
   is_rng_initialized_ = true;
 }
 
+RandomState Engine::GetRandomState() {
+  if (!is_rng_initialized_) {
+    InitThreadLocalRng();
+  }
+  RandomState state;
+  state.rnd_8_ = rnd_8_;
+  state.rnd_16_ = rnd_16_;
+  state.rnd_32_ = rnd_32_;
+  state.rnd_64_ = rnd_64_;
+  return state;
+}
+
+void Engine::SetRandomState(const RandomState &state) {
+  rnd_8_ = state.rnd_8_;
+  rnd_16_ = state.rnd_16_;
+  rnd_32_ = state.rnd_32_;
+  rnd_64_ = state.rnd_64_;
+  is_rng_initialized_ = true;
+}
+
 void Engine::InitThreadLocalRng() {
   // Get a unique seed for this thread
   Si64 ms = std::chrono::high_resolution_clock::now().time_since_epoch().count();

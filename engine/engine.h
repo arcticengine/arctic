@@ -33,6 +33,7 @@
 #include "engine/arctic_platform.h"
 #include "engine/easy_sprite.h"
 #include "engine/easy_hw_sprite.h"
+#include "engine/easy_util.h"
 #include "engine/vec2f.h"
 #include "engine/opengl.h"
 #include "engine/gl_texture2d.h"
@@ -197,6 +198,16 @@ class Engine {
   /// and remember that the order in which threads consume numbers is not
   /// reproducible by itself.
   void SetRandomSeed(Ui64 seed);
+
+  /// @brief Returns the state of the random number generators of the calling thread
+  /// @return The state of all four generators, to be put back with SetRandomState
+  /// @details A thread that has neither drawn a number nor been seeded is seeded
+  /// from the clock first, so the state returned is always a usable one.
+  RandomState GetRandomState();
+
+  /// @brief Puts a state returned by GetRandomState back
+  /// @param state The state to continue from
+  void SetRandomState(const RandomState &state);
 
   /// @brief Generates a random integer within the specified range. The range is not expected to be larger than 58 bit, larger ranges may caluse integer overflow or bad random distribution.
   /// @param min The minimum value of the range (inclusive).

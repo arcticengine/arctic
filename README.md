@@ -92,6 +92,21 @@ Uniform arrays are a weak spot of some OpenGL ES and WebGL drivers, which is why
 
 `Screenshot()` returns the frame as a software `Sprite`, and `Sprite::Save` writes `.tga` or `.png`, so a screenshot key costs three lines. Call it before `ShowFrame()`: the engine assembles the frame a second time into a texture to read it back, because a window that has been shown can no longer be read.
 
+## Reproducible randomness
+
+`Random32`, `Random64`, `RandomF` and their kin draw from four thread-local generators, one per width. `SetRandomSeed(seed)` starts the sequence of the calling thread from the beginning, which is what a level generator or a test needs to repeat itself, and every thread that has to be reproducible sets its own seed.
+
+Saving a game or running several independent sequences on one thread needs more than a seed, because a seed only rewinds to the start. `GetRandomState()` returns everything the four generators are about to give and `SetRandomState(state)` puts it back, so the numbers continue from the place the state was taken:
+
+```cpp
+RandomState state = GetRandomState();
+Si32 a = Random32(1, 100);
+SetRandomState(state);
+Si32 b = Random32(1, 100);  // the very same number
+```
+
+A state is a value of about ten kilobytes, so keeping one per world chunk and switching between them costs a copy. For a save file `RandomState::ToString` writes it as text and `RandomState::FromString` reads it back, in another run of the program as well; a text that does not parse is refused and leaves the state as it was, so check the returned `bool` instead of trusting a damaged save.
+
 ## Networking
 
 **Sockets** -- `engine/arctic_platform_tcpip.h` gives you TCP and UDP sockets over IPv4 and IPv6 with a single API across the supported platforms, for protocols of your own.

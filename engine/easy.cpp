@@ -1467,6 +1467,34 @@ void SetRandomSeed(Ui64 seed) {
   GetEngine()->SetRandomSeed(seed);
 }
 
+std::string RandomState::ToString() const {
+  std::ostringstream stream;
+  stream << rnd_8_ << ' ' << rnd_16_ << ' ' << rnd_32_ << ' ' << rnd_64_;
+  return stream.str();
+}
+
+bool RandomState::FromString(const std::string &text) {
+  // Read into a state of its own and take it over only once all four generators
+  // are read, so a truncated or foreign text leaves the sequence as it was
+  // instead of half-replacing it.
+  RandomState parsed;
+  std::istringstream stream(text);
+  stream >> parsed.rnd_8_ >> parsed.rnd_16_ >> parsed.rnd_32_ >> parsed.rnd_64_;
+  if (stream.fail()) {
+    return false;
+  }
+  *this = parsed;
+  return true;
+}
+
+RandomState GetRandomState() {
+  return GetEngine()->GetRandomState();
+}
+
+void SetRandomState(const RandomState &state) {
+  GetEngine()->SetRandomState(state);
+}
+
 Si64 Random(Si64 min, Si64 max) {
   return GetEngine()->GetRandom(min, max);
 }

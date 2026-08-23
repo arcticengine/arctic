@@ -720,6 +720,7 @@ Key random number generation features:
 - `RandomD()`: Returns a random double in range [0.0, 1.0)
 - `RandomSD()`: Returns a random double in range [-1.0, 1.0)
 - `SetRandomSeed(seed)`: Makes the sequence reproducible
+- `GetRandomState()` and `SetRandomState(state)`: Save the sequence and come back to it
 
 By default the generator is seeded from the clock, so every run differs.
 A level generator or a test that has to repeat itself should set the seed first:
@@ -733,6 +734,38 @@ A level generator or a test that has to repeat itself should set the seed first:
 
 The generators are thread-local, so the seed holds for the calling thread only and
 every thread that has to be reproducible shoud set its own seed.
+
+A seed starts a sequence from its beginning, which is not what a save file or two
+sequences on one thread need. `GetRandomState()` returns everything the four
+generators of the calling thread are about to give, and `SetRandomState()` puts it
+back, so the numbers continue from the very place the state was taken:
+
+~~~~~{.cpp}
+      RandomState state = GetRandomState();
+      Si32 a = Random32(1, 100);
+      SetRandomState(state);
+      Si32 b = Random32(1, 100);  // a == b
+~~~~~
+
+A state is a value of about ten kilobytes, so keeping one per world chunk and
+switching between them costs a copy and lets independent sequences share a thread.
+For a save file the state goes through text, and a state read back continues in
+another run of the program just as well:
+
+~~~~~{.cpp}
+      // Saving
+      const std::string text = GetRandomState().ToString();
+      WriteFile("random.txt",
+          reinterpret_cast<const Ui8*>(text.data()), text.size());
+
+      // Loading, and a refusal is worth noticing: a damaged text leaves the
+      // state as it was instead of half-replacing it.
+      std::vector<Ui8> data = ReadFile("random.txt", true);
+      RandomState state;
+      if (state.FromString(std::string(data.begin(), data.end()))) {
+        SetRandomState(state);
+      }
+~~~~~
 
 ### Playing Sounds
 
