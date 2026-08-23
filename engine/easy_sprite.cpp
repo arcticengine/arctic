@@ -939,7 +939,9 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
       " Not loading sprite.";
     return;
   }
-  if (StrCaseCmp(last_dot, ".tga") == 0) {
+  const bool is_tga = (StrCaseCmp(last_dot, ".tga") == 0);
+  const bool is_png = (StrCaseCmp(last_dot, ".png") == 0);
+  if (is_tga || is_png) {
     if (size_bytes == 0) {
       *Log() << "Error in Sprite::Load, file: \""
         << file_name << "\" could not be loaded (size=0)."
@@ -947,10 +949,14 @@ void Sprite::LoadFromData(const Ui8* data, Ui64 size_bytes,
       return;
     }
     pivot_ = Vec2Si32(0, 0);
-    sprite_instance_ = LoadTga(data, static_cast<Si64>(size_bytes), &pivot_);
+    if (is_tga) {
+      sprite_instance_ = LoadTga(data, static_cast<Si64>(size_bytes), &pivot_);
+    } else {
+      sprite_instance_ = LoadPng(data, static_cast<Si64>(size_bytes), &pivot_);
+    }
     if (!sprite_instance_) {
       *Log() << "Error in Sprite::Load, file: \""
-        << file_name << "\" could not be loaded with LoadTga."
+        << file_name << "\" could not be decoded."
           " Not loading sprite.";
       return;
     }
@@ -980,7 +986,9 @@ void Sprite::Load(const char *file_name) {
       " Not loading sprite.";
     return;
   }
-  if (StrCaseCmp(last_dot, ".tga") == 0) {
+  const bool is_tga = (StrCaseCmp(last_dot, ".tga") == 0);
+  const bool is_png = (StrCaseCmp(last_dot, ".png") == 0);
+  if (is_tga || is_png) {
     std::vector<Ui8> data = ReadFile(file_name, true);
     if (data.empty()) {
       *Log() << "Error in Sprite::Load, file: \""
@@ -989,7 +997,11 @@ void Sprite::Load(const char *file_name) {
       return;
     }
     pivot_ = Vec2Si32(0, 0);
-    sprite_instance_ = LoadTga(data.data(), static_cast<Si64>(data.size()), &pivot_);
+    if (is_tga) {
+      sprite_instance_ = LoadTga(data.data(), static_cast<Si64>(data.size()), &pivot_);
+    } else {
+      sprite_instance_ = LoadPng(data.data(), static_cast<Si64>(data.size()), &pivot_);
+    }
     ref_pos_ = Vec2Si32(0, 0);
     ref_size_ = sprite_instance_ ? Vec2Si32(sprite_instance_->width(),
       sprite_instance_->height()) : Vec2Si32(0, 0);

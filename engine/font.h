@@ -706,6 +706,8 @@ class Font {
   ///
   /// The font file must be accompanied by its corresponding texture file(s) in the same directory.
   /// For example, if you have "font.fnt", you should also have "font_0.tga"
+  /// or "font_0.png": the texture is loaded by the name written in the font file,
+  /// and both formats are read.
   ///
   /// For TrueType fonts (.ttf), use LoadTtf() instead.
   ///

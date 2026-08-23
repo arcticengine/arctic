@@ -206,6 +206,7 @@
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\easy_util.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\stb_image.h" />
     <ClInclude Include="..\engine\localization.h" />
     <ClInclude Include="..\engine\httplib.h" />
     <ClInclude Include="..\engine\wave_function_collapse.h" />

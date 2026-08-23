@@ -92,6 +92,10 @@ Uniform arrays are a weak spot of some OpenGL ES and WebGL drivers, which is why
 
 `Screenshot()` returns the frame as a software `Sprite`, and `Sprite::Save` writes `.tga` or `.png`, so a screenshot key costs three lines. Call it before `ShowFrame()`: the engine assembles the frame a second time into a texture to read it back, because a window that has been shown can no longer be read.
 
+## Image files
+
+`Sprite::Load` and `HwSprite::Load` read `.tga` and `.png`, and `Sprite::Save` writes both; the extension decides and its case does not matter. Grayscale, palette based and true color files are all read, 8 or 16 bits per channel, run length encoded tga and interlaced png included, and what comes out is always a sprite of 8 bit rgba pixels. A file that can not be read leaves the sprite empty and writes the reason to the log instead of stopping the program, so check `Width()` when a missing asset matters. The one thing a png lacks is the origin field of a tga, which the engine takes for the pivot: a sprite loaded from a png starts with its pivot at zero. Fonts go through the same loader, so the texture named inside a `.fnt` may be a png too.
+
 ## Reproducible randomness
 
 `Random32`, `Random64`, `RandomF` and their kin draw from four thread-local generators, one per width. `SetRandomSeed(seed)` starts the sequence of the calling thread from the beginning, which is what a level generator or a test needs to repeat itself, and every thread that has to be reproducible sets its own seed.

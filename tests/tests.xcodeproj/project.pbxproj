@@ -276,6 +276,7 @@
 		CC300BB489C42B4D73D38E41 /* easy_video.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = easy_video.cpp; path = ../engine/easy_video.cpp; sourceTree = SOURCE_ROOT; };
 		2C6D2EF5066ACEBBBE23B29B /* targetver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = targetver.h; path = targetver.h; sourceTree = SOURCE_ROOT; };
 		98CF8F81C43BD6F3B356CA88 /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = resource.h; path = resource.h; sourceTree = SOURCE_ROOT; };
+		8545DE0EE4905048584F4850 /* stb_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stb_image.h; path = ../engine/stb_image.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -392,6 +393,7 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				8545DE0EE4905048584F4850 /* stb_image.h */,
 				9DC1D336A6053106FA0D1BE6 /* arctic_platform_pi_video.cpp */,
 				E3A73C1B5C44997440E728FA /* httplib.h */,
 				EFB6D9A183294D99EA012890 /* wave_function_collapse.h */,

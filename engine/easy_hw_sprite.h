@@ -88,11 +88,11 @@ class HwSprite {
   void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);
 
   /// @brief Load sprite data from file
-  /// @param file_name Name of the file to load
+  /// @param file_name Name of the file to load, *.tga and *.png are supported
   void Load(const char *file_name);
 
   /// @brief Load sprite data from file
-  /// @param file_name Name of the file to load
+  /// @param file_name Name of the file to load, *.tga and *.png are supported
   void Load(const std::string &file_name);
 
   /// @brief Load sprite data from a software Sprite, uploading its pixels to the GPU

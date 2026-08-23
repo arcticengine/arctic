@@ -45,15 +45,24 @@ namespace arctic {
     framebuffer_.Create(texture_);
   }
 
-  std::shared_ptr<HwSpriteInstance> HwSpriteInstance::LoadTga(const Ui8 *data, const Si64 size) {
-    std::shared_ptr<SpriteInstance> sw_sprite = arctic::LoadTga(data, size);
+  // Uploads a decoded software sprite into a texture of its own size.
+  static std::shared_ptr<HwSpriteInstance> UploadSwSprite(
+      std::shared_ptr<SpriteInstance> sw_sprite) {
     std::shared_ptr<HwSpriteInstance> sprite(nullptr);
     if (sw_sprite) {
         sprite = std::make_shared<HwSpriteInstance>(sw_sprite->width(), sw_sprite->height());
-        sprite->texture_.SetData(sw_sprite->RawData(), sw_sprite->width(), sw_sprite->height());
+        sprite->texture().SetData(sw_sprite->RawData(), sw_sprite->width(), sw_sprite->height());
     }
 
     return sprite;
+  }
+
+  std::shared_ptr<HwSpriteInstance> HwSpriteInstance::LoadTga(const Ui8 *data, const Si64 size) {
+    return UploadSwSprite(arctic::LoadTga(data, size));
+  }
+
+  std::shared_ptr<HwSpriteInstance> HwSpriteInstance::LoadPng(const Ui8 *data, const Si64 size) {
+    return UploadSwSprite(arctic::LoadPng(data, size));
   }
 
 /*  void HwSpriteInstance::SaveTga(std::shared_ptr<HwSpriteInstance> sprite, std::vector<Ui8> *data) {

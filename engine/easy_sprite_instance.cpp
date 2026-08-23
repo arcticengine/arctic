@@ -26,6 +26,7 @@
 
 #include "engine/easy_sprite_instance.h"
 
+#include <climits>
 #include <cstring>
 #include <memory>
 #include <sstream>
@@ -35,16 +36,24 @@
 #include "engine/rgba.h"
 #include "engine/vec2si32.h"
 
-// The implementation of the library is built here, in the one file that uses it,
-// the way stb_vorbis is built in easy_sound.cpp: a translation unit of its own
-// would have to be listed in every project file of every platform by hand, and a
-// file forgotten in one of them shows up as a link error and nothing sooner. The
-// engine writes to memory and to files of its own, so the stdio path of the
-// library, and the locale trouble of its wide-character variant with it, is left
-// out.
+// The implementations of the two libraries are built here, in the one file that
+// uses them, the way stb_vorbis is built in easy_sound.cpp: a translation unit of
+// its own would have to be listed in every project file of every platform by
+// hand, and a file forgotten in one of them shows up as a link error and nothing
+// sooner. The engine reads and writes memory and files of its own, so the stdio
+// paths of the libraries, and the locale trouble of the wide-character variant
+// with them, are left out. Of the formats the reader knows only png is built:
+// the rest of them nobody asked for and every one of them costs code size.
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBI_WRITE_NO_STDIO
 #include "engine/stb_image_write.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#define STBI_NO_STDIO
+#define STBI_NO_LINEAR
+#define STBI_NO_HDR
+#include "engine/stb_image.h"
 
 namespace arctic {
 
@@ -326,6 +335,52 @@ struct TgaHeader {
                  break;
                }
     }
+    return sprite;
+  }
+
+  std::shared_ptr<SpriteInstance> LoadPng(const Ui8 *data, const Si64 size,
+      Vec2Si32 *out_origin) {
+    // A tga carries an origin of its own and the caller takes it for the pivot of
+    // the sprite; a png has no such field, so the answer here is always zero.
+    if (out_origin) {
+      *out_origin = Vec2Si32(0, 0);
+    }
+    std::shared_ptr<SpriteInstance> sprite;
+    if (data == nullptr || size <= 0) {
+      *Log() << "Error in LoadPng, there is no data to read, size: " << size;
+      return sprite;
+    }
+    if (size > static_cast<Si64>(INT_MAX)) {
+      *Log() << "Error in LoadPng, size: " << size << " does not fit in an int.";
+      return sprite;
+    }
+    int width = 0;
+    int height = 0;
+    int channels_in_file = 0;
+    // Four channels are asked for, so a grayscale, a palette, a 16 bit and an
+    // interlaced png all arrive as rgba and the engine sees one kind of pixel.
+    Ui8 *pixels = stbi_load_from_memory(data, static_cast<int>(size),
+        &width, &height, &channels_in_file, 4);
+    if (pixels == nullptr) {
+      *Log() << "Error in LoadPng, " << stbi_failure_reason() << ".";
+      return sprite;
+    }
+    if ((Ui64)width * (Ui64)height * sizeof(Rgba) >= (1ull << 30)) {
+      *Log() << "Error in LoadPng, sprite image is too large (" << width
+        << "x" << height << "x" << sizeof(Rgba) << ").";
+      stbi_image_free(pixels);
+      return sprite;
+    }
+    sprite.reset(new SpriteInstance(width, height));
+    // The rows of a png run from the top down, a sprite keeps them from the
+    // bottom up, so they are copied in reverse order.
+    const size_t row_size = static_cast<size_t>(width) * sizeof(Rgba);
+    Ui8 *to = sprite->RawData();
+    for (Si32 y = 0; y < height; ++y) {
+      memcpy(to + static_cast<size_t>(y) * row_size,
+          pixels + static_cast<size_t>(height - 1 - y) * row_size, row_size);
+    }
+    stbi_image_free(pixels);
     return sprite;
   }
 

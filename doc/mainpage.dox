@@ -335,6 +335,35 @@ shell, the log is flushed and the sound device is released on the way out. Never
 `std::exit` or `std::_Exit` instead, and remember that `EasyMain` is `void` and
 can not return a value; returning from it means `ExitProgram(0)`.
 
+### Image Files
+
+`Sprite::Load` and `HwSprite::Load` read `.tga` and `.png`, and `Sprite::Save`
+writes both; the extension of the name decides, and the case of it does not
+matter. A tga may be true color, grayscale or palette based, with or without run
+length encoding. A png may be grayscale, palette based or true color, 8 or 16
+bits per channel, interlaced or not, with or without a transparency chunk.
+Whichever it was, the sprite that comes out holds 8 bit rgba pixels, so nothing
+downstream has to ask what the file looked like:
+
+~~~~~{.cpp}
+    Sprite hero;
+    hero.Load("data/hero.png");
+    if (hero.Width() == 0) {
+      // The log already says why; the sprite is simply empty.
+    }
+~~~~~
+
+A file that can not be read leaves the sprite empty and writes the reason to the
+log rather than stopping the program, so a missing or damaged asset is survivable.
+`Sprite::LoadFromData` reads the same two formats out of memory, with the file
+name used only to pick the format and to name the file in messages, which is what
+to call when the bytes came from an archive of your own.
+
+The one thing a png does not carry is the origin field of a tga, which the engine
+takes for the pivot of the sprite. A sprite loaded from a png has its pivot at
+zero, so set it with `SetPivot` if the drawing code relies on one. Fonts follow
+`Sprite::Load`, so the texture named inside a `.fnt` may be a png as well.
+
 ### Drawing Text
 
 Text rendering in Arctic Engine is handled by the `Font` class. Here's a simple example of how to load a font and draw text:

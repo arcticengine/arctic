@@ -83,11 +83,19 @@ class Sprite {
   void LoadFromData(const Ui8* data, Ui64 size_bytes, const char *file_name);
 
   /// @brief Load sprite data from file
-  /// @param file_name Name of the file to load
+  /// @param file_name Name of the file to load, *.tga and *.png are supported
+  ///
+  /// A tga may be true color, grayscale or palette based, with or without run
+  /// length encoding; a png may be any of grayscale, palette based, true color,
+  /// 8 or 16 bits per channel, interlaced or not. A tga also carries an origin,
+  /// which becomes the pivot of the sprite, while a png has no such field and
+  /// leaves the pivot at zero. Whatever the file was, the sprite that comes out
+  /// keeps 8 bit rgba pixels. A file that could not be read leaves the sprite
+  /// empty and writes the reason to the log.
   void Load(const char *file_name);
 
   /// @brief Load sprite data from file
-  /// @param file_name Name of the file to load
+  /// @param file_name Name of the file to load, *.tga and *.png are supported
   void Load(const std::string &file_name);
 
   /// @brief Store sprite data to a file
@@ -101,7 +109,7 @@ class Sprite {
   /// @brief Store sprite data to a byte vector
   /// @param file_name A required parameter, may not be nullptr,
   /// the extension of the file_name is used to deremine the desired data format.
-  /// Saving supports *.tga and *.png, while loading reads *.tga only.
+  /// Both *.tga and *.png are supported, for saving as well as for loading.
   /// The file_name is also used in error messages.
   /// @return A vector of bytes containing the sprite data
   std::vector<Ui8> SaveToData(const char *file_name);

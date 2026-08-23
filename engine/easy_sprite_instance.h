@@ -98,6 +98,16 @@ class SpriteInstance {
 std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,
     const Si64 size, Vec2Si32 *out_origin = nullptr);
 
+/// @brief Creates a sprite instance from *.png file data
+/// @param data Pointer to the *.png file data
+/// @param size Size of the *.png file data
+/// @param out_origin Set to (0, 0) if given: a png has no origin field, unlike a tga
+/// @return Pointer to the sprite instance, an empty one if the data is not a png
+/// @details Grayscale, palette, 16 bit and interlaced files are all read and
+/// arrive as rgba pixels. The reason a file was refused is written to the log.
+std::shared_ptr<SpriteInstance> LoadPng(const Ui8 *data,
+    const Si64 size, Vec2Si32 *out_origin = nullptr);
+
 /// @brief Creates a *.tga file data from a sprite instance
 /// @param sprite Pointer to the sprite instance
 /// @param data Pointer to the vector to store the *.tga file data

@@ -63,6 +63,10 @@ class HwSpriteInstance {
   static std::shared_ptr<HwSpriteInstance> LoadTga(const Ui8 *data,
       const Si64 size);
 
+  /// @brief Creates a sprite instance from *.png file data
+  static std::shared_ptr<HwSpriteInstance> LoadPng(const Ui8 *data,
+      const Si64 size);
+
   /// @brief Creates a *.tga file data from a sprite instance
 /*  static void SaveTga(std::shared_ptr<HwSpriteInstance> sprite,
       std::vector<Ui8> *data);*/

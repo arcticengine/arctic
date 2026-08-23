@@ -2625,6 +2625,90 @@ void test_sprite_save_png(void) {
       "the tga is %zu bytes long, too short for a 7 by 3 image", tga.size());
 }
 
+void test_sprite_load_png_round_trip(void) {
+  Sprite written;
+  written.Create(5, 3);
+  // Corners and one middle pixel differ from each other, so a flipped or
+  // transposed image can not pass the comparison below by accident.
+  written.RgbaData()[0] = Rgba(255, 0, 0, 255);
+  written.RgbaData()[4] = Rgba(0, 255, 0, 255);
+  written.RgbaData()[written.StridePixels() * 2] = Rgba(0, 0, 255, 255);
+  written.RgbaData()[written.StridePixels() * 2 + 4] = Rgba(255, 255, 0, 128);
+  written.RgbaData()[written.StridePixels() + 2] = Rgba(1, 2, 3, 4);
+
+  std::vector<Ui8> png = written.SaveToData("picture.png");
+  Sprite read;
+  read.LoadFromData(png.data(), png.size(), "picture.png");
+  TEST_CHECK_(read.Width() == 5 && read.Height() == 3,
+      "the png came back as %d by %d instead of 5 by 3",
+      read.Width(), read.Height());
+  if (read.Width() != 5 || read.Height() != 3) {
+    return;
+  }
+  for (Si32 y = 0; y < 3; ++y) {
+    for (Si32 x = 0; x < 5; ++x) {
+      Rgba from = written.RgbaData()[y * written.StridePixels() + x];
+      Rgba to = read.RgbaData()[y * read.StridePixels() + x];
+      TEST_CHECK_(from.rgba == to.rgba,
+          "pixel %d,%d came back as %u,%u,%u,%u instead of %u,%u,%u,%u",
+          x, y, to.r, to.g, to.b, to.a, from.r, from.g, from.b, from.a);
+    }
+  }
+}
+
+void test_sprite_load_png_palette(void) {
+  // A four by two palette png with a transparent entry, written by hand rather
+  // than by the engine, so that the reader is checked against a file it did not
+  // make itself. The rows are red, green, blue, clear from the top, and the same
+  // four backwards below; the palette and the transparency both have to be
+  // resolved to arrive at rgba pixels.
+  const Ui8 kPng[] = {
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13,
+    73, 72, 68, 82, 0, 0, 0, 4, 0, 0, 0, 2,
+    8, 3, 0, 0, 0, 72, 118, 141, 81, 0, 0, 0,
+    12, 80, 76, 84, 69, 255, 0, 0, 0, 255, 0, 0,
+    0, 255, 0, 0, 0, 251, 190, 70, 228, 0, 0, 0,
+    4, 116, 82, 78, 83, 255, 255, 255, 0, 64, 42, 169,
+    244, 0, 0, 0, 18, 73, 68, 65, 84, 120, 218, 99,
+    96, 96, 100, 98, 102, 96, 102, 98, 100, 0, 0, 0,
+    70, 0, 13, 164, 0, 89, 123, 0, 0, 0, 0, 73,
+    69, 78, 68, 174, 66, 96, 130};
+
+  Sprite sprite;
+  sprite.LoadFromData(kPng, sizeof(kPng), "palette.png");
+  TEST_CHECK_(sprite.Width() == 4 && sprite.Height() == 2,
+      "the palette png came back as %d by %d instead of 4 by 2",
+      sprite.Width(), sprite.Height());
+  if (sprite.Width() != 4 || sprite.Height() != 2) {
+    return;
+  }
+  // A sprite keeps its rows from the bottom up, so row 0 is the lower row of the
+  // file, the one that runs clear, blue, green, red.
+  const Rgba kExpected[2][4] = {
+    {Rgba(0, 0, 0, 0), Rgba(0, 0, 255, 255),
+     Rgba(0, 255, 0, 255), Rgba(255, 0, 0, 255)},
+    {Rgba(255, 0, 0, 255), Rgba(0, 255, 0, 255),
+     Rgba(0, 0, 255, 255), Rgba(0, 0, 0, 0)}};
+  for (Si32 y = 0; y < 2; ++y) {
+    for (Si32 x = 0; x < 4; ++x) {
+      Rgba to = sprite.RgbaData()[y * sprite.StridePixels() + x];
+      Rgba from = kExpected[y][x];
+      TEST_CHECK_(from.rgba == to.rgba,
+          "pixel %d,%d came back as %u,%u,%u,%u instead of %u,%u,%u,%u",
+          x, y, to.r, to.g, to.b, to.a, from.r, from.g, from.b, from.a);
+    }
+  }
+}
+
+void test_sprite_load_png_refuses_garbage(void) {
+  const Ui8 kGarbage[] = {137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3, 4, 5};
+  Sprite sprite;
+  sprite.LoadFromData(kGarbage, sizeof(kGarbage), "broken.png");
+  TEST_CHECK_(sprite.Width() == 0 && sprite.Height() == 0,
+      "a broken png produced a %d by %d sprite instead of an empty one",
+      sprite.Width(), sprite.Height());
+}
+
 // ---------------------------------------------------------------------------
 // Mat44F rotation consistency tests
 // ---------------------------------------------------------------------------
@@ -4212,6 +4296,9 @@ TEST_LIST = {
   {"Random state continues the sequence", test_random_state_continues_the_sequence},
   {"Random state survives a trip through text", test_random_state_text_round_trip},
   {"Sprite saves png and tga", test_sprite_save_png},
+  {"Sprite reads back a png it saved", test_sprite_load_png_round_trip},
+  {"Sprite reads a palette png with transparency", test_sprite_load_png_palette},
+  {"Sprite refuses a broken png", test_sprite_load_png_refuses_garbage},
   {"SetRotationX vs SetRotationAxisAngle4", test_rotation_x_vs_axis_angle},
   {"SetRotationY vs SetRotationAxisAngle4", test_rotation_y_vs_axis_angle},
   {"SetRotationZ vs SetRotationAxisAngle4 (control)", test_rotation_z_vs_axis_angle},
