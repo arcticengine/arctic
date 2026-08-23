@@ -33,8 +33,18 @@
 #include "engine/arctic_platform.h"
 #include "engine/log.h"
 #include "engine/rgba.h"
-#include "engine/stb_image_write.h"
 #include "engine/vec2si32.h"
+
+// The implementation of the library is built here, in the one file that uses it,
+// the way stb_vorbis is built in easy_sound.cpp: a translation unit of its own
+// would have to be listed in every project file of every platform by hand, and a
+// file forgotten in one of them shows up as a link error and nothing sooner. The
+// engine writes to memory and to files of its own, so the stdio path of the
+// library, and the locale trouble of its wide-character variant with it, is left
+// out.
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_WRITE_NO_STDIO
+#include "engine/stb_image_write.h"
 
 namespace arctic {
 
