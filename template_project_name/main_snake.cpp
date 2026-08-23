@@ -25,7 +25,7 @@ void Move_snake_tail(int previous_x, int previous_y, std::deque<std::pair<int, i
 void ShowFailureMessage() {
     g_font.Draw("Game over. Press esc to quit", ScreenSize().x / 2, ScreenSize().y / 2, kTextOriginBottom);
     ShowFrame();
-    while (!IsKeyDownward(kKeyEscape)) {
+    while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
         ShowFrame();
     }
 }
@@ -109,7 +109,7 @@ void EasyMain() {
     
     Draw_scene(snake, food);
     
-    while (!IsKeyDownward(kKeyEscape)) {
+    while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
         ShowFrame();
 
         int xmul = 0;

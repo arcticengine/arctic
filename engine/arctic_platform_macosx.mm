@@ -39,6 +39,9 @@
 
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <limits.h>
+#include <mach-o/dyld.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -78,6 +81,9 @@ namespace arctic {
 }
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:
 (NSApplication *)theApplication;
+- (BOOL) windowShouldClose:(NSWindow *)sender;
+- (NSApplicationTerminateReply) applicationShouldTerminate:
+(NSApplication *)sender;
 - (void) fullScreenToggle:(NSNotification *)notification;
 - (void) windowDidEnterFullScreen:(NSNotification *)notification;
 - (void) windowDidExitFullScreen:(NSNotification *)notification;
@@ -125,6 +131,18 @@ static GCController *g_controller = nil;
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:
 (NSApplication *)application {
   return YES;
+}
+- (BOOL) windowShouldClose:(NSWindow *)sender {
+  // The only place where the close can still be refused: windowWillClose: below
+  // is told that the window is closing, not asked whether it should.
+  return arctic::OnMainWindowCloseRequested() ? YES : NO;
+}
+- (NSApplicationTerminateReply) applicationShouldTerminate:
+(NSApplication *)sender {
+  // Cmd+Q and "Quit" in the menu ask the same thing of the application as the
+  // red button does, so they go through the same handler.
+  return arctic::OnMainWindowCloseRequested()
+    ? NSTerminateNow : NSTerminateCancel;
 }
 - (void)applicationWillTerminate:(NSNotification *)notification {
   [g_main_window orderOut: self];
@@ -248,6 +266,10 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 }
 
 - (void) keyDown: (NSEvent *)theEvent {
+  // The virtual key code of an NSEvent is the physical key, the same number for
+  // the same key under any input source, so it is what the engine reports as
+  // the key. The typed text is asked for separately, right below, because that
+  // one does depend on the layout.
   arctic::KeyCode key = arctic::TranslateVirtualKeyCode([theEvent keyCode]);
   if (key == arctic::kKeyUnknown) {
     NSLog(@"Unknown virtual keyCode: %d", [theEvent keyCode]);
@@ -487,6 +509,24 @@ void Check(bool condition, const char *error_message,
   Fatal(error_message, error_message_postfix);
 }
 
+/// @brief Tells whether a modal alert can be shown at all
+///
+/// NSAlert loads its window from a nib in the main bundle, and asserts (aborts
+/// the process) when there is no bundle to load it from: a headless run, a
+/// binary started as a console tool, or a sandbox that keeps the bundle to
+/// itself all end that way, and the crash report replaces the message the user
+/// needed. The message goes to stderr and to the log in every case, so skipping
+/// the alert loses nothing but the window.
+static bool CanShowModalAlert() {
+  if (GetEngine()->IsHeadless()) {
+    return false;
+  }
+  if (NSApp == nil) {
+    return false;
+  }
+  return [[NSBundle mainBundle] bundlePath] != nil;
+}
+
 void Fatal(const char *message, const char *message_postfix) {
   size_t size = 1 +
     strlen(message) +
@@ -501,14 +541,18 @@ void Fatal(const char *message, const char *message_postfix) {
 
 #ifndef ARCTIC_NO_FATAL_MESSAGES
   NSLog(@"Fatal: %s", full_message);
+  fprintf(stderr, "Fatal: %s\n", full_message);
+  *Log() << "Fatal: " << full_message;
 
-  NSAlert *alert = [[NSAlert alloc] init];
-  [alert addButtonWithTitle: @"OK"];
-  [alert setMessageText: @"Fatal Error"];
-  [alert setInformativeText:
-    [[NSString alloc] initWithUTF8String: full_message]];
-  [alert setAlertStyle: NSAlertStyleCritical];
-  [alert runModal];
+  if (CanShowModalAlert()) {
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert addButtonWithTitle: @"OK"];
+    [alert setMessageText: @"Fatal Error"];
+    [alert setInformativeText:
+      [[NSString alloc] initWithUTF8String: full_message]];
+    [alert setAlertStyle: NSAlertStyleCritical];
+    [alert runModal];
+  }
 #endif  // ARCTIC_NO_FATAL_MESSAGES
   delete[] full_message;
 #ifndef ARCTIC_NO_HARD_EXIT
@@ -522,12 +566,9 @@ void PushInputKey(KeyCode key, bool is_down, std::string characters) {
   InputMessage msg;
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = key;
-  if (is_down) {
-    strncpy(msg.keyboard.characters, characters.c_str(), 16);
-    msg.keyboard.characters[15] = '\0';
-  } else {
-    msg.keyboard.characters[0] = '\0';
-  }
+  // [theEvent characters] answers "\t" for Tab and a C0 code for Control with a
+  // letter, and none of that is text; SetTypedCharacters leaves it out.
+  SetTypedCharacters(&msg.keyboard, is_down ? characters.c_str() : "");
   msg.keyboard.key_state = (is_down ? 1 : 2);
   PushInputMessage(msg);
 }
@@ -719,8 +760,16 @@ void CreateMainWindow(SystemInfo *system_info) {
     NSOpenGLPixelFormat *format =
       [[NSOpenGLPixelFormat alloc] initWithAttributes: format_attribute];
     if (format == nil) {
-      arctic::Log("Failed to create NSOpenGLPixelFormat.",
-        " No matching pixel format for the requested attributes.");
+      // Going on without a pixel format means going on without a GL context,
+      // and the first thing that needs one fails several steps later with a
+      // message that says nothing about the real cause ("no texture" from
+      // GlTexture2D::Create). The run ends here instead, and it names the way
+      // out for a machine that has no display to draw on.
+      Fatal("Can't create an OpenGL pixel format: no display capable of the"
+        " requested attributes (32 bit depth, double buffering)."
+        " A machine with no display can still run the program without a window,"
+        " see ARCTIC_HEADLESS_DECIDER and the ARCTIC_HEADLESS and"
+        " ARCTIC_DISABLE_HW environment variables.");
     }
 
     g_main_view = [[ArcticView alloc]
@@ -935,6 +984,19 @@ bool ChangeCurrentDirectory(const char *path) {
     return false;
   }
   return chdir(path) == 0;
+}
+
+std::string GetExecutablePath() {
+  char buffer[1 << 12];
+  uint32_t size = sizeof(buffer);
+  if (_NSGetExecutablePath(buffer, &size) != 0) {
+    return std::string();
+  }
+  char resolved[PATH_MAX];
+  if (realpath(buffer, resolved) != nullptr) {
+    return std::string(resolved);
+  }
+  return std::string(buffer);
 }
 
 bool GetDirectoryEntries(const char *path,
@@ -1172,6 +1234,36 @@ std::string GetClipboardText() {
   }
 }
 
+/// @brief Path of the application bundle the process was loaded from
+/// @return Absolute path of the `.app` directory, or an empty string if the
+///   executable does not live in a bundle
+///
+/// NSBundle is the obvious way to ask and it is not always available: a process
+/// started under a sandbox that denies it the bundle machinery gets nil for
+/// mainBundle, and passing what nil returns to std::string is a crash rather
+/// than a diagnostic. The path of the executable file answers the same question
+/// without help from the frameworks, so it serves as the fallback.
+static std::string BundlePath() {
+  NSString *bundle_path = [[NSBundle mainBundle] bundlePath];
+  const char *utf8 = (bundle_path == nil) ? nullptr : [bundle_path UTF8String];
+  if (utf8 != nullptr && *utf8 != 0) {
+    return std::string(utf8);
+  }
+  const std::string executable_path = GetExecutablePath();
+  const std::string kSuffix = "/Contents/MacOS";
+  const size_t slash = executable_path.find_last_of('/');
+  if (slash == std::string::npos) {
+    return std::string();
+  }
+  const std::string executable_dir = executable_path.substr(0, slash);
+  if (executable_dir.size() <= kSuffix.size()
+      || executable_dir.compare(executable_dir.size() - kSuffix.size(),
+        kSuffix.size(), kSuffix) != 0) {
+    return std::string();
+  }
+  return executable_dir.substr(0, executable_dir.size() - kSuffix.size());
+}
+
 std::string PrepareInitialPath() {
   // Remembered before the chdir below takes it away, and it is the only chance:
   // once the current directory is the Resources folder, nothing in the process
@@ -1182,17 +1274,22 @@ std::string PrepareInitialPath() {
   if (arctic::GetCurrentPath(&startup_directory)) {
     arctic::SetStartupDirectory(startup_directory);
   }
-  std::string initial_path([[[NSBundle mainBundle] bundlePath] UTF8String]);
-  initial_path += "/..";
+  const std::string bundle_path = BundlePath();
+  if (bundle_path.empty()) {
+    // Nothing is known about where the application lives, so the directory the
+    // user was standing in is the only sensible base for relative paths, and it
+    // stays current.
+    return startup_directory;
+  }
+  std::string initial_path = bundle_path + "/..";
   initial_path = arctic::CanonicalizePath(initial_path.c_str());
   // Resources of the bundle become the current directory so that an application
   // can load "data/hero.tga" without knowing where it was installed. The price
   // is that a relative path typed on the command line no longer means what the
   // shell meant by it, and that relative writes land inside the bundle, which a
   // rebuild replaces; see CanonicalizeArgvPath in arctic_platform.h.
-  [[NSFileManager defaultManager] changeCurrentDirectoryPath:
-    [NSString stringWithFormat:@"%@/Contents/Resources",
-    [[NSBundle mainBundle] bundlePath]]];
+  const std::string resources_path = bundle_path + "/Contents/Resources";
+  arctic::ChangeCurrentDirectory(resources_path.c_str());
   return initial_path;
 }
 

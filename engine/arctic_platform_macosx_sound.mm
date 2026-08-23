@@ -37,14 +37,18 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+#include <cctype>
 #include <cmath>
+#include <cstring>
 #include <fstream>
 #include <memory>
 #include <sstream>
+#include <string>
 #include <thread>  // NOLINT
 #include <vector>
 
 #include "engine/engine.h"
+#include "engine/log.h"
 #include "engine/scalar_math.h"
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform.h"
@@ -86,10 +90,16 @@ SoundPlayer::~SoundPlayer() {
   }
 }
 
-void CheckStatus(OSStatus status, const char *message) {
-  if (status == noErr) {
-    return;
-  }
+bool SoundPlayer::IsOk() {
+  return g_sound_mixer_state.IsOk();
+}
+
+std::string SoundPlayer::GetErrorDescription() {
+  return g_sound_mixer_state.GetErrorDescription();
+}
+
+/// @brief Turns an OSStatus into the four character code CoreAudio prints
+static std::string DescribeStatus(OSStatus status) {
   char code[20];
   Ui32 be = static_cast<Ui32>(ToBe(status));
   memcpy(code + 1, &be, sizeof(be));
@@ -103,7 +113,21 @@ void CheckStatus(OSStatus status, const char *message) {
   } else {
     snprintf(code, 20, "%d", (int)status);
   }
-  Fatal(message, code);
+  return std::string(code);
+}
+
+/// @brief Records a sound failure without ending the process
+/// @return false always, so that a caller can `return SoundFailure(...)`
+///
+/// A machine with no sound device, or one that keeps it to itself, is a machine
+/// the application should still run on: the game is playable without sound and
+/// a silent mixer is a far better answer than a process that dies before the
+/// first frame. The reason is kept for SoundPlayer::GetErrorDescription and
+/// written to the log, so that silence is never a mystery.
+static bool SoundFailure(const std::string &message) {
+  g_sound_mixer_state.SetError(message);
+  *Log() << "Sound is not available: " << message;
+  return false;
 }
 
 OSStatus SoundRenderProc(void *inRefCon,
@@ -157,11 +181,15 @@ void SoundPlayerImpl::Initialize() {
 
   AudioComponent comp = AudioComponentFindNext(NULL, &outputcd);
   if (comp == NULL) {
-    printf("can't get output unit");
-    exit(-1);
+    SoundFailure("no default output audio unit on this machine");
+    return;
   }
   OSStatus status = AudioComponentInstanceNew(comp, &output_unit);
-  CheckStatus(status, "Couldn't open component for output_unit");
+  if (status != noErr) {
+    SoundFailure("can't open the output audio unit, CoreAudio says "
+      + DescribeStatus(status));
+    return;
+  }
 
   AURenderCallbackStruct render;
   render.inputProc = SoundRenderProc;
@@ -172,13 +200,29 @@ void SoundPlayerImpl::Initialize() {
       0,
       &render,
       sizeof(render));
-  CheckStatus(status, "AudioUnitSetProperty failed");
+  if (status != noErr) {
+    SoundFailure("can't set the render callback, CoreAudio says "
+      + DescribeStatus(status));
+    AudioComponentInstanceDispose(output_unit);
+    return;
+  }
 
   status = AudioUnitInitialize(output_unit);
-  CheckStatus(status, "Couldn't initialize output unit");
+  if (status != noErr) {
+    SoundFailure("can't initialize the output audio unit, CoreAudio says "
+      + DescribeStatus(status));
+    AudioComponentInstanceDispose(output_unit);
+    return;
+  }
 
   status = AudioOutputUnitStart(output_unit);
-  CheckStatus(status, "Couldn't start output unit");
+  if (status != noErr) {
+    SoundFailure("can't start the output audio unit, CoreAudio says "
+      + DescribeStatus(status));
+    AudioUnitUninitialize(output_unit);
+    AudioComponentInstanceDispose(output_unit);
+    return;
+  }
 
   is_initialized = true;
 }

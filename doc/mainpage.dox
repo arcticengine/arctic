@@ -82,6 +82,72 @@ Instructions for Linux and MacOS users on how to run an Arctic Engine game in a 
     ~~~~~
 6. Open the address http://127.0.0.1:8000/index.html in your browser.
 
+Creating and updating a project
+-------------------------------
+
+Every project is made by the wizard, and there is no other supported way. A copy
+of `template_project_name` is not a project: the name of the target, the name of
+the bundle, the Xcode and Visual Studio projects, the relative path to the engine
+and the list of engine files inside them all have to agree with each other and
+with the directory name, and the wizard is what makes them agree. Copying the
+template by hand gives a directory that builds under a wrong name, or does not
+build at all.
+
+Build the wizard once (see Installation above) and run it with no arguments for
+the window, or with a subcommand for a terminal:
+
+~~~~~{.bash}
+    wizard create mygame                     # the default template
+    wizard create mygame --template hello    # a chosen one
+    wizard update ../mygame                  # refresh an existing project
+    wizard --help                            # the list of templates
+~~~~~
+
+A name is a directory name and a build target name at once, so it takes lowercase
+latin letters, digits and underscores, and it starts with a letter. The templates
+are `tetramino`, `hello`, `snake`, `kids`, `conquest`, `des` and `cube`; the
+`--help` text lists what each one shows. The new project appears next to the
+engine directory: `wizard create mygame` from the engine at `~/arctic` gives
+`~/mygame`, which is what the relative include path `../arctic` in the generated
+project expects.
+
+`update` is for a project made earlier with an older engine. It rewrites the
+generated parts, the engine file lists in the Xcode and Visual Studio projects
+above all, and leaves your own sources alone. It looks for the engine next to
+itself first, so it works from any directory and out of any build, and it
+recognises a project by the `<name>.xcodeproj` and `<name>.vcxproj` in it.
+
+A subcommand never opens a window: the wizard tells the engine to start headless
+as soon as it sees a command word, so `create` and `update` work over ssh, in a
+container and on a build bot, printing what they do and ending with 0 on success
+or 1 on a mistake in the arguments.
+
+The assets of a project live in its `data` directory, and the program loads them
+by relative paths like `data/hero.tga`. That works because the current directory
+is arranged for it before `EasyMain` (see "Command Line Arguments and File Paths"
+below): a macOS bundle carries the data in `Contents/Resources`, and a build in a
+directory of its own gets a copy of `data` next to the binary.
+
+Build the project in the project directory:
+
+~~~~~{.bash}
+    cmake . && make -j 8                          # in the source directory 
+~~~~~
+
+The engine is built with clang. CMake takes the compiler from
+`-DCMAKE_CXX_COMPILER=...` or from the `CXX` environment variable when either is
+set, otherwise it looks for `clang++` in the PATH, and it stops with a message
+naming what to install when there is none. gcc is not supported.
+
+On Linux the sound library is optional: without the ALSA headers the build says
+so, defines `ARCTIC_NO_ALSA`, and the program runs mute, telling the log about it
+once and answering `SoundPlayer::IsOk()` with false. The graphics backend is
+chosen with `-DARCTIC_GRAPHICS=auto|glx|gles`, and `auto` takes desktop OpenGL
+through GLX everywhere except a Raspberry Pi, which keeps GLES through EGL; the
+configure step prints which one it took. To run with no window, no GL context and
+no sound device at all, set `ARCTIC_HEADLESS=1` and `ARCTIC_DISABLE_HW=1` in the
+environment; `ARCTIC_DISABLE_AUDIO=1` alone only keeps the sound device closed.
+
 Sample project types
 --------------------
 
@@ -379,6 +445,120 @@ Key mouse input functions:
 - `IsKeyDownward(kKeyMouseLeft)`: Detects left mouse button press
 - `IsKeyDown(kKeyMouseLeft)`: Checks if left mouse button is held down
 - `IsKeyUpward(kKeyMouseLeft)`: Detects left mouse button release
+
+### Keyboard Input and Keyboard Layouts
+
+A keyboard answers two different questions, and the engine keeps them apart. The
+key functions speak of physical keys, named after the letters a US keyboard prints
+on them, so `kKeyW` is the key above the middle of the left hand whatever the
+current layout makes of it. `TypedText()` gives what the user actually typed, in
+UTF-8, through the layout the user chose:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+
+    void EasyMain() {
+      Font font;
+      font.Load("data/arctic_one_bmf.fnt");
+      Vec2Si32 hero(100, 100);
+      std::string name;
+
+      while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
+        // Physical keys: the same corner of the keyboard in every layout, so
+        // this keeps working when the user types in Cyrillic or on AZERTY.
+        if (IsKeyDown("w")) { hero.y += 4; }
+        if (IsKeyDown("s")) { hero.y -= 4; }
+        if (IsKeyDown("a")) { hero.x -= 4; }
+        if (IsKeyDown("d")) { hero.x += 4; }
+
+        // Typed text: whatever the layout produced this frame, letters of any
+        // alphabet among them.
+        name += TypedText();
+
+        Clear();
+        DrawCircle(hero, 20, Rgba(255, 255, 255));
+        font.Draw(name.c_str(), 20, 20, kTextOriginBottom, kTextAlignmentLeft,
+                  kDrawBlendingModeColorize, kFilterNearest,
+                  Rgba(255, 255, 255));
+        ShowFrame();
+      }
+    }
+~~~~~
+
+Which is to say: hotkeys and movement ask about keys, text asks about text. Never
+read `InputMessage::Keyboard::key` to build a string and never call
+`IsKeyDown('q')` hoping to catch a typed letter, because on a Cyrillic layout the
+key stays `kKeyQ` while the letter is a different one entirely. The message queue
+carries both: `.keyboard.key` is the physical key, `.keyboard.characters` is the
+UTF-8 text of that one message, which is what `TypedText()` collects for the
+frame. The string returned by `TypedText()` lives until the next `ShowFrame()`.
+
+Keys that carry no text carry none anywhere. Tab, Enter, Escape, Backspace and
+Control with a letter are reported as characters by the systems underneath, "\t"
+and "\r" among them, and the engine leaves all of that out: `.keyboard.characters`
+is empty for them, `TypedText()` skips them, and an `Editbox` never puts a
+tabulation in its text because the user pressed Tab to move to the next field.
+Such a key is read as a key, with `IsKeyDownward(kKeyTab)` and its like.
+
+Keys that are modifiers have a generic form as well as a left and a right one, so
+`IsKeyDown(kKeyControl)` is true for either Control key, and the same holds for
+Shift and Alt.
+
+### Ending the Program
+
+No key ends anything by itself. A program that leaves on Escape does so because it
+asked, which is why every example above has `IsKeyDownward(kKeyEscape)` in the
+loop condition rather than trusting the engine to notice.
+
+The window is closed by the user, though, with the red button, with Cmd+Q, with
+Alt+F4 or from the window manager, and by default the engine ends the process
+right there. An application with something to do first registers a handler and
+takes the closing over:
+
+~~~~~{.cpp}
+    #include "engine/easy.h"
+    using namespace arctic;
+
+    namespace {
+
+    // Atomic because the handler runs on another thread on Windows, see below.
+    std::atomic<bool> g_is_leaving{false};
+
+    bool OnClose() {
+      if (!HasUnsavedWork()) {
+        return true;  // nothing to lose, let the engine close
+      }
+      g_is_leaving.store(true);  // ask the user about it in the frames to come
+      return false;              // and nothing is closed for now
+    }
+
+    }  // namespace
+
+    void EasyMain() {
+      SetMainWindowCloseHandler(OnClose);
+      while (!IsMainWindowCloseRequested() || g_is_leaving.load()) {
+        ...
+        ShowFrame();
+      }
+      SaveEverything();
+    }
+~~~~~
+
+`IsMainWindowCloseRequested()` is the polling form of the same news: it goes from
+false to true when the user asks and stays true, so a main loop can end on its own
+terms. Without a handler the process ends on the request, and a loop that wants to
+see the flag has to register one.
+
+The handler is called on the thread that pumps the window messages, once per
+request. On macOS and on Linux the messages are pumped from inside `ShowFrame()`,
+so that is the thread `EasyMain` runs on, and the handler is as free with the
+application data as the frame itself. On Windows the window belongs to the main
+thread while `EasyMain` runs on a thread of its own, so the handler runs beside the
+frame and shares data with it; keep it to setting a flag, as the example above
+does, and do the work in the loop. A program that registers no handler at all and
+only reads `IsMainWindowCloseRequested()` never meets the question, because the
+flag is atomic.
 
 ### Logging
 

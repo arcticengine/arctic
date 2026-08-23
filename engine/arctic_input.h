@@ -34,6 +34,12 @@ namespace arctic {
 /// @{
 
 /// @brief Enumeration of key codes for various input devices
+///
+/// The letter and digit codes name physical keys, not letters: kKeyA is the key
+/// that a US keyboard prints "A" on, and it stays kKeyA when the layout is
+/// switched to Cyrillic and that same key starts typing "ф". The letters the
+/// user typed arrive separately, in InputMessage::Keyboard::characters, and are
+/// also available for a whole frame at once through TypedText().
 enum KeyCode {
   kKeyNone = 0,   ///< Indicates absence of any key, like SQL null
   kKeyUnknown = 1,   ///< Indicates an unidentified key
@@ -269,9 +275,9 @@ struct InputMessage {
     /// @brief Structure containing keyboard input information
     struct Keyboard {
         Ui32 state[kKeyCount] = {0};  ///< State of all keys
-        Ui32 key = 0;                 ///< Current key being processed
-        Ui32 key_state = 0;           ///< State of the current key
-        char characters[16]  = {0};   ///< Characters input, accumulated from key presses
+        Ui32 key = 0;                 ///< Physical key being processed, a KeyCode
+        Ui32 key_state = 0;           ///< State of the current key: 1 down, 2 up
+        char characters[16]  = {0};   ///< Typed text of the key in the current layout, UTF-8, no control characters
         Ui32 queue[1024] = {0};       ///< Queue of input events
         Ui32 queueLen = 0;            ///< Length of the input queue
     };
@@ -310,6 +316,29 @@ bool PopInputMessage(InputMessage *out_message);
 /// @brief Pushes an input message to the queue as if it came from the user
 /// @param [in] message Message to push
 void PushInputMessage(const InputMessage &message);
+
+/// @brief Tells whether a byte the platform reported is text and not a key
+/// @param byte One byte of the UTF-8 a platform gave for a keystroke
+/// @return true for a byte that belongs in typed text
+///
+/// Tab, Enter, Escape, Backspace and Control with a letter reach the engine as
+/// characters on every platform: "\t", "\r", "\x1b", "\x7f", and the C0 codes.
+/// They are keys, not text, and the code that wants them asks
+/// IsKeyDownward(kKeyTab) and its like, so the engine keeps them out of the text
+/// in every place text appears: InputMessage::Keyboard::characters, TypedText()
+/// and the text an Editbox holds. Every byte of a multibyte UTF-8 letter is
+/// above 0x7f, so choosing bytes by value never cuts a letter in half.
+bool IsTypedTextByte(char byte);
+
+/// @brief Puts the typed text of a keystroke into a keyboard message
+/// @param [out] out_keyboard Keyboard part of the message being built
+/// @param utf8 Text the platform reported, nullptr and "" are both fine
+/// @return true if any text was written, false for a keystroke that is only a key
+///
+/// Used by the platform code that turns a system event into an InputMessage, so
+/// that every platform reports the same thing for the keys that carry a control
+/// character; see IsTypedTextByte.
+bool SetTypedCharacters(InputMessage::Keyboard *out_keyboard, const char *utf8);
 
 /// @}
 

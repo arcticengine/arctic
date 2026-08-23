@@ -24,6 +24,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <cstddef>
+
 #include "engine/arctic_input.h"
 #include "engine/arctic_platform.h"
 #include "engine/mtq_mpsc_vinfarr.h"
@@ -58,6 +60,30 @@ void PushInputMessage(const InputMessage &message) {
     *p = message;
     g_input.enqueue(p);
   }
+}
+
+bool IsTypedTextByte(char byte) {
+  const Ui8 value = static_cast<Ui8>(byte);
+  return value >= 0x20 && value != 0x7f;
+}
+
+bool SetTypedCharacters(InputMessage::Keyboard *out_keyboard, const char *utf8) {
+  Check(out_keyboard != nullptr,
+    "Unexpected nullptr in SetTypedCharacters call");
+  const size_t size = sizeof(out_keyboard->characters);
+  size_t length = 0;
+  if (utf8 != nullptr) {
+    for (const char *p = utf8; *p != '\0' && length + 1 < size; ++p) {
+      if (IsTypedTextByte(*p)) {
+        out_keyboard->characters[length] = *p;
+        ++length;
+      }
+    }
+  }
+  for (size_t i = length; i < size; ++i) {
+    out_keyboard->characters[i] = '\0';
+  }
+  return length != 0;
 }
 
 }  // namespace arctic

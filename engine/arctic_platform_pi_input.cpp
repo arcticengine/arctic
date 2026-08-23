@@ -57,6 +57,7 @@ extern Si32 g_window_height;
 extern Window g_x_window;
 extern XIM g_x_im;
 extern XIC g_x_ic;
+extern Atom g_x_wm_delete_window;
 
 KeyCode TranslateKeyCode(KeySym ks) {
   if (ks >= XK_a && ks <= XK_z) {
@@ -279,6 +280,110 @@ KeyCode TranslateKeyCode(KeySym ks) {
   return kKeyUnknown;
 }
 
+/// @brief Translates an XKB key name into a key code
+/// @param name Four characters of an XkbKeyNameRec, not zero terminated
+/// @return The key code of the physical key, kKeyUnknown for an unnamed one
+///
+/// XKB names every physical key the same way no matter which layout is loaded
+/// on top of it: "AC01" is the leftmost letter key of the home row whether it
+/// prints "a", "q" or "ф". That makes the names, and not the keysyms, the thing
+/// to look at when the engine has to report a key by position.
+static KeyCode TranslateXkbKeyName(const char *name) {
+  struct NamedKey {
+    const char *name;
+    KeyCode key;
+  };
+  static const NamedKey kNamedKeys[] = {
+    {"ESC\0", kKeyEscape}, {"TLDE", kKeyGraveAccent},
+    {"AE01", kKey1}, {"AE02", kKey2}, {"AE03", kKey3}, {"AE04", kKey4},
+    {"AE05", kKey5}, {"AE06", kKey6}, {"AE07", kKey7}, {"AE08", kKey8},
+    {"AE09", kKey9}, {"AE10", kKey0}, {"AE11", kKeyMinus}, {"AE12", kKeyEquals},
+    {"BKSP", kKeyBackspace}, {"TAB\0", kKeyTab},
+    {"AD01", kKeyQ}, {"AD02", kKeyW}, {"AD03", kKeyE}, {"AD04", kKeyR},
+    {"AD05", kKeyT}, {"AD06", kKeyY}, {"AD07", kKeyU}, {"AD08", kKeyI},
+    {"AD09", kKeyO}, {"AD10", kKeyP}, {"AD11", kKeyLeftSquareBracket},
+    {"AD12", kKeyRightSquareBracket}, {"BKSL", kKeyBackslash},
+    {"CAPS", kKeyCapsLock},
+    {"AC01", kKeyA}, {"AC02", kKeyS}, {"AC03", kKeyD}, {"AC04", kKeyF},
+    {"AC05", kKeyG}, {"AC06", kKeyH}, {"AC07", kKeyJ}, {"AC08", kKeyK},
+    {"AC09", kKeyL}, {"AC10", kKeySemicolon}, {"AC11", kKeyApostrophe},
+    {"RTRN", kKeyEnter},
+    {"LFSH", kKeyLeftShift},
+    {"AB01", kKeyZ}, {"AB02", kKeyX}, {"AB03", kKeyC}, {"AB04", kKeyV},
+    {"AB05", kKeyB}, {"AB06", kKeyN}, {"AB07", kKeyM}, {"AB08", kKeyComma},
+    {"AB09", kKeyPeriod}, {"AB10", kKeySlash}, {"RTSH", kKeyRightShift},
+    {"LCTL", kKeyLeftControl}, {"RCTL", kKeyRightControl},
+    {"LALT", kKeyLeftAlt}, {"RALT", kKeyRightAlt}, {"SPCE", kKeySpace},
+    {"FK01", kKeyF1}, {"FK02", kKeyF2}, {"FK03", kKeyF3}, {"FK04", kKeyF4},
+    {"FK05", kKeyF5}, {"FK06", kKeyF6}, {"FK07", kKeyF7}, {"FK08", kKeyF8},
+    {"FK09", kKeyF9}, {"FK10", kKeyF10}, {"FK11", kKeyF11}, {"FK12", kKeyF12},
+    {"PRSC", kKeyPrintScreen}, {"SCLK", kKeyScrollLock}, {"PAUS", kKeyPause},
+    {"INS\0", kKeyInsert}, {"HOME", kKeyHome}, {"PGUP", kKeyPageUp},
+    {"DELE", kKeyDelete}, {"END\0", kKeyEnd}, {"PGDN", kKeyPageDown},
+    {"UP\0\0", kKeyUp}, {"LEFT", kKeyLeft}, {"DOWN", kKeyDown},
+    {"RGHT", kKeyRight},
+    {"NMLK", kKeyNumLock}, {"KPDV", kKeyNumpadSlash},
+    {"KPMU", kKeyNumpadAsterisk}, {"KPSU", kKeyNumpadMinus},
+    {"KPAD", kKeyNumpadPlus}, {"KPEN", kKeyEnter}, {"KPDL", kKeyNumpadPeriod},
+    {"KP0\0", kKeyNumpad0}, {"KP1\0", kKeyNumpad1}, {"KP2\0", kKeyNumpad2},
+    {"KP3\0", kKeyNumpad3}, {"KP4\0", kKeyNumpad4}, {"KP5\0", kKeyNumpad5},
+    {"KP6\0", kKeyNumpad6}, {"KP7\0", kKeyNumpad7}, {"KP8\0", kKeyNumpad8},
+    {"KP9\0", kKeyNumpad9}
+  };
+  for (const NamedKey &named : kNamedKeys) {
+    if (strncmp(name, named.name, 4) == 0) {
+      return named.key;
+    }
+  }
+  return kKeyUnknown;
+}
+
+/// @brief Resolves the physical key that an X11 keycode belongs to
+/// @param x_keycode Keycode of an XKeyEvent
+/// @return The key code, kKeyUnknown when neither names nor keysyms describe it
+///
+/// The XKB key names come first because they do not depend on the layout at
+/// all. Only when a key has no name the keysyms are searched, and every group
+/// is looked at rather than group 0 alone: a machine whose only layout is
+/// Cyrillic has no Latin keysym in group 0, which used to make WASD unusable.
+static KeyCode TranslatePhysicalKeyCode(unsigned int x_keycode) {
+  static XkbDescPtr xkb_names = nullptr;
+  static bool is_names_requested = false;
+  if (!is_names_requested) {
+    is_names_requested = true;
+    xkb_names = XkbGetMap(g_x_display, 0, XkbUseCoreKbd);
+    if (xkb_names != nullptr) {
+      if (XkbGetNames(g_x_display, XkbKeyNamesMask, xkb_names) != Success) {
+        XkbFreeKeyboard(xkb_names, 0, True);
+        xkb_names = nullptr;
+      }
+    }
+  }
+  if (xkb_names != nullptr && xkb_names->names != nullptr
+      && xkb_names->names->keys != nullptr
+      && x_keycode >= static_cast<unsigned int>(xkb_names->min_key_code)
+      && x_keycode <= static_cast<unsigned int>(xkb_names->max_key_code)) {
+    KeyCode key = TranslateXkbKeyName(xkb_names->names->keys[x_keycode].name);
+    if (key != kKeyUnknown) {
+      return key;
+    }
+  }
+  for (int level = 0; level < 2; ++level) {
+    for (int group = 0; group < 4; ++group) {
+      KeySym ks = XkbKeycodeToKeysym(g_x_display,
+          static_cast<::KeyCode>(x_keycode), group, level);
+      if (ks == NoSymbol) {
+        continue;
+      }
+      KeyCode key = TranslateKeyCode(ks);
+      if (key != kKeyUnknown) {
+        return key;
+      }
+    }
+  }
+  return kKeyUnknown;
+}
+
 void OnMouse(KeyCode key, Si32 mouse_x, Si32 mouse_y, bool is_down) {
   Check(g_window_width != 0, "Could not obtain window width in OnMouse");
   Check(g_window_height != 0, "Could not obtain window height in OnMouse");
@@ -369,8 +474,10 @@ void OnKey(KeyCode key, bool is_down, char *characters) {
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = key;
   msg.keyboard.key_state = (is_down ? 1 : 2);
-  strncpy(msg.keyboard.characters, characters, sizeof(msg.keyboard.characters));
-  msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
+  // Xutf8LookupString answers "\t" for Tab, "\r" for Enter and a C0 code for
+  // Control with a letter, and none of that is text; SetTypedCharacters leaves it
+  // out, the same way as on the other platforms.
+  SetTypedCharacters(&msg.keyboard, characters);
   PushInputMessage(msg);
 }
 
@@ -515,28 +622,20 @@ void PumpMessages() {
   XEvent ev;
   while (True == XCheckWindowEvent(g_x_display, g_x_window,
         KeyPressMask | KeyReleaseMask, &ev)) {
-    KeySym ks = XkbKeycodeToKeysym(g_x_display, ev.xkey.keycode, 0, 0);
-    if (ks) {
-      arctic::KeyCode key = TranslateKeyCode(ks);
-      if (key == kKeyUnknown) {
-        ::KeyCode kcode = XKeysymToKeycode(g_x_display, ks);
-        if (kcode != 0) {
-          ks = XkbKeycodeToKeysym(g_x_display, kcode, 0, 0);
-          key = TranslateKeyCode(ks);
-          // std::cerr << "ks: " << ks << " key: " << key << std::endl;
-        }
-      }
-      bool is_down = (ev.type == KeyPress);
-      Status status = 0;
-      KeySym keysym = 0;
-      char buf[20];
-      memset(buf, 0, sizeof(buf));
-      int count = Xutf8LookupString(g_x_ic,
-          reinterpret_cast<XKeyPressedEvent*>(&ev),
-          buf, 20, &keysym, &status);
-      buf[std::min(count, 19)] = '\0';
-      OnKey(key, is_down, buf);
-    }
+    arctic::KeyCode key = TranslatePhysicalKeyCode(ev.xkey.keycode);
+    bool is_down = (ev.type == KeyPress);
+    Status status = 0;
+    KeySym keysym = 0;
+    char buf[20];
+    memset(buf, 0, sizeof(buf));
+    // The typed text is a separate matter from the key: it is whatever the
+    // current layout and the input method make of the event, so a Cyrillic
+    // layout gives a Cyrillic character here while the key stays kKeyA.
+    int count = Xutf8LookupString(g_x_ic,
+        reinterpret_cast<XKeyPressedEvent*>(&ev),
+        buf, 20, &keysym, &status);
+    buf[std::min(count, 19)] = '\0';
+    OnKey(key, is_down, buf);
   }
 
   while (True == XCheckWindowEvent(g_x_display, g_x_window,
@@ -594,8 +693,19 @@ void PumpMessages() {
     g_window_height = ev.xconfigure.height;
   }
 
+  while (True == XCheckTypedWindowEvent(
+        g_x_display, g_x_window, ClientMessage, &ev)) {
+    if (g_x_wm_delete_window != None
+        && ev.xclient.data.l[0] == static_cast<long>(g_x_wm_delete_window)) {
+      if (arctic::OnMainWindowCloseRequested()) {
+        arctic::ExitProgram(0);
+      }
+    }
+  }
+
   if (True == XCheckTypedWindowEvent(
         g_x_display, g_x_window, DestroyNotify, &ev)) {
+    arctic::OnMainWindowCloseRequested();
     arctic::ExitProgram(0);
   }
 

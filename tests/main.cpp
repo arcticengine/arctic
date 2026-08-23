@@ -1,4 +1,5 @@
 #include "engine/test_main.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -322,15 +323,19 @@ void test_file_operations() {
   std::string canonic = arctic::CanonicalizePath("./..");
   
   std::string arctic_engine_dir = "../engine";
-
-  Si32 i = 0;
-  while (i < 10) {
-    if (arctic::DoesDirectoryExist(arctic_engine_dir.c_str())) {
+  bool is_engine_dir_found = false;
+  for (Si32 i = 0; i < 10; ++i) {
+    if (arctic::DoesDirectoryExist(arctic_engine_dir.c_str())
+        == kTrivalentTrue) {
+      is_engine_dir_found = true;
       break;
     }
     arctic_engine_dir = std::string("../") + arctic_engine_dir;
   }
-  TEST_CHECK(i != 10);
+  if (!is_engine_dir_found) {
+    TEST_MSG("skipped: no engine directory above the binary");
+    return;
+  }
 
   std::string arctic_root_dir = arctic_engine_dir + std::string("/..");
 
@@ -3317,6 +3322,205 @@ void test_editbox_reports_text_change_and_edit_done() {
   other->SetVisible(false);
   TEST_CHECK_(!root->IsKeyboardCaptured(),
       "a hidden editbox still claims the keyboard");
+
+  // A visible field inside a hidden panel can not be typed into either: the walk
+  // over the panels stops at the hidden one and never asks the children.
+  other->SetVisible(true);
+  TEST_CHECK(root->IsKeyboardCaptured());
+  root->SetVisible(false);
+  TEST_CHECK_(!root->IsKeyboardCaptured(),
+      "an editbox inside a hidden panel still claims the keyboard");
+  root->SetVisible(true);
+}
+
+// The keys report physical positions, so an editbox can not take the letter from
+// the key code: it has to use the typed text, or a Cyrillic layout would type
+// latin letters. A key that carries no text at all (Windows sends the key and
+// the character as two separate messages) must add nothing.
+void test_editbox_accepts_any_layout() {
+  Font font;
+  font.CreateEmpty(4, 5);
+  Sprite normal;
+  normal.Create(60, 12);
+  Sprite focused;
+  focused.Create(60, 12);
+
+  auto box = std::make_shared<Editbox>(1, Vec2Si32(10, 10), 1, normal, focused,
+      font, kTextOriginBottom, Rgba(255, 255, 255), std::string());
+  box->SetCurrentTab(true);
+
+  std::deque<GuiMessage> messages;
+  std::shared_ptr<Panel> current_tab;
+  const char *kEf = "\xd1\x84";  // Cyrillic small letter ef, the key of latin A
+
+  InputMessage cyrillic;
+  cyrillic.kind = InputMessage::kKeyboard;
+  cyrillic.keyboard.key = kKeyA;
+  cyrillic.keyboard.key_state = 1;
+  snprintf(cyrillic.keyboard.characters, sizeof(cyrillic.keyboard.characters),
+      "%s", kEf);
+  bool is_applied = false;
+  box->ApplyInput(Vec2Si32(0, 0), cyrillic, true, &is_applied, &messages,
+      &current_tab);
+  TEST_CHECK_(box->GetText() == std::string(kEf),
+      "a Cyrillic keystroke gave '%s'", box->GetText().c_str());
+
+  InputMessage latin;
+  latin.kind = InputMessage::kKeyboard;
+  latin.keyboard.key = kKeyA;
+  latin.keyboard.key_state = 1;
+  latin.keyboard.characters[0] = 'a';
+  is_applied = false;
+  box->ApplyInput(Vec2Si32(0, 0), latin, true, &is_applied, &messages,
+      &current_tab);
+  TEST_CHECK_(box->GetText() == std::string(kEf) + "a",
+      "a latin keystroke after a Cyrillic one gave '%s'",
+      box->GetText().c_str());
+
+  InputMessage bare;
+  bare.kind = InputMessage::kKeyboard;
+  bare.keyboard.key = kKeyA;
+  bare.keyboard.key_state = 1;
+  is_applied = false;
+  box->ApplyInput(Vec2Si32(0, 0), bare, true, &is_applied, &messages,
+      &current_tab);
+  TEST_CHECK_(box->GetText() == std::string(kEf) + "a",
+      "a key without typed text inserted something: '%s'",
+      box->GetText().c_str());
+
+  // Tab moves the focus and is not text, even when it comes with a tabulation
+  // for a character, and even when this box is the only one that can be focused.
+  InputMessage tab;
+  tab.kind = InputMessage::kKeyboard;
+  tab.keyboard.key = kKeyTab;
+  tab.keyboard.key_state = 1;
+  tab.keyboard.characters[0] = '\t';
+  is_applied = false;
+  box->ApplyInput(Vec2Si32(0, 0), tab, true, &is_applied, &messages,
+      &current_tab);
+  TEST_CHECK_(box->GetText() == std::string(kEf) + "a",
+      "Tab put something in the text: '%s'", box->GetText().c_str());
+}
+
+// The platform code fills the characters of a message through one function, so
+// that every platform reports the same thing for the keys that the system calls
+// characters: Tab, Enter, Escape, Backspace, Control with a letter.
+void test_typed_characters_of_a_message() {
+  InputMessage::Keyboard keyboard;
+  TEST_CHECK_(!SetTypedCharacters(&keyboard, "\t"),
+      "a tabulation was taken for text");
+  TEST_CHECK(keyboard.characters[0] == '\0');
+  TEST_CHECK_(!SetTypedCharacters(&keyboard, "\r"), "Enter was taken for text");
+  TEST_CHECK_(!SetTypedCharacters(&keyboard, "\x01"),
+      "Control with a letter was taken for text");
+  TEST_CHECK_(!SetTypedCharacters(&keyboard, "\x7f"),
+      "Backspace was taken for text");
+  TEST_CHECK_(!SetTypedCharacters(&keyboard, nullptr),
+      "a keystroke with no text at all was taken for text");
+  TEST_CHECK(keyboard.characters[0] == '\0');
+
+  TEST_CHECK_(SetTypedCharacters(&keyboard, "a"), "a letter is text");
+  TEST_CHECK_(std::string(keyboard.characters) == "a",
+      "a latin letter became '%s'", keyboard.characters);
+  const char *kEf = "\xd1\x84";  // Cyrillic small letter ef, two bytes
+  TEST_CHECK(SetTypedCharacters(&keyboard, kEf));
+  TEST_CHECK_(std::string(keyboard.characters) == kEf,
+      "a Cyrillic letter became '%s'", keyboard.characters);
+
+  // A control character next to a letter loses only itself.
+  TEST_CHECK(SetTypedCharacters(&keyboard, "\tx"));
+  TEST_CHECK_(std::string(keyboard.characters) == "x",
+      "a tabulation with a letter became '%s'", keyboard.characters);
+
+  // More text than the message can hold stays inside the array and zero ended.
+  TEST_CHECK(SetTypedCharacters(&keyboard, "0123456789abcdefghij"));
+  TEST_CHECK_(std::string(keyboard.characters) == "0123456789abcde",
+      "a long text became '%s'", keyboard.characters);
+}
+
+// The keys are physical, and a physical shift is either the left or the right
+// one, but code (the engine's own GUI included) asks about the generic kKeyShift.
+// The typed text of the frame is available without walking the message queue.
+void test_typed_text_and_generic_modifiers() {
+  InputMessage right_shift;
+  right_shift.kind = InputMessage::kKeyboard;
+  right_shift.keyboard.key = kKeyRightShift;
+  right_shift.keyboard.key_state = 1;
+  PushInputMessage(right_shift);
+
+  InputMessage typed;
+  typed.kind = InputMessage::kKeyboard;
+  typed.keyboard.key = kKeyA;
+  typed.keyboard.key_state = 1;
+  snprintf(typed.keyboard.characters, sizeof(typed.keyboard.characters),
+      "%s", "\xd0\xa4");  // Cyrillic capital ef, typed with shift held
+  PushInputMessage(typed);
+  ShowFrame();
+
+  TEST_CHECK_(IsKeyDown(kKeyRightShift), "the right shift is not down");
+  TEST_CHECK_(IsKeyDown(kKeyShift),
+      "a physical shift must also answer for the generic kKeyShift");
+  TEST_CHECK_(IsKeyDown(kKeyA), "the physical key of the keystroke is not down");
+  TEST_CHECK_(TypedText() == std::string("\xd0\xa4"),
+      "TypedText gave '%s'", TypedText().c_str());
+
+  // Holding the other shift keeps the generic one down when the first is let go.
+  InputMessage left_shift;
+  left_shift.kind = InputMessage::kKeyboard;
+  left_shift.keyboard.key = kKeyLeftShift;
+  left_shift.keyboard.key_state = 1;
+  PushInputMessage(left_shift);
+  right_shift.keyboard.key_state = 2;
+  PushInputMessage(right_shift);
+  ShowFrame();
+  TEST_CHECK_(IsKeyDown(kKeyShift),
+      "the generic shift went up while the left one is still held");
+
+  left_shift.keyboard.key_state = 2;
+  PushInputMessage(left_shift);
+  typed.keyboard.key_state = 2;
+  typed.keyboard.characters[0] = '\0';
+  PushInputMessage(typed);
+  ShowFrame();
+  TEST_CHECK_(!IsKeyDown(kKeyShift),
+      "the generic shift stayed down after both shifts were released");
+  TEST_CHECK_(IsKeyUpward(kKeyShift),
+      "the release of the last shift was not reported as an upward edge");
+  TEST_CHECK_(TypedText().empty(),
+      "the typed text survived the frame: '%s'", TypedText().c_str());
+
+  // Keys that are not text are reported with a control byte for a character by
+  // one platform or another, and none of that belongs in the typed text.
+  InputMessage tab;
+  tab.kind = InputMessage::kKeyboard;
+  tab.keyboard.key = kKeyTab;
+  tab.keyboard.key_state = 1;
+  tab.keyboard.characters[0] = '\t';
+  PushInputMessage(tab);
+  InputMessage control_letter;
+  control_letter.kind = InputMessage::kKeyboard;
+  control_letter.keyboard.key = kKeyA;
+  control_letter.keyboard.key_state = 1;
+  control_letter.keyboard.characters[0] = '\x01';  // Control with a letter
+  PushInputMessage(control_letter);
+  InputMessage letter;
+  letter.kind = InputMessage::kKeyboard;
+  letter.keyboard.key = kKeyX;
+  letter.keyboard.key_state = 1;
+  letter.keyboard.characters[0] = 'x';
+  PushInputMessage(letter);
+  ShowFrame();
+  TEST_CHECK_(TypedText() == std::string("x"),
+      "the typed text of a frame with Tab and Control+A gave '%s'",
+      TypedText().c_str());
+
+  tab.keyboard.key_state = 2;
+  PushInputMessage(tab);
+  control_letter.keyboard.key_state = 2;
+  PushInputMessage(control_letter);
+  letter.keyboard.key_state = 2;
+  PushInputMessage(letter);
+  ShowFrame();
 }
 
 // The decision to start without a window is taken before main gets going, from a
@@ -3338,6 +3542,53 @@ void test_headless_decider() {
   }
 }
 
+namespace {
+
+Si32 g_close_handler_calls = 0;
+bool g_close_handler_answer = false;
+
+bool CountingCloseHandler() {
+  ++g_close_handler_calls;
+  return g_close_handler_answer;
+}
+
+}  // namespace
+
+// The window close arrives from the system, so a test stands in for it by calling
+// what the platform code calls. Without a handler the answer is "close now",
+// which is what every application had before the handler existed; with one, the
+// application decides, and the flag stays raised either way so that a main loop
+// can end when it is ready.
+void test_main_window_close_handler() {
+  TEST_CHECK_(!arctic::IsMainWindowCloseRequested(),
+      "the close flag was raised before anybody asked to close");
+
+  arctic::SetMainWindowCloseHandler(nullptr);
+  TEST_CHECK_(arctic::OnMainWindowCloseRequested(),
+      "a run with no handler refused to close");
+  TEST_CHECK_(arctic::IsMainWindowCloseRequested(),
+      "the request did not raise the flag");
+
+  g_close_handler_calls = 0;
+  g_close_handler_answer = false;
+  arctic::SetMainWindowCloseHandler(CountingCloseHandler);
+  TEST_CHECK_(!arctic::OnMainWindowCloseRequested(),
+      "the engine closed although the handler took the closing over");
+  TEST_CHECK_(g_close_handler_calls == 1, "the handler was called %d times",
+      (int)g_close_handler_calls);
+  TEST_CHECK_(arctic::IsMainWindowCloseRequested(),
+      "the flag went down after a refused close");
+
+  g_close_handler_answer = true;
+  TEST_CHECK_(arctic::OnMainWindowCloseRequested(),
+      "the handler said yes and the engine did not close");
+  TEST_CHECK_(g_close_handler_calls == 2,
+      "the second request called the handler %d times in total",
+      (int)g_close_handler_calls);
+
+  arctic::SetMainWindowCloseHandler(nullptr);
+}
+
 // Bug 35: Sprite::Reference on a zero-sized sprite must not produce
 // negative ref_pos_ (from.ref_size_.x - 1 == -1 when ref_size_ is 0).
 void test_sprite_reference_zero_size() {
@@ -3357,6 +3608,12 @@ void test_sprite_reference_zero_size() {
 }
 
 void test_hw_sprite_subregion_draws_correctly() {
+  // Hardware sprites live in a GL context, and a run without a window has none,
+  // so on a build machine with no display there is nothing here to check.
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
   const Si32 TEX_W = 16;
   const Si32 TEX_H = 16;
   const Rgba GREEN(0, 200, 0, 255);
@@ -3775,7 +4032,11 @@ TEST_LIST = {
   {"Font border survives colorize", test_font_border_survives_colorize},
   {"Font loaders apply the border", test_font_loads_with_border},
   {"Editbox reports text change and edit done", test_editbox_reports_text_change_and_edit_done},
+  {"Editbox takes text from any keyboard layout", test_editbox_accepts_any_layout},
+  {"Typed characters of a message", test_typed_characters_of_a_message},
+  {"Typed text and generic modifiers", test_typed_text_and_generic_modifiers},
   {"Headless decider is asked at startup", test_headless_decider},
+  {"Main window close handler decides the exit", test_main_window_close_handler},
   {0}
 };
 

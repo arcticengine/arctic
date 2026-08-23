@@ -29,6 +29,7 @@
 #if defined (ARCTIC_PLATFORM_PI_ES_EGL)
 
 #include <dirent.h>
+#include <cstdlib>
 #include <cstring>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -57,10 +58,13 @@ struct SystemInfo {
 
 Si32 g_window_width = 0;
 Si32 g_window_height = 0;
-Display *g_x_display;
+Display *g_x_display = nullptr;
 Window g_x_window;
 XIM g_x_im;
 XIC g_x_ic;
+// The atom the window manager sends when the user closes the window; None until
+// the window is created, and compared against in PumpMessages.
+Atom g_x_wm_delete_window = None;
 
 static Colormap g_x_color_map;
 static const int kXEventMask = KeyPressMask | KeyReleaseMask | ButtonPressMask
@@ -130,6 +134,13 @@ void CreateMainWindow(SystemInfo *system_info) {
   XSetWMHints(g_x_display, g_x_window, &wmHints);
 
   XSetIconName(g_x_display, g_x_window, title);
+
+  // Without this the window manager closes the window by killing the connection,
+  // which reaches the program as an X error and gives it no chance to react. With
+  // it the close arrives as a client message, see PumpMessages.
+  g_x_wm_delete_window = XInternAtom(g_x_display, "WM_DELETE_WINDOW", False);
+  XSetWMProtocols(g_x_display, g_x_window, &g_x_wm_delete_window, 1);
+
   XMapWindow(g_x_display, g_x_window);
 
 
@@ -178,8 +189,12 @@ void CreateMainWindow(SystemInfo *system_info) {
 }
 
 void ExitProgram(Si32 exit_code) {
-  XCloseDisplay(arctic::g_x_display);
-  arctic::g_sound_player.Deinitialize();
+  // A headless run has no display and no sound device to release.
+  if (arctic::g_x_display != nullptr) {
+    XCloseDisplay(arctic::g_x_display);
+    arctic::g_x_display = nullptr;
+    arctic::g_sound_player.Deinitialize();
+  }
   arctic::StopLogger();
 
   exit(exit_code);
@@ -238,13 +253,34 @@ int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   std::string initial_path = arctic::PrepareInitialPath();
-  arctic::StartLogger();
-  arctic::g_sound_player.Initialize();
-  CreateMainWindow(&system_info);
+
+  // Asked before anything is created, and the command line is already in the
+  // engine so that a decider registered with ARCTIC_HEADLESS_DECIDER can look at
+  // it. See SetHeadlessDecider in arctic_platform.h.
   arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
-
   arctic::GetEngine()->SetInitialPath(initial_path);
+  if (arctic::IsHeadlessStartupRequested()) {
+    // No X display, no GL context, no sound device: a console subcommand of a
+    // GUI binary runs on a machine that has none of the three.
+    arctic::StartLogger();
+    arctic::GetEngine()->InitHeadlessScreen(1920, 1080);
+    arctic::PrepareForTheEasyMainCall();
+    EasyMain();
+    arctic::StopLogger();
+    return 0;
+  }
+
+  arctic::StartLogger();
+  // A machine with no sound device, a container, a test run that has no business
+  // making noise: ARCTIC_DISABLE_AUDIO in the environment keeps the sound device
+  // closed and everything else the same.
+  if (std::getenv("ARCTIC_DISABLE_AUDIO") == nullptr) {
+    arctic::g_sound_player.Initialize();
+  } else {
+    *arctic::Log() << "ARCTIC_DISABLE_AUDIO is set, running without sound";
+  }
+  CreateMainWindow(&system_info);
   arctic::GetEngine()->Init(system_info.screen_width,
     system_info.screen_height);
 

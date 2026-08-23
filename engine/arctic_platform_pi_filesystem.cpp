@@ -86,6 +86,22 @@ bool ChangeCurrentDirectory(const char *path) {
   return chdir(path) == 0;
 }
 
+std::string GetExecutablePath() {
+#ifdef ARCTIC_PLATFORM_WEB
+  // A page is not a file the browser could name, and nothing is shipped next to
+  // it in a way a path could describe.
+  return std::string();
+#else
+  char buffer[1 << 12];
+  ssize_t length = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+  if (length <= 0) {
+    return std::string();
+  }
+  buffer[length] = 0;
+  return std::string(buffer);
+#endif
+}
+
 bool GetDirectoryEntries(const char *path,
     std::vector<DirectoryEntry> *out_entries) {
   Check(out_entries,

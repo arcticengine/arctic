@@ -101,6 +101,71 @@ struct KeyState {
 
 static KeyState g_key_state[kKeyCount];
 static std::deque<InputMessage> g_input_messages;
+static std::string g_typed_text;
+
+/// @brief Adds the typed text of a keystroke to the text of the frame
+/// @param [in,out] out_text Text typed in the frame so far, appended to
+/// @param characters UTF-8 of the keystroke, as the message carries it
+///
+/// The platform code leaves control characters out of the message already, see
+/// SetTypedCharacters; the same rule is applied once more here, because a message
+/// can also come from PushInputMessage, and TypedText() is supposed to mean the
+/// same thing whoever produced the keystroke.
+static void AppendTypedText(std::string *out_text, const char *characters) {
+  for (const char *p = characters; *p != '\0'; ++p) {
+    if (!IsTypedTextByte(*p)) {
+      continue;
+    }
+    out_text->push_back(*p);
+  }
+}
+
+/// @brief Tells which generic modifier a side-specific modifier stands for
+/// @param key_code Key code to inspect
+/// @param [out] out_left Left key of the pair, untouched when there is no pair
+/// @param [out] out_right Right key of the pair, untouched likewise
+/// @return kKeyShift, kKeyControl or kKeyAlt, kKeyNone for any other key
+///
+/// A physical key is either the left or the right modifier, never the abstract
+/// "some shift", yet that abstraction is what most code wants to ask about, the
+/// engine's own GUI included. The pair is therefore mirrored onto the generic
+/// key by ShowFrame.
+static Ui32 GenericModifierOf(Ui32 key_code, Ui32 *out_left, Ui32 *out_right) {
+  switch (key_code) {
+    case kKeyLeftShift:
+    case kKeyRightShift:
+      *out_left = kKeyLeftShift;
+      *out_right = kKeyRightShift;
+      return kKeyShift;
+    case kKeyLeftControl:
+    case kKeyRightControl:
+      *out_left = kKeyLeftControl;
+      *out_right = kKeyRightControl;
+      return kKeyControl;
+    case kKeyLeftAlt:
+    case kKeyRightAlt:
+      *out_left = kKeyLeftAlt;
+      *out_right = kKeyRightAlt;
+      return kKeyAlt;
+    default:
+      return kKeyNone;
+  }
+}
+
+static void OnKeyStateChange(Ui32 key_code, bool is_down) {
+  g_key_state[key_code].OnStateChange(is_down);
+  Ui32 left = kKeyNone;
+  Ui32 right = kKeyNone;
+  const Ui32 generic = GenericModifierOf(key_code, &left, &right);
+  if (generic == kKeyNone) {
+    return;
+  }
+  const bool is_any_down =
+    g_key_state[left].IsDown() || g_key_state[right].IsDown();
+  if (is_any_down != g_key_state[generic].IsDown()) {
+    g_key_state[generic].OnStateChange(is_any_down);
+  }
+}
 
 static Engine *g_engine = nullptr;
 static std::string g_startup_directory;
@@ -1072,12 +1137,16 @@ void ShowFrame() {
   g_mouse_wheel_delta_x = 0;
   g_mouse_zoom_delta = 0.0f;
   g_input_messages.clear();
+  g_typed_text.clear();
   Vec2F accumulated_delta(0.0f, 0.0f);
   while (PopInputMessage(&message)) {
     if (message.kind == InputMessage::kKeyboard) {
       if (message.keyboard.key != kKeyNone && message.keyboard.key < kKeyCount) {
-        g_key_state[message.keyboard.key].OnStateChange(
+        OnKeyStateChange(message.keyboard.key,
           message.keyboard.key_state == 1);
+      }
+      if (message.keyboard.key_state == 1 && message.keyboard.characters[0]) {
+        AppendTypedText(&g_typed_text, message.keyboard.characters);
       }
     } else if (message.kind == InputMessage::kMouse) {
       message.mouse.backbuffer_pos =
@@ -1088,7 +1157,7 @@ void ShowFrame() {
       g_mouse_zoom_delta += message.mouse.zoom_delta;
       accumulated_delta += message.mouse.delta;
       if (message.keyboard.key != kKeyNone && message.keyboard.key < kKeyCount) {
-        g_key_state[message.keyboard.key].OnStateChange(
+        OnKeyStateChange(message.keyboard.key,
           message.keyboard.key_state == 1);
       }
     } else if (message.kind == InputMessage::kController) {
@@ -1440,6 +1509,10 @@ const InputMessage& GetInputMessage(Si32 idx) {
   Check(idx < static_cast<Si32>(g_input_messages.size()),
     "GetInputMessage called with idx >= InputMessagesSize()");
   return g_input_messages[static_cast<size_t>(idx)];
+}
+
+const std::string& TypedText() {
+  return g_typed_text;
 }
 
 

@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <sstream>
@@ -52,11 +53,41 @@ namespace {
 // which is single-threaded at that point.
 HeadlessDecider g_headless_decider = nullptr;
 
+// Registered from the thread that runs EasyMain and read by the thread that
+// pumps the window messages. Those are one and the same thread on macOS and on
+// Linux, where the messages are pumped from inside the frame, but not on
+// Windows, where EasyMain runs on a thread of its own while the window belongs
+// to the main one, so the pointer is atomic rather than plain.
+std::atomic<MainWindowCloseHandler> g_main_window_close_handler{nullptr};
+// Written by the window message thread and read by the main loop, which are
+// different threads on Windows.
+std::atomic<bool> g_is_main_window_close_requested{false};
+
 }  // namespace
 
 bool SetHeadlessDecider(HeadlessDecider decider) {
   g_headless_decider = decider;
   return true;
+}
+
+void SetMainWindowCloseHandler(MainWindowCloseHandler handler) {
+  g_main_window_close_handler.store(handler);
+}
+
+bool IsMainWindowCloseRequested() {
+  return g_is_main_window_close_requested.load();
+}
+
+bool OnMainWindowCloseRequested() {
+  g_is_main_window_close_requested.store(true);
+  MainWindowCloseHandler handler = g_main_window_close_handler.load();
+  if (handler == nullptr) {
+    // Nobody asked for a say in it, so the behaviour is the one every Arctic
+    // application had before the handler existed: the window closes and the
+    // process ends with it.
+    return true;
+  }
+  return handler();
 }
 
 bool IsHeadlessStartupRequested() {

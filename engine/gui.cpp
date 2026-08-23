@@ -359,14 +359,24 @@ bool Panel::IsKeyboardCapturing() const {
   return false;
 }
 
+bool Panel::IsReachableForInput() {
+  for (Panel *panel = this; panel != nullptr; panel = panel->parent_) {
+    if (!panel->IsVisible()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Panel::IsKeyboardCaptured() {
-  if (is_current_tab_ && IsVisible() && IsKeyboardCapturing()) {
+  if (is_current_tab_ && IsKeyboardCapturing() && IsReachableForInput()) {
     return true;
   }
   Panel *tab = FindCurrentTab();
   // A panel hidden while it had the focus keeps the flag, and it can not be
   // typed into, so it does not hold the keyboard either.
-  return tab != nullptr && tab->IsVisible() && tab->IsKeyboardCapturing();
+  return tab != nullptr && tab->IsKeyboardCapturing()
+    && tab->IsReachableForInput();
 }
 
 void Panel::AddChild(std::shared_ptr<Panel> child) {
@@ -1167,9 +1177,12 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   if (!*in_out_is_applied && is_current_tab_) {
     // Edit the text
     if (message.kind == InputMessage::kKeyboard) {
-      if (message.keyboard.key == kKeyTab &&
-          ((!allow_list_.empty() && allow_list_.find('\t') == allow_list_.end())
-           || is_digits_)) {
+      if (message.keyboard.key == kKeyTab) {
+        // Tab moves the focus and never becomes text. The top level of the panel
+        // tree has already had its say about the focus by now, see
+        // Panel::ApplyInput, and a box that is the only one to hold the focus
+        // used to swallow the key and insert a tabulation instead, which is not
+        // what a user pressing Tab in a form is asking for.
         return;
       }
       if (message.keyboard.key_state == 1) {

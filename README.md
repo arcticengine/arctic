@@ -9,6 +9,32 @@ In the 80's and 90's it was possible for a programmer to make a game alone and i
 
 Arctic Engine returns the power to the C++ programmer and makes game development fun again.
 
+## Starting a project
+
+Always make a project with the wizard, never by copying `template_project_name` by hand. The directory name, the CMake target, the bundle name, the Xcode and Visual Studio projects, the relative path to the engine and the engine file lists inside those projects all have to agree with each other, and the wizard is what makes them agree; a copied template builds under the wrong name or does not build at all.
+
+Build the wizard once (see the build instructions below), then:
+
+```bash
+wizard create mygame                     # the default template
+wizard create mygame --template hello    # a chosen one
+wizard update ../mygame                  # refresh a project made earlier
+wizard --help                            # the list of templates
+```
+
+A project name is a directory name and a build target name at once, so it takes lowercase latin letters, digits and underscores, and starts with a letter. The project is created next to the engine directory, which is what the `../arctic` include path in the generated project expects. `update` rewrites only the generated parts, engine file lists above all, and leaves your own sources alone; it finds the engine next to the wizard binary, so it works from any directory.
+
+Run with no arguments and the wizard opens its window. With a subcommand it never opens one, so `create` and `update` work over ssh, in a container and on a build bot, and they end with 0 on success or 1 on a mistake in the arguments.
+
+Both build styles work in a project directory:
+
+```bash
+cmake . && make -j 8                          # in the source directory
+cmake -B build && cmake --build build -j 8    # a build directory of its own
+```
+
+The engine needs clang; CMake honours `-DCMAKE_CXX_COMPILER=...` and the `CXX` environment variable, otherwise it looks for `clang++` in the PATH and says what to install when there is none. On Linux the ALSA headers are optional: without them the build warns, defines `ARCTIC_NO_ALSA` and the program runs mute. `-DARCTIC_GRAPHICS=auto|glx|gles` chooses the graphics backend, and `auto` takes GLX everywhere except a Raspberry Pi, which keeps GLES through EGL. `ARCTIC_HEADLESS=1 ARCTIC_DISABLE_HW=1` in the environment runs a program with no window, no GL context and no sound device, while `ARCTIC_DISABLE_AUDIO=1` alone only keeps the sound device closed.
+
 ## Rendering architecture
 
 Arctic Engine provides two rendering paths that share a familiar API.
@@ -154,6 +180,8 @@ cmake .
 make -j 4
 ./wizard
 ```
+
+Of that list only `git`, `cmake`, `clang` and the X11 and OpenGL development files are needed. `libasound2-dev` gives sound, and without it the build warns and the program runs mute; `libgles2-mesa-dev` gives the GLES backend, which a desktop takes only when asked with `-DARCTIC_GRAPHICS=gles` or when there is no desktop OpenGL at all; `libssl-dev` gives HTTPS in `httplib`.
 
 ### Raspberry Pi notes
 

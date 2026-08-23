@@ -884,7 +884,7 @@ void EasyMain() {
   double rt1 = Time();
   double t_target = 0.0;
 
-  while (!IsKeyDownward(kKeyEscape)) {
+  while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
     // Update simulation time
     rt0 = rt1;
     rt1 = Time();

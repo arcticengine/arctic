@@ -26,6 +26,88 @@
 #include "engine/arctic_platform_def.h"
 
 #ifdef ARCTIC_PLATFORM_PI
+#ifdef ARCTIC_NO_ALSA
+
+// A build without the ALSA headers (see the find_package(ALSA) block in the
+// CMakeLists.txt files) has no way to reach a sound device, so the player is here
+// only to keep the rest of the engine compiling and running. It says once, in the
+// log, that this build is mute, and SoundPlayer::IsOk() keeps saying it
+// afterwards through GetErrorDescription(), so an application can pass the word
+// on to whoever is looking at the screen.
+
+#include <deque>
+#include <string>
+
+#include "engine/arctic_mixer.h"
+#include "engine/arctic_platform_sound.h"
+#include "engine/log.h"
+
+namespace arctic {
+
+extern SoundMixerState g_sound_mixer_state;
+
+namespace {
+
+const char *kNoAlsaMessage =
+  "This build has no sound: it was compiled without ALSA (ARCTIC_NO_ALSA)."
+  " Install the ALSA headers (apt install libasound2-dev) and build again to"
+  " hear anything.";
+
+}  // namespace
+
+class SoundPlayerImpl {
+ public:
+  bool is_initialized = false;
+};
+
+void SoundPlayer::Initialize() {
+  Initialize(nullptr, nullptr);
+}
+
+void SoundPlayer::Initialize(const char *input_device_system_name,
+    const char *output_device_system_name) {
+  (void)input_device_system_name;
+  (void)output_device_system_name;
+  if (!impl) {
+    impl = new SoundPlayerImpl;
+  }
+  if (impl->is_initialized) {
+    return;
+  }
+  impl->is_initialized = true;
+  *Log() << kNoAlsaMessage;
+  g_sound_mixer_state.SetError(kNoAlsaMessage);
+  g_sound_mixer_state.do_quit.store(true);
+}
+
+std::deque<AudioDeviceInfo> SoundPlayer::GetDeviceList() {
+  return std::deque<AudioDeviceInfo>();
+}
+
+void SoundPlayer::Deinitialize() {
+  if (impl) {
+    impl->is_initialized = false;
+  }
+}
+
+bool SoundPlayer::IsOk() {
+  return false;
+}
+
+std::string SoundPlayer::GetErrorDescription() {
+  return std::string(kNoAlsaMessage);
+}
+
+SoundPlayer::~SoundPlayer() {
+  if (impl) {
+    delete impl;
+    impl = nullptr;
+  }
+}
+
+}  // namespace arctic
+
+#else  // ARCTIC_NO_ALSA
 
 #include <alsa/asoundlib.h>
 #include <alsa/control.h>
@@ -479,6 +561,6 @@ std::deque<AudioDeviceInfo> SoundPlayerImpl::GetDeviceList() {
 
 }  // namespace arctic
 
-
+#endif  // ARCTIC_NO_ALSA
 
 #endif  // ARCTIC_PLATFORM_PI

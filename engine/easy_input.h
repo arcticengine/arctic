@@ -41,6 +41,14 @@ namespace arctic {
 /// @name Key State Transition Functions
 /// @{
 
+/// @note All the key functions below speak of physical keys, named after the
+///       letters a US keyboard prints on them. kKeyA is the key to the right of
+///       the left Shift row start whatever the current keyboard layout makes of
+///       it, so IsKeyDown("wasd") keeps working when the user switches to a
+///       Cyrillic or an AZERTY layout. What the user actually typed is a
+///       different question, answered by TypedText() and by
+///       InputMessage::Keyboard::characters.
+
 /// Checks if a key was pressed down during the last frame
 /// @param key_code The key code to check
 /// @return True if the key transitioned from up to down state during the last frame
@@ -249,6 +257,29 @@ Si32 InputMessageCount();
 /// @param idx Index of the message to retrieve (0 to InputMessageCount()-1)
 /// @return The input message at the specified index
 const InputMessage& GetInputMessage(Si32 idx);
+
+/// Gets the text typed during the last frame
+/// @return UTF-8 text the keyboard produced during the last frame, empty when
+///         nothing printable was typed
+/// @note This is the layout-dependent counterpart of the key functions: a
+///       Cyrillic layout gives Cyrillic letters here while IsKeyDown() keeps
+///       reporting the physical keys. The string lives until the next
+///       ShowFrame() call, so copy it if it has to outlive the frame.
+/// @note Only printable text gets in. Tab, Enter, Escape, Backspace and the
+///       Control letter combinations are keys, not text, and the control bytes
+///       the platforms report for them are left out, so appending TypedText() to
+///       a name or a chat line cannot put a service byte in the middle of it.
+///       Those keys are read with IsKeyDownward(kKeyEnter) and its like.
+/// @code
+///   std::string name;
+///   while (!IsKeyDownward(kKeyEscape)) {
+///     name += TypedText();
+///     Clear();
+///     font.Draw(name.c_str(), 0, 0);
+///     ShowFrame();
+///   }
+/// @endcode
+const std::string& TypedText();
 
 /// @}
 

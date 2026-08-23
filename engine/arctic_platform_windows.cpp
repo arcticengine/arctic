@@ -44,6 +44,7 @@
 #include <GL/glu.h>
 
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <fstream>
@@ -371,6 +372,228 @@ KeyCode TranslateKeyCode(WPARAM word_param) {  //-V2008
   return kKeyUnknown;
 }
 
+/// @brief Translates a hardware scan code into a key code
+/// @param scan_code Scan code from bits 16-23 of the message lParam
+/// @param is_extended Extended-key flag from bit 24 of the same lParam
+/// @return The key code of the physical key, kKeyUnknown for an unlisted one
+///
+/// Virtual-key codes are what the active layout makes of a key, so a layout
+/// that moves the letters around moves them for the game as well. The scan code
+/// is the key itself, which is what IsKeyDown is supposed to report: the key
+/// where "A" sits on a US keyboard stays kKeyA under a Cyrillic layout, while
+/// the letter the user typed arrives separately through WM_CHAR.
+KeyCode TranslateScanCode(Ui32 scan_code, bool is_extended) {
+  if (is_extended) {
+    switch (scan_code) {
+    case 0x1C:
+      return kKeyEnter;  // numpad enter
+    case 0x1D:
+      return kKeyRightControl;
+    case 0x35:
+      return kKeyNumpadSlash;
+    case 0x37:
+      return kKeyPrintScreen;
+    case 0x38:
+      return kKeyRightAlt;
+    case 0x47:
+      return kKeyHome;
+    case 0x48:
+      return kKeyUp;
+    case 0x49:
+      return kKeyPageUp;
+    case 0x4B:
+      return kKeyLeft;
+    case 0x4D:
+      return kKeyRight;
+    case 0x4F:
+      return kKeyEnd;
+    case 0x50:
+      return kKeyDown;
+    case 0x51:
+      return kKeyPageDown;
+    case 0x52:
+      return kKeyInsert;
+    case 0x53:
+      return kKeyDelete;
+    default:
+      return kKeyUnknown;
+    }
+  }
+  switch (scan_code) {
+  case 0x01:
+    return kKeyEscape;
+  case 0x02:
+    return kKey1;
+  case 0x03:
+    return kKey2;
+  case 0x04:
+    return kKey3;
+  case 0x05:
+    return kKey4;
+  case 0x06:
+    return kKey5;
+  case 0x07:
+    return kKey6;
+  case 0x08:
+    return kKey7;
+  case 0x09:
+    return kKey8;
+  case 0x0A:
+    return kKey9;
+  case 0x0B:
+    return kKey0;
+  case 0x0C:
+    return kKeyMinus;
+  case 0x0D:
+    return kKeyEquals;
+  case 0x0E:
+    return kKeyBackspace;
+  case 0x0F:
+    return kKeyTab;
+  case 0x10:
+    return kKeyQ;
+  case 0x11:
+    return kKeyW;
+  case 0x12:
+    return kKeyE;
+  case 0x13:
+    return kKeyR;
+  case 0x14:
+    return kKeyT;
+  case 0x15:
+    return kKeyY;
+  case 0x16:
+    return kKeyU;
+  case 0x17:
+    return kKeyI;
+  case 0x18:
+    return kKeyO;
+  case 0x19:
+    return kKeyP;
+  case 0x1A:
+    return kKeyLeftSquareBracket;
+  case 0x1B:
+    return kKeyRightSquareBracket;
+  case 0x1C:
+    return kKeyEnter;
+  case 0x1D:
+    return kKeyLeftControl;
+  case 0x1E:
+    return kKeyA;
+  case 0x1F:
+    return kKeyS;
+  case 0x20:
+    return kKeyD;
+  case 0x21:
+    return kKeyF;
+  case 0x22:
+    return kKeyG;
+  case 0x23:
+    return kKeyH;
+  case 0x24:
+    return kKeyJ;
+  case 0x25:
+    return kKeyK;
+  case 0x26:
+    return kKeyL;
+  case 0x27:
+    return kKeySemicolon;
+  case 0x28:
+    return kKeyApostrophe;
+  case 0x29:
+    return kKeyGraveAccent;
+  case 0x2A:
+    return kKeyLeftShift;
+  case 0x2B:
+    return kKeyBackslash;
+  case 0x2C:
+    return kKeyZ;
+  case 0x2D:
+    return kKeyX;
+  case 0x2E:
+    return kKeyC;
+  case 0x2F:
+    return kKeyV;
+  case 0x30:
+    return kKeyB;
+  case 0x31:
+    return kKeyN;
+  case 0x32:
+    return kKeyM;
+  case 0x33:
+    return kKeyComma;
+  case 0x34:
+    return kKeyPeriod;
+  case 0x35:
+    return kKeySlash;
+  case 0x36:
+    return kKeyRightShift;
+  case 0x37:
+    return kKeyNumpadAsterisk;
+  case 0x38:
+    return kKeyLeftAlt;
+  case 0x39:
+    return kKeySpace;
+  case 0x3A:
+    return kKeyCapsLock;
+  case 0x3B:
+    return kKeyF1;
+  case 0x3C:
+    return kKeyF2;
+  case 0x3D:
+    return kKeyF3;
+  case 0x3E:
+    return kKeyF4;
+  case 0x3F:
+    return kKeyF5;
+  case 0x40:
+    return kKeyF6;
+  case 0x41:
+    return kKeyF7;
+  case 0x42:
+    return kKeyF8;
+  case 0x43:
+    return kKeyF9;
+  case 0x44:
+    return kKeyF10;
+  case 0x45:
+    return kKeyNumLock;
+  case 0x46:
+    return kKeyScrollLock;
+  case 0x47:
+    return kKeyNumpad7;
+  case 0x48:
+    return kKeyNumpad8;
+  case 0x49:
+    return kKeyNumpad9;
+  case 0x4A:
+    return kKeyNumpadMinus;
+  case 0x4B:
+    return kKeyNumpad4;
+  case 0x4C:
+    return kKeyNumpad5;
+  case 0x4D:
+    return kKeyNumpad6;
+  case 0x4E:
+    return kKeyNumpadPlus;
+  case 0x4F:
+    return kKeyNumpad1;
+  case 0x50:
+    return kKeyNumpad2;
+  case 0x51:
+    return kKeyNumpad3;
+  case 0x52:
+    return kKeyNumpad0;
+  case 0x53:
+    return kKeyNumpadPeriod;
+  case 0x57:
+    return kKeyF11;
+  case 0x58:
+    return kKeyF12;
+  }
+  return kKeyUnknown;
+}
+
 void OnMouse(KeyCode key, WPARAM word_param, LPARAM long_param, bool is_down) {
   Check(g_window_width != 0, "Could not obtain window width in OnMouse");
   Check(g_window_height != 0, "Could not obtain window height in OnMouse");
@@ -526,7 +749,14 @@ bool IsMouseCaptured() {
 }
 
 void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
-  KeyCode key = TranslateKeyCode(word_param);
+  // The physical key first, the virtual-key code only for what the scan code
+  // table does not cover (media keys and the like).
+  const Ui32 scan_code = static_cast<Ui32>((long_param >> 16) & 0xFF);
+  const bool is_extended = ((long_param >> 24) & 1) != 0;
+  KeyCode key = TranslateScanCode(scan_code, is_extended);
+  if (key == kKeyUnknown) {
+    key = TranslateKeyCode(word_param);
+  }
   InputMessage msg;
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = key;
@@ -536,20 +766,6 @@ void OnKey(WPARAM word_param, LPARAM long_param, bool is_down) {
 }
 
 void OnChar(WPARAM word_param, LPARAM long_param) {
-  switch (word_param) {
-  case 0x08:  // backspace
-    return;
-  case 0x0A:  // linefeed
-    return;
-  case 0x1B:  // escape
-    return;
-  case 0x09:  // tab
-    break;
-  case 0x0D:  // carriage return
-    return;
-  default:  // isplayable characters
-    break;
-  }
   InputMessage msg;
   msg.kind = InputMessage::kKeyboard;
   msg.keyboard.key = kKeyUnknown;
@@ -557,10 +773,13 @@ void OnChar(WPARAM word_param, LPARAM long_param) {
   char utf16[16];
   memset(utf16, 0, sizeof(utf16));
   memcpy(utf16, &word_param, sizeof(word_param));
-  memset(msg.keyboard.characters, 0, sizeof(msg.keyboard.characters));
-  strncpy(msg.keyboard.characters, Utf16ToUtf8(utf16).c_str(),
-      sizeof(msg.keyboard.characters));
-  msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
+  // This message carries nothing but the text: the key itself was reported by
+  // OnKey from WM_KEYDOWN. Backspace, Tab, Enter, Escape and Control with a
+  // letter arrive here as control characters, which are keys rather than text, so
+  // there is nothing left to push for them.
+  if (!SetTypedCharacters(&msg.keyboard, Utf16ToUtf8(utf16).c_str())) {
+    return;
+  }
   PushInputMessage(msg);
 }
 
@@ -589,8 +808,20 @@ LRESULT CALLBACK WndProc(HWND window_handle, UINT message,
   case WM_SYSKEYDOWN:
     if (word_param == VK_RETURN && (HIWORD(long_param) & KF_ALTDOWN)) {
       ToggleFullscreen();
+      break;
     }
-    break;
+    // Everything else the system means by this message stays with the system,
+    // Alt+F4 included: swallowing it here would leave the window with no way to
+    // be closed from the keyboard.
+    return DefWindowProc(window_handle, message, word_param, long_param);
+  case WM_CLOSE:
+    // The last message that can still be refused: WM_DESTROY below arrives when
+    // the window is already gone. Letting DefWindowProc have it destroys the
+    // window as usual.
+    if (!arctic::OnMainWindowCloseRequested()) {
+      return 0;
+    }
+    return DefWindowProc(window_handle, message, word_param, long_param);
   case WM_DESTROY:
     PostQuitMessage(0);
     break;
@@ -961,6 +1192,15 @@ bool ChangeCurrentDirectory(const char *path) {
   return SetCurrentDirectoryA(path) != 0;
 }
 
+std::string GetExecutablePath() {
+  char buffer[MAX_PATH];
+  DWORD length = GetModuleFileNameA(NULL, buffer, MAX_PATH);
+  if (length == 0 || length >= MAX_PATH) {
+    return std::string();
+  }
+  return std::string(buffer, length);
+}
+
 bool GetDirectoryEntries(const char *path,
      std::vector<DirectoryEntry> *out_entries) {
   Check(out_entries,
@@ -1274,7 +1514,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
 
   arctic::StartLogger();
   arctic::SoundPlayer soundPlayer;
-  soundPlayer.Initialize();
+  // A machine with no sound device, a build bot, a run that has no business
+  // making noise: ARCTIC_DISABLE_AUDIO in the environment keeps the sound device
+  // closed and everything else the same.
+  if (std::getenv("ARCTIC_DISABLE_AUDIO") == nullptr) {
+    soundPlayer.Initialize();
+  } else {
+    *arctic::Log() << "ARCTIC_DISABLE_AUDIO is set, running without sound";
+  }
   arctic::CreateMainWindow(&arctic::g_system_info);
 
   std::thread engine_thread(arctic::EngineThreadFunction,

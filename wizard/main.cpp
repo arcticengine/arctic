@@ -103,6 +103,367 @@ enum MainMode {
 ProjectKind g_project_kind = kProjectKindTetramino;
 MainMode g_mode_of_operation = kModeCreate;
 bool g_pause_when_done = true;
+// A run with a subcommand has no window to draw in, so everything the wizard
+// would show goes to the terminal instead and no asset is loaded at all.
+bool g_is_gui = true;
+bool g_is_mode_of_operation_set = false;
+bool g_is_project_name_set = false;
+bool g_is_project_directory_set = false;
+
+struct TemplateKind {
+  const char *name;
+  ProjectKind kind;
+  const char *description;
+};
+
+const TemplateKind kTemplateKinds[] = {
+  {"tetramino", kProjectKindTetramino, "falling blocks game, the default"},
+  {"hello", kProjectKindHello, "a screen with a text on it, the smallest one"},
+  {"snake", kProjectKindSnake, "snake game"},
+  {"kids", kProjectKindCodingForKids, "8x8 text screen sandbox for teaching"},
+  {"conquest", kProjectKindConquest, "turn-based strategy game"},
+  {"des", kProjectKindDiscreteEventSimButton,
+    "discrete-event simulator with a GUI"},
+  {"cube", kProjectKind3DCube, "spinning 3d cube, uses the hardware renderer"},
+};
+
+// A command word means there is nobody to look at a window: the wizard is being
+// run from a script or a terminal, and a window that opens and closes on its own
+// is worse than none. A typo is a command word too, so "wizard creat mygame"
+// complains in the terminal instead of opening the interactive wizard. The engine
+// asks this before it creates the window, the GL context and the sound device,
+// see ARCTIC_HEADLESS_DECIDER.
+bool IsWizardConsoleRun() {
+  const Engine *engine = GetEngine();
+  if (engine->GetArgc() < 2) {
+    return false;
+  }
+  const std::string first(engine->GetArgv()[1]);
+  if (first == "--help" || first == "-h") {
+    return true;
+  }
+  // Anything that starts with a dash is not a command, and the Finder adds one of
+  // its own (-psn_0_12345) when the bundle is opened by a double click.
+  return !first.empty() && first[0] != '-';
+}
+ARCTIC_HEADLESS_DECIDER(IsWizardConsoleRun)
+
+void PrintLine(const std::string &text) {
+  std::cout << text << std::endl;
+  *Log() << text;
+}
+
+void PrintError(const std::string &text) {
+  // The same messages serve the dialog in the window, where a line break is a
+  // part of the layout; in a terminal a message is one line.
+  std::string one_line = text;
+  std::replace(one_line.begin(), one_line.end(), '\n', ' ');
+  std::cerr << "error: " << one_line << std::endl;
+  *Log() << "error: " << one_line;
+}
+
+void PrintUsage() {
+  PrintLine("The Snow Wizard creates and updates Arctic Engine projects.");
+  PrintLine("");
+  PrintLine("Usage:");
+  PrintLine("  wizard                                    the wizard in a window");
+  PrintLine("  wizard create <name> [--template <kind>]  create a project");
+  PrintLine("  wizard update <path>                      update a project");
+  PrintLine("  wizard --help                             this text");
+  PrintLine("");
+  PrintLine("A subcommand always runs without a window, without a GL context and"
+      " without sound, so it works over ssh and on a machine with no display.");
+  PrintLine("");
+  PrintLine("A project name has lowercase latin letters, digits and underscores"
+      " in it, and it starts with a letter: it becomes a directory name and a"
+      " build target name.");
+  PrintLine("");
+  PrintLine("Template kinds:");
+  const size_t kind_count = sizeof(kTemplateKinds) / sizeof(kTemplateKinds[0]);
+  for (size_t i = 0; i < kind_count; ++i) {
+    std::string line = "  ";
+    line += kTemplateKinds[i].name;
+    while (line.size() < 14) {
+      line += ' ';
+    }
+    line += kTemplateKinds[i].description;
+    PrintLine(line);
+  }
+  PrintLine("");
+  PrintLine("The new project is created next to the engine directory, so"
+      " \"wizard create mygame\" gives a sibling of \"arctic\" named"
+      " \"mygame\".");
+}
+
+const char *TemplateKindName(ProjectKind kind) {
+  const size_t kind_count = sizeof(kTemplateKinds) / sizeof(kTemplateKinds[0]);
+  for (size_t i = 0; i < kind_count; ++i) {
+    if (kTemplateKinds[i].kind == kind) {
+      return kTemplateKinds[i].name;
+    }
+  }
+  return "unknown";
+}
+
+bool FindTemplateKind(const std::string &name, ProjectKind *out_kind) {
+  const size_t kind_count = sizeof(kTemplateKinds) / sizeof(kTemplateKinds[0]);
+  for (size_t i = 0; i < kind_count; ++i) {
+    if (name == kTemplateKinds[i].name) {
+      *out_kind = kTemplateKinds[i].kind;
+      return true;
+    }
+  }
+  return false;
+}
+
+// The name has to survive being a directory name, an Xcode target, a Visual
+// Studio project and a C identifier inside the generated files, which is why the
+// window offers no other letters either.
+bool ValidateProjectName(const std::string &name, std::string *out_error) {
+  const size_t kMaxLength = 64;
+  if (name.empty()) {
+    *out_error = "The project name is empty.";
+    return false;
+  }
+  if (name.size() > kMaxLength) {
+    *out_error = "The project name is longer than 64 characters.";
+    return false;
+  }
+  if (name[0] < 'a' || name[0] > 'z') {
+    *out_error = "The project name \"" + name
+      + "\" does not start with a lowercase latin letter.";
+    return false;
+  }
+  for (size_t i = 0; i < name.size(); ++i) {
+    const char ch = name[i];
+    const bool is_allowed = (ch >= 'a' && ch <= 'z')
+      || (ch >= '0' && ch <= '9') || ch == '_';
+    if (!is_allowed) {
+      *out_error = "The project name \"" + name + "\" has a '"
+        + std::string(1, ch) + "' in it. Only lowercase latin letters, digits"
+        " and underscores are allowed, which leaves out path separators and"
+        " dots: the name is a directory name, not a path.";
+      return false;
+    }
+  }
+  return true;
+}
+
+// DoesDirectoryExist answers three things and they are three different troubles:
+// nothing at the path means the thing was never created or never installed,
+// while something that is not a directory at the path means it was created
+// wrongly, and one message for both sends the user looking for a missing
+// directory that is in fact a file in the way.
+bool CheckDirectoryIsThere(const std::string &path, const std::string &what,
+    std::string *out_error) {
+  const Trivalent is_directory = DoesDirectoryExist(path.c_str());
+  if (is_directory == kTrivalentTrue) {
+    return true;
+  }
+  if (is_directory == kTrivalentFalse) {
+    *out_error = "Can't find " + what + " directory\n\"" + path + "\".";
+  } else {
+    *out_error = "The " + what + " path\n\"" + path
+      + "\"\nis not a directory.";
+  }
+  return false;
+}
+
+// The console run has no frames to show the progress in, so the lines the window
+// would draw are written to the terminal as soon as they appear.
+void ReportProgressTail(size_t *in_out_reported) {
+  if (g_progress.size() <= *in_out_reported) {
+    return;
+  }
+  std::string tail = g_progress.substr(*in_out_reported);
+  *in_out_reported = g_progress.size();
+  while (!tail.empty() && tail[tail.size() - 1] == '\n') {
+    tail.erase(tail.size() - 1);
+  }
+  if (!tail.empty()) {
+    PrintLine(tail);
+  }
+}
+
+bool IsEngineRoot(const std::string &directory) {
+  const std::string file = directory + "/arctic.engine";
+  const std::vector<Ui8> data = ReadFile(file.c_str(), true);
+  const char *expected = "arctic.engine";
+  const size_t expected_size = std::strlen(expected);
+  return data.size() >= expected_size
+    && memcmp(data.data(), expected, expected_size) == 0;
+}
+
+bool FindEngineRootFrom(const std::string &start, std::string *out_root) {
+  if (start.empty()) {
+    return false;
+  }
+  std::string directory = CanonicalizePath(start.c_str());
+  for (Si32 i = 0; i < 10; ++i) {
+    if (IsEngineRoot(directory)) {
+      *out_root = directory;
+      return true;
+    }
+    directory = CanonicalizePath((directory + "/..").c_str());
+  }
+  return false;
+}
+
+// The engine tree holds everything the wizard reads: engine/ to add to the
+// projects, template_project_name/ to copy from, and the arctic.engine file that
+// says "this is it". The binary lives inside that tree, so the search starts
+// where the binary is and climbs (a macOS bundle adds three levels of its own,
+// which the climb passes through); only then it tries the directory the run
+// started in, which is what the wizard did before and what a copied binary needs.
+std::string FindEngineRoot() {
+  std::string root;
+  const std::string executable = GetExecutablePath();
+  if (!executable.empty()) {
+    const size_t slash = executable.find_last_of("/\\");
+    if (slash != std::string::npos
+        && FindEngineRootFrom(executable.substr(0, slash), &root)) {
+      return root;
+    }
+  }
+  if (FindEngineRootFrom(GetEngine()->GetInitialPath(), &root)) {
+    return root;
+  }
+  if (FindEngineRootFrom(GetStartupDirectory(), &root)) {
+    return root;
+  }
+  return std::string();
+}
+
+// The assets are asked for by a relative path, so the wizard has to stand in a
+// directory that has a data/ in it. It normally does, and a run started from
+// somewhere else moves to the directory of the binary instead of failing on the
+// first font. The paths from the command line are unaffected, they are resolved
+// against the startup directory by CanonicalizeArgvPath.
+void EnsureDataDirectory() {
+  if (DoesDirectoryExist("data") == kTrivalentTrue) {
+    return;
+  }
+  const std::string executable = GetExecutablePath();
+  if (executable.empty()) {
+    return;
+  }
+  const size_t slash = executable.find_last_of("/\\");
+  if (slash == std::string::npos) {
+    return;
+  }
+  const std::string directory = executable.substr(0, slash);
+  if (DoesDirectoryExist((directory + "/data").c_str()) != kTrivalentTrue) {
+    return;
+  }
+  if (ChangeCurrentDirectory(directory.c_str())) {
+    *Log() << "The data directory is next to the binary, working in \""
+      << directory << "\"";
+  }
+}
+
+// Reads the command line and fills in everything the wizard would otherwise ask
+// about in a window. Returns false when the command line makes no sense, and the
+// caller leaves with a non-zero code.
+bool ParseCommandLine() {
+  const Engine *engine = GetEngine();
+  const Si32 argc = engine->GetArgc();
+  for (Si32 i = 0; i < argc; ++i) {
+    Log("Argument: ", engine->GetArgv()[i]);
+  }
+  if (argc < 2) {
+    return true;  // Nothing was asked for, so the window asks instead.
+  }
+
+  const std::string command(engine->GetArgv()[1]);
+  if (command == "help" || command == "--help" || command == "-h") {
+    PrintUsage();
+    ExitProgram(0);
+  }
+
+  if (command == "create") {
+    if (argc < 3) {
+      PrintError("\"create\" needs a name for the new project.");
+      PrintUsage();
+      return false;
+    }
+    g_project_name.assign(engine->GetArgv()[2]);
+    std::string error;
+    if (!ValidateProjectName(g_project_name, &error)) {
+      PrintError(error);
+      return false;
+    }
+    bool is_template_set = false;
+    for (Si32 i = 3; i < argc; ++i) {
+      const std::string arg(engine->GetArgv()[i]);
+      std::string kind_name;
+      const std::string kPrefix = "--template=";
+      if (arg == "--template" || arg == "-t") {
+        if (i + 1 >= argc) {
+          PrintError("\"" + arg + "\" needs the kind of template after it.");
+          PrintUsage();
+          return false;
+        }
+        kind_name.assign(engine->GetArgv()[i + 1]);
+        ++i;
+      } else if (arg.size() > kPrefix.size()
+          && arg.compare(0, kPrefix.size(), kPrefix) == 0) {
+        kind_name = arg.substr(kPrefix.size());
+      } else {
+        PrintError("Unknown argument \"" + arg + "\".");
+        PrintUsage();
+        return false;
+      }
+      if (!FindTemplateKind(kind_name, &g_project_kind)) {
+        PrintError("Unknown template kind \"" + kind_name + "\".");
+        PrintUsage();
+        return false;
+      }
+      is_template_set = true;
+    }
+    if (!is_template_set) {
+      PrintLine(std::string("No --template given, using \"")
+          + TemplateKindName(g_project_kind) + "\".");
+    }
+    g_mode_of_operation = kModeCreate;
+    g_is_mode_of_operation_set = true;
+    g_is_project_name_set = true;
+    g_pause_when_done = false;
+    return true;
+  }
+
+  if (command == "update") {
+    if (argc < 3) {
+      PrintError("\"update\" needs the path of the project to update.");
+      PrintUsage();
+      return false;
+    }
+    if (argc > 3) {
+      PrintError("Unknown argument \"" + std::string(engine->GetArgv()[3])
+          + "\".");
+      PrintUsage();
+      return false;
+    }
+    if (std::strlen(engine->GetArgv()[2]) == 0) {
+      PrintError("The path of the project to update is empty.");
+      return false;
+    }
+    g_project_directory.assign(CanonicalizeArgvPath(engine->GetArgv()[2]));
+    std::string path_error;
+    if (!CheckDirectoryIsThere(g_project_directory, "project", &path_error)) {
+      PrintError(path_error);
+      return false;
+    }
+    g_mode_of_operation = kModeUpdate;
+    g_is_mode_of_operation_set = true;
+    g_is_project_directory_set = true;
+    g_pause_when_done = false;
+    return true;
+  }
+
+  PrintError("Unknown command \"" + command + "\".");
+  PrintUsage();
+  return false;
+}
 
 
 
@@ -645,22 +1006,9 @@ bool GetProjectName() {
 
   std::string base_dir;
   {
-    std::string search_dir = g_current_directory;
-    for (Si32 i = 0; i < 10; ++i) {
-      std::string marker = search_dir + "/arctic.engine";
-      std::vector<Ui8> data = ReadFile(marker.c_str(), true);
-      const char *expected = "arctic.engine";
-      if (data.size() >= std::strlen(expected)
-          && memcmp(data.data(), expected, std::strlen(expected)) == 0) {
-        base_dir = CanonicalizePath((search_dir + "/..").c_str());
-        break;
-      }
-      search_dir += "/..";
-    }
-    if (base_dir.empty()) {
-      base_dir = CanonicalizePath(
-        (g_current_directory + "/..").c_str());
-    }
+    const std::string root = FindEngineRoot();
+    base_dir = CanonicalizePath(
+      ((root.empty() ? g_current_directory : root) + "/..").c_str());
   }
 
   std::string prev_name;
@@ -1039,43 +1387,41 @@ bool ShowProgress() {
   bool has_error = false;
   bool is_done = false;
   std::string error_message;
+  size_t reported_progress = 0;
   char text[1 << 20];
   while (!has_error && !is_done) {
     switch (step) {
     case 1:
     {
-      bool is_ok = false;
-      for (Si32 i = 0; i < 10; ++i) {
-        std::string file;
-        file.clear();
-        file.append(g_current_directory);
-        file.append("/arctic.engine");
-        std::vector<Ui8> data = ReadFile(file.c_str(), true);
-        const char* expected = "arctic.engine";
-        if (data.size() >= std::strlen(expected)) {
-          if (memcmp(data.data(), expected, std::strlen(expected)) == 0) {
-            is_ok = true;
-            break;
-          }
-        }
-        g_current_directory.append("/..");
-      }
-      if (is_ok) {
+      const std::string root = FindEngineRoot();
+      if (!root.empty()) {
+        g_current_directory = root;
         g_path = CanonicalizePath(
           (g_current_directory + "/..").c_str()) + "/" + g_project_name;
       } else {
-        error_message = "Can't detect Arctic Engine.";
+        error_message = "Can't detect Arctic Engine: no arctic.engine file"
+          " next to the wizard or above it, and none in the current directory"
+          " either.";
         has_error = true;
       }
     }
     break;
     case 2:
-      if (DoesDirectoryExist(g_path.c_str()) == 0) {
-      } else {
+    {
+      const Trivalent is_directory = DoesDirectoryExist(g_path.c_str());
+      if (is_directory == kTrivalentTrue) {
         error_message = "A directory named\n\""
           + g_path + "\"\nalready exists. Use another name.";
         has_error = true;
+      } else if (is_directory == kTrivalentUnknown) {
+        // Something is there and it is not a directory: a file, a link, a
+        // socket. MakeDirectory refuses it in the next step all the same, and
+        // saying "a directory already exists" about a file is a riddle.
+        error_message = "Something that is not a directory is already at\n\""
+          + g_path + "\".\nUse another name.";
+        has_error = true;
       }
+    }
       break;
     case 3:
       if (MakeDirectory(g_path.c_str())) {
@@ -1088,10 +1434,7 @@ bool ShowProgress() {
       break;
     case 4:
       g_template = g_current_directory + "/template_project_name";
-      if (DoesDirectoryExist(g_template.c_str()) == 1) {
-      } else {
-        error_message = "Can't find template directory\n\""
-          + g_template + "\".";
+      if (!CheckDirectoryIsThere(g_template, "template", &error_message)) {
         has_error = true;
       }
       break;
@@ -1221,6 +1564,11 @@ bool ShowProgress() {
     }
     step++;
 
+    if (!g_is_gui) {
+      ReportProgressTail(&reported_progress);
+      continue;
+    }
+
     UpdateResolution();
     Clear();
     const char *welcome = (const char *)u8"The Snow Wizard\n\n"
@@ -1235,6 +1583,9 @@ bool ShowProgress() {
                 kTextAlignmentLeft, kDrawBlendingModeColorize,
                 kFilterNearest, g_palete);
     ShowFrame();
+  }
+  if (has_error && !g_is_gui) {
+    PrintError(error_message);
   }
   if (!g_pause_when_done) {
     return !has_error;
@@ -1252,44 +1603,30 @@ bool ShowUpdateProgress() {
   bool has_error = false;
   bool is_done = false;
   std::string error_message;
+  size_t reported_progress = 0;
   char text[1 << 20];
   while (!has_error && !is_done) {
     switch (step) {
       case 1: {
-        bool is_ok = false;
-        for (Si32 i = 0; i < 10; ++i) {
-          std::string file;
-          file.clear();
-          file.append(g_current_directory);
-          file.append("/arctic.engine");
-          file = CanonicalizePath(file.c_str());
-          std::vector<Ui8> data = ReadFile(file.c_str(), true);
-          const char *expected = "arctic.engine";
-          if (data.size() >= std::strlen(expected)) {
-            if (memcmp(data.data(), expected, std::strlen(expected)) == 0) {
-              is_ok = true;
-              break;
-            }
-          }
-          g_current_directory.append("/..");
-          g_current_directory = CanonicalizePath(g_current_directory.c_str());
-        }
-        if (!is_ok) {
-          error_message = "Can't detect Arctic Engine.";
+        const std::string root = FindEngineRoot();
+        if (root.empty()) {
+          error_message = "Can't detect Arctic Engine: no arctic.engine file"
+            " next to the wizard or above it, and none in the current directory"
+            " either.";
           has_error = true;
+        } else {
+          g_current_directory = root;
         }
       }
         break;
       case 2: {
         g_engine = CanonicalizePath((g_current_directory + "/engine").c_str());
-        if (DoesDirectoryExist(g_engine.c_str()) == 1) {
+        if (CheckDirectoryIsThere(g_engine, "engine", &error_message)) {
           GetDirectoryEntries(g_engine.c_str(), &engine_entries);
           g_progress.append("Engine found: \"");
           g_progress.append(g_engine);
           g_progress.append("\"\n");
         } else {
-          error_message = "Can't find engine directory\n\""
-            + g_engine + "\".";
           has_error = true;
         }
       }
@@ -1733,12 +2070,7 @@ bool ShowUpdateProgress() {
         }
 
         {
-          // Insertions go into a working copy, and each one looks its anchor
-          // up in that copy anew, so they do not disturb each other and their
-          // order does not matter. The engine anchors are opening tags with
-          // children, "<ClCompile Include=\"..\arctic\engine\engine.cpp\">",
-          // because the payload closes the tag and opens the next entry; the
-          // project's own files are listed as self-closed tags.
+
           std::string engine_h_pattern =
             "<ClInclude Include=\"" + rel_engine_h_path + "\">";
           std::string engine_cpp_pattern =
@@ -1781,10 +2113,7 @@ bool ShowUpdateProgress() {
         break;
       case 6:
         g_template = g_current_directory + "/template_project_name";
-        if (DoesDirectoryExist(g_template.c_str()) == 1) {
-        } else {
-          error_message = "Can't find template directory\n\""
-            + g_template + "\".";
+        if (!CheckDirectoryIsThere(g_template, "template", &error_message)) {
           has_error = true;
         }
         break;
@@ -1797,6 +2126,11 @@ bool ShowUpdateProgress() {
         break;
     }
     step++;
+
+    if (!g_is_gui) {
+      ReportProgressTail(&reported_progress);
+      continue;
+    }
 
     UpdateResolution();
     Clear();
@@ -1813,6 +2147,9 @@ bool ShowUpdateProgress() {
                 kFilterNearest, g_palete);
     ShowFrame();
   }
+  if (has_error && !g_is_gui) {
+    PrintError(error_message);
+  }
   if (!g_pause_when_done) {
     return !has_error;
   }
@@ -1828,7 +2165,9 @@ bool ShowUpdateProgress() {
   return true;
 }
 
-void EasyMain() {
+// Everything here needs a window: the sounds need a device, the sprites need the
+// backbuffer to end up in, and a console run needs none of it.
+void LoadGuiAssets() {
   g_sound_chime.Load("data/chime.wav");
   g_sound_chime.Play();
 
@@ -1884,77 +2223,81 @@ void EasyMain() {
     g_v_scrollbar_theme->down_button_cur_.Load("data/v_scroll_cur_down.tga");
     g_v_scrollbar_theme->disabled_button_cur_.Load("data/v_scroll_cur_disabled.tga");
   }
+}
 
+// The list of files that used to be part of the engine and are not any more; the
+// update needs it whether there is a window or not.
+void LoadDeprecations() {
   CsvTable csv;
   csv.LoadFile("data/deprecations.csv");
   size_t row_count = static_cast<size_t>(csv.RowCount());
   for (size_t i = 0; i < row_count; ++i) {
     g_deprecated_files.push_back(csv.GetRow(i)->GetValue(0, std::string("")));
   }
+}
 
-  for (Si64 i = 0; i < GetEngine()->GetArgc(); ++i) {
-    Log("Argument: ", GetEngine()->GetArgv()[i]);
+// A failed step in a console run has to reach the shell as a code, or a script
+// that calls the wizard has no way of knowing that nothing was created.
+void LeaveOnFailure() {
+  if (!g_is_gui) {
+    ExitProgram(1);
+  }
+}
+
+void EasyMain() {
+  g_is_gui = !GetEngine()->IsHeadless();
+
+  if (!ParseCommandLine()) {
+    ExitProgram(1);
   }
 
-  bool is_mode_of_operation_set = false;
-  bool is_project_name_set = false;
-  bool is_project_directory_set = false;
-  if (GetEngine()->GetArgc() == 3) {
-    if (GetEngine()->GetArgv()[1] == std::string("create")) {
-      g_mode_of_operation = kModeCreate;
-      is_mode_of_operation_set = true;
+  EnsureDataDirectory();
 
-      if (strlen(GetEngine()->GetArgv()[2]) > 0) {
-        g_project_name.assign(GetEngine()->GetArgv()[2]);
-        // TODO(Huldra): validate g_project_name
-        is_project_name_set = true;
-        g_pause_when_done = false;
-      }
-    }
-    if (GetEngine()->GetArgv()[1] == std::string("update")) {
-      g_mode_of_operation = kModeUpdate;
-      is_mode_of_operation_set = true;
-
-      if (strlen(GetEngine()->GetArgv()[2]) > 0) {
-        // Read through the argv helper: the current directory is the resources
-        // folder of the wizard's own bundle, so "update ../mygame" would point
-        // inside the wizard instead of at the user's project.
-        g_project_directory.assign(
-          CanonicalizeArgvPath(GetEngine()->GetArgv()[2]));
-        // TODO(Huldra): validate g_project_directory
-        is_project_directory_set = true;
-        g_pause_when_done = false;
-      }
-    }
+  if (g_is_gui) {
+    LoadGuiAssets();
   }
+  LoadDeprecations();
 
   g_current_directory = GetEngine()->GetInitialPath();
 
-  if (!is_mode_of_operation_set) {
+  if (!g_is_mode_of_operation_set) {
     if (!GetOperationMode()) {
       return;
     }
   }
   if (g_mode_of_operation == kModeCreate) {
-    if (!is_project_name_set) {
+    if (!g_is_project_name_set) {
       if (!GetProjectKind()) {
         return;
       }
       if (!GetProjectName()) {
         return;
       }
+    } else if (!g_is_gui) {
+      PrintLine("Creating project \"" + g_project_name + "\" from the \""
+          + TemplateKindName(g_project_kind) + "\" template.");
     }
     if (!ShowProgress()) {
+      LeaveOnFailure();
       return;
     }
   } else if (g_mode_of_operation == kModeUpdate) {
-    if (!is_project_directory_set) {
+    if (!g_is_project_directory_set) {
       if (!SelectProject()) {
         return;
       }
+    } else if (!g_is_gui) {
+      PrintLine("Updating project in \"" + g_project_directory + "\".");
     }
   }
   if (!ShowUpdateProgress()) {
+    LeaveOnFailure();
     return;
+  }
+  if (!g_is_gui) {
+    const char *action = (g_mode_of_operation == kModeCreate)
+      ? "created" : "updated";
+    PrintLine(std::string("Project \"") + g_project_name + "\" " + action
+        + " successfully in \"" + g_project_directory + "\".");
   }
 }

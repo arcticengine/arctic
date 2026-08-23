@@ -409,6 +409,14 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// @return True if the panel is visible, false otherwise.
   virtual bool IsVisible();
 
+  /// @brief Checks whether input can reach this panel at all
+  /// @return True while this panel and every panel above it are visible.
+  ///
+  /// Hiding a panel hides its children with it, and the input walk stops at the
+  /// hidden panel without ever asking the children about anything, so a visible
+  /// field inside a hidden dialog receives nothing.
+  bool IsReachableForInput();
+
   /// @brief Checks if the panel is mouse transparent at a given position.
   /// @param parent_pos Position of the parent panel.
   /// @param mouse_pos Mouse position relative to the parent panel.

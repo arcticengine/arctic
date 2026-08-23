@@ -29,6 +29,7 @@
 #ifdef ARCTIC_PLATFORM_PI_OPENGL_GLX
 
 #include <dirent.h>
+#include <cstdlib>
 #include <cstring>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -69,6 +70,9 @@ Display *g_x_display = nullptr;
 Window g_x_window;
 XIM g_x_im;
 XIC g_x_ic;
+// The atom the window manager sends when the user closes the window; None until
+// the window is created, and compared against in PumpMessages.
+Atom g_x_wm_delete_window = None;
 
 static Colormap g_x_color_map;
 static XVisualInfo *g_glx_visual;
@@ -173,6 +177,13 @@ void CreateMainWindow(SystemInfo *system_info) {
   XSetWMHints(g_x_display, g_x_window, &wmHints);
 
   XSetIconName(g_x_display, g_x_window, title);
+
+  // Without this the window manager closes the window by killing the connection,
+  // which reaches the program as an X error and gives it no chance to react. With
+  // it the close arrives as a client message, see PumpMessages.
+  g_x_wm_delete_window = XInternAtom(g_x_display, "WM_DELETE_WINDOW", False);
+  XSetWMProtocols(g_x_display, g_x_window, &g_x_wm_delete_window, 1);
+
   XMapWindow(g_x_display, g_x_window);
 
 
@@ -285,7 +296,14 @@ int main(int argc, char **argv) {
   }
 
   arctic::StartLogger();
-  arctic::g_sound_player.Initialize();
+  // A machine with no sound device, a container, a test run that has no business
+  // making noise: ARCTIC_DISABLE_AUDIO in the environment keeps the sound device
+  // closed and everything else the same.
+  if (std::getenv("ARCTIC_DISABLE_AUDIO") == nullptr) {
+    arctic::g_sound_player.Initialize();
+  } else {
+    *arctic::Log() << "ARCTIC_DISABLE_AUDIO is set, running without sound";
+  }
   CreateMainWindow(&system_info);
   arctic::GetEngine()->Init(system_info.screen_width,
       system_info.screen_height);

@@ -212,9 +212,12 @@ EM_BOOL KeyCallback(int eventType, const EmscriptenKeyboardEvent* e, void* userD
   probe.Reset(reinterpret_cast<const Ui8*>(e->key));
   Ui32 first_cp = probe.ReadOne();
   Ui32 second_cp = probe.ReadOne();
+  // The browser names a key that types nothing ("Tab", "Enter", "Escape"), and a
+  // name is several codepoints long, so only a single codepoint can be text at
+  // all. SetTypedCharacters then keeps out the control characters, the same way
+  // as on the other platforms.
   if (first_cp != 0 && second_cp == 0) {
-    strncpy(msg.keyboard.characters, e->key, sizeof(msg.keyboard.characters));
-    msg.keyboard.characters[sizeof(msg.keyboard.characters) - 1] = '\0';
+    SetTypedCharacters(&msg.keyboard, e->key);
   } else {
     msg.keyboard.characters[0] = '\0';
   }

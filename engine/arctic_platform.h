@@ -121,6 +121,75 @@ bool SetHeadlessDecider(HeadlessDecider decider);
 /// asks GetEngine()->IsHeadless() instead, at any time after EasyMain begins.
 bool IsHeadlessStartupRequested();
 
+/// @brief Type of the function that answers "close the window now?"
+using MainWindowCloseHandler = bool (*)();
+
+/// @brief Registers the function the engine asks when the window is closed
+/// @param handler Function returning true to let the engine end the process
+///   right now, or nullptr to go back to the default behaviour
+///
+/// The user closes the window with the red button, with Cmd+Q, with Alt+F4 or
+/// with the window manager, and by default the engine ends the process there and
+/// then. An application that has something to do first (ask about unsaved work,
+/// finish the frame, write a save file, leave with a code of its own) registers a
+/// handler and returns false from it: nothing is closed, the frame goes on, and
+/// IsMainWindowCloseRequested() keeps returning true so that the main loop can
+/// end when the application is ready.
+///
+/// The handler is called from the thread that pumps the window messages. On
+/// macOS and on Linux that is the thread EasyMain runs on, because the messages
+/// are pumped from inside ShowFrame, and the handler is as free to touch the
+/// application data as the frame itself is. On Windows the window belongs to the
+/// main thread while EasyMain runs on a thread of its own, so the handler runs in
+/// parallel with the frame and has to treat everything it reads or writes as
+/// shared with another thread. A handler that only sets a flag, or that is not
+/// there at all while the main loop watches IsMainWindowCloseRequested(), needs
+/// no such care and behaves the same everywhere. The handler is called once per
+/// request; a user who clicks the button twice gets two calls.
+///
+/// @code
+/// std::atomic<bool> g_is_save_dialog_shown{false};  // written by the handler
+///
+/// bool OnClose() {
+///   if (!g_has_unsaved_work) {
+///     return true;  // nothing to lose, let the engine close
+///   }
+///   g_is_save_dialog_shown.store(true);
+///   return false;  // the application decides when to leave
+/// }
+///
+/// void EasyMain() {
+///   SetMainWindowCloseHandler(OnClose);
+///   while (!IsMainWindowCloseRequested() || g_is_save_dialog_shown.load()) {
+///     ...
+///     ShowFrame();
+///   }
+/// }
+/// @endcode
+void SetMainWindowCloseHandler(MainWindowCloseHandler handler);
+
+/// @brief Tells whether the user has asked to close the main window
+/// @return true once the window was asked to close, false before that
+///
+/// Reading it is the way for a main loop to end on its own terms:
+/// `while (!IsMainWindowCloseRequested())`. It only ever goes from false to true,
+/// and it stays true afterwards. Note that without a handler registered with
+/// SetMainWindowCloseHandler the engine ends the process immediately on the
+/// request, so a loop that wants to see the flag has to register one.
+///
+/// Escape is not part of this: no key closes anything by itself, and a program
+/// that ends on Escape checks IsKeyDownward(kKeyEscape) because it decided to,
+/// not because the engine did.
+bool IsMainWindowCloseRequested();
+
+/// @brief Reports a close request from the platform window code
+/// @return true if the engine should end the process right now
+///
+/// Called by the platform code that receives the request from the system
+/// (windowShouldClose: on macOS, WM_CLOSE on Windows, the WM_DELETE_WINDOW
+/// client message on X11). An application has no reason to call it.
+bool OnMainWindowCloseRequested();
+
 #ifdef ARCTIC_NO_MAIN
 /// @brief Initializes the platform code for headless-mode use
 void HeadlessPlatformInit();
@@ -235,6 +304,27 @@ bool GetDirectoryEntries(const char *path,
 /// so that assets can be loaded by their relative paths. Use
 /// CanonicalizeArgvPath for a path that came from the command line.
 std::string CanonicalizePath(const char *path);
+
+/// @brief Returns the path of the file the process was loaded from
+/// @return Absolute canonical path of the executable file, or an empty string if
+///   the platform can not tell (the web)
+///
+/// This is the one path that does not depend on the current directory, on the
+/// directory the user was standing in, or on what argv[0] happens to contain, so
+/// it is the way for a tool to find the data shipped next to it. On macOS the
+/// executable of a bundled application lives in `<name>.app/Contents/MacOS`, so
+/// a tool looking for its own data folder should be ready to step out of the
+/// bundle; GetEngine()->GetInitialPath() already points at the directory that
+/// contains the bundle.
+///
+/// Example:
+/// @code
+/// const std::string exe = GetExecutablePath();
+/// const std::string dir = exe.substr(0, exe.find_last_of('/'));
+/// Sprite s;
+/// s.Load(GluePath(dir.c_str(), "data/hero.tga").c_str());
+/// @endcode
+std::string GetExecutablePath();
 
 /// @brief Returns the directory the process was started from
 /// @return Absolute path of the startup directory, or an empty string if the

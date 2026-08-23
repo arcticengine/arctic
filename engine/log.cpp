@@ -26,6 +26,7 @@
 #include "engine/log.h"
 
 #include <condition_variable>  // NOLINT
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <mutex>  // NOLINT
@@ -97,7 +98,10 @@ static SyncQueue<
   MpscVirtInfArray<std::string*, TuneDeletePayloadFlag<true>, TuneChunkSize<4000>>,
   std::string> g_logger_queue;
 static std::thread g_logger_thread;
+// The logger thread tells the item apart from a message by the value of the
+// pointer, so the pointer has to keep it until the thread has seen it and ended.
 static std::string *g_quit_item = nullptr;
+static bool g_is_logger_stopping = false;
 static std::mutex g_quit_mutex;
 
 #ifdef ARCTIC_PLATFORM_WEB
@@ -209,16 +213,47 @@ static std::mutex g_quit_mutex;
     g_is_log_enabled.store(true);
     g_quit_item = new std::string("g_quit_item");
     g_logger_thread = std::thread(arctic::LoggerThreadFunction);
+    static bool is_exit_handler_registered = false;
+    if (!is_exit_handler_registered) {
+      // A fatal error ends the process with exit() from wherever it was noticed,
+      // and the destructor of a still joinable std::thread calls std::terminate,
+      // which replaces the diagnostic the user needs with "libc++abi:
+      // terminating" and an abort. Stopping the logger from an exit handler both
+      // flushes what was logged on the way out and leaves nothing joinable to
+      // destroy.
+      std::atexit([]() { StopLogger(); });
+      is_exit_handler_registered = true;
+    }
   }
 
   void StopLogger() {
-    std::lock_guard<std::mutex> lock(g_quit_mutex);
-    if (g_quit_item == nullptr) {
-      return;
+    std::thread logger_thread;
+    {
+      std::lock_guard<std::mutex> lock(g_quit_mutex);
+      if (g_quit_item == nullptr || g_is_logger_stopping) {
+        return;
+      }
+      g_is_logger_stopping = true;
+      g_is_log_enabled.store(false);
+      g_logger_queue.Enqueue(g_quit_item);
+      logger_thread = std::move(g_logger_thread);
     }
-    g_is_log_enabled.store(false);
-    g_logger_queue.Enqueue(g_quit_item);
-    g_logger_thread.join();
+    // The waiting happens with the mutex released. The logger thread ends the
+    // process itself when it cannot write the file, its exit handler enters this
+    // function again, and a mutex held across the join would leave the two
+    // threads waiting for each other forever. The second call sees the stopping
+    // flag and returns at once instead.
+    if (logger_thread.get_id() == std::this_thread::get_id()) {
+      // Asked to stop from inside the logger thread, and no thread can wait for
+      // itself, so the thread is let go instead of joined.
+      logger_thread.detach();
+    } else {
+      logger_thread.join();
+    }
+    std::lock_guard<std::mutex> lock(g_quit_mutex);
+    // The thread deleted the item on its way out, and the next StartLogger makes
+    // one of its own.
     g_quit_item = nullptr;
+    g_is_logger_stopping = false;
   }
 }  // namespace arctic

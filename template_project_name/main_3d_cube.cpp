@@ -213,7 +213,7 @@ void EasyMain() {
   Si32 fps_frame_count = 0;
   Si32 fps_display = 0;
 
-  while (!IsKeyDownward(kKeyEscape)) {
+  while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
     double cur_time = Time();
     float dt = static_cast<float>(cur_time - prev_time);
     prev_time = cur_time;
