@@ -1363,6 +1363,30 @@ bool SelectProject() {
   }
 }
 
+// The template is written for a project next to the engine tree, so the engine in
+// it is "../arctic/engine". That is right for everything the wizard creates, and
+// wrong for a project that sits somewhere else, the engine's own projects inside
+// the tree among them: there the engine is "../engine", and a CMakeLists that
+// says otherwise globs a directory that is not there, configures without a word
+// and fails at link time with the whole engine missing. So the path the project
+// really has is computed and put in place of the one from the template.
+void PatchEnginePath(std::string *in_out_content) {
+  Check(in_out_content, "PatchEnginePath called with in_out_content == nullptr");
+  if (g_engine.empty() || g_project_directory.empty()) {
+    return;
+  }
+  std::string path = RelativePathFromTo(
+      g_project_directory.c_str(), g_engine.c_str());
+  ReplaceAll("\\", "/", &path);
+  if (path.empty() || path == "../arctic/engine") {
+    return;
+  }
+  std::string windows_path = path;
+  ReplaceAll("/", "\\", &windows_path);
+  ReplaceAll("../arctic/engine", path, in_out_content);
+  ReplaceAll("..\\arctic\\engine", windows_path, in_out_content);
+}
+
 void PatchAndCopyTemplateFile(std::string file_name, std::string target_name) {
   std::vector<Ui8> data = ReadFile(
       (g_template + "/" + file_name).c_str());
@@ -1374,6 +1398,7 @@ void PatchAndCopyTemplateFile(std::string file_name, std::string target_name) {
   std::string bundle_name = g_project_name;
   std::replace(bundle_name.begin(), bundle_name.end(), '_', '-');
   ReplaceAll("template-project-name", bundle_name, &content);
+  PatchEnginePath(&content);
   WriteFile((g_project_directory + "/" + name).c_str(),
       reinterpret_cast<const Ui8*>(content.data()), content.size());
 }

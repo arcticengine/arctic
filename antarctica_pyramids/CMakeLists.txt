@@ -1,3 +1,16 @@
+# =============================================================================
+# How to build (read first)
+# =============================================================================
+# This file uses paths relative to the project folder (e.g. ../engine,
+# ./data). Configure and build from the directory that contains THIS file so
+# those paths resolve as intended. A separate build/ subdirectory will result
+# in a failed build.
+#
+# Always build from this directory:
+#   cmake . && make -j 8
+# =============================================================================
+
+
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 ################### Variables. ####################
 # Change if you want modify path or other values. #
@@ -67,14 +80,15 @@ IF (APPLE)
   FIND_LIBRARY(AVFOUNDATION AVFoundation)
   FIND_LIBRARY(COREVIDEO CoreVideo)
   FIND_LIBRARY(COREMEDIA CoreMedia)
+  # Keychain access: engine/httplib.h reads the trusted roots from there once
+  # HTTPS is enabled below.
+  FIND_LIBRARY(SECURITY Security)
 ELSE (APPLE)
 
   IF (EMSCRIPTEN)
   ELSE (EMSCRIPTEN)
     # Sound is optional: a machine without the ALSA headers, a container, a build
-    # bot, all of them build and run, only without a sound of any kind. That has to
-    # be said out loud here and at run time, or silence looks like a bug in the
-    # program.
+    # bot, all of them build and run, only without a sound of any kind.
     find_package(ALSA)
     if (NOT ALSA_FOUND)
       add_definitions(-DARCTIC_NO_ALSA)
@@ -93,11 +107,7 @@ ELSE (APPLE)
   ENDIF (EMSCRIPTEN)
 
   # Two ways to draw on Linux: desktop OpenGL through GLX, and OpenGL ES through
-  # EGL. Both draw into an X11 window, so X11 is needed either way. The choice used
-  # to fall to ES/EGL as soon as the GLES headers happened to be installed, which
-  # sent a desktop with libgles2-mesa-dev on it down the Raspberry Pi path; now GLX
-  # wins unless the machine is a Pi or has no desktop OpenGL at all.
-  # -DARCTIC_GRAPHICS=glx or =gles settles it by hand.
+  # EGL. Both draw into an X11 window, so X11 is needed either way. 
   set(ARCTIC_GRAPHICS "auto" CACHE STRING "Graphics backend: auto, glx or gles")
   set_property(CACHE ARCTIC_GRAPHICS PROPERTY STRINGS auto glx gles)
 
@@ -161,6 +171,33 @@ ELSE (APPLE)
   find_package(Threads REQUIRED)
 ENDIF (APPLE)
 
+# HTTPS for engine/httplib.h is optional, so OpenSSL is looked up but never
+# required: with it the HTTP client and server speak TLS, without it they are
+# limited to plain HTTP and nothing else in the engine is affected. Emscripten is
+# skipped because the browser terminates TLS itself.
+IF (NOT EMSCRIPTEN)
+  IF (APPLE AND NOT OPENSSL_ROOT_DIR)
+    # Homebrew installs OpenSSL outside the default search path, so hint the
+    # common locations before find_package.
+    foreach(cand /opt/homebrew/opt/openssl@3 /usr/local/opt/openssl@3
+                 /opt/homebrew/opt/openssl /usr/local/opt/openssl)
+      if(EXISTS "${cand}")
+        set(OPENSSL_ROOT_DIR "${cand}")
+        break()
+      endif()
+    endforeach()
+  ENDIF ()
+  find_package(OpenSSL QUIET)
+  if (OPENSSL_FOUND)
+    message(STATUS "OpenSSL found: httplib HTTPS enabled.")
+    add_definitions(-DCPPHTTPLIB_OPENSSL_SUPPORT)
+  else ()
+    message(STATUS "OpenSSL not found: httplib is limited to plain HTTP. "
+                   "Install OpenSSL (libssl-dev / brew install openssl) to "
+                   "enable HTTPS.")
+  endif ()
+ENDIF (NOT EMSCRIPTEN)
+
 
 
 # Definition of Macros
@@ -200,6 +237,7 @@ ELSE (APPLE)
 ENDIF (APPLE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../arctic)
 
 ################# Flags ################
 # Defines Flags for Windows and Linux. #
@@ -328,6 +366,13 @@ ELSE (APPLE)
     endif()
   ENDIF (EMSCRIPTEN)
 ENDIF (APPLE)
+
+if (OPENSSL_FOUND)
+  target_link_libraries(${PROJECT_NAME} OpenSSL::SSL OpenSSL::Crypto)
+  IF (APPLE)
+    target_link_libraries(${PROJECT_NAME} ${SECURITY})
+  ENDIF (APPLE)
+endif ()
 
 # The browser has no file system to read the assets from, so they are packed into
 # a .data file next to the .js and unpacked into a virtual file system at start.
