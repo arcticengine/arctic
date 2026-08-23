@@ -68,19 +68,25 @@ Instructions for Linux and MacOS users on how to run an Arctic Engine game in a 
     source ./emsdk_env.sh
     ~~~~~
 2. Navigate to your game directory.
-3. Remove the CMake cache:
+3. Build the project in a directory of its own, so that the web build and the
+    native one do not fight over the same CMake cache:
     ~~~~~{.bash}
-    rm -f ./CMakeCache.txt
+    emcmake cmake -DCMAKE_BUILD_TYPE=Release -S . -B build_web && cmake --build build_web -j 8
     ~~~~~
-4. Build the project:
+    The `data` directory is packed into `build_web/<project>.data` and unpacked
+    into the virtual file system of the page at start, so the game finds its
+    assets under the same `data/...` paths as on the desktop. The `index.html`
+    page and the `webserver.py` script are copied next to the built `.js` file,
+    which makes `build_web` the whole thing, ready to be served.
+4. Start the web server (the `webserver.py` script is included in projects created with the wizard):
     ~~~~~{.bash}
-    emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8
+    cd build_web && python3 ./webserver.py
     ~~~~~
-5. Start the web server (the `webserver.py` script is included in projects created with the wizard):
-    ~~~~~{.bash}
-    python3 ./webserver.py
-    ~~~~~
-6. Open the address http://127.0.0.1:8000/index.html in your browser.
+5. Open the address http://127.0.0.1:8000/index.html in your browser.
+
+A build in the game directory itself (`emcmake cmake -DCMAKE_BUILD_TYPE=Release . && make -j 8`)
+works as well, but the cache it leaves behind belongs to Emscripten, so the next
+native build needs `rm -f ./CMakeCache.txt` first.
 
 Creating and updating a project
 -------------------------------
@@ -207,6 +213,18 @@ Project examples cover a wide range of functionalities, including basic graphic 
   - Managing simulation time and events.
   - GUI for managing simulation parameters.
   - Displaying the current state and progress information.
+
+7. Spinning 3D cube
+
+  This example is the smallest complete 3D program: a textured cube built as a
+  `Mesh`, a camera moved with WASD and the mouse, two point lights circling the
+  cube, a render target with a depth buffer, and F12 saving a screenshot.
+
+  Key Features:
+  - Naming vertex elements after shader attributes and drawing with `Mesh::Draw`.
+  - A render target that follows the window size.
+  - Point lights as separate uniforms, which every GLES driver handles.
+  - `Screenshot()` and saving a png.
 
 Quick Tutorials
 --------------
@@ -381,6 +399,69 @@ draw with `kDrawBlendingModeAlphaBlend`, which ignores the `Draw` color, when bo
 colors have to survive exactly. `AddBorder()` does the same to an already loaded
 font, and note that a `Font` is a shared handle: bordering one copy borders every
 copy made from the same load.
+
+### 3D Rendering
+
+The `cube` template is a whole working 3D program; this is the shape of it. A mesh
+whose vertex elements carry the names of the shader attributes draws itself:
+
+~~~~~{.cpp}
+    MeshVertexFormat format;
+    format.AddElement("vPosition", 3, kRMVEDT_Float);
+    format.AddElement("vNormal", 3, kRMVEDT_Float);
+    format.AddElement("vTexCoord", 2, kRMVEDT_Float);
+    mesh.Init(1, 24, &format, kRMVEDT_Polys, 1, 12);
+    // AddVertex and AddFace fill it in
+
+    program.Create(vertex_shader, fragment_shader,
+        {"vPosition", "vNormal", "vTexCoord"});
+    program.Bind();
+    program.SetUniformTransposed("projection", projection);
+    mesh.Draw(program);
+~~~~~
+
+`Mesh::Draw` owns the vertex and index buffers on the GPU, sends the geometry
+again whenever it changes, asks the program for the slot of every named element
+and quietly skips the ones the shader does not declare. A format with unnamed
+elements keeps the old behaviour, element `i` to slot `i`. The names are not
+copied, so let them be literals. `GlProgram::Create` without a list of names
+binds `vPosition` and `vTex`, the attributes of the built-in 2D shaders, which is
+why a 3D shader wants either the list or `GetAttribLocation`.
+
+`Init` fixes the capacity of a mesh once. `AddVertex` and `AddFace` never grow it:
+beyond the capacity they write a line to the log and return -1, so an
+underestimate shows up instead of geometry silently going missing. Either count
+the geometry first or call `Expand`, keeping in mind that it moves the buffers and
+every pointer `GetVertexData` handed out becomes stale.
+
+A 3D pass draws into a render target with a depth buffer, and the target has to
+match the window, or the picture lands in a corner of it. Two different sizes are
+involved: `ScreenSize()` is the resolution of the 2D backbuffer, the one
+`ResizeScreen` sets, while `WindowSize()` is the window in real pixels of the
+display, which on a HiDPI or Retina screen is twice the size in points. They start
+out equal and the engine never resizes the backbuffer by itself, so they part ways
+as soon as the window is resized. A pass that wants the whole window keeps up with
+it:
+
+~~~~~{.cpp}
+    if (WindowSize() != known_size) {
+      known_size = WindowSize();
+      ResizeScreen(known_size);
+      target.Create(known_size.x, known_size.y);
+      target.sprite_instance()->framebuffer().AttachDepthBuffer(
+          known_size.x, known_size.y);
+    }
+~~~~~
+
+Uniform arrays are a weak spot of some OpenGL ES and WebGL drivers, so the
+template gives each of its two lamps its own `vec3` uniforms, `light0Pos` and
+`light1Pos`, rather than a `lightPos[2]`. Do the same in a shader that has to run
+on the web or on a phone.
+
+`Screenshot()` hands back the frame as a software `Sprite`, and `Sprite::Save`
+writes `.tga` or `.png` by the extension, so a screenshot key is three lines. Call
+it before `ShowFrame()`: the frame is assembled a second time into a texture to be
+read back, because a window that has been shown can no longer be read.
 
 ### Processing Mouse Input
 
@@ -638,6 +719,20 @@ Key random number generation features:
 - `RandomSF()`: Returns a random float in range [-1.0, 1.0)
 - `RandomD()`: Returns a random double in range [0.0, 1.0)
 - `RandomSD()`: Returns a random double in range [-1.0, 1.0)
+- `SetRandomSeed(seed)`: Makes the sequence reproducible
+
+By default the generator is seeded from the clock, so every run differs.
+A level generator or a test that has to repeat itself should set the seed first:
+
+~~~~~{.cpp}
+      SetRandomSeed(20250823);
+      Si32 first = Random32(1, 100);
+      SetRandomSeed(20250823);
+      Si32 again = Random32(1, 100);  // the very same number
+~~~~~
+
+The generators are thread-local, so the seed holds for the calling thread only and
+every thread that has to be reproducible shoud set its own seed.
 
 ### Playing Sounds
 

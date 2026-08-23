@@ -32,18 +32,34 @@ namespace arctic {
 /// @{
 
 /// @brief Get the window size in actual pixels of the OS
+/// @details These are real pixels of the display, not points: on a HiDPI or
+/// Retina screen the number is twice what the window manager calls the window
+/// size. It follows the window, so it changes whenever the window is resized or
+/// goes full screen, while ScreenSize() does not.
 Vec2Si32 WindowSize();
 
 /// @brief Get the backbuffer resolution in pixels
+/// @details This is what ResizeScreen last set, which the engine never changes
+/// on its own, so it is the size drawing coordinates are measured in and it
+/// stays put while the window is resized. The backbuffer is scaled into the
+/// window keeping its aspect ratio, with bars on the sides when the ratios
+/// differ. Code that renders in the resolution of the window, a 3d pass for
+/// instance, follows WindowSize() and calls ResizeScreen() when it changes.
 Vec2Si32 ScreenSize();
 
 /// @brief Set the backbuffer resolution in pixels
 /// @param width The desired width of the backbuffer in pixels
 /// @param height The desired height of the backbuffer in pixels
+/// @details The backbuffer is recreated and its contents are lost. Pass
+/// WindowSize() to draw in real pixels of the display, and do it only when the
+/// window size actually changes, as recreating textures every frame is not free.
 void ResizeScreen(const Si32 width, const Si32 height);
 
 /// @brief Set the backbuffer resolution in pixels
 /// @param size The desired size of the backbuffer in pixels
+/// @details The backbuffer is recreated and its contents are lost. Pass
+/// WindowSize() to draw in real pixels of the display, and do it only when the
+/// window size actually changes, as recreating textures every frame is not free.
 void ResizeScreen(const Vec2Si32 size);
 
 /// @brief Enables/disables Y-coordinate inversion. By default Y-axis is directed upward.
@@ -53,6 +69,15 @@ void SetInverseY(bool is_inverse);
 /// @brief Returns time in seconds since the game start
 /// @return Time in seconds as a double
 double Time();
+
+/// @brief Seeds the random number generators of the calling thread
+/// @param seed The seed value, any value will do
+/// @details Every Random function below draws from thread-local generators, so
+/// a seed set here holds for the calling thread only, and a thread that was
+/// never seeded starts from the clock. Seeding the same value again replays the
+/// same sequence of numbers, which is what a reproducible level generator or a
+/// test needs.
+void SetRandomSeed(Ui64 seed);
 
 /// @brief Returns a random number in range [min,max]
 /// @param min The minimum value of the range (inclusive)

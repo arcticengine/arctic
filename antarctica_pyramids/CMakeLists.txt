@@ -329,8 +329,15 @@ ELSE (APPLE)
   ENDIF (EMSCRIPTEN)
 ENDIF (APPLE)
 
+# The browser has no file system to read the assets from, so they are packed into
+# a .data file next to the .js and unpacked into a virtual file system at start.
+# The packager resolves a relative path against the directory the linker runs in,
+# which in a build directory of its own holds no data at all, so the path is
+# written in full and mapped to /data, where the program looks for it. The quotes
+# reach the link command and keep a space in the path from splitting the argument.
 IF (EMSCRIPTEN)
-  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "--preload-file data")
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    LINK_FLAGS "--preload-file \"${DATA_DIR}/data\"@/data")
 ENDIF (EMSCRIPTEN)
 
 # An out-of-source build (cmake -B build) leaves the binary in the build
@@ -343,4 +350,19 @@ if (EXISTS "${DATA_DIR}/data"
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${DATA_DIR}/data" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data")
+endif ()
+
+# The page that loads the .js and the server that hands it to the browser are in
+# the project directory, while a build of its own leaves the .js somewhere else,
+# so both are copied next to it and the result is served from a single directory.
+if (EMSCRIPTEN
+    AND NOT "${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  foreach (WEB_FILE index.html webserver.py)
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${WEB_FILE}")
+      add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${CMAKE_CURRENT_SOURCE_DIR}/${WEB_FILE}"
+          "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${WEB_FILE}")
+    endif ()
+  endforeach ()
 endif ()

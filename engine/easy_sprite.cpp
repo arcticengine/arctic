@@ -1025,8 +1025,11 @@ std::vector<Ui8> Sprite::SaveToData(const char *file_name) {
   Check(!!last_dot, "Error in Sprite::Save, file_name has no extension.");
   if (StrCaseCmp(last_dot, ".tga") == 0) {
     SaveTga(sprite_instance_, &data);
+  } else if (StrCaseCmp(last_dot, ".png") == 0) {
+    SavePng(sprite_instance_, &data);
   } else {
-    Fatal("Error in Sprite::Save, unknown file extension.");
+    Fatal("Error in Sprite::Save, unknown file extension:"
+      " only .tga and .png are supported at the moment.");
   }
   return data;
 }

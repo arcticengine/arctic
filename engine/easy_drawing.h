@@ -250,6 +250,18 @@ Vec2F BlockEdgePos(Vec2F lower_left_pos, Vec2F size, float corner_radius, Vec2F 
 /// @brief Show the current backbuffer and update the input state
 void ShowFrame();
 
+/// @brief Takes a picture of the frame that is about to be shown
+/// @return A software sprite holding the frame, empty if there is nothing to
+/// read, the reason for which goes to the log
+/// @details Call it before ShowFrame(), while the frame is still being built.
+/// In software mode the picture is a copy of the backbuffer, and its size is
+/// the backbuffer size. In hardware mode the frame is assembled a second time
+/// into a texture, so the picture has the size of the window and shows the
+/// hardware sprites, letterbox bars and all, exactly as the window would.
+/// Nothing is written to disk: save the sprite with Sprite::Save if a file is
+/// what is wanted.
+Sprite Screenshot();
+
 /// @brief Clear the backbuffer with black color
 void Clear();
 

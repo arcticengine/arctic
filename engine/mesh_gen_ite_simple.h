@@ -38,7 +38,7 @@ typedef bool (*IQMESH_SURFACE_FUNC)(const float *pos, const float *nor, int call
 bool Mesh_Vertex(Mesh *me, IQMESH_VERTEX_FUNC callback, void *opaque);
 
 bool Mesh_Surface(Mesh *me,
-                     const float density, int supersample,  int mseed, 
+                     const float density, int supersample,
                      IQMESH_SURFACE_FUNC callback, void *opaque, const float *bbox);
 
 } // namspace arctic

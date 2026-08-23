@@ -1204,7 +1204,8 @@ void test_json_parse_file() {
   std::string path = data_dir + "/test_config.json";
 
   std::ifstream file(path);
-  if (!TEST_CHECK_(file.is_open(), "Failed to open %s", path.c_str())) {
+  if (!TEST_CHECK_(file.is_open(), "Failed to open %s",
+      arctic::DescribeFilePath(path.c_str()).c_str())) {
     return;
   }
 
@@ -2405,6 +2406,151 @@ void test_mesh_extrude_face_covers_all_edges(void) {
   TEST_MSG("Edge 2-0 covered by side faces: %s", edge20_found ? "yes" : "NO");
 }
 
+
+// A named element remembers the attribute name for Mesh::Draw, while an unnamed
+// one keeps the old positional binding, and both count towards the stride.
+void test_mesh_named_elements(void) {
+  MeshVertexFormat format;
+  int position = format.AddElement("vPosition", 3, kRMVEDT_Float);
+  int normal = format.AddElement("vNormal", 3, kRMVEDT_Float);
+  int color = format.AddElement(4, kRMVEDT_UByte, true);
+
+  TEST_CHECK_(position == 0 && normal == 1 && color == 2,
+      "elements got indices %d, %d, %d instead of 0, 1, 2",
+      position, normal, color);
+  TEST_CHECK_(format.mElems[position].mName != nullptr
+      && strcmp(format.mElems[position].mName, "vPosition") == 0,
+      "the name of element 0 was lost");
+  TEST_CHECK_(format.mElems[normal].mName != nullptr
+      && strcmp(format.mElems[normal].mName, "vNormal") == 0,
+      "the name of element 1 was lost");
+  TEST_CHECK_(format.mElems[color].mName == nullptr,
+      "an unnamed element got a name out of nowhere");
+  TEST_CHECK_(format.mElems[normal].mOffset == 3 * sizeof(float),
+      "element 1 sits at offset %u instead of %u",
+      format.mElems[normal].mOffset,
+      (unsigned int)(3 * sizeof(float)));
+  TEST_CHECK_(format.mStride == (int)(6 * sizeof(float) + 4),
+      "the stride is %d instead of %d", format.mStride,
+      (int)(6 * sizeof(float) + 4));
+}
+
+// Init fixes the capacity: AddVertex and AddFace refuse to write past it and
+// say so with -1 instead of growing or overflowing the buffer.
+void test_mesh_capacity_is_final(void) {
+  MeshVertexFormat format;
+  format.AddElement("vPosition", 3, kRMVEDT_Float);
+
+  Mesh mesh;
+  TEST_CHECK(mesh.Init(1, 3, &format, kRMVEDT_Polys, 1, 1));
+
+  for (int i = 0; i < 3; ++i) {
+    int id = mesh.AddVertex(0, 0.0f, 0.0f, (float)i);
+    TEST_CHECK_(id == i, "vertex %d got index %d", i, id);
+  }
+  TEST_CHECK_(mesh.AddFace(0, 0, 1, 2) == 0, "the only face was refused");
+
+  TEST_CHECK_(mesh.AddVertex(0, 1.0f, 1.0f, 1.0f) == -1,
+      "a vertex past the capacity was accepted");
+  TEST_CHECK_(mesh.AddFace(0, 0, 1, 2) == -1,
+      "a face past the capacity was accepted");
+  TEST_CHECK_(mesh.GetCurrentVertexCount(0) == 3,
+      "the vertex count moved to %d", mesh.GetCurrentVertexCount(0));
+  TEST_CHECK_(mesh.GetCurrentFaceCount(0) == 1,
+      "the face count moved to %d", mesh.GetCurrentFaceCount(0));
+
+  // Expand is the way to get more room, and it has to serve every stream and
+  // every index array, not only the first one.
+  TEST_CHECK(mesh.Expand(64, 64));
+  TEST_CHECK_(mesh.AddVertex(0, 1.0f, 1.0f, 1.0f) == 3,
+      "the vertex after Expand was still refused");
+  TEST_CHECK_(mesh.AddFace(0, 1, 2, 3) == 1,
+      "the face after Expand was still refused");
+}
+
+void test_mesh_expand_every_stream(void) {
+  MeshVertexFormat format[2];
+  format[0].AddElement("vPosition", 3, kRMVEDT_Float);
+  format[1].AddElement("vTexCoord", 2, kRMVEDT_Float);
+
+  Mesh mesh;
+  TEST_CHECK(mesh.Init(2, 4, format, kRMVEDT_Polys, 2, 2));
+
+  const unsigned int vertex_max_before = mesh.mVertexData.mVertexArray[1].mMax;
+  const unsigned int face_max_before = mesh.mFaceData.mIndexArray[1].mMax;
+  TEST_CHECK(mesh.Expand(64, 64));
+  TEST_CHECK_(mesh.mVertexData.mVertexArray[1].mMax > vertex_max_before,
+      "the second vertex stream stayed at %u vertices", vertex_max_before);
+  TEST_CHECK_(mesh.mFaceData.mIndexArray[1].mMax > face_max_before,
+      "the second index array stayed at %u faces", face_max_before);
+}
+
+// The same seed has to give the same numbers, and a different one different
+// numbers, or a level generator cannot be reproduced.
+void test_random_seed_determinism(void) {
+  const Ui64 seed = 20250823ull;
+  std::vector<Ui64> first;
+  SetRandomSeed(seed);
+  for (int i = 0; i < 16; ++i) {
+    first.push_back(Random64());
+    first.push_back((Ui64)Random32());
+    first.push_back((Ui64)Random16());
+    first.push_back((Ui64)Random8());
+    first.push_back((Ui64)Random(0, 1000000));
+  }
+
+  std::vector<Ui64> second;
+  SetRandomSeed(seed);
+  for (int i = 0; i < 16; ++i) {
+    second.push_back(Random64());
+    second.push_back((Ui64)Random32());
+    second.push_back((Ui64)Random16());
+    second.push_back((Ui64)Random8());
+    second.push_back((Ui64)Random(0, 1000000));
+  }
+  TEST_CHECK_(first == second,
+      "the same seed gave a different sequence the second time");
+
+  SetRandomSeed(seed + 1ull);
+  std::vector<Ui64> other;
+  for (size_t i = 0; i < first.size(); ++i) {
+    other.push_back(Random64());
+  }
+  TEST_CHECK_(first != other, "a different seed gave the very same sequence");
+}
+
+void test_sprite_save_png(void) {
+  Sprite sprite;
+  sprite.Create(7, 3);
+  sprite.RgbaData()[0] = Rgba(255, 0, 0);
+  sprite.RgbaData()[sprite.StridePixels() * 2 + 6] = Rgba(0, 255, 0);
+
+  std::vector<Ui8> png = sprite.SaveToData("picture.png");
+  TEST_CHECK_(png.size() > 8, "the png is %zu bytes long", png.size());
+  if (png.size() < 33) {
+    return;
+  }
+
+  const Ui8 signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+  TEST_CHECK_(memcmp(png.data(), signature, 8) == 0,
+      "the data does not start with the png signature");
+  TEST_CHECK_(memcmp(png.data() + 12, "IHDR", 4) == 0,
+      "the first chunk is not IHDR");
+  const Ui32 width = ((Ui32)png[16] << 24) | ((Ui32)png[17] << 16)
+    | ((Ui32)png[18] << 8) | (Ui32)png[19];
+  const Ui32 height = ((Ui32)png[20] << 24) | ((Ui32)png[21] << 16)
+    | ((Ui32)png[22] << 8) | (Ui32)png[23];
+  TEST_CHECK_(width == 7 && height == 3,
+      "IHDR says %u by %u instead of 7 by 3", width, height);
+  TEST_CHECK_(png[24] == 8 && png[25] == 6,
+      "IHDR says %u bits and color type %u instead of 8 and 6",
+      (unsigned int)png[24], (unsigned int)png[25]);
+
+  // The tga path has to keep working next to the new one.
+  std::vector<Ui8> tga = sprite.SaveToData("picture.tga");
+  TEST_CHECK_(tga.size() >= 18 + 7 * 3 * 4,
+      "the tga is %zu bytes long, too short for a 7 by 3 image", tga.size());
+}
 
 // ---------------------------------------------------------------------------
 // Mat44F rotation consistency tests
@@ -3986,6 +4132,11 @@ TEST_LIST = {
   {"Mesh PLY readline does not strip CRLF", test_mesh_ply_readline_crlf},
   {"Mesh vertex attrib write overflow", test_mesh_vertex_attrib_write_overflow},
   {"Mesh extrude face covers all edges", test_mesh_extrude_face_covers_all_edges},
+  {"Mesh vertex elements keep attribute names", test_mesh_named_elements},
+  {"Mesh capacity from Init is final", test_mesh_capacity_is_final},
+  {"Mesh Expand grows every stream", test_mesh_expand_every_stream},
+  {"SetRandomSeed makes the sequence repeat", test_random_seed_determinism},
+  {"Sprite saves png and tga", test_sprite_save_png},
   {"SetRotationX vs SetRotationAxisAngle4", test_rotation_x_vs_axis_angle},
   {"SetRotationY vs SetRotationAxisAngle4", test_rotation_y_vs_axis_angle},
   {"SetRotationZ vs SetRotationAxisAngle4 (control)", test_rotation_z_vs_axis_angle},

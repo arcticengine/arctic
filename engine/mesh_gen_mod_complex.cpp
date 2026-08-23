@@ -133,6 +133,15 @@ bool Mesh_Subdivide(Mesh *mesh, int times, int mode) {
     aux.mFaceData.mIndexArray[0].mNum = numOutFaces;
     *mesh = aux;
 
+    // The buffers belong to mesh now, so aux must not free them when it dies.
+    for (int i=0; i<aux.mVertexData.mNumVertexArrays; i++) {
+      aux.mVertexData.mVertexArray[i].mBuffer = nullptr;
+      aux.mVertexData.mVertexArray[i].mMax = 0;
+    }
+    for (int i=0; i<aux.mFaceData.mNumIndexArrays; i++) {
+      aux.mFaceData.mIndexArray[i].mBuffer = nullptr;
+      aux.mFaceData.mIndexArray[i].mMax = 0;
+    }
   }
 
   return true;

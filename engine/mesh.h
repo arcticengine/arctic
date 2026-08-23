@@ -26,9 +26,13 @@
 
 #pragma once
 
+#include "engine/arctic_types.h"
 #include "engine/bound3f.h"
 
 namespace arctic {
+
+class GlBuffer;
+class GlProgram;
 
 #define Mesh_MAXELEMS    8
 #define Mesh_MAXINDEXARRAYS 48
@@ -51,6 +55,9 @@ struct MeshVertexElemInfo {
   MeshVertexElemDataType mType = kRMVEDT_UByte;
   bool mNormalize = false;
   unsigned int mOffset = 0;
+  // The vertex shader attribute this element feeds, used by Mesh::Draw. The
+  // string is not copied, so it has to outlive the mesh: a literal will do.
+  const char *mName = nullptr;
 
   // Calculate the size of an element in bytes
   unsigned int GetElementSize() const;
@@ -65,6 +72,12 @@ struct MeshVertexFormat {
   // Adds a new element to the vertex format
   // Returns the index of the added element or -1 if the format is full
   int AddElement(unsigned int numComponents, MeshVertexElemDataType type, bool normalize = false);
+
+  // Adds a new element named after the vertex shader attribute it feeds, so
+  // that Mesh::Draw can bind it by name
+  // Returns the index of the added element or -1 if the format is full
+  int AddElement(const char *name, unsigned int numComponents,
+      MeshVertexElemDataType type, bool normalize = false);
 };
 
 struct MeshVertexArray {
@@ -102,14 +115,21 @@ class Mesh {
     Mesh();
     ~Mesh();
 
+    // Allocates the mesh. The capacity is fixed here: AddVertex and AddFace
+    // never grow it, they refuse to write past nv/numElements. Call Expand to
+    // make room for more.
     bool Init(int numVertexStreams, int nv, const MeshVertexFormat *vf,
               MeshType type,
               int numElementsArrays, int numElements);
     void DeInit();
     void ClearGeometry();
+    // Makes room for nv more vertices in every vertex stream and nf more faces
+    // in every index array. Invalidates every pointer previously returned by
+    // GetVertexData, and mBuffer pointers as well.
     bool Expand(int nv, int nf);
     bool Clone(Mesh *dst);
 
+    // The returned pointer is valid until the next Expand or DeInit call.
     void *GetVertexData(int streamID, int vertexID, int elementID) const;
     bool AddVertexStream(const int nv, const MeshVertexFormat *vf);
     void Normalize(int stream, int pPos, int npos);
@@ -126,16 +146,47 @@ class Mesh {
     void SetVertex(int streamID, int vertexID, void *data);
     bool SetTriangle(int streamID, int triangleID, int a, int b, int c);
 
-    // New methods for direct vertex and face manipulation
+    // New methods for direct vertex and face manipulation.
+    // Both return -1 and write a message to the log when the capacity given to
+    // Init is exhausted, so an underestimated Init is visible instead of
+    // silently losing geometry.
     int AddVertex(int streamID, ...);
     int AddFace(int streamID, int v1, int v2, int v3);
     int GetCurrentVertexCount(int streamID) const;
     int GetCurrentFaceCount(int streamID) const;
 
+    // Draws the mesh with the given program. Every vertex element that has a
+    // name goes to the shader attribute of that name, so the caller needs
+    // neither a vertex buffer of its own nor a single glVertexAttribPointer
+    // call. An element whose name the shader does not declare is skipped. A
+    // format without any names falls back to binding element i to slot i.
+    // The vertex and index buffers of the GPU are created here on the first
+    // call and refreshed whenever the geometry changes.
+    void Draw(GlProgram &program, int streamID = 0, int indexArrayID = 0);
+
+    // Tells Draw that the geometry has changed and has to be sent to the GPU
+    // again. The methods of this class do it themselves; call it after writing
+    // to mVertexData or mFaceData buffers directly.
+    void InvalidateGpuGeometry();
+
+  private:
+    bool GrowVertexArray(int streamID, int extra);
+    bool GrowIndexArray(int arrayID, int extra);
+    void ReleaseGpuBuffers();
+
   public:
     Bound3F mBBox;
     MeshVertexData mVertexData;
     MeshFaceData mFaceData;
+
+  private:
+    // Plain scalars and pointers only, as Init memsets the whole object.
+    GlBuffer *mGpuVertexBuffer = nullptr;
+    GlBuffer *mGpuIndexBuffer = nullptr;
+    Ui64 mGeometryRevision = 0;
+    Ui64 mGpuRevision = 0;
+    int mGpuStreamID = -1;
+    int mGpuIndexArrayID = -1;
 };
 
 

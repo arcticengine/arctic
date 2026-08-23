@@ -62,6 +62,8 @@ class Engine {
   Sprite backbuffer_texture_;
   HwSprite hw_backbuffer_texture_;
 
+  HwSprite screenshot_target_;
+
   Mesh mesh_;
   std::vector<HwSpriteDrawing> hw_sprite_drawing_;
 
@@ -96,6 +98,11 @@ class Engine {
 
   /// @brief Initializes thread-local random number generators for the current thread
   void InitThreadLocalRng();
+
+  /// @brief Assembles the frame from the software backbuffer and the queued
+  /// hardware sprites
+  /// @param target The framebuffer to draw into, nullptr for the window
+  void Compose2d(GlFramebuffer *target);
 
  public:
   /// @brief Adds a new HwSpriteDrawing to the engine.
@@ -153,6 +160,14 @@ class Engine {
   /// @brief Performs 2D drawing operations.
   void Draw2d();
 
+  /// @brief Reads the frame that is about to be shown into a software sprite
+  /// @return A sprite of window size, empty if there is nothing to read
+  /// @details Assembles the frame a second time into a texture of its own,
+  /// because the window can not be read back after it is shown, and leaves the
+  /// queue of hardware sprites untouched so that the frame is still drawn as
+  /// usual. Call it before ShowFrame().
+  Sprite TakeScreenshot();
+
   /// @brief Gets the backbuffer sprite.
   /// @return Reference to the backbuffer sprite.
   Sprite &GetBackbuffer() {
@@ -173,6 +188,15 @@ class Engine {
   /// @brief Gets the current time.
   /// @return The current time as a double.
   double GetTime();
+
+  /// @brief Seeds the random number generators of the calling thread
+  /// @param seed The seed value, any value will do
+  /// @details The generators are thread-local, so this affects the calling
+  /// thread only, and a thread that was never seeded takes its seed from the
+  /// clock instead. Seed every thread whose numbers have to be reproducible,
+  /// and remember that the order in which threads consume numbers is not
+  /// reproducible by itself.
+  void SetRandomSeed(Ui64 seed);
 
   /// @brief Generates a random integer within the specified range. The range is not expected to be larger than 58 bit, larger ranges may caluse integer overflow or bad random distribution.
   /// @param min The minimum value of the range (inclusive).

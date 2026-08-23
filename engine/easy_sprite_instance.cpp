@@ -33,6 +33,7 @@
 #include "engine/arctic_platform.h"
 #include "engine/log.h"
 #include "engine/rgba.h"
+#include "engine/stb_image_write.h"
 #include "engine/vec2si32.h"
 
 namespace arctic {
@@ -352,6 +353,46 @@ struct TgaHeader {
       }
     }
     return;
+  }
+
+  // Collects what stb hands out into the vector the caller gave us.
+  static void AppendToVector(void *context, void *data, int size) {
+    std::vector<Ui8> *out = static_cast<std::vector<Ui8>*>(context);
+    const Ui8 *bytes = static_cast<const Ui8*>(data);
+    out->insert(out->end(), bytes, bytes + size);
+  }
+
+  void SavePng(std::shared_ptr<SpriteInstance> sprite, std::vector<Ui8> *data) {
+    data->clear();
+    if (!sprite) {
+      *Log() << "Error in SavePng, the sprite is empty, nothing is saved.";
+      return;
+    }
+    const Si32 w = sprite->width();
+    const Si32 h = sprite->height();
+    if (w <= 0 || h <= 0) {
+      *Log() << "Error in SavePng, the sprite is " << w << " by " << h
+        << " pixels, nothing is saved.";
+      return;
+    }
+
+    // A sprite keeps its rows bottom-up, the way TGA does, while PNG counts
+    // rows from the top, so the copy given to stb is turned over.
+    const size_t stride = static_cast<size_t>(w) * sizeof(Rgba);
+    std::vector<Ui8> top_down(stride * static_cast<size_t>(h));
+    const Ui8 *from = sprite->RawData();
+    for (Si32 y = 0; y < h; ++y) {
+      memcpy(top_down.data() + stride * static_cast<size_t>(h - 1 - y),
+          from + stride * static_cast<size_t>(y), stride);
+    }
+
+    const int written = stbi_write_png_to_func(AppendToVector, data, w, h, 4,
+        top_down.data(), static_cast<int>(stride));
+    if (written == 0) {
+      data->clear();
+      *Log() << "Error in SavePng, the encoder failed on a " << w << " by " << h
+        << " pixel image, nothing is saved.";
+    }
   }
 
 }  // namespace arctic

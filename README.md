@@ -26,14 +26,13 @@ A project name is a directory name and a build target name at once, so it takes 
 
 Run with no arguments and the wizard opens its window. With a subcommand it never opens one, so `create` and `update` work over ssh, in a container and on a build bot, and they end with 0 on success or 1 on a mistake in the arguments.
 
-Both build styles work in a project directory:
+Build the project in the project directory:
 
 ```bash
 cmake . && make -j 8                          # in the source directory
-cmake -B build && cmake --build build -j 8    # a build directory of its own
 ```
 
-The engine needs clang; CMake honours `-DCMAKE_CXX_COMPILER=...` and the `CXX` environment variable, otherwise it looks for `clang++` in the PATH and says what to install when there is none. On Linux the ALSA headers are optional: without them the build warns, defines `ARCTIC_NO_ALSA` and the program runs mute. `-DARCTIC_GRAPHICS=auto|glx|gles` chooses the graphics backend, and `auto` takes GLX everywhere except a Raspberry Pi, which keeps GLES through EGL. `ARCTIC_HEADLESS=1 ARCTIC_DISABLE_HW=1` in the environment runs a program with no window, no GL context and no sound device, while `ARCTIC_DISABLE_AUDIO=1` alone only keeps the sound device closed.
+The engine needs clang; CMake honours `-DCMAKE_CXX_COMPILER=...` and the `CXX` environment variable, otherwise it looks for `clang++` in the PATH and says what to install when there is none. On Linux the ALSA headers are optional: without them the build warns, defines `ARCTIC_NO_ALSA` and the program runs mute. `-DARCTIC_GRAPHICS=auto|glx|gles` chooses the graphics backend, and `auto` takes GLX everywhere except a Raspberry Pi, which keeps GLES through EGL. `ARCTIC_HEADLESS=1 ARCTIC_DISABLE_HW=1` in the environment runs a program with no window, no GL context and no sound device, while `ARCTIC_DISABLE_AUDIO=1` alone only disables the sound.
 
 ## Rendering architecture
 
@@ -54,6 +53,44 @@ Beyond 2D sprites, the engine ships with infrastructure for 3D rendering. These 
 **OpenGL wrappers** -- `GlProgram` (shader programs), `GlBuffer` (vertex/index buffers), `GlTexture2D` (textures), `GlFramebuffer` (render targets). These give you direct but convenient access to the GPU pipeline for custom 3D rendering, shadow maps, post-processing, and anything else OpenGL can do.
 
 **Skeletal animation** -- `piSkeleton` for bone hierarchies and skeletal transforms.
+
+### Writing a 3D pass
+
+The `cube` template (`wizard create mygame --template cube`) is a complete working example: a mesh, a camera, two moving point lights, a render target with a depth buffer, and a screenshot on F12. What follows is what it does and why.
+
+Name the vertex elements after the shader attributes they feed, and the mesh binds them by itself:
+
+```cpp
+MeshVertexFormat format;
+format.AddElement("vPosition", 3, kRMVEDT_Float);
+format.AddElement("vNormal", 3, kRMVEDT_Float);
+format.AddElement("vTexCoord", 2, kRMVEDT_Float);
+mesh.Init(1, vertex_count, &format, kRMVEDT_Polys, 1, face_count);
+// ... AddVertex and AddFace ...
+program.Create(vertex_shader, fragment_shader,
+    {"vPosition", "vNormal", "vTexCoord"});
+mesh.Draw(program);
+```
+
+`Mesh::Draw` keeps the vertex and index buffers of the mesh on the GPU, uploads them again whenever the geometry changes, asks the program where each named element goes and skips the ones the shader does not declare. A format with no names keeps the old behaviour, element `i` to slot `i`. The names are not copied, so they have to outlive the mesh; string literals do.
+
+`Init` fixes the capacity of the mesh. `AddVertex` and `AddFace` never grow it: past the capacity they write a line to the log and return -1, so an underestimate is visible rather than silently missing geometry. Count the geometry first, or call `Expand` to make room, remembering that it moves the buffers and invalidates every pointer `GetVertexData` returned.
+
+The two names for the size of things are worth keeping apart. `ScreenSize()` is the resolution of the 2D backbuffer, which is whatever `ResizeScreen` last set, and `WindowSize()` is the window in real pixels of the display, which is twice the size in points on a HiDPI or Retina screen. The engine starts them equal and never touches the backbuffer afterwards, so a resized window leaves them apart, and a render target built for the old size then covers a part of the window. A 3D pass that wants the whole window follows the window itself:
+
+```cpp
+if (WindowSize() != known_size) {
+  known_size = WindowSize();
+  ResizeScreen(known_size);
+  target.Create(known_size.x, known_size.y);
+  target.sprite_instance()->framebuffer().AttachDepthBuffer(
+      known_size.x, known_size.y);
+}
+```
+
+Uniform arrays are a weak spot of some OpenGL ES and WebGL drivers, which is why the template gives each of its two lamps a `vec3` uniform of its own instead of an array of two. Prefer `light0Pos`, `light1Pos` to `lightPos[2]` in a shader that has to run on the web or on a phone.
+
+`Screenshot()` returns the frame as a software `Sprite`, and `Sprite::Save` writes `.tga` or `.png`, so a screenshot key costs three lines. Call it before `ShowFrame()`: the engine assembles the frame a second time into a texture to read it back, because a window that has been shown can no longer be read.
 
 ## Networking
 
@@ -181,7 +218,7 @@ make -j 4
 ./wizard
 ```
 
-Of that list only `git`, `cmake`, `clang` and the X11 and OpenGL development files are needed. `libasound2-dev` gives sound, and without it the build warns and the program runs mute; `libgles2-mesa-dev` gives the GLES backend, which a desktop takes only when asked with `-DARCTIC_GRAPHICS=gles` or when there is no desktop OpenGL at all; `libssl-dev` gives HTTPS in `httplib`.
+Of that list only `git`, `cmake`, `clang` and the X11 and OpenGL development files are mandatory. `libasound2-dev` gives sound, and without it the build warns and the program runs mute; `libgles2-mesa-dev` gives the GLES backend, which a desktop takes only when asked with `-DARCTIC_GRAPHICS=gles` or when there is no desktop OpenGL at all; `libssl-dev` gives HTTPS in `httplib`.
 
 ### Raspberry Pi notes
 

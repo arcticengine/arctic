@@ -93,10 +93,9 @@ static bool isOutside(const Vec3F **p, int num, const float *bbox) {
 } 
 
 
-bool Mesh_Surface(Mesh *me, const float density, int supersample, int /*mseed*/, IQMESH_SURFACE_FUNC callback, void *opaque, const float *bbox) {
+bool Mesh_Surface(Mesh *me, const float density, int supersample, IQMESH_SURFACE_FUNC callback, void *opaque, const float *bbox) {
   const int num = me->mFaceData.mIndexArray[STREAMID].mNum;
   int id = 0;
-  // int seed = 123456789 + mseed;
   for (int i=0; i<num; i++) {
     const int ni = 3;
     const int *ind = me->mFaceData.mIndexArray[0].mBuffer[i].mIndex;

@@ -1,15 +1,13 @@
 # =============================================================================
-# How to build
+# How to build (read first)
 # =============================================================================
-# The engine sits next to this project (../arctic/engine), and the paths here are
-# taken from the directory of this file, so either way of building works:
+# This file uses paths relative to the project folder (e.g. ../arctic/engine,
+# ./data). Configure and build from the directory that contains THIS file so
+# those paths resolve as intended. A separate build/ subdirectory will result
+# in a failed build.
 #
-#   cmake . && make -j 8              in the project directory
-#   cmake -B build && cmake --build build -j 8   in a build directory of its own
-#
-# The second one copies data/ next to the binary after the build, so the program
-# finds its assets where it looks for them. Clang is required: see the compiler
-# block below.
+# Always build from this directory:
+#   cmake . && make -j 8
 # =============================================================================
 
 
@@ -90,9 +88,7 @@ ELSE (APPLE)
   IF (EMSCRIPTEN)
   ELSE (EMSCRIPTEN)
     # Sound is optional: a machine without the ALSA headers, a container, a build
-    # bot, all of them build and run, only without a sound of any kind. That has to
-    # be said out loud here and at run time, or silence looks like a bug in the
-    # program.
+    # bot, all of them build and run, only without a sound of any kind.
     find_package(ALSA)
     if (NOT ALSA_FOUND)
       add_definitions(-DARCTIC_NO_ALSA)
@@ -111,11 +107,7 @@ ELSE (APPLE)
   ENDIF (EMSCRIPTEN)
 
   # Two ways to draw on Linux: desktop OpenGL through GLX, and OpenGL ES through
-  # EGL. Both draw into an X11 window, so X11 is needed either way. The choice used
-  # to fall to ES/EGL as soon as the GLES headers happened to be installed, which
-  # sent a desktop with libgles2-mesa-dev on it down the Raspberry Pi path; now GLX
-  # wins unless the machine is a Pi or has no desktop OpenGL at all.
-  # -DARCTIC_GRAPHICS=glx or =gles settles it by hand.
+  # EGL. Both draw into an X11 window, so X11 is needed either way. 
   set(ARCTIC_GRAPHICS "auto" CACHE STRING "Graphics backend: auto, glx or gles")
   set_property(CACHE ARCTIC_GRAPHICS PROPERTY STRINGS auto glx gles)
 
@@ -382,8 +374,15 @@ if (OPENSSL_FOUND)
   ENDIF (APPLE)
 endif ()
 
+# The browser has no file system to read the assets from, so they are packed into
+# a .data file next to the .js and unpacked into a virtual file system at start.
+# The packager resolves a relative path against the directory the linker runs in,
+# which in a build directory of its own holds no data at all, so the path is
+# written in full and mapped to /data, where the program looks for it. The quotes
+# reach the link command and keep a space in the path from splitting the argument.
 IF (EMSCRIPTEN)
-  set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "--preload-file data")
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    LINK_FLAGS "--preload-file \"${DATA_DIR}/data\"@/data")
 ENDIF (EMSCRIPTEN)
 
 # An out-of-source build (cmake -B build) leaves the binary in the build
@@ -396,4 +395,19 @@ if (EXISTS "${DATA_DIR}/data"
   add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${DATA_DIR}/data" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data")
+endif ()
+
+# The page that loads the .js and the server that hands it to the browser are in
+# the project directory, while a build of its own leaves the .js somewhere else,
+# so both are copied next to it and the result is served from a single directory.
+if (EMSCRIPTEN
+    AND NOT "${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  foreach (WEB_FILE index.html webserver.py)
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${WEB_FILE}")
+      add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${CMAKE_CURRENT_SOURCE_DIR}/${WEB_FILE}"
+          "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${WEB_FILE}")
+    endif ()
+  endforeach ()
 endif ()

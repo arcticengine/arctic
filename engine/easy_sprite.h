@@ -91,17 +91,17 @@ class Sprite {
   void Load(const std::string &file_name);
 
   /// @brief Store sprite data to a file
-  /// @param file_name Name of the file to save
+  /// @param file_name Name of the file to save, *.tga and *.png are supported
   void Save(const char *file_name);
 
   /// @brief Store sprite data to a file
-  /// @param file_name Name of the file to save
+  /// @param file_name Name of the file to save, *.tga and *.png are supported
   void Save(const std::string &file_name);
 
   /// @brief Store sprite data to a byte vector
   /// @param file_name A required parameter, may not be nullptr,
   /// the extension of the file_name is used to deremine the desired data format.
-  /// At the moment only *.tga is supported.
+  /// Saving supports *.tga and *.png, while loading reads *.tga only.
   /// The file_name is also used in error messages.
   /// @return A vector of bytes containing the sprite data
   std::vector<Ui8> SaveToData(const char *file_name);

@@ -25,12 +25,19 @@
 // IN THE SOFTWARE.
 
 #include <cstring>
+#include <sstream>
 #include <stdarg.h>
 
 #include "engine/data_reader.h"
 #include "engine/data_writer.h"
+#include "engine/easy_advanced.h"
 #include "engine/easy_files.h"
+#include "engine/engine.h"
+#include "engine/gl_buffer.h"
+#include "engine/gl_program.h"
+#include "engine/log.h"
 #include "engine/mesh.h"
+#include "engine/opengl.h"
 #include "engine/arctic_platform_fatal.h"
 
 namespace arctic {
@@ -46,6 +53,15 @@ unsigned int MeshVertexElemInfo::GetElementSize() const {
     return mNumComponents * typeSizeof[mType];
 }
 
+int MeshVertexFormat::AddElement(const char *name, unsigned int numComponents,
+        MeshVertexElemDataType type, bool normalize) {
+    const int id = AddElement(numComponents, type, normalize);
+    if (id >= 0) {
+      mElems[id].mName = name;
+    }
+    return id;
+}
+
 int MeshVertexFormat::AddElement(unsigned int numComponents, MeshVertexElemDataType type, bool normalize) {
     if (mNumElems >= Mesh_MAXELEMS) {
       return -1;  // Format is already full
@@ -56,6 +72,7 @@ int MeshVertexFormat::AddElement(unsigned int numComponents, MeshVertexElemDataT
     elem.mNumComponents = numComponents;
     elem.mType = type;
     elem.mNormalize = normalize;
+    elem.mName = nullptr;
     
     // Calculate the offset based on existing elements
     if (mNumElems > 0) {
@@ -89,6 +106,9 @@ bool Mesh::Init(int numVertexStreams, int nv,
     return false;
   }
 
+  // Init on an already initialized mesh would leak the previous buffers,
+  // as the memset below forgets the pointers to them.
+  DeInit();
   memset((char*)this, 0, sizeof(Mesh));
 
 
@@ -167,16 +187,21 @@ bool Mesh::Clone(Mesh *dst) {
 }
 
 void Mesh::DeInit() {
+  ReleaseGpuBuffers();
   for (int i=0; i<mVertexData.mNumVertexArrays; i++) {
     if (mVertexData.mVertexArray[i].mMax) {
       free(mVertexData.mVertexArray[i].mBuffer);
+      mVertexData.mVertexArray[i].mBuffer = nullptr;
       mVertexData.mVertexArray[i].mMax = 0;
+      mVertexData.mVertexArray[i].mNum = 0;
     }
   }
   for (int i=0; i<mFaceData.mNumIndexArrays; i++) {
     if (mFaceData.mIndexArray[i].mMax) { 
       free(mFaceData.mIndexArray[i].mBuffer);
+      mFaceData.mIndexArray[i].mBuffer = nullptr;
       mFaceData.mIndexArray[i].mMax = 0;
+      mFaceData.mIndexArray[i].mNum = 0;
     }
   }
 }
@@ -188,6 +213,7 @@ void Mesh::ClearGeometry() {
   for (int i=0; i<mFaceData.mNumIndexArrays; i++) {
     mFaceData.mIndexArray[i].mNum = 0;
   }
+  mGeometryRevision++;
 }
 
 int Mesh::Save(const char *name) {
@@ -233,6 +259,10 @@ int Mesh::Save(const char *name) {
 }
 
 bool Mesh::Load(const char *name) {
+  // The buffers allocated below replace the current ones, which have to be
+  // released first, or they are lost.
+  DeInit();
+
   DataReader fp;
   fp.Reset(ReadFile(name));
 
@@ -293,6 +323,7 @@ bool Mesh::Load(const char *name) {
     }
   }
 
+  mGeometryRevision++;
   return true;
 }
 
@@ -883,29 +914,56 @@ void Mesh::CalcBBox(int stream, int pPos) {
   }
 }
 
+bool Mesh::GrowVertexArray(int streamID, int extra) {
+  MeshVertexArray *va = mVertexData.mVertexArray + streamID;
+  if ((va->mNum + extra) < va->mMax) {
+    return true;
+  }
+  const unsigned int newNV = va->mMax + ((extra<64)?64:extra);
+  void *tmp = realloc(va->mBuffer, newNV*va->mFormat.mStride);
+  if (!tmp) {
+    *Log() << "Mesh::Expand failed to allocate " << newNV
+      << " vertices of " << va->mFormat.mStride
+      << " bytes for vertex stream " << streamID;
+    return false;
+  }
+  va->mBuffer = tmp;
+  va->mMax = newNV;
+  mGeometryRevision++;
+  return true;
+}
+
+bool Mesh::GrowIndexArray(int arrayID, int extra) {
+  MeshIndexArray *ia = mFaceData.mIndexArray + arrayID;
+  if ((ia->mNum + extra) < ia->mMax) {
+    return true;
+  }
+  const unsigned int elemSize = (mFaceData.mType==kRMVEDT_Polys)
+    ? (unsigned int)sizeof(MeshFace) : (unsigned int)sizeof(unsigned int);
+  const unsigned int newNF = ia->mMax + ((extra<64)?64:extra);
+  void *tmp = realloc(ia->mBuffer, newNF*elemSize);
+  if (!tmp) {
+    *Log() << "Mesh::Expand failed to allocate " << newNF
+      << " faces for index array " << arrayID;
+    return false;
+  }
+  ia->mBuffer = (MeshFace*)tmp;
+  ia->mMax = newNF;
+  mGeometryRevision++;
+  return true;
+}
+
 bool Mesh::Expand(int nv, int nf) {
   for (int j=0; j<mVertexData.mNumVertexArrays; j++) {
-    MeshVertexArray *va = mVertexData.mVertexArray + j;
-
-    if ((va->mNum + nv) >= va->mMax) {
-      const unsigned int newNV = va->mMax + ((nv<64)?64:nv);
-      void *tmp = realloc(va->mBuffer, newNV*va->mFormat.mStride);
-      if (!tmp) {
-        return false;
-      }
-      va->mBuffer = tmp;
-      va->mMax = newNV;
+    if (!GrowVertexArray(j, nv)) {
+      return false;
     }
   }
 
-  if ((mFaceData.mIndexArray[0].mNum + nf) >= mFaceData.mIndexArray[0].mMax) {
-    const unsigned int newNF = mFaceData.mIndexArray[0].mMax + ((nf<64)?64:nf);
-    void *tmp = realloc(mFaceData.mIndexArray[0].mBuffer, newNF*sizeof(MeshFace));
-    if (!tmp) {
+  for (int i=0; i<mFaceData.mNumIndexArrays; i++) {
+    if (!GrowIndexArray(i, nf)) {
       return false;
     }
-    mFaceData.mIndexArray[0].mBuffer = (MeshFace*)tmp;
-    mFaceData.mIndexArray[0].mMax = newNF;
   }
 
   return true;
@@ -989,6 +1047,7 @@ int Mesh::Compact() {
     free(tmpHis);
   }
 
+  mGeometryRevision++;
   return 1;
 }
 
@@ -1018,6 +1077,7 @@ void Mesh::SetVertex(int streamID, int vertexID, void *data) {
   memcpy((char*)mVertexData.mVertexArray[streamID].mBuffer + mVertexData.mVertexArray[streamID].mFormat.mStride*vertexID,
       data,
       mVertexData.mVertexArray[streamID].mFormat.mStride);
+  mGeometryRevision++;
 }
 
 bool Mesh::SetTriangle(int streamID, int triangleID, int a, int b, int c) {
@@ -1025,6 +1085,7 @@ bool Mesh::SetTriangle(int streamID, int triangleID, int a, int b, int c) {
   face->mIndex[0] = a;
   face->mIndex[1] = b;
   face->mIndex[2] = c;
+  mGeometryRevision++;
 
   return true;
 }
@@ -1039,6 +1100,10 @@ int Mesh::AddVertex(int streamID, ...) {
     MeshVertexArray* va = &mVertexData.mVertexArray[streamID];
     unsigned int vertexIndex = va->mNum;
     if (vertexIndex >= va->mMax) {
+      *Log() << "Mesh::AddVertex is out of room in vertex stream " << streamID
+        << ": " << va->mNum << " of " << va->mMax
+        << " vertices are used, the vertex is dropped."
+        " Ask Init for more vertices or call Expand.";
       return -1;
     }
     
@@ -1095,12 +1160,17 @@ int Mesh::AddVertex(int streamID, ...) {
     va_end(args);
     // Increment vertex count
     va->mNum++;
+    mGeometryRevision++;
     return (int)vertexIndex;
 }
 
 int Mesh::AddFace(int streamID, int v1, int v2, int v3) {
     MeshIndexArray* ia = &mFaceData.mIndexArray[streamID];
     if (ia->mNum >= ia->mMax) {
+        *Log() << "Mesh::AddFace is out of room in index array " << streamID
+          << ": " << ia->mNum << " of " << ia->mMax
+          << " faces are used, the face is dropped."
+          " Ask Init for more faces or call Expand.";
         return -1;
     }
     int faceIndex = ia->mNum;
@@ -1111,6 +1181,7 @@ int Mesh::AddFace(int streamID, int v1, int v2, int v3) {
     face->mIndex[2] = v3;
 
     ia->mNum++;
+    mGeometryRevision++;
     return faceIndex;
 }
 
@@ -1120,6 +1191,150 @@ int Mesh::GetCurrentVertexCount(int streamID) const {
 
 int Mesh::GetCurrentFaceCount(int streamID) const {
     return mFaceData.mIndexArray[streamID].mNum;
+}
+
+void Mesh::InvalidateGpuGeometry() {
+    mGeometryRevision++;
+}
+
+void Mesh::ReleaseGpuBuffers() {
+    delete mGpuVertexBuffer;
+    mGpuVertexBuffer = nullptr;
+    delete mGpuIndexBuffer;
+    mGpuIndexBuffer = nullptr;
+    mGpuRevision = 0;
+    mGpuStreamID = -1;
+    mGpuIndexArrayID = -1;
+}
+
+// Returns the OpenGL type of a vertex element, or -1 for a type that can not
+// be a vertex attribute here.
+static GLint MeshElementGlType(MeshVertexElemDataType type) {
+    switch (type) {
+        case kRMVEDT_UByte:
+            return GL_UNSIGNED_BYTE;
+        case kRMVEDT_Float:
+            return GL_FLOAT;
+        case kRMVEDT_Int:
+            // OpenGL ES 2 and WebGL 1 have no integer vertex attributes, so
+            // this one works on the desktop only.
+            return GL_INT;
+        case kRMVEDT_Double:
+#ifdef GL_DOUBLE
+            return GL_DOUBLE;
+#else
+            return -1;
+#endif
+        default:
+            return -1;
+    }
+}
+
+void Mesh::Draw(GlProgram &program, int streamID, int indexArrayID) {
+    if (streamID < 0 || streamID >= mVertexData.mNumVertexArrays) {
+        *Log() << "Mesh::Draw got vertex stream " << streamID
+          << " while the mesh has " << mVertexData.mNumVertexArrays << " of them";
+        return;
+    }
+    if (indexArrayID < 0 || indexArrayID >= mFaceData.mNumIndexArrays) {
+        *Log() << "Mesh::Draw got index array " << indexArrayID
+          << " while the mesh has " << mFaceData.mNumIndexArrays << " of them";
+        return;
+    }
+    if (GetEngine()->IsSoftwareOnly()) {
+        return;
+    }
+
+    MeshVertexArray *va = mVertexData.mVertexArray + streamID;
+    MeshIndexArray *ia = mFaceData.mIndexArray + indexArrayID;
+    if (va->mNum == 0) {
+        return;
+    }
+
+    bool is_upload_needed = false;
+    if (mGpuVertexBuffer == nullptr) {
+        mGpuVertexBuffer = new GlBuffer();
+        mGpuVertexBuffer->Create();
+        mGpuIndexBuffer = new GlBuffer();
+        mGpuIndexBuffer->Create();
+        is_upload_needed = true;
+    }
+    if (mGpuRevision != mGeometryRevision
+        || mGpuStreamID != streamID
+        || mGpuIndexArrayID != indexArrayID) {
+        is_upload_needed = true;
+    }
+
+    const unsigned int index_size = (mFaceData.mType == kRMVEDT_Polys)
+      ? (unsigned int)sizeof(MeshFace) : (unsigned int)sizeof(unsigned int);
+    if (is_upload_needed) {
+        mGpuVertexBuffer->Bind(GL_ARRAY_BUFFER);
+        mGpuVertexBuffer->SetData(va->mBuffer, va->mNum * va->mFormat.mStride);
+        if (ia->mNum > 0) {
+            mGpuIndexBuffer->Bind(GL_ELEMENT_ARRAY_BUFFER);
+            mGpuIndexBuffer->SetData(ia->mBuffer, ia->mNum * index_size);
+        }
+        mGpuRevision = mGeometryRevision;
+        mGpuStreamID = streamID;
+        mGpuIndexArrayID = indexArrayID;
+    }
+
+    program.Bind();
+    mGpuVertexBuffer->Bind(GL_ARRAY_BUFFER);
+
+    const MeshVertexFormat &format = va->mFormat;
+    bool is_named_format = false;
+    for (int i = 0; i < format.mNumElems; i++) {
+        if (format.mElems[i].mName != nullptr) {
+            is_named_format = true;
+            break;
+        }
+    }
+
+    Si32 enabled[Mesh_MAXELEMS];
+    Si32 enabled_count = 0;
+    for (int i = 0; i < format.mNumElems; i++) {
+        const MeshVertexElemInfo &elem = format.mElems[i];
+        Si32 location = i;
+        if (is_named_format) {
+            // An element the shader does not use gets skipped instead of being
+            // pointed at slot -1, which WebGL treats as an error.
+            if (elem.mName == nullptr) {
+                continue;
+            }
+            location = program.GetAttribLocation(elem.mName);
+            if (location < 0) {
+                continue;
+            }
+        }
+        const GLint gl_type = MeshElementGlType(elem.mType);
+        if (gl_type < 0) {
+            *Log() << "Mesh::Draw can not feed vertex element " << i
+              << " of type " << (int)elem.mType << " to the shader";
+            continue;
+        }
+        ARCTIC_GL_CHECK_ERROR(glVertexAttribPointer((GLuint)location,
+            (GLint)elem.mNumComponents, (GLenum)gl_type,
+            elem.mNormalize ? GL_TRUE : GL_FALSE, format.mStride,
+            (const GLvoid*)(uintptr_t)elem.mOffset));
+        ARCTIC_GL_CHECK_ERROR(glEnableVertexAttribArray((GLuint)location));
+        enabled[enabled_count] = location;
+        enabled_count++;
+    }
+
+    if (mFaceData.mType == kRMVEDT_Polys) {
+        if (ia->mNum > 0) {
+            mGpuIndexBuffer->Bind(GL_ELEMENT_ARRAY_BUFFER);
+            ARCTIC_GL_CHECK_ERROR(glDrawElements(GL_TRIANGLES,
+                (GLsizei)(ia->mNum * 3), GL_UNSIGNED_INT, 0));
+        }
+    } else {
+        ARCTIC_GL_CHECK_ERROR(glDrawArrays(GL_POINTS, 0, (GLsizei)va->mNum));
+    }
+
+    for (Si32 i = 0; i < enabled_count; i++) {
+        ARCTIC_GL_CHECK_ERROR(glDisableVertexAttribArray((GLuint)enabled[i]));
+    }
 }
 
 }

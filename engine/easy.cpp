@@ -1184,6 +1184,10 @@ void ShowFrame() {
   }
 }
 
+Sprite Screenshot() {
+  return GetEngine()->TakeScreenshot();
+}
+
 bool IsKeyDownwardImpl(Ui32 key_code) {
   if (key_code >= kKeyCount) {
     return false;
@@ -1457,6 +1461,10 @@ void Clear(Rgba color) {
 
 double Time() {
   return GetEngine()->GetTime();
+}
+
+void SetRandomSeed(Ui64 seed) {
+  GetEngine()->SetRandomSeed(seed);
 }
 
 Si64 Random(Si64 min, Si64 max) {

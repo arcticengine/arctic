@@ -149,6 +149,16 @@ std::string Engine::GetInitialPath() const {
   return initial_path_;
 }
 
+void Engine::SetRandomSeed(Ui64 seed) {
+  // The four generators are seeded apart, exactly as the clock-based
+  // initialization does it, so that the streams do not repeat each other.
+  rnd_8_.seed(seed);
+  rnd_16_.seed(seed + 1ull);
+  rnd_32_.seed(seed + 2ull);
+  rnd_64_.seed(seed + 3ull);
+  is_rng_initialized_ = true;
+}
+
 void Engine::InitThreadLocalRng() {
   // Get a unique seed for this thread
   Si64 ms = std::chrono::high_resolution_clock::now().time_since_epoch().count();
@@ -336,11 +346,20 @@ struct Vertex {
 };
 
 void Engine::Draw2d() {
+  Compose2d(nullptr);
+  Swap();
+}
+
+void Engine::Compose2d(GlFramebuffer *target) {
   gl_backbuffer_texture_.UpdateData(backbuffer_texture_.RawData());
 
   // render
 
-  GlFramebuffer::BindDefault();
+  if (target == nullptr) {
+    GlFramebuffer::BindDefault();
+  } else {
+    target->Bind();
+  }
   GlState::SetViewport(0, 0, window_width_, window_height_);
 
   glDisable(GL_SCISSOR_TEST);
@@ -615,8 +634,48 @@ void Engine::Draw2d() {
                   GL_UNSIGNED_INT,
                   0));  // Offset into the bound index buffer
   }
+}
 
-  Swap();
+Sprite Engine::TakeScreenshot() {
+  Sprite result;
+  if (is_software_only_) {
+    // The software backbuffer is the whole frame in this mode.
+    result.Clone(backbuffer_texture_);
+    return result;
+  }
+  if (window_width_ <= 0 || window_height_ <= 0) {
+    *Log() << "Error in Screenshot, the window is " << window_width_ << " by "
+      << window_height_ << " pixels, the returned sprite is empty.";
+    return result;
+  }
+
+  // The frame is assembled from the queued hardware sprites and the software
+  // backbuffer, and it lands in the window, which can not be read back once it
+  // is shown. So the very same assembly runs once more into a texture of our
+  // own, and the queue is put back afterwards for the frame itself to use.
+  if (screenshot_target_.Width() != window_width_
+      || screenshot_target_.Height() != window_height_) {
+    screenshot_target_.Create(window_width_, window_height_);
+  }
+  std::vector<HwSpriteDrawing> pending_drawings = hw_sprite_drawing_;
+  Compose2d(&screenshot_target_.sprite_instance()->framebuffer());
+  hw_sprite_drawing_ = pending_drawings;
+
+  result.Create(window_width_, window_height_);
+  ARCTIC_GL_CHECK_ERROR(glReadPixels(0, 0, window_width_, window_height_,
+      GL_RGBA, GL_UNSIGNED_BYTE, result.RawData()));
+  GlFramebuffer::BindDefault();
+
+  // The frame is drawn over a transparent background, so the parts no sprite
+  // covered, the letterbox bars for instance, come back transparent. A picture
+  // of the screen is expected to be opaque instead.
+  Rgba *pixels = result.RgbaData();
+  const Si64 pixel_count = static_cast<Si64>(window_width_)
+    * static_cast<Si64>(window_height_);
+  for (Si64 i = 0; i < pixel_count; ++i) {
+    pixels[i].a = 255;
+  }
+  return result;
 }
 
 void Engine::ResizeBackbuffer(const Si32 width, const Si32 height) {

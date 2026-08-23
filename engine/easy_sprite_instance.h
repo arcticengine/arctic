@@ -104,6 +104,15 @@ std::shared_ptr<SpriteInstance> LoadTga(const Ui8 *data,
 void SaveTga(std::shared_ptr<SpriteInstance> sprite,
     std::vector<Ui8> *data);
 
+/// @brief Creates a *.png file data from a sprite instance
+/// @param sprite Pointer to the sprite instance
+/// @param data Pointer to the vector to store the *.png file data
+/// @details The result is a 32 bit RGBA png with the rows turned over, as a
+/// sprite keeps them bottom-up and png wants them top-down. On any failure the
+/// vector is left empty and the reason goes to the log.
+void SavePng(std::shared_ptr<SpriteInstance> sprite,
+    std::vector<Ui8> *data);
+
 /// @}
 
 }  // namespace arctic

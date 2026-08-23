@@ -127,6 +127,35 @@ static bool g_is_mouse_captured = false;
 
 static GCController *g_controller = nil;
 
+// The size of the view in real pixels, the unit both the GL viewport and the
+// backbuffer of the engine are measured in.
+//
+// convertRectToBacking: asks the window for the scale, and a window that the
+// run loop has not put on a screen yet answers 1.0, which is half the pixels
+// on a Retina display. Measuring the window before the first frame that way
+// used to give the engine a backbuffer of a quarter of the area, and the first
+// Swap() then reported the honest size and the two disagreed forever after.
+// Hence the fallback to the scale of the screen the window is headed for.
+static NSSize BackingPixelSize(NSView *view) {
+  if (view == nil) {
+    return NSMakeSize(0.0, 0.0);
+  }
+  const NSRect frame = [view frame];
+  const NSRect backing = [view convertRectToBacking: frame];
+  NSScreen *screen = [[view window] screen];
+  if (screen == nil) {
+    screen = [NSScreen mainScreen];
+  }
+  const CGFloat scale = (screen == nil) ? 1.0 : [screen backingScaleFactor];
+  const NSSize scaled = NSMakeSize(frame.size.width * scale,
+      frame.size.height * scale);
+  if (backing.size.width < scaled.width
+      || backing.size.height < scaled.height) {
+    return scaled;
+  }
+  return backing.size;
+}
+
 @implementation ArcticAppDelegate
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:
 (NSApplication *)application {
@@ -153,16 +182,16 @@ static GCController *g_controller = nil;
 - (void) windowDidEnterFullScreen:(NSNotification *)notification {
   g_is_full_screen = true;
   [[g_main_view openGLContext] update];
-  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+  NSSize size = BackingPixelSize(g_main_view);
   arctic::GetEngine()->OnWindowResize(
-      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
+      (arctic::Si32)size.width, (arctic::Si32)size.height);
 }
 - (void) windowDidExitFullScreen:(NSNotification *)notification {
   g_is_full_screen = false;
   [[g_main_view openGLContext] update];
-  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+  NSSize size = BackingPixelSize(g_main_view);
   arctic::GetEngine()->OnWindowResize(
-      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
+      (arctic::Si32)size.width, (arctic::Si32)size.height);
 }
 @end
 
@@ -193,9 +222,9 @@ backing: (NSBackingStoreType)bufferingType defer: (BOOL)deferFlg {
 
 - (void) windowDidResize: (NSNotification *)notification {
   [[g_main_view openGLContext] update];
-  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
+  NSSize size = BackingPixelSize(g_main_view);
   arctic::GetEngine()->OnWindowResize(
-      (arctic::Si32)rect.size.width, (arctic::Si32)rect.size.height);
+      (arctic::Si32)size.width, (arctic::Si32)size.height);
 }
 
 - (void) windowWillClose: (NSNotification *)notification {
@@ -798,9 +827,9 @@ void CreateMainWindow(SystemInfo *system_info) {
 
     NSLog(@"%d controllers found.", (int)[GCController controllers].count);
 
-    NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-    system_info->screen_width = (arctic::Si32)rect.size.width;
-    system_info->screen_height = (arctic::Si32)rect.size.height;
+    NSSize size = BackingPixelSize(g_main_view);
+    system_info->screen_width = (arctic::Si32)size.width;
+    system_info->screen_height = (arctic::Si32)size.height;
   }
 }
 
@@ -874,9 +903,9 @@ void Swap() {
 
   static arctic::Si32 cached_width = 0;
   static arctic::Si32 cached_height = 0;
-  NSRect rect = [g_main_view convertRectToBacking: [g_main_view frame]];
-  arctic::Si32 w = (arctic::Si32)rect.size.width;
-  arctic::Si32 h = (arctic::Si32)rect.size.height;
+  NSSize size = BackingPixelSize(g_main_view);
+  arctic::Si32 w = (arctic::Si32)size.width;
+  arctic::Si32 h = (arctic::Si32)size.height;
   if (w != cached_width || h != cached_height) {
     cached_width = w;
     cached_height = h;

@@ -26,6 +26,7 @@
 #include "engine/gl_program.h"
 
 #include <sstream>
+#include <vector>
 #include "engine/arctic_platform.h"
 #include "engine/log.h"
 #include "engine/opengl.h"
@@ -78,9 +79,23 @@ GlProgram::~GlProgram() {
 }
 
 void GlProgram::Create(const char *vs_src, const char *fs_src) {
+    // The attribute names the built-in 2d shaders of the engine use.
+    static const char *const kSpriteAttributeNames[] = {"vPosition", "vTex"};
+    Create(vs_src, fs_src, kSpriteAttributeNames, 2);
+}
+
+void GlProgram::Create(const char *vs_src, const char *fs_src,
+        std::initializer_list<const char*> attribute_names) {
+    std::vector<const char*> names(attribute_names.begin(), attribute_names.end());
+    Create(vs_src, fs_src, names.data(), (Si32)names.size());
+}
+
+void GlProgram::Create(const char *vs_src, const char *fs_src,
+        const char *const *attribute_names, Si32 attribute_count) {
     if (program_id_ != 0) {
         ARCTIC_GL_CHECK_ERROR(glDeleteProgram(program_id_));
     }
+    attribute_locations_.clear();
 
     // Load the vertex/fragment shaders
     GLuint vertexShader = LoadShader(vs_src, GL_VERTEX_SHADER);
@@ -102,9 +117,14 @@ void GlProgram::Create(const char *vs_src, const char *fs_src) {
     }
     ARCTIC_GL_CHECK_ERROR(glAttachShader(program_id_, vertexShader));
     ARCTIC_GL_CHECK_ERROR(glAttachShader(program_id_, fragmentShader));
-    // Bind vPosition to attribute 0
-    ARCTIC_GL_CHECK_ERROR(glBindAttribLocation(program_id_, 0, "vPosition"));
-    ARCTIC_GL_CHECK_ERROR(glBindAttribLocation(program_id_, 1, "vTex"));
+    // Bind the requested attribute names to slots 0..attribute_count-1.
+    // A name the shader does not declare is ignored by OpenGL.
+    for (Si32 i = 0; i < attribute_count; ++i) {
+        if (attribute_names[i] == nullptr) {
+            continue;
+        }
+        ARCTIC_GL_CHECK_ERROR(glBindAttribLocation(program_id_, (GLuint)i, attribute_names[i]));
+    }
     // Link the program
     ARCTIC_GL_CHECK_ERROR(glLinkProgram(program_id_));
     // Check the link status
@@ -229,6 +249,20 @@ int GlProgram::GetUniformLocation(const char *name) const {
     ARCTIC_GL_CHECK_ERROR(loc = glGetUniformLocation(program_id_, name));
     Check(loc >= 0, name, " not found");
     return loc;
+}
+
+Si32 GlProgram::GetAttribLocation(const char *name) const {
+    if (name == nullptr || program_id_ == 0) {
+        return -1;
+    }
+    auto it = attribute_locations_.find(name);
+    if (it != attribute_locations_.end()) {
+        return it->second;
+    }
+    GLint loc;
+    ARCTIC_GL_CHECK_ERROR(loc = glGetAttribLocation(program_id_, name));
+    attribute_locations_[name] = (Si32)loc;
+    return (Si32)loc;
 }
 
 
