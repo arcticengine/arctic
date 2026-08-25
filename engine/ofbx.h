@@ -139,7 +139,9 @@ struct Object {
     ANIMATION_STACK,
     ANIMATION_LAYER,
     ANIMATION_CURVE,
-    ANIMATION_CURVE_NODE
+    ANIMATION_CURVE_NODE,
+    LAYERED_TEXTURE,
+    VIDEO
   };
 
   Object(const Scene& _scene, const IElement& _element);
@@ -200,6 +202,24 @@ struct Texture : Object {
   Texture(const Scene& _scene, const IElement& _element);
   virtual DataView getFileName() const = 0;
   virtual DataView getRelativeFileName() const = 0;
+};
+
+
+struct Video : Object {
+  static const Type s_type = Type::VIDEO;
+
+  Video(const Scene& _scene, const IElement& _element);
+  virtual DataView getFileName() const = 0;
+  virtual DataView getRelativeFileName() const = 0;
+};
+
+
+struct LayeredTexture : Object {
+  static const Type s_type = Type::LAYERED_TEXTURE;
+
+  LayeredTexture(const Scene& _scene, const IElement& _element);
+  // Only the bottom layer is kept, the remaining layers are not blended.
+  virtual const Texture* getTexture() const = 0;
 };
 
 
@@ -314,6 +334,8 @@ struct AnimationCurveNode : Object {
 
   virtual Vec3D getNodeLocalTransform(double time) const = 0;
   virtual const Object* getBone() const = 0;
+  virtual const AnimationCurve* getCurve(int axis) const = 0;
+  virtual DataView getLinkProperty() const = 0;
 };
 
 
@@ -392,6 +414,8 @@ struct IScene {
   virtual const IElement* getRootElement() const = 0;
   virtual const Object* getRoot() const = 0;
   virtual const TakeInfo* getTakeInfo(const char* name) const = 0;
+  virtual int getTakeCount() const = 0;
+  virtual const TakeInfo* getTake(int index) const = 0;
   virtual int getMeshCount() const = 0;
   virtual float getSceneFrameRate() const = 0;
   virtual const GlobalSettings* getGlobalSettings() const = 0;

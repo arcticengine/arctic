@@ -1378,6 +1378,16 @@ Texture::Texture(const Scene& _scene, const IElement& _element)
 }
 
 
+Video::Video(const Scene& _scene, const IElement& _element)
+  : Object(_scene, _element) {
+}
+
+
+LayeredTexture::LayeredTexture(const Scene& _scene, const IElement& _element)
+  : Object(_scene, _element) {
+}
+
+
 struct TextureImpl : Texture {
   TextureImpl(const Scene& _scene, const IElement& _element)
     : Texture(_scene, _element) {
@@ -1392,6 +1402,38 @@ struct TextureImpl : Texture {
   DataView relative_filename;
   Type getType() const override {
     return Type::TEXTURE; }
+};
+
+
+struct VideoImpl : Video {
+  VideoImpl(const Scene& _scene, const IElement& _element)
+    : Video(_scene, _element) {
+  }
+
+  DataView getRelativeFileName() const override {
+    return relative_filename; }
+  DataView getFileName() const override {
+    return filename; }
+
+  DataView filename;
+  DataView relative_filename;
+  Type getType() const override {
+    return Type::VIDEO; }
+};
+
+
+struct LayeredTextureImpl : LayeredTexture {
+  LayeredTextureImpl(const Scene& _scene, const IElement& _element)
+    : LayeredTexture(_scene, _element) {
+  }
+
+  const Texture* getTexture() const override {
+    return texture; }
+
+  Type getType() const override {
+    return Type::LAYERED_TEXTURE; }
+
+  Texture* texture = nullptr;
 };
 
 
@@ -1470,6 +1512,17 @@ struct Scene : IScene {
     return nullptr;
   }
 
+  int getTakeCount() const override {
+    return static_cast<int>(m_take_infos.size());
+  }
+
+  const TakeInfo* getTake(int index) const override {
+    if (index < 0 || index >= static_cast<int>(m_take_infos.size())) {
+      return nullptr;
+    }
+    return &m_take_infos[static_cast<size_t>(index)];
+  }
+
 
   const IElement* getRootElement() const override {
     return m_root_element; }
@@ -1512,6 +1565,17 @@ struct AnimationCurveNodeImpl : AnimationCurveNode {
 
   const Object* getBone() const override {
     return bone;
+  }
+
+  const AnimationCurve* getCurve(int axis) const override {
+    if (axis < 0 || axis > 2) {
+      return nullptr;
+    }
+    return curves[axis].curve;
+  }
+
+  DataView getLinkProperty() const override {
+    return bone_link_property;
   }
 
 
@@ -1592,20 +1656,36 @@ struct AnimationLayerImpl : AnimationLayer {
 };
 
 
+// Exporters disagree on the capitalization of the file name element.
+static void parseFileNames(const Element& element, DataView* filename,
+    DataView* relative_filename) {
+  const Element* name_element = findChild(element, "FileName");
+  if (!name_element) {
+    name_element = findChild(element, "Filename");
+  }
+  if (name_element && name_element->first_property) {
+    *filename = name_element->first_property->value;
+  }
+  const Element* relative_element = findChild(element, "RelativeFilename");
+  if (relative_element && relative_element->first_property) {
+    *relative_filename = relative_element->first_property->value;
+  }
+}
+
+
 struct OptionalError<Object*> parseTexture(const Scene& scene,
     const Element& element) {
   TextureImpl* texture = new TextureImpl(scene, element);
-  const Element* texture_filename = findChild(element, "FileName");
-  if (texture_filename && texture_filename->first_property) {
-    texture->filename = texture_filename->first_property->value;
-  }
-  const Element* texture_relative_filename = findChild(
-      element, "RelativeFilename");
-  if (texture_relative_filename && texture_relative_filename->first_property) {
-    texture->relative_filename =
-      texture_relative_filename->first_property->value;
-  }
+  parseFileNames(element, &texture->filename, &texture->relative_filename);
   return texture;
+}
+
+
+struct OptionalError<Object*> parseVideo(const Scene& scene,
+    const Element& element) {
+  VideoImpl* video = new VideoImpl(scene, element);
+  parseFileNames(element, &video->filename, &video->relative_filename);
+  return video;
 }
 
 
@@ -2404,7 +2484,19 @@ if (node->first_property->value == name) { \
   } \
 }
 
-            get_property("UpAxis", UpAxis, UpVector, toInt);
+// The file stores axis properties as 0-based indices (0 = X, 1 = Y, 2 = Z),
+// while UpVector numbers its axes from one, so the raw value has to be
+// shifted before it can be used as the enum.
+#define get_axis_property(name, field, type, getter) \
+if (node->first_property->value == name) { \
+  ofbx::IElementProperty* prop = node->getProperty(4); \
+  if (prop) { \
+    ofbx::DataView value = prop->getValue(); \
+    scene->m_settings.field = (type)(value.getter() + 1); \
+  } \
+}
+
+            get_axis_property("UpAxis", UpAxis, UpVector, toInt);
             get_property("UpAxisSign", UpAxisSign, int, toInt);
             get_property("FrontAxis", FrontAxis, FrontVector, toInt);
             get_property("FrontAxisSign", FrontAxisSign, int, toInt);
@@ -2420,6 +2512,7 @@ if (node->first_property->value == name) { \
             get_property("TimeMode", TimeMode, FrameRate, toInt);
             get_property("CustomFrameRate", CustomFrameRate, float, toDouble);
 
+#undef get_axis_property
 #undef get_property
 
             scene->m_scene_frame_rate = getFramerateFromTimeMode(
@@ -2431,6 +2524,38 @@ if (node->first_property->value == name) { \
       break;
     }
   }
+}
+
+
+static bool dataViewContains(const DataView& view, const char* needle) {
+  if (!view.begin || !view.end || !needle || !*needle) {
+    return false;
+  }
+  const size_t n = std::strlen(needle);
+  const size_t m = static_cast<size_t>(view.end - view.begin);
+  if (m < n) {
+    return false;
+  }
+  const char* b = reinterpret_cast<const char*>(view.begin);
+  for (size_t i = 0; i + n <= m; ++i) {
+    if (std::memcmp(b + i, needle, n) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+// The property may be qualified by the exporter, as in "Maya|DiffuseColor",
+// so a substring match is needed on top of the plain names.
+static Texture::TextureType textureTypeFromProperty(const DataView& prop) {
+  if (dataViewContains(prop, "NormalMap")) {
+    return Texture::NORMAL;
+  }
+  if (prop == "Diffuse" || dataViewContains(prop, "DiffuseColor")) {
+    return Texture::DIFFUSE;
+  }
+  return Texture::COUNT;
 }
 
 
@@ -2511,6 +2636,10 @@ static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
       }
     } else if (iter.second.element->id == "Texture") {
       obj = parseTexture(*scene, *iter.second.element);
+    } else if (iter.second.element->id == "Video") {
+      obj = parseVideo(*scene, *iter.second.element);
+    } else if (iter.second.element->id == "LayeredTexture") {
+      obj = parse<LayeredTextureImpl>(*scene, *iter.second.element);
     }
 
     if (obj.isError())
@@ -2520,6 +2649,45 @@ static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
     if (obj.getValue()) {
       scene->m_all_objects.push_back(obj.getValue());
       obj.getValue()->id = iter.first;
+    }
+  }
+
+  // Some exporters leave the Texture clip empty and store the path on the
+  // Video node connected to it, so take the path from there as a fallback.
+  for (const Scene::Connection& con : scene->m_connections) {
+    Object* parent = scene->m_object_map[con.to].object;
+    Object* child = scene->m_object_map[con.from].object;
+    if (!child || !parent) {
+      continue;
+    }
+    if (child->getType() == Object::Type::VIDEO &&
+        parent->getType() == Object::Type::TEXTURE) {
+      TextureImpl* tex = reinterpret_cast<TextureImpl*>(parent);
+      VideoImpl* vid = reinterpret_cast<VideoImpl*>(child);
+      if (!tex->filename.begin && vid->filename.begin) {
+        tex->filename = vid->filename;
+      }
+      if (!tex->relative_filename.begin && vid->relative_filename.begin) {
+        tex->relative_filename = vid->relative_filename;
+      }
+    }
+  }
+
+  // Must run before the main loop wires LayeredTexture into Material, since
+  // that step needs the layered object to already know its Texture.
+  for (const Scene::Connection& con : scene->m_connections) {
+    Object* parent = scene->m_object_map[con.to].object;
+    Object* child = scene->m_object_map[con.from].object;
+    if (!child || !parent) {
+      continue;
+    }
+    if (child->getType() == Object::Type::TEXTURE &&
+        parent->getType() == Object::Type::LAYERED_TEXTURE) {
+      LayeredTextureImpl* layered =
+          reinterpret_cast<LayeredTextureImpl*>(parent);
+      if (!layered->texture) {
+        layered->texture = reinterpret_cast<Texture*>(child);
+      }
     }
   }
 
@@ -2546,8 +2714,8 @@ static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
         }
         break;
       default:
-        Error::s_message = "Unexpected child, code 2602";
-        return false;
+        // Other child types are dispatched by the parent switch below.
+        break;
     }
 
     switch (parent->getType()) {
@@ -2565,8 +2733,7 @@ static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
             mesh->materials.push_back(reinterpret_cast<Material*>(child));
             break;
           default:
-            Error::s_message = "Unexpected child, code 2625";
-            return false;
+            break;
         }
         break;
       }
@@ -2585,12 +2752,14 @@ static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
       }
       case Object::Type::MATERIAL: {
         MaterialImpl* mat = reinterpret_cast<MaterialImpl*>(parent);
+        Texture* tex = nullptr;
         if (child->getType() == Object::Type::TEXTURE) {
-          Texture::TextureType type = Texture::COUNT;
-          if (con.property == "NormalMap")
-            type = Texture::NORMAL;
-          else if (con.property == "DiffuseColor")
-            type = Texture::DIFFUSE;
+          tex = reinterpret_cast<Texture*>(child);
+        } else if (child->getType() == Object::Type::LAYERED_TEXTURE) {
+          tex = reinterpret_cast<LayeredTextureImpl*>(child)->texture;
+        }
+        if (tex) {
+          Texture::TextureType type = textureTypeFromProperty(con.property);
           if (type == Texture::COUNT) break;
 
           if (mat->textures[type]) {
@@ -2600,7 +2769,7 @@ static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
             //  return false;
           }
 
-          mat->textures[type] = reinterpret_cast<Texture*>(child);
+          mat->textures[type] = tex;
         }
         break;
       }
@@ -2652,8 +2821,8 @@ static bool parseObjects(const Element& root, Scene* scene) {  //-V2008
         break;
       }
       default:
-        Error::s_message = "Unexpected parent type, code 2727";
-        return false;
+        // Node parenting is not stored here: getParent() walks m_connections.
+        break;
     }
   }
 
@@ -2862,12 +3031,21 @@ Object* Object::getParent() const {
 
 
 IScene* load(const Ui8* data, int size) {
+  // The header is read as a whole before anything else, so a buffer that
+  // cannot hold one is refused here rather than read past its end.
+  if (!data || size < static_cast<int>(sizeof(Header))) {
+    Error::s_message = "The file is too short to hold an FBX header";
+    return nullptr;
+  }
   std::unique_ptr<Scene> scene(new Scene());
   scene->m_data.resize(size);
   memcpy(&scene->m_data[0], data, size);
   Ui32 version;
   OptionalError<Element*> root = tokenize(&scene->m_data[0], size, &version);
   if (version < 6200) {
+    if (!root.isError()) {
+      deleteElement(root.getValue());
+    }
     Error::s_message =
       "Unsupported FBX file format version. Minimum supported version is 6.2";
     return nullptr;

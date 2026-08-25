@@ -140,11 +140,17 @@ class Engine {
   }
 
   /// @brief Initializes the engine for headless mode.
+  ///
+  /// Startup itself is decided earlier, by IsHeadlessStartupRequested and a
+  /// decider registered with ARCTIC_HEADLESS_DECIDER. Xcode's Debug Run flag
+  /// is not a reason to take this path; see SetHeadlessDecider.
   void HeadlessInit();
 
   // Initializes a software backbuffer and input state without creating a
   // native window, OpenGL context or audio device.  This is the explicit
   // software-only path (ARCTIC_HEADLESS + ARCTIC_DISABLE_HW).
+  // Xcode appending -NSDocumentRevisionsDebugMode YES is not that path;
+  // see SetHeadlessDecider.
   void InitHeadlessScreen(Si32 width, Si32 height);
 
   bool IsHeadless() const { return is_headless_; }

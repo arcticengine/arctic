@@ -184,14 +184,29 @@ std::string CanonicalizePath(const char *path) {
 // TODO(Huldra): Move common code out of macos and pi specific files.
 std::string RelativePathFromTo(const char *from, const char *to) {
   std::string from_abs = CanonicalizePath(from);
-  if (from && from[strlen(from) - 1] == '/' &&
+  if (from && from[0] != 0 && from[strlen(from) - 1] == '/' &&
       from_abs.size() && from_abs[from_abs.size() - 1] != '/') {
     from_abs = from_abs + '/';
   }
   std::string to_abs = CanonicalizePath(to);
-  if (to && to[strlen(to) - 1] == '/' &&
+  if (to && to[0] != 0 && to[strlen(to) - 1] == '/' &&
       to_abs.size() && to_abs[to_abs.size() - 1] != '/') {
     to_abs = to_abs + '/';
+  }
+  // "/a/b/" and "/a/b" are one and the same directory, so the way from a place
+  // to itself is "./" whichever of the two spellings each side came in as.
+  {
+    std::string from_bare = from_abs;
+    std::string to_bare = to_abs;
+    if (from_bare.size() > 1 && from_bare[from_bare.size() - 1] == '/') {
+      from_bare.resize(from_bare.size() - 1);
+    }
+    if (to_bare.size() > 1 && to_bare[to_bare.size() - 1] == '/') {
+      to_bare.resize(to_bare.size() - 1);
+    }
+    if (from_bare == to_bare) {
+      return "./";
+    }
   }
   Ui32 matching = 0;
   while (matching < from_abs.size() && matching < to_abs.size()) {
@@ -200,9 +215,6 @@ std::string RelativePathFromTo(const char *from, const char *to) {
     } else {
       break;
     }
-  }
-  if (matching == from_abs.size() && matching == to_abs.size()) {
-    return "./";
   }
   bool is_one_end = (matching == from_abs.size() || matching == to_abs.size());
   bool is_one_next_slash =
@@ -220,11 +232,18 @@ std::string RelativePathFromTo(const char *from, const char *to) {
     }
   }
 
+  // One ".." per directory left behind. A slash names no directory of its own,
+  // so the empty piece a trailing slash leaves at the end of "from" adds none:
+  // "/a/b/" and "/a/b" are the same place, and from either of them the way to
+  // "/a/c" is one step up.
   const char *from_part = from_abs.c_str() + matching;
 
   while (*from_part != 0) {
+    if (*from_part == '/') {
+      ++from_part;
+      continue;
+    }
     res << "../";
-    ++from_part;
     while (*from_part != 0 && *from_part != '/') {
       ++from_part;
     }

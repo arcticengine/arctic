@@ -85,6 +85,9 @@
 		B8BC47C09F8C1443D444BAAF /* ini.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 73BC3E9860A98BD31E25D3B4 /* ini.cpp */; };
 		6BE3DA2295A25ED2C89E86A3 /* arctic_platform_web_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F6C878C7CF23BA20D958A80 /* arctic_platform_web_sound.cpp */; };
 		7A36A5FE357B4BA6F6A429FC /* easy_video.cpp in Sources */ = {isa = PBXBuildFile; fileRef = CC300BB489C42B4D73D38E41 /* easy_video.cpp */; };
+		94D6922018740F1DABF30819 /* mesh_fbx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 38FA12B6632D7C16A7C94AB9 /* mesh_fbx.cpp */; };
+		385D8DC1B1471DF02628E50B /* gl_texture_cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5B2F6E9168F6B56D7A0BA26D /* gl_texture_cache.cpp */; };
+		84B5A4212640DA4CA5386566 /* model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F9DCB5FCA5D201753EAF288B /* model.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -277,6 +280,12 @@
 		2C6D2EF5066ACEBBBE23B29B /* targetver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = targetver.h; path = targetver.h; sourceTree = SOURCE_ROOT; };
 		98CF8F81C43BD6F3B356CA88 /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = resource.h; path = resource.h; sourceTree = SOURCE_ROOT; };
 		8545DE0EE4905048584F4850 /* stb_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stb_image.h; path = ../engine/stb_image.h; sourceTree = SOURCE_ROOT; };
+		DF67CD3CB4BD727DAFCC534E /* gl_texture_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_texture_cache.h; path = ../engine/gl_texture_cache.h; sourceTree = SOURCE_ROOT; };
+		38FA12B6632D7C16A7C94AB9 /* mesh_fbx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mesh_fbx.cpp; path = ../engine/mesh_fbx.cpp; sourceTree = SOURCE_ROOT; };
+		BDC2EE6DA926C25A1D7C1D8F /* mesh_fbx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mesh_fbx.h; path = ../engine/mesh_fbx.h; sourceTree = SOURCE_ROOT; };
+		5B2F6E9168F6B56D7A0BA26D /* gl_texture_cache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_texture_cache.cpp; path = ../engine/gl_texture_cache.cpp; sourceTree = SOURCE_ROOT; };
+		608E9B99571C04580F8F5045 /* model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = model.h; path = ../engine/model.h; sourceTree = SOURCE_ROOT; };
+		F9DCB5FCA5D201753EAF288B /* model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = model.cpp; path = ../engine/model.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -393,6 +402,12 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				DF67CD3CB4BD727DAFCC534E /* gl_texture_cache.h */,
+				38FA12B6632D7C16A7C94AB9 /* mesh_fbx.cpp */,
+				BDC2EE6DA926C25A1D7C1D8F /* mesh_fbx.h */,
+				5B2F6E9168F6B56D7A0BA26D /* gl_texture_cache.cpp */,
+				608E9B99571C04580F8F5045 /* model.h */,
+				F9DCB5FCA5D201753EAF288B /* model.cpp */,
 				8545DE0EE4905048584F4850 /* stb_image.h */,
 				9DC1D336A6053106FA0D1BE6 /* arctic_platform_pi_video.cpp */,
 				E3A73C1B5C44997440E728FA /* httplib.h */,
@@ -610,6 +625,9 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				94D6922018740F1DABF30819 /* mesh_fbx.cpp in Sources */,
+				385D8DC1B1471DF02628E50B /* gl_texture_cache.cpp in Sources */,
+				84B5A4212640DA4CA5386566 /* model.cpp in Sources */,
 				A7F932E6461D715962C23527 /* arctic_platform_pi_video.cpp in Sources */,
 				1E7B463998023FEF45A69D04 /* arctic_platform_windows_video.cpp in Sources */,
 				224B5B839D12C4A78828E234 /* wave_function_collapse.cpp in Sources */,

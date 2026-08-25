@@ -52,6 +52,7 @@ demo/demo
 # cmake intermediate files and folders
 CMakeCache.txt
 CMakeFiles
+CMakeScripts
 Makefile
 cmake_install.cmake
 
@@ -66,3 +67,4 @@ log.txt
 *.wasm
 *.wasm.map
 *.ww.js
+.cursor/hooks/state/continual-learning-index.json

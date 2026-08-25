@@ -29,6 +29,15 @@
     <ClCompile Include="..\engine\engine.cpp">
       <Filter>engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\engine\mesh_fbx.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\gl_texture_cache.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\model.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
     <ClCompile Include="..\engine\arctic_platform_pi_video.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -238,6 +247,15 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\gl_texture_cache.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\mesh_fbx.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\model.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\stb_image.h">

@@ -210,6 +210,9 @@
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\easy_util.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\gl_texture_cache.h" />
+    <ClInclude Include="..\engine\mesh_fbx.h" />
+    <ClInclude Include="..\engine\model.h" />
     <ClInclude Include="..\engine\stb_image.h" />
     <ClInclude Include="..\engine\localization.h" />
     <ClInclude Include="..\engine\httplib.h" />
@@ -313,6 +316,9 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\mesh_fbx.cpp" />
+    <ClCompile Include="..\engine\gl_texture_cache.cpp" />
+    <ClCompile Include="..\engine\model.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_video.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows_video.cpp" />
     <ClCompile Include="..\engine\wave_function_collapse.cpp" />

@@ -127,6 +127,37 @@ const TemplateKind kTemplateKinds[] = {
   {"cube", kProjectKind3DCube, "spinning 3d cube, uses the hardware renderer"},
 };
 
+// Xcode injects "-NSDocumentRevisionsDebugMode YES" when the bundle is Run
+// from the IDE. Classic Finder used to inject "-psn_0_...". Neither is a
+// command and neither takes a value the wizard understands.
+Si32 LauncherArgSpan(Si32 argc, const char *const *argv, Si32 i) {
+  if (i < 0 || i >= argc || argv[i] == nullptr) {
+    return 0;
+  }
+  if (std::strcmp(argv[i], "-NSDocumentRevisionsDebugMode") == 0) {
+    if (i + 1 < argc && argv[i + 1] != nullptr
+        && std::strcmp(argv[i + 1], "YES") == 0) {
+      return 2;
+    }
+    return 1;
+  }
+  if (std::strncmp(argv[i], "-psn_", 5) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+Si32 SkipLauncherArgs(Si32 argc, const char *const *argv, Si32 i) {
+  while (true) {
+    const Si32 span = LauncherArgSpan(argc, argv, i);
+    if (span == 0) {
+      break;
+    }
+    i += span;
+  }
+  return i;
+}
+
 // A command word means there is nobody to look at a window: the wizard is being
 // run from a script or a terminal, and a window that opens and closes on its own
 // is worse than none. A typo is a command word too, so "wizard creat mygame"
@@ -135,15 +166,18 @@ const TemplateKind kTemplateKinds[] = {
 // see ARCTIC_HEADLESS_DECIDER.
 bool IsWizardConsoleRun() {
   const Engine *engine = GetEngine();
-  if (engine->GetArgc() < 2) {
+  const Si32 argc = engine->GetArgc();
+  const char *const *argv = engine->GetArgv();
+  const Si32 first_i = SkipLauncherArgs(argc, argv, 1);
+  if (first_i >= argc) {
     return false;
   }
-  const std::string first(engine->GetArgv()[1]);
+  const std::string first(argv[first_i]);
   if (first == "--help" || first == "-h") {
     return true;
   }
-  // Anything that starts with a dash is not a command, and the Finder adds one of
-  // its own (-psn_0_12345) when the bundle is opened by a double click.
+  // Anything that starts with a dash is not a command. Launcher noise is
+  // already skipped above, so a leftover dash is a real flag such as --help.
   return !first.empty() && first[0] != '-';
 }
 ARCTIC_HEADLESS_DECIDER(IsWizardConsoleRun)
@@ -370,41 +404,46 @@ bool ParseCommandLine() {
   for (Si32 i = 0; i < argc; ++i) {
     Log("Argument: ", engine->GetArgv()[i]);
   }
-  if (argc < 2) {
+  const char *const *argv = engine->GetArgv();
+  const Si32 cmd_i = SkipLauncherArgs(argc, argv, 1);
+  if (cmd_i >= argc) {
     return true;  // Nothing was asked for, so the window asks instead.
   }
 
-  const std::string command(engine->GetArgv()[1]);
+  const std::string command(argv[cmd_i]);
   if (command == "help" || command == "--help" || command == "-h") {
     PrintUsage();
     ExitProgram(0);
   }
 
   if (command == "create") {
-    if (argc < 3) {
+    const Si32 name_i = SkipLauncherArgs(argc, argv, cmd_i + 1);
+    if (name_i >= argc) {
       PrintError("\"create\" needs a name for the new project.");
       PrintUsage();
       return false;
     }
-    g_project_name.assign(engine->GetArgv()[2]);
+    g_project_name.assign(argv[name_i]);
     std::string error;
     if (!ValidateProjectName(g_project_name, &error)) {
       PrintError(error);
       return false;
     }
     bool is_template_set = false;
-    for (Si32 i = 3; i < argc; ++i) {
-      const std::string arg(engine->GetArgv()[i]);
+    for (Si32 i = SkipLauncherArgs(argc, argv, name_i + 1); i < argc;
+        i = SkipLauncherArgs(argc, argv, i + 1)) {
+      const std::string arg(argv[i]);
       std::string kind_name;
       const std::string kPrefix = "--template=";
       if (arg == "--template" || arg == "-t") {
-        if (i + 1 >= argc) {
+        const Si32 kind_i = SkipLauncherArgs(argc, argv, i + 1);
+        if (kind_i >= argc) {
           PrintError("\"" + arg + "\" needs the kind of template after it.");
           PrintUsage();
           return false;
         }
-        kind_name.assign(engine->GetArgv()[i + 1]);
-        ++i;
+        kind_name.assign(argv[kind_i]);
+        i = kind_i;
       } else if (arg.size() > kPrefix.size()
           && arg.compare(0, kPrefix.size(), kPrefix) == 0) {
         kind_name = arg.substr(kPrefix.size());
@@ -432,22 +471,24 @@ bool ParseCommandLine() {
   }
 
   if (command == "update") {
-    if (argc < 3) {
+    const Si32 path_i = SkipLauncherArgs(argc, argv, cmd_i + 1);
+    if (path_i >= argc) {
       PrintError("\"update\" needs the path of the project to update.");
       PrintUsage();
       return false;
     }
-    if (argc > 3) {
-      PrintError("Unknown argument \"" + std::string(engine->GetArgv()[3])
+    const Si32 extra_i = SkipLauncherArgs(argc, argv, path_i + 1);
+    if (extra_i < argc) {
+      PrintError("Unknown argument \"" + std::string(argv[extra_i])
           + "\".");
       PrintUsage();
       return false;
     }
-    if (std::strlen(engine->GetArgv()[2]) == 0) {
+    if (std::strlen(argv[path_i]) == 0) {
       PrintError("The path of the project to update is empty.");
       return false;
     }
-    g_project_directory.assign(CanonicalizeArgvPath(engine->GetArgv()[2]));
+    g_project_directory.assign(CanonicalizeArgvPath(argv[path_i]));
     std::string path_error;
     if (!CheckDirectoryIsThere(g_project_directory, "project", &path_error)) {
       PrintError(path_error);
@@ -521,6 +562,131 @@ bool IsProjectSourceName(const std::string &title) {
   return IsCompilableSourceName(title) || IsHeaderSourceName(title);
 }
 
+bool IsAbsolutePath(const std::string &path) {
+  if (path.empty()) {
+    return false;
+  }
+  if (path[0] == '/' || path[0] == '\\') {
+    return true;
+  }
+  if (path.size() >= 2 && path[1] == ':') {
+    return true;
+  }
+  return false;
+}
+
+bool IsPathUnder(const std::string &directory, const std::string &full_path) {
+  if (directory.empty() || full_path.size() <= directory.size()) {
+    return false;
+  }
+  if (full_path.compare(0, directory.size(), directory) != 0) {
+    return false;
+  }
+  const char separator = full_path[directory.size()];
+  return separator == '/' || separator == '\\';
+}
+
+std::string ProjectPathToFullPath(const std::string &project_directory,
+    std::string path) {
+  ReplaceAll("\\", "/", &path);
+  if (IsAbsolutePath(path)) {
+    return CanonicalizePath(path.c_str());
+  }
+  return CanonicalizePath((project_directory + "/" + path).c_str());
+}
+
+std::string MakeProjectPathRelative(const std::string &project_directory,
+    const std::string &engine_root, const std::string &path) {
+  if (!IsAbsolutePath(path)) {
+    return path;
+  }
+  std::string full_path = ProjectPathToFullPath(project_directory, path);
+  if (!IsPathUnder(project_directory, full_path)
+      && !IsPathUnder(engine_root, full_path)) {
+    return path;
+  }
+  std::string rel_path = RelativePathFromTo(
+      project_directory.c_str(), full_path.c_str());
+  ReplaceAll("\\", "/", &rel_path);
+  if (rel_path.compare(0, 2, "./") == 0) {
+    rel_path = rel_path.substr(2);
+  }
+  if (rel_path.empty() || IsAbsolutePath(rel_path)) {
+    return path;
+  }
+  if (path.find('\\') != std::string::npos) {
+    ReplaceAll("/", "\\", &rel_path);
+  }
+  return rel_path;
+}
+
+void MakeXcodeProjectPathsRelative(const std::string &project_directory,
+    const std::string &engine_root, std::string *in_out_content) {
+  Check(in_out_content,
+    "MakeXcodeProjectPathsRelative called with in_out_content == nullptr");
+  const std::string kPrefix = "path = ";
+  std::string result;
+  result.reserve(in_out_content->size());
+  std::size_t cursor = 0;
+  while (true) {
+    std::size_t found = in_out_content->find(kPrefix, cursor);
+    if (found == std::string::npos) {
+      break;
+    }
+    std::size_t value_begin = found + kPrefix.size();
+    std::size_t value_end = in_out_content->find(';', value_begin);
+    if (value_end == std::string::npos) {
+      break;
+    }
+    std::string value = in_out_content->substr(
+        value_begin, value_end - value_begin);
+    bool is_quoted = (value.size() >= 2 && value[0] == '"'
+        && value[value.size() - 1] == '"');
+    std::string path = is_quoted ? value.substr(1, value.size() - 2) : value;
+    std::string rel_path = MakeProjectPathRelative(
+        project_directory, engine_root, path);
+    result.append(*in_out_content, cursor, value_begin - cursor);
+    if (is_quoted) {
+      result.append("\"").append(rel_path).append("\"");
+    } else {
+      result.append(rel_path);
+    }
+    cursor = value_end;
+  }
+  result.append(*in_out_content, cursor, std::string::npos);
+  in_out_content->swap(result);
+}
+
+void MakeVisualStudioProjectPathsRelative(const std::string &project_directory,
+    const std::string &engine_root, std::string *in_out_content) {
+  Check(in_out_content,
+    "MakeVisualStudioProjectPathsRelative called with in_out_content =="
+    " nullptr");
+  const std::string kPrefix = "Include=\"";
+  std::string result;
+  result.reserve(in_out_content->size());
+  std::size_t cursor = 0;
+  while (true) {
+    std::size_t found = in_out_content->find(kPrefix, cursor);
+    if (found == std::string::npos) {
+      break;
+    }
+    std::size_t value_begin = found + kPrefix.size();
+    std::size_t value_end = in_out_content->find('"', value_begin);
+    if (value_end == std::string::npos) {
+      break;
+    }
+    std::string path = in_out_content->substr(
+        value_begin, value_end - value_begin);
+    result.append(*in_out_content, cursor, value_begin - cursor);
+    result.append(MakeProjectPathRelative(
+        project_directory, engine_root, path));
+    cursor = value_end;
+  }
+  result.append(*in_out_content, cursor, std::string::npos);
+  in_out_content->swap(result);
+}
+
 // True if path is a direct child of project_directory (no subfolders).
 bool IsProjectRootRelativeFile(const std::string &project_directory,
                                const std::string &full_path,
@@ -583,9 +749,7 @@ void NoteExistingProjectPath(std::string path,
   Check(in_out_existing_files, "Unexpected in_out_existing_files = nullptr");
   Check(in_out_existing_project_files,
     "Unexpected in_out_existing_project_files = nullptr");
-  ReplaceAll("\\", "/", &path);
-  std::string full_path =
-    CanonicalizePath((g_project_directory + "/" + path).c_str());
+  std::string full_path = ProjectPathToFullPath(g_project_directory, path);
   std::string rel_path = RelativePathFromTo(
     (g_engine + "/").c_str(), full_path.c_str());
   if (rel_path.size() && rel_path[0] != '.') {
@@ -1691,6 +1855,8 @@ bool ShowUpdateProgress() {
         std::string pbx_files_begin = "/* Begin PBXFileReference section */";
         std::string pbx_files_end = "/* End PBXFileReference section */";
         std::string full_content(reinterpret_cast<char*>(data.data()));
+        MakeXcodeProjectPathsRelative(g_project_directory, g_current_directory,
+          &full_content);
         std::string files = CutStringBetween(full_content,
           pbx_files_begin, pbx_files_end);
         std::regex path_regex("path = (.*?);");
@@ -1699,7 +1865,7 @@ bool ShowUpdateProgress() {
         while (next != end) {
           std::string path = next->str(1).c_str();
           std::string full_path =
-            CanonicalizePath((g_project_directory + "/" + path).c_str());
+            ProjectPathToFullPath(g_project_directory, path);
           std::string rel_path = RelativePathFromTo(
             (g_engine + "/").c_str(), full_path.c_str());
           if (rel_path.size() && rel_path[0] != '.') {
@@ -1724,6 +1890,7 @@ bool ShowUpdateProgress() {
         for (Ui32 idx = 0; idx < engine_entries.size(); ++idx) {
           auto &entry = engine_entries[idx];
           if (entry.is_file == kTrivalentTrue
+                && IsProjectSourceName(entry.title)
                 && existing_files.find(entry.title) == existing_files.end()) {
             files_to_add.push_back({entry.title, kFileToAddEngine});
           }
@@ -1898,6 +2065,8 @@ bool ShowUpdateProgress() {
         std::vector<Ui8> data = ReadFile(vs_project_full_name.c_str());
         data.push_back(0);
         std::string full_content(reinterpret_cast<char*>(data.data()));
+        MakeVisualStudioProjectPathsRelative(g_project_directory,
+          g_current_directory, &full_content);
 
         std::string filter_name = "template_project_name.vcxproj.filters";
         ReplaceAll("template_project_name", g_project_name, &filter_name);
@@ -1907,6 +2076,8 @@ bool ShowUpdateProgress() {
         filter_data.push_back(0);
         std::string full_filter_content(
           reinterpret_cast<char*>(filter_data.data()));
+        MakeVisualStudioProjectPathsRelative(g_project_directory,
+          g_current_directory, &full_filter_content);
 
         {
           std::regex include_path_regex("<ClInclude Include=\"(.*?)\"\\s*/>");

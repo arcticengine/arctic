@@ -78,11 +78,29 @@ using HeadlessDecider = bool (*)();
 /// ARCTIC_HEADLESS_DECIDER macro is for. The command line is already there to
 /// look at, through GetEngine()->GetArgc() and GetEngine()->GetArgv().
 ///
+/// A Debug Run from Xcode appends `-NSDocumentRevisionsDebugMode YES` to that
+/// command line. Classic Finder used to append `-psn_0_...`. Neither is a
+/// subcommand of the application: the flag by itself must not send the process
+/// into headless mode, or pressing Run in the IDE opens no window. Skip those
+/// injected arguments (and the `YES` that follows the Xcode flag) before
+/// deciding; if nothing real remains, start with a window. A decider that
+/// treats "any extra argv" as a console run will get this wrong.
+///
 /// @code
 /// bool IsConsoleSubcommand() {
 ///   Engine *engine = GetEngine();
 ///   for (Si32 i = 1; i < engine->GetArgc(); ++i) {
 ///     const std::string arg = engine->GetArgv()[i];
+///     if (arg == "-NSDocumentRevisionsDebugMode") {
+///       if (i + 1 < engine->GetArgc()
+///           && std::string(engine->GetArgv()[i + 1]) == "YES") {
+///         ++i;
+///       }
+///       continue;
+///     }
+///     if (arg.size() >= 5 && arg.compare(0, 5, "-psn_") == 0) {
+///       continue;
+///     }
 ///     if (arg == "convert" || arg == "test") {
 ///       return true;
 ///     }
@@ -119,6 +137,9 @@ bool SetHeadlessDecider(HeadlessDecider decider);
 ///
 /// Called by the engine startup code before it creates anything; an application
 /// asks GetEngine()->IsHeadless() instead, at any time after EasyMain begins.
+/// The registered decider sees argv as the process received it, including the
+/// `-NSDocumentRevisionsDebugMode YES` pair Xcode adds on a Debug Run: that
+/// pair alone is not a reason to return true, see SetHeadlessDecider.
 bool IsHeadlessStartupRequested();
 
 /// @brief Type of the function that answers "close the window now?"
@@ -391,6 +412,12 @@ std::string DescribeFilePath(const char *path);
 /// @brief Creates a relative path to a file or directory
 /// The path is transformed into a relative form so that
 /// it leads *from* the source directory *to* the target file or directory
+///
+/// A trailing slash on *from* names the same directory as the path without one,
+/// and the number of ".." steps in the answer is the same either way. The two
+/// spellings differ only for a target inside that very directory: "/a/b" gives
+/// "./main.cpp" and "/a/b/" gives the bare "main.cpp". A path from a place to
+/// itself is "./".
 /// @param [in] from Path to the source directory
 /// @param [in] to Path to the destination directory
 /// @return relative path *from* source *to* target

@@ -48,7 +48,10 @@ GlTexture2D::~GlTexture2D() {
             current_texture_id_[i] = 0;
         }
     }
-    ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
+    if (texture_id_ != 0) {
+        ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
+        texture_id_ = 0;
+    }
 }
 
 void GlTexture2D::Create(Si32 w, Si32 h) {
@@ -60,7 +63,10 @@ void GlTexture2D::Create(Si32 w, Si32 h) {
             current_texture_id_[i] = 0;
         }
     }
-    ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
+    if (texture_id_ != 0) {
+        ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
+        texture_id_ = 0;
+    }
 
     ARCTIC_GL_CHECK_ERROR(glPixelStorei(GL_UNPACK_ALIGNMENT, 1));
     ARCTIC_GL_CHECK_ERROR(glPixelStorei(GL_PACK_ALIGNMENT, 1));
@@ -86,7 +92,10 @@ void GlTexture2D::CreateDepth(Si32 w, Si32 h) {
             current_texture_id_[i] = 0;
         }
     }
-    ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
+    if (texture_id_ != 0) {
+        ARCTIC_GL_CHECK_ERROR(glDeleteTextures(1, &texture_id_));
+        texture_id_ = 0;
+    }
 
     ARCTIC_GL_CHECK_ERROR(glGenTextures(1, &texture_id_));
     Bind(0);
