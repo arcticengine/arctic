@@ -33,6 +33,7 @@
 #include "engine/mat33f.h"
 #include "engine/mat44f.h"
 #include "engine/scalar_math.h"
+#include "engine/sphere_vs_triangle.h"
 #include "engine/vec2d.h"
 #include "engine/vec2f.h"
 #include "engine/vec2si32.h"
