@@ -71,12 +71,21 @@ bool MakeDirectory(const char *path) {
 }
 
 bool GetCurrentPath(std::string *out_dir) {
-  char cwd[1 << 20];
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    out_dir->assign(cwd);
-    return true;
+  // On the heap, and not a megabyte of it on the stack: this is called from
+  // whatever thread wants to know a path, and a std::thread gets a stack far
+  // smaller than the main one, so a buffer that big turns a path question into
+  // a stack overflow. The logger thread hit exactly that.
+  std::vector<char> cwd(4096);
+  while (true) {
+    if (getcwd(cwd.data(), cwd.size()) != nullptr) {
+      out_dir->assign(cwd.data());
+      return true;
+    }
+    if (errno != ERANGE || cwd.size() >= (1 << 20)) {
+      return false;
+    }
+    cwd.resize(cwd.size() * 2);
   }
-  return false;
 }
 
 bool ChangeCurrentDirectory(const char *path) {
@@ -113,7 +122,7 @@ bool GetDirectoryEntries(const char *path,
       << " while opening path: \"" << path << "\"" << std::endl;
     return false;
   }
-  char full_path[1 << 20];
+  std::vector<char> full_path(1 << 20);
   while (true) {
     struct dirent *dir_entry = readdir(dir);
     if (dir_entry == nullptr) {
@@ -121,11 +130,11 @@ bool GetDirectoryEntries(const char *path,
     }
     DirectoryEntry entry;
     entry.title = dir_entry->d_name;
-    int written = snprintf(full_path, sizeof(full_path), "%s/%s", path, dir_entry->d_name);
-    Check(written >= 0 && static_cast<size_t>(written) < sizeof(full_path),
+    int written = snprintf(full_path.data(), full_path.size(), "%s/%s", path, dir_entry->d_name);
+    Check(written >= 0 && static_cast<size_t>(written) < full_path.size(),
       "GetDirectoryEntries: path too long: ", dir_entry->d_name);
     struct stat info;
-    if (stat(full_path, &info) != 0) {
+    if (stat(full_path.data(), &info) != 0) {
       closedir(dir);
       return false;
     }
@@ -148,11 +157,11 @@ std::string CanonicalizePath(const char *path) {
     return std::string();
   }
   if (p[0] != '/') {
-    char cwd[1 << 20];
-    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    std::string cwd;
+    if (!GetCurrentPath(&cwd)) {
       return std::string();
     }
-    p = std::string(cwd) + "/" + p;
+    p = cwd + "/" + p;
   }
   std::vector<std::string> components;
   size_t start = 1;

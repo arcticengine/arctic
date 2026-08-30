@@ -547,7 +547,9 @@ void Check(bool condition, const char *error_message,
 /// needed. The message goes to stderr and to the log in every case, so skipping
 /// the alert loses nothing but the window.
 static bool CanShowModalAlert() {
-  if (GetEngine()->IsHeadless()) {
+  // A hidden window counts too: a modal alert in a scripted run has nobody to
+  // dismiss it, so it would hang the run instead of reporting anything.
+  if (!GetEngine()->IsWindowOnScreen()) {
     return false;
   }
   if (NSApp == nil) {
@@ -797,7 +799,7 @@ void CreateMainWindow(SystemInfo *system_info) {
       Fatal("Can't create an OpenGL pixel format: no display capable of the"
         " requested attributes (32 bit depth, double buffering)."
         " A machine with no display can still run the program without a window,"
-        " see ARCTIC_HEADLESS_DECIDER and the ARCTIC_HEADLESS and"
+        " see ARCTIC_STARTUP_MODE_DECIDER and the ARCTIC_HEADLESS and"
         " ARCTIC_DISABLE_HW environment variables.");
     }
 
@@ -810,13 +812,13 @@ void CreateMainWindow(SystemInfo *system_info) {
 
     [g_main_window setContentView: g_main_view];
     [g_main_window makeFirstResponder: g_main_view];
-    if (std::getenv("ARCTIC_HEADLESS") == nullptr) {
+    if (arctic::RequestedStartupMode() == arctic::StartupMode::kWindowed) {
       [g_main_window makeKeyAndOrderFront: nil];
       [g_main_window makeMainWindow];
       [NSApp activateIgnoringOtherApps: YES];
     } else {
-      // Keep the NSOpenGLContext alive for headless hardware rendering, but
-      // never present the native window to the user.
+      // Keep the NSOpenGLContext alive for hardware rendering into a window
+      // that is never presented to the user.
       [g_main_window orderOut: nil];
     }
 
@@ -1000,12 +1002,21 @@ bool MakeDirectory(const char *path) {
 }
 
 bool GetCurrentPath(std::string *out_dir) {
-  char cwd[1 << 20];
-  if (getcwd(cwd, sizeof(cwd)) != NULL) {
-    out_dir->assign(cwd);
-    return true;
+  // On the heap, and not a megabyte of it on the stack: this is called from
+  // whatever thread wants to know a path, and a std::thread gets half a
+  // megabyte of stack by default, so a buffer that big turns a path question
+  // into a stack overflow. The logger thread hit exactly that.
+  std::vector<char> cwd(4096);
+  while (true) {
+    if (getcwd(cwd.data(), cwd.size()) != nullptr) {
+      out_dir->assign(cwd.data());
+      return true;
+    }
+    if (errno != ERANGE || cwd.size() >= (1 << 20)) {
+      return false;
+    }
+    cwd.resize(cwd.size() * 2);
   }
-  return false;
 }
 
 bool ChangeCurrentDirectory(const char *path) {
@@ -1041,7 +1052,7 @@ bool GetDirectoryEntries(const char *path,
     Log(info.str().c_str());
     return false;
   }
-  char full_path[1 << 20];
+  std::vector<char> full_path(1 << 20);
   while (true) {
     struct dirent *dir_entry = readdir(dir);
     if (dir_entry == nullptr) {
@@ -1049,11 +1060,11 @@ bool GetDirectoryEntries(const char *path,
     }
     DirectoryEntry entry;
     entry.title = dir_entry->d_name;
-    int written = snprintf(full_path, sizeof(full_path), "%s/%s", path, dir_entry->d_name);
-    Check(written >= 0 && static_cast<size_t>(written) < sizeof(full_path),
+    int written = snprintf(full_path.data(), full_path.size(), "%s/%s", path, dir_entry->d_name);
+    Check(written >= 0 && static_cast<size_t>(written) < full_path.size(),
       "GetDirectoryEntries: path too long: ", dir_entry->d_name);
     struct stat info;
-    if (stat(full_path, &info) != 0) {
+    if (stat(full_path.data(), &info) != 0) {
       closedir(dir);
       return false;
     }
@@ -1076,11 +1087,11 @@ std::string CanonicalizePath(const char *path) {
     return std::string();
   }
   if (p[0] != '/') {
-    char cwd[1 << 20];
-    if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    std::string cwd;
+    if (!GetCurrentPath(&cwd)) {
       return std::string();
     }
-    p = std::string(cwd) + "/" + p;
+    p = cwd + "/" + p;
   }
   std::vector<std::string> components;
   size_t start = 1;
@@ -1351,13 +1362,13 @@ namespace arctic {
 int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
-  const bool headless = std::getenv("ARCTIC_HEADLESS") != nullptr;
-
   // The command line is handed to the engine first, so that a decider
-  // registered with ARCTIC_HEADLESS_DECIDER can read it and tell a console
-  // subcommand from a normal run before anything is created.
+  // registered with ARCTIC_STARTUP_MODE_DECIDER can read it and tell a console
+  // subcommand or a hidden run from a normal one before anything is created.
   arctic::GetEngine()->SetArgcArgv(argc, const_cast<const char **>(argv));
-  if (arctic::IsHeadlessStartupRequested()) {
+  const arctic::StartupMode startup_mode = arctic::RequestedStartupMode();
+  arctic::GetEngine()->SetStartupMode(startup_mode);
+  if (startup_mode == arctic::StartupMode::kNoWindow) {
     // No window, no GL context, no sound device: the backbuffer is memory and
     // nothing here needs a display to be attached to the machine.
     arctic::GetEngine()->SetInitialPath(arctic::PrepareInitialPath());
@@ -1376,9 +1387,10 @@ int main(int argc, char **argv) {
     g_mixer->Initialize();
   }
   arctic::CreateMainWindow(&system_info);
-  if (headless) {
+  if (startup_mode == arctic::StartupMode::kHiddenWindow) {
+    // CreateMainWindow already kept it off the screen; this is belt and
+    // braces for a window some other path may have ordered front.
     [g_main_window orderOut: nil];
-    arctic::GetEngine()->SetHeadless(true);
   }
 
   arctic::GetEngine()->SetInitialPath(initial_path);

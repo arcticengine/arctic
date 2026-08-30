@@ -58,25 +58,44 @@ struct DirectoryEntry {
 /// any exit, so a global that outlives EasyMain must be able to destruct.
 void ExitProgram(Si32 exit_code = 0);
 
-/// @brief Type of the function that answers "start without a window?"
-using HeadlessDecider = bool (*)();
+/// @brief How a run starts: with a window, with a hidden one, or with none
+///
+/// The three differ in what exists, and a program that draws has to pick the
+/// right one. kWindowed is an ordinary run. kHiddenWindow builds the window,
+/// the GL context and the sound device exactly as usual and simply never
+/// shows the window, so the GPU still draws every frame and a screenshot
+/// looks like one taken from a played round -- this is the mode a scripted
+/// run, an automated lap or a self-test wants. kNoWindow creates none of the
+/// three: the backbuffer is a plain piece of memory, nothing needs a display
+/// to be attached, and anything that requires a GL context fails, so this is
+/// the mode for a console subcommand or a machine with no display at all.
+enum class StartupMode : Si32 {
+  kWindowed = 0,
+  kHiddenWindow = 1,
+  kNoWindow = 2
+};
+
+/// @brief Type of the function that answers "how does this run start?"
+using StartupModeDecider = StartupMode (*)();
 
 /// @brief Registers the function the engine asks before it creates the window
-/// @param decider Function returning true to start without a window, or nullptr
+/// @param decider Function returning the mode to start in, or nullptr
 /// @return true always, so that a global can be initialized with the call
 ///
 /// A GUI application often has console subcommands: `mygame convert a.png b.tga`
 /// has no business opening a window, and a window that opens and closes right
-/// away is worse than none on a machine with no display at all. The engine asks
-/// the decider before it creates the window, the GL context and the sound
-/// device; when it answers true, none of the three is created, the backbuffer is
-/// a plain piece of memory, and GetEngine()->IsHeadless() stays true for the
-/// whole run.
+/// away is worse than none on a machine with no display at all. Equally often
+/// it has runs that do draw but must not be seen -- a self-test, a scripted
+/// lap, a screenshot job -- and those need the window and the GL context to
+/// exist while staying off the screen. The engine asks the decider before it
+/// creates the window, the GL context and the sound device, and honours the
+/// mode it returns for the whole run; GetEngine()->IsHeadless() stays true
+/// for kNoWindow.
 ///
 /// The catch is the timing: the decision is needed before EasyMain is called, so
 /// the registration has to happen before main runs. That is what the
-/// ARCTIC_HEADLESS_DECIDER macro is for. The command line is already there to
-/// look at, through GetEngine()->GetArgc() and GetEngine()->GetArgv().
+/// ARCTIC_STARTUP_MODE_DECIDER macro is for. The command line is already there
+/// to look at, through GetEngine()->GetArgc() and GetEngine()->GetArgv().
 ///
 /// A Debug Run from Xcode appends `-NSDocumentRevisionsDebugMode YES` to that
 /// command line. Classic Finder used to append `-psn_0_...`. Neither is a
@@ -87,8 +106,9 @@ using HeadlessDecider = bool (*)();
 /// treats "any extra argv" as a console run will get this wrong.
 ///
 /// @code
-/// bool IsConsoleSubcommand() {
+/// StartupMode DecideStartupMode() {
 ///   Engine *engine = GetEngine();
+///   StartupMode mode = StartupMode::kWindowed;
 ///   for (Si32 i = 1; i < engine->GetArgc(); ++i) {
 ///     const std::string arg = engine->GetArgv()[i];
 ///     if (arg == "-NSDocumentRevisionsDebugMode") {
@@ -102,12 +122,15 @@ using HeadlessDecider = bool (*)();
 ///       continue;
 ///     }
 ///     if (arg == "convert" || arg == "test") {
-///       return true;
+///       return StartupMode::kNoWindow;
+///     }
+///     if (arg == "--selftest") {
+///       mode = StartupMode::kHiddenWindow;
 ///     }
 ///   }
-///   return false;
+///   return mode;
 /// }
-/// ARCTIC_HEADLESS_DECIDER(IsConsoleSubcommand)
+/// ARCTIC_STARTUP_MODE_DECIDER(DecideStartupMode)
 ///
 /// void EasyMain() {
 ///   if (GetEngine()->IsHeadless()) {
@@ -118,28 +141,35 @@ using HeadlessDecider = bool (*)();
 /// }
 /// @endcode
 ///
-/// Setting both the ARCTIC_HEADLESS and the ARCTIC_DISABLE_HW environment
-/// variables asks for the same thing from outside, without a decider.
-bool SetHeadlessDecider(HeadlessDecider decider);
+/// The environment asks for the same things from outside, without a decider,
+/// for a binary that knows nothing about either mode: ARCTIC_HEADLESS on its
+/// own means kHiddenWindow, and together with ARCTIC_DISABLE_HW it means
+/// kNoWindow. The environment wins over the decider, so a run can always be
+/// hidden from the outside.
+bool SetStartupModeDecider(StartupModeDecider decider);
 
-/// @brief Registers a headless decider before main runs
+/// @brief Registers a startup mode decider before main runs
 ///
 /// Put it at namespace scope in one of the translation units of the application,
-/// next to the decider itself. See SetHeadlessDecider.
-#define ARCTIC_HEADLESS_DECIDER(decider_function)                    \
+/// next to the decider itself. See SetStartupModeDecider.
+#define ARCTIC_STARTUP_MODE_DECIDER(decider_function)                \
   namespace {                                                        \
-  const bool g_arctic_headless_decider_registered =                  \
-      ::arctic::SetHeadlessDecider(decider_function);                 \
+  const bool g_arctic_startup_mode_decider_registered =              \
+      ::arctic::SetStartupModeDecider(decider_function);              \
   }  // namespace
 
-/// @brief Asks the registered decider and the environment about the window
-/// @return true if this run must have no window, no GL context and no sound
+/// @brief Asks the environment and the registered decider about the window
+/// @return The mode this run must start in
 ///
 /// Called by the engine startup code before it creates anything; an application
-/// asks GetEngine()->IsHeadless() instead, at any time after EasyMain begins.
-/// The registered decider sees argv as the process received it, including the
-/// `-NSDocumentRevisionsDebugMode YES` pair Xcode adds on a Debug Run: that
-/// pair alone is not a reason to return true, see SetHeadlessDecider.
+/// asks GetEngine()->IsHeadless() (for kNoWindow) or keeps its own copy of the
+/// answer. The registered decider sees argv as the process received it,
+/// including the `-NSDocumentRevisionsDebugMode YES` pair Xcode adds on a Debug
+/// Run: that pair alone is not a reason to leave kWindowed, see
+/// SetStartupModeDecider.
+StartupMode RequestedStartupMode();
+
+/// @brief Shorthand for RequestedStartupMode() == StartupMode::kNoWindow
 bool IsHeadlessStartupRequested();
 
 /// @brief Type of the function that answers "close the window now?"

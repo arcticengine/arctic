@@ -49,9 +49,9 @@ thread_local bool Engine::is_rng_initialized_ = false;
 namespace {
 
 // Set before main runs, from a global of the application, see
-// ARCTIC_HEADLESS_DECIDER. Read once from the startup code of the platform,
+// ARCTIC_STARTUP_MODE_DECIDER. Read once from the startup code of the platform,
 // which is single-threaded at that point.
-HeadlessDecider g_headless_decider = nullptr;
+StartupModeDecider g_startup_mode_decider = nullptr;
 
 // Registered from the thread that runs EasyMain and read by the thread that
 // pumps the window messages. Those are one and the same thread on macOS and on
@@ -65,8 +65,8 @@ std::atomic<bool> g_is_main_window_close_requested{false};
 
 }  // namespace
 
-bool SetHeadlessDecider(HeadlessDecider decider) {
-  g_headless_decider = decider;
+bool SetStartupModeDecider(StartupModeDecider decider) {
+  g_startup_mode_decider = decider;
   return true;
 }
 
@@ -90,18 +90,26 @@ bool OnMainWindowCloseRequested() {
   return handler();
 }
 
+StartupMode RequestedStartupMode() {
+  // The environment says it from outside, for a binary that knows nothing
+  // about either mode, and it wins over the decider so that a run can always
+  // be hidden from the outside. ARCTIC_HEADLESS on its own is the hidden
+  // window; only together with ARCTIC_DISABLE_HW does it mean no window,
+  // no GL context and no sound device at all.
+  if (std::getenv("ARCTIC_HEADLESS") != nullptr) {
+    if (std::getenv("ARCTIC_DISABLE_HW") != nullptr) {
+      return StartupMode::kNoWindow;
+    }
+    return StartupMode::kHiddenWindow;
+  }
+  if (g_startup_mode_decider != nullptr) {
+    return g_startup_mode_decider();
+  }
+  return StartupMode::kWindowed;
+}
+
 bool IsHeadlessStartupRequested() {
-  // The environment says it from outside, for a binary that knows nothing about
-  // headless runs; both variables are needed, as ARCTIC_HEADLESS alone means the
-  // older "window is created but hidden" mode.
-  if (std::getenv("ARCTIC_HEADLESS") != nullptr &&
-      std::getenv("ARCTIC_DISABLE_HW") != nullptr) {
-    return true;
-  }
-  if (g_headless_decider != nullptr) {
-    return g_headless_decider();
-  }
-  return false;
+  return RequestedStartupMode() == StartupMode::kNoWindow;
 }
 
 void MathTables::Init() {

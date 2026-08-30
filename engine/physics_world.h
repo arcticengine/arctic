@@ -71,15 +71,24 @@ class PhysicsWorld {
   void RemoveSphere(PhysicsBodyId id);
   bool IsAlive(PhysicsBodyId id) const;
 
-  /// Moves a body without sweeping anything: this is a teleport, not a
-  /// motion, and geometry between the old and new place is not consulted.
-  /// Calling it every frame to carry a game's own idea of where a body
-  /// belongs defeats the solver, so drive bodies with SetWishVelocity and
-  /// keep this for spawns, resets and deliberate jumps. The measured part
-  /// of the body's support is refreshed here so a hover control reading it
-  /// on the frame right after a teleport is not answered from the old
-  /// place.
-  void SetPosition(PhysicsBodyId id, const Vec3F &position);
+  /// Moves a body without sweeping anything: geometry between the old and
+  /// the new place is not consulted, so this can put a body through a wall.
+  /// The name says teleport because that is the only thing it is for --
+  /// spawns, resets, deliberate jumps. Calling it every frame to carry a
+  /// game's own idea of where a body belongs defeats the solver, which is
+  /// how Hover Racer's craft used to be walked sideways through the mesh by
+  /// nothing but a change of heading; drive bodies with SetWishVelocity
+  /// instead. The measured part of the body's support is refreshed here so
+  /// a hover control reading it on the frame right after a teleport is not
+  /// answered from the old place.
+  void Teleport(PhysicsBodyId id, const Vec3F &position);
+  /// How many teleports happened since the last Step began. Step() zeroes
+  /// it, so a caller that reads it at the end of a frame learns whether
+  /// anything moved a body behind the solver's back, and a test can assert
+  /// on the frames where it must be zero.
+  Si32 TeleportsSinceStep() const {
+    return teleports_since_step_;
+  }
   void SetRadius(PhysicsBodyId id, float radius);
   void SetWishVelocity(PhysicsBodyId id, const Vec3F &wish_velocity);
   /// Sphere vs. sphere separation splits the overlap between the two
@@ -97,19 +106,43 @@ class PhysicsWorld {
   void Step(float dt);
 
   Vec3F Position(PhysicsBodyId id) const;
+  float Radius(PhysicsBodyId id) const;
+  Vec3F WishVelocity(PhysicsBodyId id) const;
   Vec3F Velocity(PhysicsBodyId id) const;
   /// What the last Step's residual-penetration cleanup added to position,
   /// zero when the last step found nothing to correct. See
   /// SphereStepResult::position_correction.
   Vec3F LastPositionCorrection(PhysicsBodyId id) const;
-  const SphereBodySupport &Support(PhysicsBodyId id) const;
+  /// What the body was standing on, sliding along or measuring below itself
+  /// as of its last step. Returned by value on purpose: bodies live in one
+  /// vector, so a reference into it dies the moment AddSphere grows that
+  /// vector, and the value here is a handful of floats and flags.
+  SphereBodySupport Support(PhysicsBodyId id) const;
+  /// The body's contact manifold as of its last step. This one is a
+  /// reference because a manifold can hold many contacts, and it stays good
+  /// only until the next Step, Teleport, AddSphere or RemoveSphere: the
+  /// first two rebuild the manifold, the last two may move the bodies. Copy
+  /// what is needed before calling any of them.
   const std::vector<ContactPoint> &Contacts(PhysicsBodyId id) const;
   ContactSolveOutcome Outcome(PhysicsBodyId id) const;
+  /// True when the last Step for this body needed more substeps than
+  /// PhysicsStepConfig::max_substeps allows. See
+  /// SphereStepResult::substep_budget_exhausted.
+  bool SubstepBudgetExhausted(PhysicsBodyId id) const;
 
   /// Sweeps a sphere that is not one of the registered bodies (a camera
-  /// boom, for instance) against the static mesh only.
-  Vec3F SweepSphereQuery(const Vec3F &from, const Vec3F &to,
+  /// boom, for instance) against the static mesh only, keeping a skin off
+  /// whatever it hits. See SweepSphereResult for why the answer says which
+  /// of the three outcomes happened.
+  SweepSphereResult SweepSphereQuery(const Vec3F &from, const Vec3F &to,
       float radius) const;
+  /// Measures the floor height under (x, z), for a hover control or any
+  /// other caller that wants a number rather than a place to stand. See
+  /// QuerySphereHeightBelow: only floor-facing faces answer, max_drop is how
+  /// far the *center* is allowed to fall (so a floor `d` below a resting
+  /// sphere needs max_drop >= d + radius), a floor exactly at the end of the
+  /// range counts as found, and the height comes back with no margin shaved
+  /// off it, whatever distance it was measured from.
   bool HeightBelowQuery(float x, float z, float from_y, float max_drop,
       float radius, float *out_height) const;
   /// Drops a sphere that is not one of the registered bodies straight down.
@@ -118,7 +151,10 @@ class PhysicsWorld {
   SphereDropResult DropSphereQuery(const Vec3F &start, float max_drop,
       float radius) const;
   /// Pushes center out of whatever it overlaps right now; useful to settle
-  /// a body placed by teleport before the first Step.
+  /// a body placed by teleport before the first Step. See
+  /// UnstickSphereBody for the convention: true means free where it is now,
+  /// including "it never overlapped anything", and false means it gave up
+  /// and left the center untouched.
   bool UnstickQuery(Vec3F *center, float radius) const;
 
  private:
@@ -134,11 +170,16 @@ class PhysicsWorld {
 
   const SphereBody &BodyAt(PhysicsBodyId id) const;
   SphereBody &BodyAt(PhysicsBodyId id);
+  /// Sweeps a body-vs-body separation shift against the static mesh so the
+  /// push cannot put a body inside a wall, and settles whatever overlap is
+  /// left. Returns where the body ends up.
+  Vec3F PushBodyAside(const SphereBody &body, const Vec3F &shift) const;
   void ResolveSphereSphere();
 
   CollideSoup soup_;
   PhysicsStepConfig config_;
   std::vector<SphereBody> bodies_;
+  Si32 teleports_since_step_ = 0;
 };
 
 /// @}

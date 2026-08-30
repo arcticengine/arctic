@@ -26,7 +26,9 @@
 #include "engine/log.h"
 
 #include <condition_variable>  // NOLINT
+#include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <mutex>  // NOLINT
@@ -37,6 +39,8 @@
 #include "engine/mtq_mpsc_vinfarr.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_platform_def.h"
+#include "engine/easy_advanced.h"
+#include "engine/engine.h"
 
 #ifdef ARCTIC_PLATFORM_MACOSX
 #include <os/log.h>
@@ -103,6 +107,19 @@ static std::thread g_logger_thread;
 static std::string *g_quit_item = nullptr;
 static bool g_is_logger_stopping = false;
 static std::mutex g_quit_mutex;
+// Everything the outside world can ask of the file the logger thread owns is
+// asked through these, so that no other thread ever touches the stream. A
+// clear is a number rather than a flag: the thread compares it with the one it
+// has already carried out, so two clears in a row are two clears.
+static std::atomic<Ui64> g_log_size_limit = ATOMIC_VAR_INIT(0);
+static std::atomic<Ui64> g_log_clear_requests = ATOMIC_VAR_INIT(0);
+static std::mutex g_log_path_mutex;
+static std::string g_log_path;
+
+#ifndef ARCTIC_PLATFORM_WEB
+static const char *kLogFileName = "log.txt";
+static const char *kPreviousLogFileName = "log_prev.txt";
+#endif  // ARCTIC_PLATFORM_WEB
 
 #ifdef ARCTIC_PLATFORM_WEB
   void LoggerThreadFunction() {
@@ -120,15 +137,46 @@ static std::mutex g_quit_mutex;
     }
   }
 #else  // ARCTIC_PLATFORM_WEB
-  void LoggerThreadFunction() {
-    const char *file_name = "log.txt";
-    const char *newline = "\r\n";
-    std::ofstream out(file_name,
-      std::ios_base::binary | std::ios_base::out | std::ios_base::app);
-    Check(!(out.rdstate() & std::ios_base::failbit),
+  // Opens the log and answers how much of it is already there, so that the
+  // thread can keep the size without asking the stream after every write.
+  static Ui64 OpenLogFile(std::ofstream *out, bool is_truncated) {
+    std::ios_base::openmode mode = std::ios_base::binary | std::ios_base::out;
+    mode |= is_truncated ? std::ios_base::trunc : std::ios_base::app;
+    out->open(kLogFileName, mode);
+    Check(!(out->rdstate() & std::ios_base::failbit),
       "Error in LoggerThreadFunction. Can't create/open the file, file_name: ",
-      file_name);
-    out.exceptions(std::ios_base::goodbit);
+      kLogFileName);
+    out->exceptions(std::ios_base::goodbit);
+    out->seekp(0, std::ios_base::end);
+    std::streamoff size = out->tellp();
+    if (size <= 0) {
+      return 0;
+    }
+    return static_cast<Ui64>(size);
+  }
+
+  static void ReopenLogFile(std::ofstream *out, Ui64 *size, bool is_truncated) {
+    out->flush();
+    out->close();
+    *size = OpenLogFile(out, is_truncated);
+  }
+
+  // The current log becomes the previous one and a new one is started. Two
+  // files is the whole scheme: an older one to look back at and a newer one
+  // short enough that the end of the last run is near its end.
+  static void RotateLogFile(std::ofstream *out, Ui64 *size) {
+    out->flush();
+    out->close();
+    std::remove(kPreviousLogFileName);
+    std::rename(kLogFileName, kPreviousLogFileName);
+    *size = OpenLogFile(out, true);
+  }
+
+  void LoggerThreadFunction() {
+    const char *newline = "\r\n";
+    std::ofstream out;
+    Ui64 size = OpenLogFile(&out, false);
+    Ui64 carried_out_clears = g_log_clear_requests.load();
     bool is_flush_needed = false;
     while (true) {
       std::string *message = g_logger_queue.TryDequeue();
@@ -146,9 +194,20 @@ static std::mutex g_quit_mutex;
         out.close();
         Check(!(out.rdstate() & std::ios_base::failbit),
           "Error in LoggerThreadFunction. Can't close the file, file_name: ",
-          file_name);
+          kLogFileName);
         delete message;
         return;
+      }
+      const Ui64 asked_clears = g_log_clear_requests.load();
+      if (asked_clears != carried_out_clears) {
+        carried_out_clears = asked_clears;
+        ReopenLogFile(&out, &size, true);
+        is_flush_needed = false;
+      }
+      const Ui64 limit = g_log_size_limit.load();
+      if (limit != 0 && size >= limit) {
+        RotateLogFile(&out, &size);
+        is_flush_needed = false;
       }
       is_flush_needed = true;
   #ifdef ARCTIC_PLATFORM_MACOSX
@@ -157,11 +216,12 @@ static std::mutex g_quit_mutex;
       out.write(message->data(), static_cast<std::streamsize>(message->size()));
       Check(!(out.rdstate() & std::ios_base::badbit),
         "Error in LoggerThreadFunction. Can't write the file, file_name: ",
-        file_name);
+        kLogFileName);
       out.write(newline, 2);
       Check(!(out.rdstate() & std::ios_base::badbit),
         "Error in LoggerThreadFunction. Can't write the file, file_name: ",
-        file_name);
+        kLogFileName);
+      size += static_cast<Ui64>(message->size()) + 2;
       delete message;
     }
   }
@@ -206,12 +266,92 @@ static std::mutex g_quit_mutex;
       (new std::ostringstream, LogAndDelete);
   }
 
+  std::string LogFilePath() {
+#ifdef ARCTIC_PLATFORM_WEB
+    // The log goes to the console of the browser, there is no file to name.
+    return std::string();
+#else
+    {
+      std::lock_guard<std::mutex> lock(g_log_path_mutex);
+      if (!g_log_path.empty()) {
+        return g_log_path;
+      }
+    }
+    // Asked before the logger opened anything, so the answer is where it would
+    // open it with the current directory as it is now.
+    return CanonicalizePath(kLogFileName);
+#endif
+  }
+
+  void SetLogSizeLimit(Ui64 max_bytes) {
+    g_log_size_limit.store(max_bytes);
+  }
+
+  Ui64 LogSizeLimit() {
+    return g_log_size_limit.load();
+  }
+
+  void ClearLog() {
+    g_log_clear_requests.fetch_add(1);
+    // The thread acts on the request when it takes the next message out of the
+    // queue, and a request with nothing following it would sit there unseen.
+    Log("Log cleared");
+  }
+
+  void LogRunHeader() {
+    std::time_t now = std::time(nullptr);
+    std::tm broken_down;
+#ifdef ARCTIC_PLATFORM_WINDOWS
+    localtime_s(&broken_down, &now);
+#else
+    localtime_r(&now, &broken_down);
+#endif
+    char stamp[64];
+    if (std::strftime(stamp, sizeof(stamp), "%Y-%m-%d %H:%M:%S",
+        &broken_down) == 0) {
+      stamp[0] = '\0';
+    }
+    std::ostringstream header;
+    header << "=== run started " << stamp << " ===";
+    Log(header.str().c_str());
+    std::ostringstream where;
+    where << "run: log=" << LogFilePath();
+    std::string current_path;
+    if (GetCurrentPath(&current_path)) {
+      where << " cwd=" << current_path;
+    }
+    where << " exe=" << GetExecutablePath();
+    Log(where.str().c_str());
+    std::ostringstream args;
+    args << "run: args=";
+    const Engine *engine = GetEngine();
+    Si32 argc = engine->GetArgc();
+    const char *const *argv = engine->GetArgv();
+    for (Si32 i = 0; i < argc; ++i) {
+      if (i != 0) {
+        args << " ";
+      }
+      args << (argv[i] != nullptr ? argv[i] : "");
+    }
+    Log(args.str().c_str());
+  }
+
   void StartLogger() {
     std::lock_guard<std::mutex> lock(g_quit_mutex);
     Check(g_quit_item == nullptr,
         "StartLogger called with g_quit_item already initialized");
     g_is_log_enabled.store(true);
     g_quit_item = new std::string("g_quit_item");
+#ifndef ARCTIC_PLATFORM_WEB
+    {
+      // Resolved here rather than in the logger thread: the name is relative to
+      // the current directory, and the current directory can be changed by the
+      // application at any time afterwards, so the answer is only certain now.
+      std::string path = CanonicalizePath(kLogFileName);
+      std::lock_guard<std::mutex> path_lock(g_log_path_mutex);
+      g_log_path = path;
+    }
+#endif
     g_logger_thread = std::thread(arctic::LoggerThreadFunction);
     static bool is_exit_handler_registered = false;
     if (!is_exit_handler_registered) {
@@ -224,6 +364,9 @@ static std::mutex g_quit_mutex;
       std::atexit([]() { StopLogger(); });
       is_exit_handler_registered = true;
     }
+    // A log is opened for appending, so without a line like this the runs of a
+    // week run together and the end of the last one has to be guessed at.
+    LogRunHeader();
   }
 
   void StopLogger() {

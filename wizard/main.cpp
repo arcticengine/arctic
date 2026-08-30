@@ -163,7 +163,7 @@ Si32 SkipLauncherArgs(Si32 argc, const char *const *argv, Si32 i) {
 // is worse than none. A typo is a command word too, so "wizard creat mygame"
 // complains in the terminal instead of opening the interactive wizard. The engine
 // asks this before it creates the window, the GL context and the sound device,
-// see ARCTIC_HEADLESS_DECIDER.
+// see ARCTIC_STARTUP_MODE_DECIDER.
 bool IsWizardConsoleRun() {
   const Engine *engine = GetEngine();
   const Si32 argc = engine->GetArgc();
@@ -180,7 +180,11 @@ bool IsWizardConsoleRun() {
   // already skipped above, so a leftover dash is a real flag such as --help.
   return !first.empty() && first[0] != '-';
 }
-ARCTIC_HEADLESS_DECIDER(IsWizardConsoleRun)
+StartupMode DecideWizardStartupMode() {
+  return IsWizardConsoleRun() ? StartupMode::kNoWindow
+      : StartupMode::kWindowed;
+}
+ARCTIC_STARTUP_MODE_DECIDER(DecideWizardStartupMode)
 
 void PrintLine(const std::string &text) {
   std::cout << text << std::endl;

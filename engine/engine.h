@@ -85,6 +85,7 @@ class Engine {
   bool is_sw_renderer_enabled_ = true;
   bool is_headless_ = false;
   bool is_software_only_ = false;
+  StartupMode startup_mode_ = StartupMode::kWindowed;
 
   MathTables math_tables_;
 
@@ -141,22 +142,36 @@ class Engine {
 
   /// @brief Initializes the engine for headless mode.
   ///
-  /// Startup itself is decided earlier, by IsHeadlessStartupRequested and a
-  /// decider registered with ARCTIC_HEADLESS_DECIDER. Xcode's Debug Run flag
-  /// is not a reason to take this path; see SetHeadlessDecider.
+  /// Startup itself is decided earlier, by RequestedStartupMode and a decider
+  /// registered with ARCTIC_STARTUP_MODE_DECIDER. Xcode's Debug Run flag is
+  /// not a reason to take this path; see SetStartupModeDecider.
   void HeadlessInit();
 
   // Initializes a software backbuffer and input state without creating a
   // native window, OpenGL context or audio device.  This is the explicit
-  // software-only path (ARCTIC_HEADLESS + ARCTIC_DISABLE_HW).
+  // software-only path (StartupMode::kNoWindow, asked for from outside with
+  // ARCTIC_HEADLESS + ARCTIC_DISABLE_HW).
   // Xcode appending -NSDocumentRevisionsDebugMode YES is not that path;
-  // see SetHeadlessDecider.
+  // see SetStartupModeDecider.
   void InitHeadlessScreen(Si32 width, Si32 height);
 
   bool IsHeadless() const { return is_headless_; }
 
   // Suppresses presentation while retaining the hardware rendering path.
   void SetHeadless(bool value) { is_headless_ = value; }
+
+  /// @brief How this run started, as decided before the window was created
+  ///
+  /// Set once by the platform startup code, so anything running later can ask
+  /// instead of re-reading the environment or guessing. The distinction that
+  /// matters most often is "is there a window on the screen at all": a modal
+  /// alert, a cursor grab or a "press any key" prompt has nobody to talk to
+  /// in either of the two windowless modes.
+  StartupMode GetStartupMode() const { return startup_mode_; }
+  void SetStartupMode(StartupMode mode) { startup_mode_ = mode; }
+  bool IsWindowOnScreen() const {
+    return startup_mode_ == StartupMode::kWindowed;
+  }
   bool IsSoftwareOnly() const { return is_software_only_; }
 
   /// @brief Initializes the engine with the specified width and height.

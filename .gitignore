@@ -59,6 +59,7 @@ cmake_install.cmake
 # final artefacts
 wizard/wizard
 log.txt
+log_prev.txt
 
 # emscripten build artefacts
 *.aw.js
@@ -68,3 +69,5 @@ log.txt
 *.wasm.map
 *.ww.js
 .cursor/hooks/state/continual-learning-index.json
+tests/CTestTestfile.cmake
+tests/Testing/Temporary

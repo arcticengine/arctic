@@ -1046,9 +1046,15 @@ void CreateMainWindow(SystemInfo *system_info) {
   arctic::Check(inner_window_handle, "Can't create the Main Window! Code: WIN08.");
 
   //  ShowWindow(window_handle, cmd_show);
-  ShowWindow(window_handle, SW_MINIMIZE);
-  ShowWindow(window_handle, SW_MAXIMIZE);
-  UpdateWindow(window_handle);
+  if (arctic::RequestedStartupMode() == arctic::StartupMode::kWindowed) {
+    ShowWindow(window_handle, SW_MINIMIZE);
+    ShowWindow(window_handle, SW_MAXIMIZE);
+    UpdateWindow(window_handle);
+  } else {
+    // The window and the GL context are made as usual so the GPU still draws
+    // every frame; it is only never put on the screen.
+    ShowWindow(window_handle, SW_HIDE);
+  }
 
   Check(!!system_info, "Error, system_info: nullptr in CreateMainWindow");
   system_info->window_handle = window_handle;
@@ -1502,8 +1508,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance_handle,
   // Asked before the window, the GL context and the sound device are created, so
   // that a console subcommand of a GUI binary can run without any of them. The
   // command line is already in the engine for the decider to read, see
-  // SetHeadlessDecider in arctic_platform.h.
-  if (arctic::IsHeadlessStartupRequested()) {
+  // SetStartupModeDecider in arctic_platform.h.
+  arctic::GetEngine()->SetStartupMode(arctic::RequestedStartupMode());
+  if (arctic::GetEngine()->GetStartupMode()
+      == arctic::StartupMode::kNoWindow) {
     arctic::StartLogger();
     arctic::GetEngine()->InitHeadlessScreen(1920, 1080);
     arctic::PrepareForTheEasyMainCall();

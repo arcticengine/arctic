@@ -164,6 +164,60 @@ void GatherSphereContacts(const CollideSoup &soup, const Vec3F &center,
   }
 }
 
+namespace {
+
+// How alarming a solver outcome is, so a merged report can keep the worst
+// one. A degenerate wedge (no feasible tangent at all) matters most; the
+// PGS fallback is next because it means the exact solver did not apply.
+Si32 OutcomeSeverity(ContactSolveOutcome outcome) {
+  switch (outcome) {
+    case ContactSolveOutcome::kFree:
+      return 0;
+    case ContactSolveOutcome::kFace:
+      return 1;
+    case ContactSolveOutcome::kEdge:
+      return 2;
+    case ContactSolveOutcome::kCorner:
+      return 3;
+    case ContactSolveOutcome::kPgs:
+      return 4;
+    case ContactSolveOutcome::kDegenerate:
+      return 5;
+  }
+  return 0;
+}
+
+}  // namespace
+
+SphereStepResult MergeSphereStepResults(const SphereStepResult &earlier,
+    const SphereStepResult &later) {
+  SphereStepResult out = later;
+  out.contact_count = std::max(earlier.contact_count, later.contact_count);
+  if (OutcomeSeverity(earlier.outcome) > OutcomeSeverity(later.outcome)) {
+    out.outcome = earlier.outcome;
+  }
+  out.position_correction = earlier.position_correction
+      + later.position_correction;
+  out.substep_budget_exhausted = earlier.substep_budget_exhausted
+      || later.substep_budget_exhausted;
+  out.support.has_wall = earlier.support.has_wall || later.support.has_wall;
+  out.support.has_ceiling = earlier.support.has_ceiling
+      || later.support.has_ceiling;
+  if (earlier.support.has_floor && !later.support.has_floor) {
+    out.support.has_floor = true;
+    out.support.floor_normal = earlier.support.floor_normal;
+    out.support.floor_material = earlier.support.floor_material;
+  } else if (earlier.support.has_floor && later.support.has_floor
+      && earlier.support.floor_normal.y > later.support.floor_normal.y) {
+    // Same rule as within one substep: the flattest floor touched wins, so
+    // a game reading the floor normal gets the face it is actually riding
+    // and not whichever steep facet happened to be touched last.
+    out.support.floor_normal = earlier.support.floor_normal;
+    out.support.floor_material = earlier.support.floor_material;
+  }
+  return out;
+}
+
 SphereStepResult StepSphereBody(const CollideSoup &soup,
     PhysicsManifold *manifold, Vec3F *position, float radius,
     const Vec3F &wish_velocity, float dt, const PhysicsStepConfig &config) {
@@ -335,17 +389,24 @@ SphereStepResult StepSphereBody(const CollideSoup &soup,
 
 namespace {
 
-struct SweepDetail {
-  Vec3F position;
-  SphereTriangleHit hit;
-};
+// Turns a margin in world units into a fraction of a path of this length,
+// so the sweeps below can stop a fixed distance short of what they hit.
+float BackoffFraction(float travel, float backoff) {
+  if (travel <= 1.0e-10f || backoff <= 0.0f) {
+    return 0.0f;
+  }
+  return backoff / travel;
+}
 
-SweepDetail SweepSphereDetail(const CollideSoup &soup, const Vec3F &from,
-    const Vec3F &to, float radius) {
-  SweepDetail out;
+}  // namespace
+
+SweepSphereResult SweepSphere(const CollideSoup &soup, const Vec3F &from,
+    const Vec3F &to, float radius, float backoff) {
+  SweepSphereResult out;
   out.position = to;
   Vec3F vel = to - from;
-  if (LengthSquared(vel) < 1.0e-10f) {
+  float travel = Length(vel);
+  if (travel <= 1.0e-5f) {
     return out;
   }
   MovingSphere sph(from, radius, vel);
@@ -359,17 +420,18 @@ SweepDetail SweepSphereDetail(const CollideSoup &soup, const Vec3F &from,
   if (!best.hit || best.time >= 1.0f) {
     return out;
   }
-  out.hit = best;
-  float t = std::max(0.0f, best.time * 0.9f);
+  out.normal = NormalizeSafe(best.normal);
+  out.time = best.time;
+  float t = best.time - BackoffFraction(travel, backoff);
+  if (t <= 0.0f) {
+    t = 0.0f;
+    out.kind = (best.time <= 0.0f) ? SweepSphereResult::Kind::kStartOverlap
+        : SweepSphereResult::Kind::kHit;
+  } else {
+    out.kind = SweepSphereResult::Kind::kHit;
+  }
   out.position = from + vel * t;
   return out;
-}
-
-}  // namespace
-
-Vec3F SweepSphere(const CollideSoup &soup, const Vec3F &from,
-    const Vec3F &to, float radius) {
-  return SweepSphereDetail(soup, from, to, radius).position;
 }
 
 bool UnstickSphereBody(const CollideSoup &soup, Vec3F *center, float radius,
@@ -422,8 +484,9 @@ bool UnstickSphereBody(const CollideSoup &soup, Vec3F *center, float radius,
 }
 
 Vec3F ClampSegmentToSurface(const CollideSoup &soup, const Vec3F &from,
-    const Vec3F &to) {
-  if (LengthSquared(to - from) < 1.0e-20f) {
+    const Vec3F &to, float backoff) {
+  float travel = Length(to - from);
+  if (travel <= 1.0e-10f) {
     return to;
   }
   float best_t = 1.0f;
@@ -440,7 +503,7 @@ Vec3F ClampSegmentToSurface(const CollideSoup &soup, const Vec3F &from,
   if (best_t >= 1.0f) {
     return to;
   }
-  float s = std::max(0.0f, best_t * 0.9f);
+  float s = std::max(0.0f, best_t - BackoffFraction(travel, backoff));
   return from + (to - from) * s;
 }
 
@@ -498,7 +561,7 @@ bool QuerySphereHeightBelow(const CollideSoup &soup, float x, float z,
 }
 
 SphereDropResult DropSphereBody(const CollideSoup &soup, const Vec3F &start,
-    float max_drop, float radius) {
+    float max_drop, float radius, float backoff) {
   SphereDropResult result;
   result.position = start;
   result.kind = SphereDropResult::Kind::kBlockedAtStart;
@@ -507,21 +570,22 @@ SphereDropResult DropSphereBody(const CollideSoup &soup, const Vec3F &start,
   }
   Vec3F dest = start;
   dest.y -= max_drop;
-  SweepDetail sweep = SweepSphereDetail(soup, start, dest, radius);
-  Vec3F at = ClampSegmentToSurface(soup, start, sweep.position);
+  SweepSphereResult sweep = SweepSphere(soup, start, dest, radius, backoff);
+  bool sweep_hit = sweep.kind != SweepSphereResult::Kind::kClear;
+  Vec3F at = ClampSegmentToSurface(soup, start, sweep.position, backoff);
   UnstickSphereBody(soup, &at, radius);
-  at = ClampSegmentToSurface(soup, start, at);
+  at = ClampSegmentToSurface(soup, start, at, backoff);
   result.position = at;
   result.fall = start.y - at.y;
-  if (sweep.hit.hit) {
-    result.normal = NormalizeSafe(sweep.hit.normal);
+  if (sweep_hit) {
+    result.normal = sweep.normal;
   }
   float slack = std::max(1.0e-6f, max_drop * 1.0e-5f);
   if (result.fall <= slack) {
     result.fall = 0.0f;
     result.position = start;
     result.kind = SphereDropResult::Kind::kBlockedAtStart;
-  } else if (!sweep.hit.hit && result.fall >= max_drop - slack) {
+  } else if (!sweep_hit && result.fall >= max_drop - slack) {
     result.kind = SphereDropResult::Kind::kNothingBelow;
     result.normal = Vec3F(0.0f, 0.0f, 0.0f);
   } else {

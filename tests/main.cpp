@@ -2,15 +2,19 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>  // NOLINT
 #include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 #include <deque>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <thread>  // NOLINT
+#include <type_traits>
 #include <vector>
 
 #include "engine/arctic_pi.h"
@@ -44,6 +48,7 @@
 #include "engine/sphere_vs_triangle.h"
 #include "engine/collide_soup.h"
 #include "engine/physics_contact.h"
+#include "engine/physics_debug.h"
 #include "engine/physics_solver.h"
 #include "engine/physics_sphere_body.h"
 #include "engine/physics_world.h"
@@ -3838,23 +3843,161 @@ void test_typed_text_and_generic_modifiers() {
   ShowFrame();
 }
 
-// The decision to start without a window is taken before main gets going, from a
-// function the application registers. The registration is the only part of it a
-// test can reach; the startup code that asks the question runs once, before this.
-void test_headless_decider() {
-  const bool env_asks =
-      std::getenv("ARCTIC_HEADLESS") != nullptr &&
-      std::getenv("ARCTIC_DISABLE_HW") != nullptr;
-  if (!env_asks) {
+// How a run starts is decided before main gets going, from a function the
+// application registers. The registration is the only part of it a test can
+// reach; the startup code that asks the question runs once, before this.
+void test_startup_mode_decider() {
+  const bool env_hides = std::getenv("ARCTIC_HEADLESS") != nullptr;
+  const bool env_asks_no_window =
+      env_hides && std::getenv("ARCTIC_DISABLE_HW") != nullptr;
+  if (!env_hides) {
+    TEST_CHECK_(arctic::RequestedStartupMode()
+            == arctic::StartupMode::kWindowed,
+        "a binary with no decider and a clean environment must start "
+        "windowed, got %d", static_cast<int>(arctic::RequestedStartupMode()));
+  }
+
+  // The environment wins over the decider, so a run can always be hidden from
+  // the outside: that is how the self-tests of a game are run.
+  TEST_CHECK(arctic::SetStartupModeDecider(
+      []() { return arctic::StartupMode::kNoWindow; }));
+  if (!env_hides) {
+    TEST_CHECK(arctic::IsHeadlessStartupRequested());
+    TEST_CHECK(arctic::RequestedStartupMode()
+        == arctic::StartupMode::kNoWindow);
+  }
+
+  // A hidden window is its own answer, and must not be mistaken for the mode
+  // that has no window and no GL context at all.
+  arctic::SetStartupModeDecider(
+      []() { return arctic::StartupMode::kHiddenWindow; });
+  if (!env_hides) {
+    TEST_CHECK_(arctic::RequestedStartupMode()
+            == arctic::StartupMode::kHiddenWindow,
+        "a decider asking for a hidden window must be heard, got %d",
+        static_cast<int>(arctic::RequestedStartupMode()));
     TEST_CHECK_(!arctic::IsHeadlessStartupRequested(),
-        "a binary with no decider asked for a headless run");
+        "a hidden window still has a window and a GL context, so it is not a "
+        "headless start");
   }
-  TEST_CHECK(arctic::SetHeadlessDecider([]() { return true; }));
-  TEST_CHECK(arctic::IsHeadlessStartupRequested());
-  arctic::SetHeadlessDecider(nullptr);
-  if (!env_asks) {
-    TEST_CHECK(!arctic::IsHeadlessStartupRequested());
+
+  arctic::SetStartupModeDecider(nullptr);
+  if (!env_hides) {
+    TEST_CHECK(arctic::RequestedStartupMode()
+        == arctic::StartupMode::kWindowed);
+  } else if (env_asks_no_window) {
+    TEST_CHECK(arctic::RequestedStartupMode()
+        == arctic::StartupMode::kNoWindow);
+  } else {
+    TEST_CHECK_(arctic::RequestedStartupMode()
+            == arctic::StartupMode::kHiddenWindow,
+        "ARCTIC_HEADLESS on its own means a hidden window, got %d",
+        static_cast<int>(arctic::RequestedStartupMode()));
   }
+}
+
+namespace {
+
+// The logger writes from a thread of its own and flushes once its queue runs
+// dry, so a test that wants to read what it wrote has to give it a moment.
+// Waiting for a condition rather than for a fixed time keeps the test both
+// quick when the machine is idle and sound when it is not.
+bool WaitForLogFile(const std::string &path,
+    const std::function<bool(const std::string &)> &is_as_wanted,
+    std::string *out_text) {
+  for (Si32 attempt = 0; attempt < 200; ++attempt) {
+    std::ifstream file(path, std::ios_base::binary);
+    std::ostringstream text;
+    if (file.is_open()) {
+      text << file.rdbuf();
+    }
+    *out_text = text.str();
+    if (is_as_wanted(*out_text)) {
+      return true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return false;
+}
+
+bool LogFileHolds(const std::string &text, const std::string &part) {
+  return text.find(part) != std::string::npos;
+}
+
+}  // namespace
+
+// Two runs of a game land in the same log, and a long session grows it past the
+// point where the end of the last run can be found by eye. Both are answered
+// here: a run says in the log where and when it started, a run can throw away
+// what came before it, and a size limit keeps the newer half short.
+void test_log_file_is_findable_clearable_and_rotated() {
+  const std::string path = arctic::LogFilePath();
+  TEST_CHECK_(!path.empty(), "the log file has no path");
+  TEST_CHECK_(path.size() > 8
+          && path.compare(path.size() - 8, 8, "/log.txt") == 0,
+      "the log path '%s' does not name log.txt", path.c_str());
+  TEST_CHECK_(path[0] == '/', "the log path '%s' is not absolute",
+      path.c_str());
+
+  const std::string previous_path =
+      path.substr(0, path.size() - 8) + "/log_prev.txt";
+  const Ui64 limit_before = arctic::LogSizeLimit();
+  std::remove(previous_path.c_str());
+
+  // A clear has to be a clear: a marker logged before it must be gone, and one
+  // logged after it must be there.
+  arctic::SetLogSizeLimit(0);
+  *arctic::Log() << "test_log before the clear 0123456789";
+  std::string text;
+  TEST_CHECK_(WaitForLogFile(path, [](const std::string &t) {
+        return LogFileHolds(t, "test_log before the clear");
+      }, &text), "the line logged before the clear never reached the file");
+  arctic::ClearLog();
+  *arctic::Log() << "test_log after the clear 0123456789";
+  TEST_CHECK_(WaitForLogFile(path, [](const std::string &t) {
+        return LogFileHolds(t, "test_log after the clear");
+      }, &text), "the line logged after the clear never reached the file");
+  TEST_CHECK_(!LogFileHolds(text, "test_log before the clear"),
+      "the clear left the older lines in a %d byte log",
+      static_cast<Si32>(text.size()));
+
+  // Rotation: with a small limit, enough lines push the older ones out into
+  // log_prev.txt, and what is left is short and ends with the newest line.
+  arctic::LogRunHeader();
+  arctic::SetLogSizeLimit(4096);
+  for (Si32 i = 0; i < 400; ++i) {
+    *arctic::Log() << "test_log filler line " << i
+      << " 0123456789 0123456789 0123456789 0123456789";
+  }
+  *arctic::Log() << "test_log last line after rotation";
+  TEST_CHECK_(WaitForLogFile(path, [](const std::string &t) {
+        return LogFileHolds(t, "test_log last line after rotation");
+      }, &text), "the last line never reached the file");
+  TEST_CHECK_(text.size() < 4096 + 4096,
+      "the log grew to %d bytes with a 4096 byte limit",
+      static_cast<Si32>(text.size()));
+  TEST_CHECK_(!LogFileHolds(text, "test_log filler line 0 "),
+      "the first filler line is still in a log that was rotated");
+  // Rotation keeps two files, so the filler that no longer fits is in the
+  // previous one -- not necessarily the very first line of it, because that
+  // many lines rotate the log more than once and only the last two files are
+  // kept, which is the whole point of the limit.
+  std::string previous_text;
+  TEST_CHECK_(WaitForLogFile(previous_path, [](const std::string &t) {
+        return LogFileHolds(t, "test_log filler line ");
+      }, &previous_text),
+      "the lines pushed out of the log did not end up in log_prev.txt");
+  TEST_CHECK_(!LogFileHolds(previous_text, "test_log last line after rotation"),
+      "the newest line ended up in log_prev.txt as well");
+
+  arctic::SetLogSizeLimit(limit_before);
+  arctic::ClearLog();
+  arctic::LogRunHeader();
+  TEST_CHECK_(WaitForLogFile(path, [](const std::string &t) {
+        return LogFileHolds(t, "=== run started ");
+      }, &text), "the run header is not written to a fresh log");
+  TEST_CHECK_(LogFileHolds(text, "run: log=" + path),
+      "the run header does not tell where the log is: %s", text.c_str());
 }
 
 namespace {
@@ -9044,58 +9187,48 @@ void test_physics_sphere_body_rolls_over_road_seam_skirt() {
   const float road_y = 6.09000349f;
   const float seam_z = 55.8258095f;
 
-  CollisionTriangle road_near_a = MakeTri(
+  // The fixture builder is what keeps the two skirts really being the
+  // near-vertical faces the log describes, standing back to back across the
+  // seam: a transcription that flipped one of them would otherwise pass no
+  // matter what the contact code did.
+  const Vec3F up(0.0f, 1.0f, 0.0f);
+  const Vec3F toward_z(0.0f, 0.0f, 1.0f);
+  const Vec3F away_z(0.0f, 0.0f, -1.0f);
+  CollideSoupFixture fixture;
+  fixture.AddFacing(
       Vec3F(-76.2699127f, 6.09000969f, 55.3730125f),
       Vec3F(-76.5137024f, 6.09001017f, 55.3653564f),
-      Vec3F(-76.507164f, 6.09000349f, 55.8258095f));
-  CollisionTriangle road_near_b = MakeTri(
+      Vec3F(-76.507164f, 6.09000349f, 55.8258095f), up);
+  fixture.AddFacing(
       Vec3F(-76.2699127f, 6.09000969f, 55.3730125f),
       Vec3F(-76.507164f, 6.09000349f, 55.8258095f),
-      Vec3F(-76.2706528f, 6.09000158f, 55.8258934f));
-  CollisionTriangle road_far_a = MakeTri(
+      Vec3F(-76.2706528f, 6.09000158f, 55.8258934f), up);
+  fixture.AddFacing(
       Vec3F(-76.4949417f, 6.09000349f, 55.8269501f),
       Vec3F(-76.4944534f, 6.09000921f, 56.2978592f),
-      Vec3F(-76.2528305f, 6.09000921f, 56.289856f));
-  CollisionTriangle road_far_b = MakeTri(
+      Vec3F(-76.2528305f, 6.09000921f, 56.289856f), up);
+  fixture.AddFacing(
       Vec3F(-76.4949417f, 6.09000349f, 55.8269501f),
       Vec3F(-76.2528305f, 6.09000921f, 56.289856f),
-      Vec3F(-76.2614441f, 6.09000015f, 55.8268738f));
-  CollisionTriangle skirt_near = MakeTri(
+      Vec3F(-76.2614441f, 6.09000015f, 55.8268738f), up);
+  fixture.AddFacing(
       Vec3F(-77.3691711f, 4.19974661f, 55.8515434f),
       Vec3F(-76.2706528f, 6.09000158f, 55.8258934f),
-      Vec3F(-76.507164f, 6.09000349f, 55.8258095f));
-  CollisionTriangle skirt_far = MakeTri(
+      Vec3F(-76.507164f, 6.09000349f, 55.8258095f), toward_z);
+  Si32 skirt_far = fixture.AddFacing(
       Vec3F(-77.3672943f, 4.19974613f, 55.810318f),
       Vec3F(-76.4949417f, 6.09000349f, 55.8269501f),
-      Vec3F(-76.2614441f, 6.09000015f, 55.8268738f));
+      Vec3F(-76.2614441f, 6.09000015f, 55.8268738f), away_z);
+  CollideSoup soup;
+  fixture.Build(&soup);
+  TEST_CHECK_(fixture.Ok(), "The fixture must describe the logged seam:\n%s",
+      fixture.Problems().c_str());
 
-  // The fixture only works if the two skirts really are the near-vertical
-  // faces the log describes, with their top edge level with the road: a
-  // fixture that quietly lost them would pass no matter what the contact
-  // code did.
-  Vec3F near_n = skirt_near.n / Length(skirt_near.n);
-  Vec3F far_n = skirt_far.n / Length(skirt_far.n);
-  TEST_CHECK_(std::fabs(near_n.y) < 0.05f && std::fabs(far_n.y) < 0.05f,
-      "Both skirts must be near-vertical faces, near_n.y=%f far_n.y=%f",
-      near_n.y, far_n.y);
-  TEST_CHECK_(near_n.z > 0.9f && far_n.z < -0.9f,
-      "The skirts must stand back to back across the seam, near_n.z=%f "
-      "far_n.z=%f", near_n.z, far_n.z);
-  float skirt_top = std::max(std::max(skirt_far.a.y, skirt_far.b.y),
-      skirt_far.c.y);
+  const CollisionTriangle &far_tri = fixture.Triangle(skirt_far);
+  float skirt_top = std::max(std::max(far_tri.a.y, far_tri.b.y), far_tri.c.y);
   TEST_CHECK_(std::fabs(skirt_top - road_y) < 1.0e-3f,
       "The skirt's top edge must sit at the road level the sphere rolls "
       "on, skirt_top=%f road_y=%f", skirt_top, road_y);
-
-  std::vector<Vec3F> pa = {road_near_a.a, road_near_b.a, road_far_a.a,
-      road_far_b.a, skirt_near.a, skirt_far.a};
-  std::vector<Vec3F> pb = {road_near_a.b, road_near_b.b, road_far_a.b,
-      road_far_b.b, skirt_near.b, skirt_far.b};
-  std::vector<Vec3F> pc = {road_near_a.c, road_near_b.c, road_far_a.c,
-      road_far_b.c, skirt_near.c, skirt_far.c};
-  std::vector<PhysicsMaterial> mats(6);
-  CollideSoup soup;
-  soup.Build(pa, pb, pc, mats, 8);
 
   PhysicsStepConfig config;
   config.max_substep_move = 1.15f * units;
@@ -9244,43 +9377,37 @@ void test_physics_drop_probe_conventions_at_a_seam() {
   const float seam_z = 55.8258095f;
   const float up = 0.0702245f;
 
-  CollisionTriangle road_a = MakeTri(
+  const Vec3F faces_up(0.0f, 1.0f, 0.0f);
+  const Vec3F away_z(0.0f, 0.0f, -1.0f);
+  CollideSoupFixture fixture;
+  fixture.AddFacing(
       Vec3F(-76.2699127f, 6.09000969f, 55.3730125f),
       Vec3F(-76.5137024f, 6.09001017f, 55.3653564f),
-      Vec3F(-76.507164f, 6.09000349f, 55.8258095f));
-  CollisionTriangle road_b = MakeTri(
+      Vec3F(-76.507164f, 6.09000349f, 55.8258095f), faces_up);
+  fixture.AddFacing(
       Vec3F(-76.2699127f, 6.09000969f, 55.3730125f),
       Vec3F(-76.507164f, 6.09000349f, 55.8258095f),
-      Vec3F(-76.2706528f, 6.09000158f, 55.8258934f));
-  CollisionTriangle skirt = MakeTri(
+      Vec3F(-76.2706528f, 6.09000158f, 55.8258934f), faces_up);
+  // The skirt has to face the sphere for it to graze the fall path at all.
+  fixture.AddFacing(
       Vec3F(-77.3672943f, 4.19974613f, 55.810318f),
       Vec3F(-76.4949417f, 6.09000349f, 55.8269501f),
-      Vec3F(-76.2614441f, 6.09000015f, 55.8268738f));
-
-  Vec3F road_n = road_a.n / Length(road_a.n);
-  Vec3F skirt_n = skirt.n / Length(skirt.n);
-  TEST_CHECK_(road_n.y > 0.99f,
-      "The road must face up for the floor-only probe to see it, "
-      "road_n=(%f,%f,%f)", road_n.x, road_n.y, road_n.z);
-  TEST_CHECK_(skirt_n.z < -0.99f,
-      "The skirt must face the sphere for it to graze the fall path at "
-      "all, skirt_n=(%f,%f,%f)", skirt_n.x, skirt_n.y, skirt_n.z);
-
-  std::vector<Vec3F> pa = {road_a.a, road_b.a, skirt.a};
-  std::vector<Vec3F> pb = {road_a.b, road_b.b, skirt.b};
-  std::vector<Vec3F> pc = {road_a.c, road_b.c, skirt.c};
-  std::vector<PhysicsMaterial> mats(3);
+      Vec3F(-76.2614441f, 6.09000015f, 55.8268738f), away_z);
   CollideSoup soup;
-  soup.Build(pa, pb, pc, mats, 8);
+  fixture.Build(&soup);
+  TEST_CHECK_(fixture.Ok(), "The fixture must describe a road and the skirt "
+      "hanging off its edge:\n%s", fixture.Problems().c_str());
 
   const float max_drop = up + 40.0f * 0.140449f;
+  const float backoff = 0.01f;
   Vec3F resting(-76.4620132f, 6.36600637f, 55.8240395f);
   Vec3F from(resting.x, resting.y + up, resting.z);
   TEST_CHECK_(std::fabs(resting.y - radius - road_y) < 1.0e-3f,
       "The sphere must start resting on the road, bottom=%f road_y=%f",
       resting.y - radius, road_y);
 
-  SphereDropResult landed = DropSphereBody(soup, from, max_drop, radius);
+  SphereDropResult landed = DropSphereBody(soup, from, max_drop, radius,
+      backoff);
   TEST_CHECK_(landed.kind == SphereDropResult::Kind::kBlockedAtStart,
       "Next to the seam the drop cannot start at all and must say so "
       "instead of handing back a place that looks like a landing, kind=%d "
@@ -9308,9 +9435,10 @@ void test_physics_drop_probe_conventions_at_a_seam() {
       "A sphere already resting on the road must measure as being exactly "
       "at its height, err=%f", err);
 
-  // The margin the sweeps keep is a fraction of the distance traveled, so
-  // a probe that starts high is where it would show: measured from four
-  // units up, a tenth of the fall is most of half a unit of made-up height.
+  // A measurement must not depend on where the probe was launched from,
+  // which is exactly what a margin taken as a fraction of the path would
+  // break: from four units up, a tenth of the fall was most of half a unit
+  // of made-up height.
   Vec3F high(resting.x, resting.y + 4.0f, resting.z);
   float high_surface = -1000.0f;
   TEST_CHECK_(QuerySphereHeightBelow(soup, high.x, high.z, high.y, max_drop,
@@ -9326,7 +9454,7 @@ void test_physics_drop_probe_conventions_at_a_seam() {
   Vec3F clear(-76.4f, road_y + radius, 55.5f);
   Vec3F clear_from(clear.x, clear.y + up, clear.z);
   SphereDropResult clear_landed = DropSphereBody(soup, clear_from, max_drop,
-      radius);
+      radius, backoff);
   TEST_CHECK_(clear_landed.kind == SphereDropResult::Kind::kLanded,
       "Away from the seam the drop must land, kind=%d",
       static_cast<int>(clear_landed.kind));
@@ -9338,16 +9466,17 @@ void test_physics_drop_probe_conventions_at_a_seam() {
   TEST_CHECK_(QuerySphereHeightBelow(soup, clear_from.x, clear_from.z,
           clear_from.y, max_drop, radius, 0.45f, &clear_surface),
       "The floor-only probe must find the road away from the seam too");
-  TEST_CHECK_(std::fabs(clear_landed.position.y - (clear_surface + radius))
-          < 0.01f,
-      "Away from the seam the drop query's landing center and the floor "
-      "probe's surface plus radius must agree, landed.y=%f surface+r=%f",
-      clear_landed.position.y, clear_surface + radius);
+  float clear_gap = clear_landed.position.y - (clear_surface + radius);
+  TEST_CHECK_(std::fabs(clear_gap - backoff) < 0.002f,
+      "Away from the seam a landing must sit exactly the asked-for margin "
+      "above what the floor probe reports, gap=%f backoff=%f", clear_gap,
+      backoff);
 
   // Nothing below is its own answer, distinct from both a landing and a
   // blocked start.
   Vec3F over_edge(-76.4f, road_y + radius, 56.5f);
-  SphereDropResult fell = DropSphereBody(soup, over_edge, 5.0f, radius);
+  SphereDropResult fell = DropSphereBody(soup, over_edge, 5.0f, radius,
+      backoff);
   TEST_CHECK_(fell.kind == SphereDropResult::Kind::kNothingBelow,
       "With nothing below the drop must say so, kind=%d",
       static_cast<int>(fell.kind));
@@ -9359,6 +9488,612 @@ void test_physics_drop_probe_conventions_at_a_seam() {
           over_edge.y, 5.0f, radius, 0.45f, &none),
       "With nothing below, the floor-only probe must report a miss instead "
       "of a height, reported=%f", none);
+}
+
+void test_physics_sweep_backoff_is_a_distance_not_a_fraction() {
+  // The margin a sweep keeps off what it hits guards against float slop
+  // around the contact, and that slop does not grow with how far the sweep
+  // happened to travel. While the margin was a tenth of the path, the same
+  // wall stopped a long sweep a whole unit early and a short one a hair
+  // early, so a camera boom drawn far back hung visibly short of the wall
+  // and a probe launched from high above read the ground as high above too.
+  const float radius = 0.5f;
+  const float backoff = 0.05f;
+  const float wall_x = 0.0f;
+
+  CollisionTriangle wall_a = MakeTri(Vec3F(0.0f, -5.0f, -5.0f),
+      Vec3F(0.0f, 5.0f, 5.0f), Vec3F(0.0f, 5.0f, -5.0f));
+  CollisionTriangle wall_b = MakeTri(Vec3F(0.0f, -5.0f, -5.0f),
+      Vec3F(0.0f, -5.0f, 5.0f), Vec3F(0.0f, 5.0f, 5.0f));
+  Vec3F wall_n = wall_a.n / Length(wall_a.n);
+  TEST_CHECK_(wall_n.x < -0.99f,
+      "The wall must face the oncoming sphere, n=(%f,%f,%f)", wall_n.x,
+      wall_n.y, wall_n.z);
+
+  std::vector<Vec3F> pa = {wall_a.a, wall_b.a};
+  std::vector<Vec3F> pb = {wall_a.b, wall_b.b};
+  std::vector<Vec3F> pc = {wall_a.c, wall_b.c};
+  std::vector<PhysicsMaterial> mats(2);
+  CollideSoup soup;
+  soup.Build(pa, pb, pc, mats, 8);
+
+  Vec3F target(2.0f, 0.0f, 0.0f);
+  float expected_x = wall_x - radius - backoff;
+
+  SweepSphereResult far_hit = SweepSphere(soup, Vec3F(-20.0f, 0.0f, 0.0f),
+      target, radius, backoff);
+  SweepSphereResult near_hit = SweepSphere(soup, Vec3F(-0.8f, 0.0f, 0.0f),
+      target, radius, backoff);
+  TEST_CHECK_(far_hit.kind == SweepSphereResult::Kind::kHit,
+      "A sweep into the wall must report a hit, kind=%d",
+      static_cast<int>(far_hit.kind));
+  TEST_CHECK_(near_hit.kind == SweepSphereResult::Kind::kHit,
+      "A short sweep into the wall must report a hit too, kind=%d",
+      static_cast<int>(near_hit.kind));
+  TEST_CHECK_(std::fabs(far_hit.position.x - expected_x) < 0.002f,
+      "A sweep of twenty units must stop the asked-for margin short of the "
+      "wall, x=%f expected=%f", far_hit.position.x, expected_x);
+  TEST_CHECK_(std::fabs(near_hit.position.x - expected_x) < 0.002f,
+      "A sweep of less than a unit must stop at the very same place, x=%f "
+      "expected=%f", near_hit.position.x, expected_x);
+  TEST_CHECK_(std::fabs(far_hit.position.x - near_hit.position.x) < 0.001f,
+      "Distance traveled must not change where a sweep stops, far=%f "
+      "near=%f", far_hit.position.x, near_hit.position.x);
+  TEST_CHECK_(far_hit.normal.x < -0.99f,
+      "A hit must report the way out of what was hit, normal=(%f,%f,%f)",
+      far_hit.normal.x, far_hit.normal.y, far_hit.normal.z);
+
+  SweepSphereResult exact = SweepSphere(soup, Vec3F(-20.0f, 0.0f, 0.0f),
+      target, radius, 0.0f);
+  TEST_CHECK_(std::fabs(exact.position.x - (wall_x - radius)) < 0.002f,
+      "A zero margin must stop exactly at the touch, x=%f expected=%f",
+      exact.position.x, wall_x - radius);
+
+  SweepSphereResult clear = SweepSphere(soup, Vec3F(-20.0f, 0.0f, 0.0f),
+      Vec3F(-10.0f, 0.0f, 0.0f), radius, backoff);
+  TEST_CHECK_(clear.kind == SweepSphereResult::Kind::kClear,
+      "A sweep that reaches its target must say the way was clear, kind=%d",
+      static_cast<int>(clear.kind));
+  TEST_CHECK_(std::fabs(clear.position.x + 10.0f) < 1.0e-5f,
+      "A clear sweep must arrive at its target, x=%f", clear.position.x);
+  TEST_CHECK_(LengthSquared(clear.normal) < 1.0e-10f,
+      "A clear sweep has nothing to report a normal for, normal=(%f,%f,%f)",
+      clear.normal.x, clear.normal.y, clear.normal.z);
+
+  // Already touching is its own outcome: the position coming back unchanged
+  // must not be readable as "the way ahead is blocked", which is the trap
+  // the drop probe fell into at a road seam.
+  SweepSphereResult stuck = SweepSphere(soup, Vec3F(-0.45f, 0.0f, 0.0f),
+      target, radius, backoff);
+  TEST_CHECK_(stuck.kind == SweepSphereResult::Kind::kStartOverlap,
+      "A sweep that starts inside the wall must say so, kind=%d time=%f",
+      static_cast<int>(stuck.kind), stuck.time);
+  TEST_CHECK_(std::fabs(stuck.position.x + 0.45f) < 1.0e-6f,
+      "A sweep blocked at the start must not move, x=%f", stuck.position.x);
+}
+
+void test_physics_step_report_merges_substeps() {
+  // A Step can be cut into several substeps, and the report has to describe
+  // the whole step. While it was simply the last substep's result, anything
+  // that happened in an earlier one -- a floor touched, a wall hit, a
+  // correction applied -- vanished, and a game that asks "what am I standing
+  // on" once per frame saw a body that touched nothing.
+  SphereStepResult early;
+  early.contact_count = 3;
+  early.outcome = ContactSolveOutcome::kDegenerate;
+  early.position_correction = Vec3F(0.1f, 0.2f, 0.0f);
+  early.velocity = Vec3F(9.0f, 0.0f, 0.0f);
+  early.support.has_floor = true;
+  early.support.floor_normal = Vec3F(0.0f, 1.0f, 0.0f);
+  early.support.floor_material.grip = 0.25f;
+  early.support.has_wall = true;
+  early.support.floor_distance = 5.0f;
+  early.support.has_floor_below = true;
+
+  SphereStepResult late;
+  late.contact_count = 1;
+  late.outcome = ContactSolveOutcome::kFace;
+  late.position_correction = Vec3F(0.0f, 0.3f, 0.0f);
+  late.velocity = Vec3F(1.0f, 0.0f, 0.0f);
+  late.support.has_ceiling = true;
+  late.support.has_floor_below = true;
+  late.support.floor_distance = 0.5f;
+
+  SphereStepResult merged = MergeSphereStepResults(early, late);
+  TEST_CHECK_(merged.support.has_floor,
+      "A floor touched in an earlier substep must survive into the report");
+  TEST_CHECK_(merged.support.floor_material.grip == 0.25f,
+      "The surviving floor must bring its material along, grip=%f",
+      merged.support.floor_material.grip);
+  TEST_CHECK_(merged.support.has_wall && merged.support.has_ceiling,
+      "Wall and ceiling flags must be the union of the substeps, wall=%d "
+      "ceiling=%d", merged.support.has_wall ? 1 : 0,
+      merged.support.has_ceiling ? 1 : 0);
+  TEST_CHECK_(merged.contact_count == 3,
+      "The busiest substep sets the contact count, got %d",
+      merged.contact_count);
+  TEST_CHECK_(merged.outcome == ContactSolveOutcome::kDegenerate,
+      "The worst solver outcome must be the one reported, got %d",
+      static_cast<int>(merged.outcome));
+  TEST_CHECK_(std::fabs(merged.position_correction.y - 0.5f) < 1.0e-6f,
+      "Corrections are cumulative and must add up, y=%f",
+      merged.position_correction.y);
+  TEST_CHECK_(std::fabs(merged.velocity.x - 1.0f) < 1.0e-6f,
+      "The velocity is a state, so the last substep's is the step's, x=%f",
+      merged.velocity.x);
+  TEST_CHECK_(std::fabs(merged.support.floor_distance - 0.5f) < 1.0e-6f,
+      "The measured height is about where the body ended up, so the last "
+      "substep's reading wins, got %f", merged.support.floor_distance);
+
+  SphereStepResult over_budget;
+  over_budget.substep_budget_exhausted = true;
+  TEST_CHECK_(MergeSphereStepResults(over_budget, late)
+          .substep_budget_exhausted,
+      "An exhausted substep budget must not be forgotten by the merge");
+
+  // Same thing through the world, where the substeps actually happen: a
+  // plate that ends halfway through the motion is a floor the body only
+  // touches during the first substeps.
+  CollisionTriangle plate_a = MakeTri(Vec3F(-5.0f, 0.0f, -5.0f),
+      Vec3F(-5.0f, 0.0f, 5.0f), Vec3F(0.0f, 0.0f, 5.0f));
+  CollisionTriangle plate_b = MakeTri(Vec3F(-5.0f, 0.0f, -5.0f),
+      Vec3F(0.0f, 0.0f, 5.0f), Vec3F(0.0f, 0.0f, -5.0f));
+  TEST_CHECK_(plate_a.n.y > 0.99f && plate_b.n.y > 0.99f,
+      "test setup: the plate must face up, a=%f b=%f", plate_a.n.y,
+      plate_b.n.y);
+  std::vector<Vec3F> pa = {plate_a.a, plate_b.a};
+  std::vector<Vec3F> pb = {plate_a.b, plate_b.b};
+  std::vector<Vec3F> pc = {plate_a.c, plate_b.c};
+  std::vector<PhysicsMaterial> mats(2);
+
+  const float radius = 0.5f;
+  const float dt = 1.0f / 60.0f;
+  PhysicsStepConfig config;
+  config.max_substep_move = 0.2f;
+  config.max_substeps = 16;
+  PhysicsWorld world;
+  world.SetConfig(config);
+  world.SetStaticMesh(pa, pb, pc, mats, 8);
+  PhysicsBodyId id = world.AddSphere(Vec3F(-0.6f, radius, 0.0f), radius);
+  world.SetWishVelocity(id, Vec3F(72.0f, 0.0f, 0.0f));
+  world.Step(dt);
+  TEST_CHECK_(world.Position(id).x > 0.2f,
+      "The body must have run off the end of the plate for this to be "
+      "about several substeps, x=%f", world.Position(id).x);
+  TEST_CHECK_(world.Support(id).has_floor,
+      "The plate touched during the first substeps must be in the step's "
+      "report even though the body ended up past its edge");
+  TEST_CHECK_(!world.SubstepBudgetExhausted(id),
+      "With sixteen substeps allowed this motion must fit in the budget");
+
+  // The last substep on its own sees nothing, which is what makes the check
+  // above a statement about merging and not about the geometry.
+  Vec3F past_edge = world.Position(id);
+  SphereStepResult alone = StepSphereBody(world.Soup(), nullptr, &past_edge,
+      radius, Vec3F(72.0f, 0.0f, 0.0f), dt / 7.0f, config);
+  TEST_CHECK_(!alone.support.has_floor,
+      "test setup: past the edge a lone substep must find no floor");
+
+  // The cap on substeps is the anti-tunneling promise: a step that needs
+  // more of them than allowed is moving further per substep than
+  // max_substep_move, and that has to be said out loud.
+  PhysicsStepConfig tight = config;
+  tight.max_substeps = 2;
+  PhysicsWorld tight_world;
+  tight_world.SetConfig(tight);
+  tight_world.SetStaticMesh(pa, pb, pc, mats, 8);
+  PhysicsBodyId tight_id = tight_world.AddSphere(Vec3F(-4.0f, radius, 0.0f),
+      radius);
+  tight_world.SetWishVelocity(tight_id, Vec3F(72.0f, 0.0f, 0.0f));
+  tight_world.Step(dt);
+  TEST_CHECK_(tight_world.SubstepBudgetExhausted(tight_id),
+      "A motion needing seven substeps with two allowed must report the "
+      "budget as exhausted");
+  tight_world.SetWishVelocity(tight_id, Vec3F(1.0f, 0.0f, 0.0f));
+  tight_world.Step(dt);
+  TEST_CHECK_(!tight_world.SubstepBudgetExhausted(tight_id),
+      "A slow motion must clear the flag again");
+}
+
+void test_physics_body_separation_stays_out_of_the_mesh() {
+  // Two bodies squeezed together push each other apart in XZ, and one of
+  // them can be against a wall. While that push was written straight into
+  // the position, a big enough shove carried the center clear through a
+  // face, and the push-out afterwards helpfully settled the body on the far
+  // side of the wall -- the same "write the position and hope" that the
+  // solver exists to avoid, and that Hover Racer already paid for once.
+  CollisionTriangle floor_a = MakeTri(Vec3F(-5.0f, 0.0f, -5.0f),
+      Vec3F(-5.0f, 0.0f, 5.0f), Vec3F(5.0f, 0.0f, 5.0f));
+  CollisionTriangle floor_b = MakeTri(Vec3F(-5.0f, 0.0f, -5.0f),
+      Vec3F(5.0f, 0.0f, 5.0f), Vec3F(5.0f, 0.0f, -5.0f));
+  const float wall_x = 2.0f;
+  CollisionTriangle wall_a = MakeTri(Vec3F(wall_x, 0.0f, -5.0f),
+      Vec3F(wall_x, 3.0f, 5.0f), Vec3F(wall_x, 3.0f, -5.0f));
+  CollisionTriangle wall_b = MakeTri(Vec3F(wall_x, 0.0f, -5.0f),
+      Vec3F(wall_x, 0.0f, 5.0f), Vec3F(wall_x, 3.0f, 5.0f));
+  TEST_CHECK_(floor_a.n.y > 0.99f && floor_b.n.y > 0.99f,
+      "test setup: the floor must face up, a=%f b=%f", floor_a.n.y,
+      floor_b.n.y);
+  Vec3F wall_n = wall_a.n / Length(wall_a.n);
+  TEST_CHECK_(wall_n.x < -0.99f,
+      "test setup: the wall must face the bodies, n=(%f,%f,%f)", wall_n.x,
+      wall_n.y, wall_n.z);
+
+  std::vector<Vec3F> pa = {floor_a.a, floor_b.a, wall_a.a, wall_b.a};
+  std::vector<Vec3F> pb = {floor_a.b, floor_b.b, wall_a.b, wall_b.b};
+  std::vector<Vec3F> pc = {floor_a.c, floor_b.c, wall_a.c, wall_b.c};
+  std::vector<PhysicsMaterial> mats(4);
+
+  const float radius = 0.5f;
+  const float dt = 1.0f / 60.0f;
+  PhysicsStepConfig config;
+  PhysicsWorld world;
+  world.SetConfig(config);
+  world.SetStaticMesh(pa, pb, pc, mats, 8);
+
+  // Nearly coincident, and all of the separation falls on the body next to
+  // the wall: the shove is then more than a radius, which is exactly when
+  // writing the position walks the center to the other side of the face.
+  PhysicsBodyId pressed = world.AddSphere(Vec3F(1.2f, radius, 0.0f), radius);
+  PhysicsBodyId holder = world.AddSphere(Vec3F(1.199f, radius, 0.0f),
+      radius);
+  world.SetPushWeight(pressed, 1.0f);
+  world.SetPushWeight(holder, 0.0f);
+  TEST_CHECK_(world.Position(pressed).x + radius < wall_x,
+      "test setup: the pressed body must start clear of the wall, x=%f",
+      world.Position(pressed).x);
+
+  world.Step(dt);
+
+  float x = world.Position(pressed).x;
+  TEST_CHECK_(x + radius <= wall_x + config.skin,
+      "The separated body must stay on this side of the wall, x=%f "
+      "wall=%f radius=%f", x, wall_x, radius);
+  TEST_CHECK_(x > 1.2f + 0.05f,
+      "The separation must still have happened, otherwise the check above "
+      "passes for the wrong reason, x=%f", x);
+  TEST_CHECK_(std::fabs(world.Position(holder).x - 1.199f) < 1.0e-4f,
+      "A body with no push weight must not be moved by the separation, "
+      "x=%f", world.Position(holder).x);
+  TEST_CHECK_(std::fabs(world.Position(pressed).y - radius) < config.skin,
+      "Separating bodies must not lift them off the floor, y=%f", 
+      world.Position(pressed).y);
+}
+
+void test_physics_world_query_conventions() {
+  // The world's four queries are what a game reaches for, and every one of
+  // them has a convention that is easy to get wrong in the caller and
+  // impossible to see in a happy-path test: what a miss looks like, what
+  // "the answer is where you already are" looks like, what happens exactly
+  // at the end of the asked-for range, and how far short of geometry a
+  // query stops. Hover Racer read three of these wrong in turn.
+  const float radius = 0.5f;
+  const float floor_y = 0.0f;
+  const float wall_x = 2.0f;
+  const Vec3F up(0.0f, 1.0f, 0.0f);
+  const Vec3F towards_minus_x(-1.0f, 0.0f, 0.0f);
+
+  CollideSoupFixture fixture;
+  fixture.AddFacing(Vec3F(-5.0f, floor_y, -5.0f), Vec3F(-5.0f, floor_y, 5.0f),
+      Vec3F(5.0f, floor_y, 5.0f), up);
+  fixture.AddFacing(Vec3F(-5.0f, floor_y, -5.0f), Vec3F(5.0f, floor_y, 5.0f),
+      Vec3F(5.0f, floor_y, -5.0f), up);
+  fixture.AddFacing(Vec3F(wall_x, 0.0f, -5.0f), Vec3F(wall_x, 4.0f, 5.0f),
+      Vec3F(wall_x, 4.0f, -5.0f), towards_minus_x);
+  fixture.AddFacing(Vec3F(wall_x, 0.0f, -5.0f), Vec3F(wall_x, 0.0f, 5.0f),
+      Vec3F(wall_x, 4.0f, 5.0f), towards_minus_x);
+
+  PhysicsStepConfig config;
+  config.skin = 0.04f;
+  PhysicsWorld world;
+  world.SetConfig(config);
+  {
+    CollideSoup soup;
+    fixture.Build(&soup);
+    TEST_CHECK_(fixture.Ok(), "The fixture must be a floor and a wall:\n%s",
+        fixture.Problems().c_str());
+    std::vector<Vec3F> pa, pb, pc;
+    std::vector<PhysicsMaterial> mats;
+    for (Si32 i = 0; i < soup.TriangleCount(); ++i) {
+      pa.push_back(soup.Triangle(i).a);
+      pb.push_back(soup.Triangle(i).b);
+      pc.push_back(soup.Triangle(i).c);
+      mats.push_back(soup.Material(i));
+    }
+    world.SetStaticMesh(pa, pb, pc, mats, 8);
+  }
+
+  // A sweep keeps the world's own skin off what it hits, and says which of
+  // the three things happened rather than leaving the caller to guess from a
+  // position.
+  const Vec3F lane(0.0f, floor_y + radius + 1.0f, 0.0f);
+  SweepSphereResult hit = world.SweepSphereQuery(lane,
+      Vec3F(wall_x + 1.0f, lane.y, lane.z), radius);
+  TEST_CHECK_(hit.kind == SweepSphereResult::Kind::kHit,
+      "A sweep into the wall must report a hit, kind=%d",
+      static_cast<int>(hit.kind));
+  const float expected_x = wall_x - radius - config.skin;
+  TEST_CHECK_(std::fabs(hit.position.x - expected_x) < 0.002f,
+      "A sweep must stop the world's skin short of the wall, x=%f "
+      "expected=%f skin=%f", hit.position.x, expected_x, config.skin);
+  SweepSphereResult clear = world.SweepSphereQuery(lane,
+      Vec3F(1.0f, lane.y, lane.z), radius);
+  TEST_CHECK_(clear.kind == SweepSphereResult::Kind::kClear
+          && std::fabs(clear.position.x - 1.0f) < 1.0e-5f,
+      "A sweep with room to spare must arrive where it was sent, kind=%d "
+      "x=%f", static_cast<int>(clear.kind), clear.position.x);
+  SweepSphereResult inside = world.SweepSphereQuery(
+      Vec3F(wall_x - 0.4f * radius, lane.y, lane.z),
+      Vec3F(wall_x + 1.0f, lane.y, lane.z), radius);
+  TEST_CHECK_(inside.kind == SweepSphereResult::Kind::kStartOverlap,
+      "A sweep that starts inside the wall must say so and not look like "
+      "a hit a hair ahead, kind=%d", static_cast<int>(inside.kind));
+
+  // The drop probe: landing, nothing below, and blocked before it began are
+  // three different answers.
+  SphereDropResult landed = world.DropSphereQuery(
+      Vec3F(0.0f, floor_y + radius + 2.0f, 0.0f), 10.0f, radius);
+  TEST_CHECK_(landed.kind == SphereDropResult::Kind::kLanded,
+      "A drop onto the floor must land, kind=%d",
+      static_cast<int>(landed.kind));
+  TEST_CHECK_(std::fabs(landed.position.y - (floor_y + radius + config.skin))
+          < 0.003f,
+      "A landing must sit the world's skin above the floor, y=%f "
+      "expected=%f", landed.position.y, floor_y + radius + config.skin);
+  SphereDropResult nothing = world.DropSphereQuery(
+      Vec3F(0.0f, floor_y + 8.0f, 0.0f), 2.0f, radius);
+  TEST_CHECK_(nothing.kind == SphereDropResult::Kind::kNothingBelow,
+      "A drop that runs out of range must report a miss and not a landing "
+      "at the bottom of the range, kind=%d",
+      static_cast<int>(nothing.kind));
+  TEST_CHECK_(std::fabs(nothing.fall - 2.0f) < 1.0e-3f,
+      "A drop with nothing below must take the whole range, fall=%f",
+      nothing.fall);
+  SphereDropResult blocked = world.DropSphereQuery(
+      Vec3F(wall_x - 0.4f * radius, floor_y + 2.0f, 0.0f), 10.0f, radius);
+  TEST_CHECK_(blocked.kind == SphereDropResult::Kind::kBlockedAtStart,
+      "A drop that starts inside the wall must say it never began, kind=%d",
+      static_cast<int>(blocked.kind));
+
+  // The height probe: max_drop is how far the center may fall, so a floor
+  // `d` below a resting sphere is exactly d + radius of range away. The far
+  // end of the range is inclusive, and the answer does not depend on how far
+  // away the question was asked from -- the last of these was wrong while
+  // the margin was a fraction of the path.
+  const float from_y = floor_y + 3.0f;
+  const float exact_range = from_y - floor_y - radius;
+  float height = -1000.0f;
+  TEST_CHECK_(world.HeightBelowQuery(0.0f, 0.0f, from_y, exact_range, radius,
+          &height),
+      "A floor exactly at the end of the range must be found, range=%f",
+      exact_range);
+  TEST_CHECK_(std::fabs(height - floor_y) < 1.0e-3f,
+      "The height reported must be the floor itself, height=%f floor=%f",
+      height, floor_y);
+  float short_height = -1000.0f;
+  TEST_CHECK_(!world.HeightBelowQuery(0.0f, 0.0f, from_y,
+          exact_range - 0.1f, radius, &short_height),
+      "A floor just past the end of the range must be a miss, reported=%f",
+      short_height);
+  TEST_CHECK_(short_height == -1000.0f,
+      "A miss must leave the caller's number alone rather than writing "
+      "something into it, got %f", short_height);
+  float far_height = -1000.0f;
+  TEST_CHECK_(world.HeightBelowQuery(0.0f, 0.0f, floor_y + 30.0f, 60.0f,
+          radius, &far_height),
+      "The floor must be found from far above as well");
+  TEST_CHECK_(std::fabs(far_height - height) < 1.0e-3f,
+      "A measurement must not change with the distance it was taken from, "
+      "near=%f far=%f", height, far_height);
+
+  // Unsticking answers about the state it leaves the center in, not about
+  // whether it had work to do: true is "free where it is now", and a sphere
+  // that overlapped nothing is free without being moved.
+  Vec3F free_center(0.0f, floor_y + radius + 1.0f, 0.0f);
+  Vec3F untouched = free_center;
+  TEST_CHECK_(world.UnstickQuery(&free_center, radius),
+      "A sphere touching nothing is already free and must be reported so");
+  TEST_CHECK_(Length(free_center - untouched) < 1.0e-6f,
+      "A sphere that needed no unsticking must not be moved, moved by %f",
+      Length(free_center - untouched));
+  Vec3F buried(0.0f, floor_y + 0.2f * radius, 0.0f);
+  TEST_CHECK_(world.UnstickQuery(&buried, radius),
+      "A sphere sunk into the floor must be reported as free afterwards");
+  TEST_CHECK_(buried.y >= floor_y + radius - 1.0e-3f,
+      "An unstuck sphere must end up out of the floor, y=%f floor+r=%f",
+      buried.y, floor_y + radius);
+  TEST_CHECK_(std::fabs(buried.x) < 1.0e-4f && std::fabs(buried.z) < 1.0e-4f,
+      "Unsticking must push straight out of the face and not slide the "
+      "sphere along it, x=%f z=%f", buried.x, buried.z);
+}
+
+void test_physics_broad_phase_offers_every_overlapping_triangle() {
+  // The broad-phase grid is allowed to offer too much and never too little:
+  // the narrow phase filters candidates, so a triangle that is not offered
+  // simply does not exist as far as collision is concerned. That failure is
+  // invisible in ordinary play and was found once already as "a big
+  // triangle is not found", when a face spanning many cells was only
+  // registered in the cells its corners fell into. Two checks here: a
+  // random mesh against a full scan, and one long triangle asked for from
+  // every cell it crosses.
+  Ui64 seed = 0x5eed1234u;
+  auto next = [&seed]() {
+    seed = seed * 6364136223846793005ull + 1442695040888963407ull;
+    return static_cast<float>((seed >> 33) & 0xffffff)
+        / static_cast<float>(0x1000000);
+  };
+  auto span = [&next](float lo, float hi) {
+    return lo + (hi - lo) * next();
+  };
+
+  std::vector<Vec3F> pa, pb, pc;
+  for (Si32 i = 0; i < 220; ++i) {
+    // A mix of sizes on purpose: the small ones fit inside a cell, the big
+    // ones cross many, and only the big ones can expose a grid that
+    // registers a face by its corners.
+    float reach = (i % 11 == 0) ? span(20.0f, 60.0f) : span(0.2f, 3.0f);
+    Vec3F a(span(-40.0f, 40.0f), span(-10.0f, 10.0f), span(-40.0f, 40.0f));
+    Vec3F b = a + Vec3F(span(-reach, reach), span(-reach, reach),
+        span(-reach, reach));
+    Vec3F c = a + Vec3F(span(-reach, reach), span(-reach, reach),
+        span(-reach, reach));
+    CollisionTriangle probe;
+    if (!probe.Set(a, b, c)) {
+      continue;
+    }
+    pa.push_back(a);
+    pb.push_back(b);
+    pc.push_back(c);
+  }
+  std::vector<PhysicsMaterial> mats(pa.size());
+  CollideSoup soup;
+  soup.Build(pa, pb, pc, mats, 16);
+  TEST_CHECK_(soup.TriangleCount() > 180,
+      "test setup: the random mesh must have kept its faces, got %d",
+      soup.TriangleCount());
+
+  Si32 boxes_with_hits = 0;
+  for (Si32 q = 0; q < 400; ++q) {
+    float half = span(0.05f, 4.0f);
+    Vec3F at(span(-45.0f, 45.0f), span(-12.0f, 12.0f), span(-45.0f, 45.0f));
+    Bound3F box(at.x - half, at.x + half, at.y - half, at.y + half,
+        at.z - half, at.z + half);
+
+    std::vector<bool> offered(static_cast<size_t>(soup.TriangleCount()),
+        false);
+    Si32 offers = 0;
+    soup.ForEachNear(box, [&offered, &offers](Si32 index) {
+      offered[static_cast<size_t>(index)] = true;
+      ++offers;
+    });
+    TEST_CHECK_(offers == static_cast<Si32>(std::count(offered.begin(),
+            offered.end(), true)),
+        "The grid must offer each triangle once per query, offers=%d "
+        "distinct=%d", offers,
+        static_cast<Si32>(std::count(offered.begin(), offered.end(), true)));
+
+    for (Si32 i = 0; i < soup.TriangleCount(); ++i) {
+      const CollisionTriangle &tri = soup.Triangle(i);
+      Bound3F tri_box(
+          std::min(tri.a.x, std::min(tri.b.x, tri.c.x)),
+          std::max(tri.a.x, std::max(tri.b.x, tri.c.x)),
+          std::min(tri.a.y, std::min(tri.b.y, tri.c.y)),
+          std::max(tri.a.y, std::max(tri.b.y, tri.c.y)),
+          std::min(tri.a.z, std::min(tri.b.z, tri.c.z)),
+          std::max(tri.a.z, std::max(tri.b.z, tri.c.z)));
+      bool overlaps = tri_box.max_x >= box.min_x && tri_box.min_x <= box.max_x
+          && tri_box.max_y >= box.min_y && tri_box.min_y <= box.max_y
+          && tri_box.max_z >= box.min_z && tri_box.min_z <= box.max_z;
+      if (!overlaps) {
+        continue;
+      }
+      ++boxes_with_hits;
+      if (!TEST_CHECK_(offered[static_cast<size_t>(i)],
+          "The grid did not offer triangle %d, whose box "
+          "[%f..%f][%f..%f][%f..%f] overlaps the query "
+          "[%f..%f][%f..%f][%f..%f]", i, tri_box.min_x, tri_box.max_x,
+          tri_box.min_y, tri_box.max_y, tri_box.min_z, tri_box.max_z,
+          box.min_x, box.max_x, box.min_y, box.max_y, box.min_z,
+          box.max_z)) {
+        return;
+      }
+    }
+  }
+  TEST_CHECK_(boxes_with_hits > 100,
+      "test setup: the random queries must have found something to compare, "
+      "hits=%d", boxes_with_hits);
+
+  // One face across the whole mesh, asked for from a small box walking
+  // along it: this is the shape of the bug that was already fixed once, and
+  // it must stay fixed cell by cell rather than on average.
+  const float far_end = 90.0f;
+  std::vector<Vec3F> la = {Vec3F(-far_end, 0.0f, -far_end),
+      Vec3F(-5.0f, -1.0f, -5.0f)};
+  std::vector<Vec3F> lb = {Vec3F(far_end, 0.0f, far_end),
+      Vec3F(5.0f, -1.0f, -5.0f)};
+  std::vector<Vec3F> lc = {Vec3F(-far_end, 2.0f, -far_end + 1.0f),
+      Vec3F(5.0f, -1.0f, 5.0f)};
+  std::vector<PhysicsMaterial> long_mats(2);
+  CollideSoup long_soup;
+  long_soup.Build(la, lb, lc, long_mats, 64);
+  TEST_CHECK_(long_soup.TriangleCount() == 2,
+      "test setup: the long mesh must keep both faces, got %d",
+      long_soup.TriangleCount());
+
+  const Si32 kSteps = 200;
+  Si32 asked = 0;
+  for (Si32 i = 0; i <= kSteps; ++i) {
+    float t = static_cast<float>(i) / static_cast<float>(kSteps);
+    float x = -far_end + 2.0f * far_end * t;
+    float z = x;
+    Bound3F box(x - 0.05f, x + 0.05f, -1.0f, 3.0f, z - 0.05f, z + 0.05f);
+    bool found = false;
+    long_soup.ForEachNear(box, [&found](Si32 index) {
+      if (index == 0) {
+        found = true;
+      }
+    });
+    ++asked;
+    if (!TEST_CHECK_(found,
+        "A face crossing the whole mesh must be offered from every cell it "
+        "passes through, and it was not at (%f, %f)", x, z)) {
+      return;
+    }
+  }
+  TEST_CHECK_(asked == kSteps + 1,
+      "test setup: every step along the face must have been asked, "
+      "asked=%d", asked);
+}
+
+void test_physics_fixture_builder_catches_bad_geometry() {
+  // Every physics fixture in this file is transcribed geometry, and the two
+  // ways transcription goes wrong are silent: a degenerate face is dropped
+  // by the mesh builder without a word, and a face wound the other way
+  // still builds -- it just points the wrong direction, which comes out
+  // several layers later as a sphere falling through a floor. The builder
+  // exists to turn both into a message that names the face.
+  const Vec3F up(0.0f, 1.0f, 0.0f);
+
+  CollideSoupFixture good;
+  Si32 first = good.AddFacing(Vec3F(-1.0f, 0.0f, -1.0f),
+      Vec3F(-1.0f, 0.0f, 1.0f), Vec3F(1.0f, 0.0f, 1.0f), up);
+  Si32 second = good.AddFacing(Vec3F(-1.0f, 0.0f, -1.0f),
+      Vec3F(1.0f, 0.0f, 1.0f), Vec3F(1.0f, 0.0f, -1.0f), up);
+  TEST_CHECK_(first == 0 && second == 1,
+      "Faces must come back numbered in the order they were added, got %d "
+      "and %d", first, second);
+  CollideSoup soup;
+  good.Build(&soup);
+  TEST_CHECK_(good.Ok(), "A correct fixture must report nothing wrong:\n%s",
+      good.Problems().c_str());
+  TEST_CHECK_(soup.TriangleCount() == 2,
+      "The built mesh must keep both faces, got %d", soup.TriangleCount());
+  TEST_CHECK_(good.NormalLines().size() == 2,
+      "There must be one normal line per face, got %d",
+      static_cast<int>(good.NormalLines().size()));
+
+  CollideSoupFixture flipped;
+  flipped.AddFacing(Vec3F(-1.0f, 0.0f, -1.0f), Vec3F(1.0f, 0.0f, 1.0f),
+      Vec3F(-1.0f, 0.0f, 1.0f), up);
+  TEST_CHECK_(!flipped.Ok(),
+      "A face wound the other way must not pass as facing up");
+  TEST_CHECK_(flipped.Problems().find("order of its vertices")
+          != std::string::npos,
+      "The complaint must say what to look at, got: %s",
+      flipped.Problems().c_str());
+
+  CollideSoupFixture degenerate;
+  Si32 bad = degenerate.Add(Vec3F(0.0f, 0.0f, 0.0f), Vec3F(1.0f, 0.0f, 0.0f),
+      Vec3F(2.0f, 0.0f, 0.0f));
+  TEST_CHECK_(bad < 0,
+      "A degenerate face must not be handed back as a usable one, got %d",
+      bad);
+  TEST_CHECK_(!degenerate.Ok() &&
+          degenerate.Problems().find("degenerate") != std::string::npos,
+      "A degenerate face must be reported, got: %s",
+      degenerate.Problems().c_str());
+  TEST_CHECK_(degenerate.Count() == 0,
+      "A degenerate face must not be kept, count=%d", degenerate.Count());
 }
 
 void test_physics_support_measures_height_above_floor() {
@@ -9481,17 +10216,55 @@ void test_physics_support_measures_height_above_floor() {
   world.SetConfig(config);
   world.SetStaticMesh(pa, pb, pc, mats, 8);
   PhysicsBodyId id = world.AddSphere(Vec3F(0.0f, radius, 0.0f), radius);
-  world.SetPosition(id, Vec3F(0.0f, radius + 2.5f, 0.0f));
+  world.Teleport(id, Vec3F(0.0f, radius + 2.5f, 0.0f));
   TEST_CHECK_(world.Support(id).has_floor_below,
       "Right after a teleport the support must already know about the "
       "floor below the new place");
   TEST_CHECK_(std::fabs(world.Support(id).floor_distance - 2.5f) < 1.0e-3f,
       "The refreshed measurement must be about the new place, got %f "
       "expected 2.5", world.Support(id).floor_distance);
-  world.SetPosition(id, Vec3F(20.0f, radius, 20.0f));
+  world.Teleport(id, Vec3F(20.0f, radius, 20.0f));
   TEST_CHECK_(!world.Support(id).has_floor_below,
       "Teleported off the mesh, the support must stop claiming a floor "
       "below, distance=%f", world.Support(id).floor_distance);
+
+  // The support has to be a value. While it was a reference into the vector
+  // the bodies live in, registering another body could reallocate that
+  // vector under a caller still holding the reference -- silent, and of the
+  // kind that only shows up once the field grows.
+  static_assert(std::is_same<decltype(world.Support(id)),
+      SphereBodySupport>::value,
+      "PhysicsWorld::Support must return a value, not a reference into the "
+      "body vector");
+  SphereBodySupport kept = world.Support(id);
+  for (Si32 i = 0; i < 32; ++i) {
+    world.AddSphere(Vec3F(100.0f + static_cast<float>(i), radius, 100.0f),
+        radius);
+  }
+  TEST_CHECK_(kept.has_floor_below == world.Support(id).has_floor_below &&
+          std::fabs(kept.floor_distance - world.Support(id).floor_distance)
+              < 1.0e-6f,
+      "A support taken before the field grew must still describe the same "
+      "body");
+
+  // Moving a body by hand is the one thing a solver cannot account for, so
+  // the world counts it and a game can assert the count is zero on the
+  // frames it did not mean to teleport. Hover Racer needed exactly this
+  // check, and had to watch positions itself to get it.
+  TEST_CHECK_(world.TeleportsSinceStep() == 2,
+      "Both teleports must be counted, got %d", world.TeleportsSinceStep());
+  world.Step(1.0f / 60.0f);
+  TEST_CHECK_(world.TeleportsSinceStep() == 0,
+      "A step must clear the teleport count, got %d",
+      world.TeleportsSinceStep());
+  Vec3F before_step = world.Position(id);
+  world.SetWishVelocity(id, Vec3F(1.0f, 0.0f, 0.0f));
+  world.Step(1.0f / 60.0f);
+  TEST_CHECK_(world.TeleportsSinceStep() == 0,
+      "Driving a body must not look like a teleport, got %d",
+      world.TeleportsSinceStep());
+  TEST_CHECK_(Length(world.Position(id) - before_step) > 1.0e-4f,
+      "The driven body must have moved for that check to mean anything");
 }
 
 TEST_LIST = {
@@ -9623,7 +10396,9 @@ TEST_LIST = {
   {"Editbox takes text from any keyboard layout", test_editbox_accepts_any_layout},
   {"Typed characters of a message", test_typed_characters_of_a_message},
   {"Typed text and generic modifiers", test_typed_text_and_generic_modifiers},
-  {"Headless decider is asked at startup", test_headless_decider},
+  {"Startup mode decider is asked at startup", test_startup_mode_decider},
+  {"Log file is findable, clearable and rotated",
+      test_log_file_is_findable_clearable_and_rotated},
   {"Main window close handler decides the exit", test_main_window_close_handler},
   {"FBX rejects an unsupported version", test_fbx_rejects_unsupported_version},
   {"FBX rejects a buffer too short for a header", test_fbx_rejects_a_buffer_too_short_for_a_header},
@@ -9707,6 +10482,18 @@ TEST_LIST = {
       test_physics_sphere_body_step_above_center_still_blocks},
   {"Physics drop probe conventions at a seam",
       test_physics_drop_probe_conventions_at_a_seam},
+  {"Physics sweep backoff is a distance not a fraction",
+      test_physics_sweep_backoff_is_a_distance_not_a_fraction},
+  {"Physics step report merges substeps",
+      test_physics_step_report_merges_substeps},
+  {"Physics body separation stays out of the mesh",
+      test_physics_body_separation_stays_out_of_the_mesh},
+  {"Physics fixture builder catches bad geometry",
+      test_physics_fixture_builder_catches_bad_geometry},
+  {"Physics world query conventions",
+      test_physics_world_query_conventions},
+  {"Physics broad phase offers every overlapping triangle",
+      test_physics_broad_phase_offers_every_overlapping_triangle},
   {"Physics support measures height above floor",
       test_physics_support_measures_height_above_floor},
   {"Physics sphere body reacquires steep floor gap",

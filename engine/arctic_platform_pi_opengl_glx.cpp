@@ -184,7 +184,11 @@ void CreateMainWindow(SystemInfo *system_info) {
   g_x_wm_delete_window = XInternAtom(g_x_display, "WM_DELETE_WINDOW", False);
   XSetWMProtocols(g_x_display, g_x_window, &g_x_wm_delete_window, 1);
 
-  XMapWindow(g_x_display, g_x_window);
+  // A hidden run keeps the window unmapped: GLX still draws into it, but no
+  // window manager ever puts it on the screen.
+  if (RequestedStartupMode() == StartupMode::kWindowed) {
+    XMapWindow(g_x_display, g_x_window);
+  }
 
 
   g_x_im = XOpenIM(g_x_display, NULL, NULL, NULL);
@@ -279,12 +283,14 @@ int main(int argc, char **argv) {
   arctic::SystemInfo system_info;
 
   // Asked before anything is created, and the command line is already in the
-  // engine so that a decider registered with ARCTIC_HEADLESS_DECIDER can look at
-  // it. See SetHeadlessDecider in arctic_platform.h.
+  // engine so that a decider registered with ARCTIC_STARTUP_MODE_DECIDER can
+  // look at it. See SetStartupModeDecider in arctic_platform.h.
   arctic::GetEngine()->SetArgcArgv(argc,
     const_cast<const char **>(argv));
   arctic::GetEngine()->SetInitialPath(initial_path);
-  if (arctic::IsHeadlessStartupRequested()) {
+  arctic::GetEngine()->SetStartupMode(arctic::RequestedStartupMode());
+  if (arctic::GetEngine()->GetStartupMode()
+      == arctic::StartupMode::kNoWindow) {
     // No X display, no GL context, no sound device: a console subcommand of a
     // GUI binary runs on a machine that has none of the three.
     arctic::StartLogger();

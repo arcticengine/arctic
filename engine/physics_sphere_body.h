@@ -81,7 +81,26 @@ struct SphereStepResult {
   /// being pushed back and forth between two opposing faces (e.g. a floor
   /// below and a low ceiling/ledge above) rather than converging.
   Vec3F position_correction = Vec3F(0.0f, 0.0f, 0.0f);
+  /// Set when a step had to be cut into more substeps than
+  /// PhysicsStepConfig::max_substeps allows, so at least one substep covered
+  /// more than max_substep_move. That cap is the guarantee against
+  /// tunneling, and silently exceeding it is how a fast body ends up on the
+  /// far side of a wall; a caller seeing this is being told the guarantee
+  /// did not hold this step, not that anything went visibly wrong yet.
+  bool substep_budget_exhausted = false;
 };
+
+/// Folds a later substep's result into an earlier one so a whole Step can be
+/// reported as a single answer. Everything that is an event is kept (support
+/// flags by "or", the worst solver outcome, the largest contact count,
+/// corrections summed), everything that is a state is taken from the later
+/// substep (the velocity the body ends the step with, the measured floor
+/// below wherever it ended up). Without this, an event in the first of
+/// several substeps -- a floor touched, a wall hit -- simply disappears from
+/// the report, and a game that reads "am I standing on something" once per
+/// frame sees a body that never touched anything.
+SphereStepResult MergeSphereStepResults(const SphereStepResult &earlier,
+    const SphereStepResult &later);
 
 /// Narrow-phase for one sphere: finds every triangle within reach this
 /// substep (the skin margin, plus however far wish_velocity could carry the
@@ -107,19 +126,53 @@ SphereStepResult StepSphereBody(const CollideSoup &soup,
     PhysicsManifold *manifold, Vec3F *position, float radius,
     const Vec3F &wish_velocity, float dt, const PhysicsStepConfig &config);
 
-/// Sweeps a sphere from `from` to `to` and stops short of the first hit
-/// (at 0.9 of the hit time, never exactly on the contact plane, so a sphere
-/// sliding down a slope is not walked sideways off it by a snap to the
-/// surface). No sliding, no contact resolution: this is for callers like a
-/// camera boom that only ever want "as far as I can get without going
-/// through a wall."
-Vec3F SweepSphere(const CollideSoup &soup, const Vec3F &from,
-    const Vec3F &to, float radius);
+/// What a sweep ran into, so a caller can tell the three outcomes apart
+/// instead of guessing from the position it got back.
+struct SweepSphereResult {
+  enum class Kind {
+    /// Reached `to` without touching anything.
+    kClear,
+    /// Stopped short of a hit along the way.
+    kHit,
+    /// Was already touching something at `from`, so it did not move.
+    /// Nothing is known about the rest of the path: a face merely grazing
+    /// the start beside the sphere reports this too, which is why the
+    /// position coming back unchanged must not be read as "the way is
+    /// blocked ahead".
+    kStartOverlap
+  };
+  Kind kind = Kind::kClear;
+  /// Where the sweep ended up, valid for every kind.
+  Vec3F position = Vec3F(0.0f, 0.0f, 0.0f);
+  /// Unit direction out of what was hit, zero for kClear.
+  Vec3F normal = Vec3F(0.0f, 0.0f, 0.0f);
+  /// Fraction of from-to at the moment of touch, 1 for kClear and 0 for
+  /// kStartOverlap.
+  float time = 1.0f;
+};
+
+/// Sweeps a sphere from `from` to `to` and stops `backoff` world units short
+/// of the first hit, never exactly on the contact plane, so a body placed
+/// where this points is not found penetrating on the next frame. The margin
+/// is a distance and not a fraction of the path on purpose: what it protects
+/// against is float slop around the contact, which does not grow with how
+/// far the sweep happened to travel, and a proportional margin left a long
+/// sweep stopping a whole unit early while a short one stopped a hair early.
+/// Pass PhysicsStepConfig::skin unless there is a reason not to; zero means
+/// stop exactly at the touch. No sliding, no contact resolution: this is for
+/// callers like a camera boom that only ever want "as far as I can get
+/// without going through a wall".
+SweepSphereResult SweepSphere(const CollideSoup &soup, const Vec3F &from,
+    const Vec3F &to, float radius, float backoff);
 
 /// Pushes center directly out of whatever it already overlaps, without
-/// otherwise moving it, iterating on the shallowest overlap first. Returns
-/// false (and reverts to the starting position) if it could not converge
-/// within max_iterations. A contact whose push would be downward through a
+/// otherwise moving it, iterating on the shallowest overlap first. True means
+/// the center is free where it now is, which includes the common case of a
+/// sphere that overlapped nothing to begin with and was not moved: the answer
+/// is about the state, not about whether any work was done. False means it
+/// could not converge within max_iterations, and the center is left exactly
+/// where it started, so a caller can tell "still stuck" from "fine now" and
+/// nothing in between. A contact whose push would be downward through a
 /// floor-like face (n.y > 0.35, whether or not that reaches the
 /// floor/ceiling/wall threshold) is skipped, so unsticking never drops the
 /// sphere through the ground it is resting on.
@@ -127,10 +180,11 @@ bool UnstickSphereBody(const CollideSoup &soup, Vec3F *center, float radius,
     Si32 max_iterations = 20);
 
 /// If the open segment from-to would carry the center through a triangle,
-/// stops at 0.9 of the first such pierce. A safety net for when a swept
-/// test missed a face the straight-line center path still crosses.
+/// stops `backoff` world units short of the first such pierce (see
+/// SweepSphere for why that margin is a distance). A safety net for when a
+/// swept test missed a face the straight-line center path still crosses.
 Vec3F ClampSegmentToSurface(const CollideSoup &soup, const Vec3F &from,
-    const Vec3F &to);
+    const Vec3F &to, float backoff);
 
 /// Sweeps straight down from (x, from_y, z) by at most max_drop and reports
 /// the surface height under it: the radius has already been taken off the
@@ -176,9 +230,10 @@ struct SphereDropResult {
 };
 
 /// Drops center straight down by at most max_drop until its skin rests on
-/// the mesh: sweep, clamp to the surface, unstick, clamp again.
+/// the mesh: sweep, clamp to the surface, unstick, clamp again. `backoff` is
+/// the margin kept off the surface, as in SweepSphere.
 SphereDropResult DropSphereBody(const CollideSoup &soup, const Vec3F &start,
-    float max_drop, float radius);
+    float max_drop, float radius, float backoff);
 
 /// Fills the measured part of a support (has_floor_below, floor_distance)
 /// for a sphere at `center`, leaving the contact-derived fields alone. Runs
