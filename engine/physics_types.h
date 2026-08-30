@@ -76,6 +76,15 @@ struct PhysicsStepConfig {
   /// is a floor; at or below its negation it is a ceiling; in between it is
   /// a wall. Matches the threshold Hover Racer tuned by hand.
   float floor_normal_y = 0.45f;
+  /// How far below a body to measure the surface it is riding over, on top
+  /// of the contacts. Contacts only ever see what is within reach, so they
+  /// cannot answer "how far above the ground am I" for a body in the air --
+  /// and a game that hovers needs exactly that, far enough out to start
+  /// braking before it arrives. Set this to the tallest drop the hover
+  /// control must brake for and read SphereBodySupport::floor_distance
+  /// after the step; leave it at zero and no measurement is taken, so a
+  /// caller with no use for it pays nothing.
+  float support_probe = 0.0f;
 };
 
 /// @}

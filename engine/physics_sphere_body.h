@@ -49,6 +49,20 @@ struct SphereBodySupport {
   PhysicsMaterial floor_material;
   bool has_wall = false;
   bool has_ceiling = false;
+  /// A measurement rather than a contact, and the two answer different
+  /// questions: has_floor says the sphere is resting on something now,
+  /// while this says how far it could still fall before its skin would meet
+  /// the floor below (zero while resting), and whether any floor was found
+  /// within PhysicsStepConfig::support_probe at all. A hover control needs
+  /// the measurement, since it has to start braking while still in the air,
+  /// and it needs it from the same mesh the contacts come from -- a game
+  /// probing on its own drifts away from the engine and pays for it (Hover
+  /// Racer's own copy misread grazing seams as a half-unit deficit and froze
+  /// the craft mid-road). Filled by StepSphereBody only when support_probe
+  /// is positive; GatherSphereContacts leaves it alone because contacts have
+  /// no opinion about anything past their reach.
+  bool has_floor_below = false;
+  float floor_distance = 0.0f;
 };
 
 /// Result of advancing a sphere body by one substep.
@@ -131,18 +145,49 @@ bool QuerySphereHeightBelow(const CollideSoup &soup, float x, float z,
     float from_y, float max_drop, float radius, float floor_normal_y,
     float *out_height);
 
+/// What a drop ended up doing. The position alone cannot say this, which is
+/// the whole reason this is a struct: a fall that stopped at the start looks
+/// exactly like a fall that never began, and reading one as the other is
+/// what froze Hover Racer in the middle of the road (see
+/// test_physics_drop_probe_conventions_at_a_seam).
+struct SphereDropResult {
+  enum class Kind {
+    /// Came to rest on the mesh, having fallen less than max_drop.
+    kLanded,
+    /// Fell the whole max_drop with nothing under it.
+    kNothingBelow,
+    /// Could not move at all. Either the sphere is already resting on
+    /// something, or a face merely grazes the fall path beside it, which
+    /// the swept test also reports as a hit at time zero; `normal` tells
+    /// those apart. Nothing about the surface below is known in this case,
+    /// so this is not a height measurement -- use QuerySphereHeightBelow.
+    kBlockedAtStart
+  };
+  Kind kind = Kind::kNothingBelow;
+  /// Where the sphere ended up, valid for every kind.
+  Vec3F position = Vec3F(0.0f, 0.0f, 0.0f);
+  /// How far down it actually went: zero for kBlockedAtStart, the full
+  /// max_drop for kNothingBelow.
+  float fall = 0.0f;
+  /// Unit direction out of the first thing the fall ran into, so an upward
+  /// normal means a floor stopped it and a sideways one a wall did. Zero
+  /// for kNothingBelow.
+  Vec3F normal = Vec3F(0.0f, 0.0f, 0.0f);
+};
+
 /// Drops center straight down by at most max_drop until its skin rests on
-/// the mesh: sweep, clamp to the surface, unstick, clamp again. With
-/// nothing below, the whole max_drop is taken, so telling a landing from a
-/// miss means comparing the fall against max_drop rather than looking for
-/// the start position to come back. The start position comes back when the
-/// drop could not begin at all, which a near-vertical face grazing the
-/// fall path is enough to cause: the swept test reports it as a hit at
-/// time zero (see SweepSphere). A returned start therefore means "could
-/// not move", not "nothing below", and this is not a way to measure the
-/// height of a surface running alongside such a face.
-Vec3F DropSphereBody(const CollideSoup &soup, const Vec3F &start,
+/// the mesh: sweep, clamp to the surface, unstick, clamp again.
+SphereDropResult DropSphereBody(const CollideSoup &soup, const Vec3F &start,
     float max_drop, float radius);
+
+/// Fills the measured part of a support (has_floor_below, floor_distance)
+/// for a sphere at `center`, leaving the contact-derived fields alone. Runs
+/// inside StepSphereBody when config.support_probe is positive, and is
+/// exposed so a caller that has just teleported a body can refresh the
+/// measurement without waiting for the next step.
+void MeasureSphereFloorBelow(const CollideSoup &soup, const Vec3F &center,
+    float radius, const PhysicsStepConfig &config,
+    SphereBodySupport *support);
 
 /// @}
 

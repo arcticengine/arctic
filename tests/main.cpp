@@ -9280,10 +9280,19 @@ void test_physics_drop_probe_conventions_at_a_seam() {
       "The sphere must start resting on the road, bottom=%f road_y=%f",
       resting.y - radius, road_y);
 
-  Vec3F landed = DropSphereBody(soup, from, max_drop, radius);
-  TEST_CHECK_(std::fabs(landed.y - from.y) < 1.0e-6f,
-      "Next to the seam the drop query cannot start at all and must hand "
-      "the start position back, from.y=%f landed.y=%f", from.y, landed.y);
+  SphereDropResult landed = DropSphereBody(soup, from, max_drop, radius);
+  TEST_CHECK_(landed.kind == SphereDropResult::Kind::kBlockedAtStart,
+      "Next to the seam the drop cannot start at all and must say so "
+      "instead of handing back a place that looks like a landing, kind=%d "
+      "fall=%f", static_cast<int>(landed.kind), landed.fall);
+  TEST_CHECK_(std::fabs(landed.position.y - from.y) < 1.0e-6f,
+      "A blocked drop must leave the sphere where it started, from.y=%f "
+      "position.y=%f", from.y, landed.position.y);
+  TEST_CHECK_(landed.normal.y < 0.45f,
+      "The blocker beside the seam is the skirt, so the way out of it must "
+      "not look like a floor -- this is how a caller tells 'a wall grazes "
+      "me' from 'I am already standing on the ground', normal=(%f,%f,%f)",
+      landed.normal.x, landed.normal.y, landed.normal.z);
 
   float surface = -1000.0f;
   bool found = QuerySphereHeightBelow(soup, from.x, from.z, from.y, max_drop,
@@ -9316,28 +9325,173 @@ void test_physics_drop_probe_conventions_at_a_seam() {
   // above a property of the grazing face and not of the fixture.
   Vec3F clear(-76.4f, road_y + radius, 55.5f);
   Vec3F clear_from(clear.x, clear.y + up, clear.z);
-  Vec3F clear_landed = DropSphereBody(soup, clear_from, max_drop, radius);
+  SphereDropResult clear_landed = DropSphereBody(soup, clear_from, max_drop,
+      radius);
+  TEST_CHECK_(clear_landed.kind == SphereDropResult::Kind::kLanded,
+      "Away from the seam the drop must land, kind=%d",
+      static_cast<int>(clear_landed.kind));
+  TEST_CHECK_(clear_landed.normal.y > 0.9f,
+      "A landing on the road must report the road as what stopped it, "
+      "normal=(%f,%f,%f)", clear_landed.normal.x, clear_landed.normal.y,
+      clear_landed.normal.z);
   float clear_surface = -1000.0f;
   TEST_CHECK_(QuerySphereHeightBelow(soup, clear_from.x, clear_from.z,
           clear_from.y, max_drop, radius, 0.45f, &clear_surface),
       "The floor-only probe must find the road away from the seam too");
-  TEST_CHECK_(std::fabs(clear_landed.y - (clear_surface + radius)) < 0.01f,
+  TEST_CHECK_(std::fabs(clear_landed.position.y - (clear_surface + radius))
+          < 0.01f,
       "Away from the seam the drop query's landing center and the floor "
       "probe's surface plus radius must agree, landed.y=%f surface+r=%f",
-      clear_landed.y, clear_surface + radius);
+      clear_landed.position.y, clear_surface + radius);
 
-  // Nothing below means the whole max_drop, not the start position: this is
-  // the only way a caller can tell a miss from a landing.
+  // Nothing below is its own answer, distinct from both a landing and a
+  // blocked start.
   Vec3F over_edge(-76.4f, road_y + radius, 56.5f);
-  Vec3F fell = DropSphereBody(soup, over_edge, 5.0f, radius);
-  TEST_CHECK_(std::fabs((over_edge.y - fell.y) - 5.0f) < 1.0e-3f,
+  SphereDropResult fell = DropSphereBody(soup, over_edge, 5.0f, radius);
+  TEST_CHECK_(fell.kind == SphereDropResult::Kind::kNothingBelow,
+      "With nothing below the drop must say so, kind=%d",
+      static_cast<int>(fell.kind));
+  TEST_CHECK_(std::fabs(fell.fall - 5.0f) < 1.0e-3f,
       "With nothing below, the drop must take the whole max_drop, "
-      "fall=%f max_drop=%f", over_edge.y - fell.y, 5.0f);
+      "fall=%f max_drop=%f", fell.fall, 5.0f);
   float none = -1000.0f;
   TEST_CHECK_(!QuerySphereHeightBelow(soup, over_edge.x, over_edge.z,
           over_edge.y, 5.0f, radius, 0.45f, &none),
       "With nothing below, the floor-only probe must report a miss instead "
       "of a height, reported=%f", none);
+}
+
+void test_physics_support_measures_height_above_floor() {
+  // A hover control has to start braking while still in the air, so it needs
+  // the distance to the ground and not just "am I touching". Before the
+  // support carried that measurement, Hover Racer probed on its own, drifted
+  // away from the engine's own reading and froze mid-road on it; the point of
+  // these checks is that the engine's own answer is exact, opt-in, and fresh
+  // after a teleport.
+  CollisionTriangle floor_a = MakeTri(
+      Vec3F(-5.0f, 0.0f, -5.0f), Vec3F(-5.0f, 0.0f, 5.0f),
+      Vec3F(5.0f, 0.0f, 5.0f));
+  CollisionTriangle floor_b = MakeTri(
+      Vec3F(-5.0f, 0.0f, -5.0f), Vec3F(5.0f, 0.0f, 5.0f),
+      Vec3F(5.0f, 0.0f, -5.0f));
+  TEST_CHECK_(floor_a.n.y > 0.99f && floor_b.n.y > 0.99f,
+      "test setup: both floor triangles must face up, a=%f b=%f",
+      floor_a.n.y, floor_b.n.y);
+  std::vector<Vec3F> pa = {floor_a.a, floor_b.a};
+  std::vector<Vec3F> pb = {floor_a.b, floor_b.b};
+  std::vector<Vec3F> pc = {floor_a.c, floor_b.c};
+  std::vector<PhysicsMaterial> mats(2);
+  CollideSoup soup;
+  soup.Build(pa, pb, pc, mats, 8);
+
+  const float radius = 0.276000023f;
+  const float dt = 1.0f / 60.0f;
+  const Vec3F still(0.0f, 0.0f, 0.0f);
+  PhysicsStepConfig config;
+  config.support_probe = 6.0f;
+
+  Vec3F resting(0.0f, radius, 0.0f);
+  SphereStepResult rest_step = StepSphereBody(soup, nullptr, &resting, radius,
+      still, dt, config);
+  TEST_CHECK_(rest_step.support.has_floor_below,
+      "A sphere on the floor must find a floor below it");
+  TEST_CHECK_(std::fabs(rest_step.support.floor_distance) < config.skin,
+      "A resting sphere must measure as zero away from the floor, got %f "
+      "skin=%f", rest_step.support.floor_distance, config.skin);
+
+  // Airborne, and measured at two very different heights: the answer has to
+  // be the real height both times. A margin proportional to the fall (which
+  // is what the sweeps keep for placing bodies) would show up here as a
+  // reading that grows wrong with distance.
+  const float heights[2] = {0.5f, 5.0f};
+  for (Si32 i = 0; i < 2; ++i) {
+    Vec3F pos(0.0f, radius + heights[i], 0.0f);
+    SphereStepResult step = StepSphereBody(soup, nullptr, &pos, radius,
+        still, dt, config);
+    TEST_CHECK_(step.support.has_floor_below,
+        "The floor must be found from %f up", heights[i]);
+    TEST_CHECK_(!step.support.has_floor,
+        "Hanging %f above the floor is not resting on it", heights[i]);
+    TEST_CHECK_(std::fabs(step.support.floor_distance - heights[i]) < 1.0e-3f,
+        "The measured height must be the real one, measured=%f real=%f",
+        step.support.floor_distance, heights[i]);
+  }
+
+  Vec3F too_high(0.0f, radius + config.support_probe + 1.0f, 0.0f);
+  SphereStepResult high_step = StepSphereBody(soup, nullptr, &too_high,
+      radius, still, dt, config);
+  TEST_CHECK_(!high_step.support.has_floor_below,
+      "A floor past support_probe must not be reported, distance=%f "
+      "probe=%f", high_step.support.floor_distance, config.support_probe);
+
+  Vec3F off_the_edge(20.0f, radius, 20.0f);
+  SphereStepResult off_step = StepSphereBody(soup, nullptr, &off_the_edge,
+      radius, still, dt, config);
+  TEST_CHECK_(!off_step.support.has_floor_below,
+      "With no floor under it at all the measurement must report nothing, "
+      "distance=%f", off_step.support.floor_distance);
+
+  // Opt-in: a caller with no use for the measurement must not pay for it.
+  PhysicsStepConfig no_probe;
+  no_probe.support_probe = 0.0f;
+  Vec3F above(0.0f, radius + 1.0f, 0.0f);
+  SphereStepResult no_probe_step = StepSphereBody(soup, nullptr, &above,
+      radius, still, dt, no_probe);
+  TEST_CHECK_(!no_probe_step.support.has_floor_below,
+      "With support_probe at zero nothing may be measured, distance=%f",
+      no_probe_step.support.floor_distance);
+
+  // Through a real fall the measurement must track the height the geometry
+  // says, every step, not just at the ends.
+  PhysicsManifold manifold;
+  Vec3F falling(0.0f, radius + 4.0f, 0.0f);
+  float lift = 0.0f;
+  float worst_error = 0.0f;
+  bool ever_missed = false;
+  for (Si32 i = 0; i < 120; ++i) {
+    lift -= 9.8f * dt;
+    SphereStepResult step = StepSphereBody(soup, &manifold, &falling, radius,
+        Vec3F(0.0f, lift, 0.0f), dt, config);
+    if (step.support.has_floor) {
+      lift = 0.0f;
+    }
+    if (!step.support.has_floor_below) {
+      ever_missed = true;
+      continue;
+    }
+    float truth = falling.y - radius;
+    float error = std::fabs(step.support.floor_distance - truth);
+    if (error > worst_error) {
+      worst_error = error;
+    }
+  }
+  TEST_CHECK_(!ever_missed,
+      "The floor must stay found for the whole fall from four units up");
+  TEST_CHECK_(worst_error < 1.0e-3f,
+      "The measurement must follow the true height through the fall, worst "
+      "error=%f", worst_error);
+  TEST_CHECK_(falling.y <= radius + config.skin,
+      "The falling sphere must land, y=%f", falling.y);
+
+  // A teleport is the one moment the last step's measurement is about the
+  // wrong place, so the world refreshes it right there. A hover control
+  // reads the support before it steps, and on the frame after a spawn that
+  // would otherwise be an answer about where the body used to be.
+  PhysicsWorld world;
+  world.SetConfig(config);
+  world.SetStaticMesh(pa, pb, pc, mats, 8);
+  PhysicsBodyId id = world.AddSphere(Vec3F(0.0f, radius, 0.0f), radius);
+  world.SetPosition(id, Vec3F(0.0f, radius + 2.5f, 0.0f));
+  TEST_CHECK_(world.Support(id).has_floor_below,
+      "Right after a teleport the support must already know about the "
+      "floor below the new place");
+  TEST_CHECK_(std::fabs(world.Support(id).floor_distance - 2.5f) < 1.0e-3f,
+      "The refreshed measurement must be about the new place, got %f "
+      "expected 2.5", world.Support(id).floor_distance);
+  world.SetPosition(id, Vec3F(20.0f, radius, 20.0f));
+  TEST_CHECK_(!world.Support(id).has_floor_below,
+      "Teleported off the mesh, the support must stop claiming a floor "
+      "below, distance=%f", world.Support(id).floor_distance);
 }
 
 TEST_LIST = {
@@ -9553,6 +9707,8 @@ TEST_LIST = {
       test_physics_sphere_body_step_above_center_still_blocks},
   {"Physics drop probe conventions at a seam",
       test_physics_drop_probe_conventions_at_a_seam},
+  {"Physics support measures height above floor",
+      test_physics_support_measures_height_above_floor},
   {"Physics sphere body reacquires steep floor gap",
       test_physics_sphere_body_reacquires_steep_floor_gap},
   {"Physics sphere body hovering over floor is not sitting",

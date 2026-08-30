@@ -328,14 +328,25 @@ SphereStepResult StepSphereBody(const CollideSoup &soup,
     }
   }
 
+  MeasureSphereFloorBelow(soup, *position, radius, config, &result.support);
+
   return result;
 }
 
-Vec3F SweepSphere(const CollideSoup &soup, const Vec3F &from,
+namespace {
+
+struct SweepDetail {
+  Vec3F position;
+  SphereTriangleHit hit;
+};
+
+SweepDetail SweepSphereDetail(const CollideSoup &soup, const Vec3F &from,
     const Vec3F &to, float radius) {
+  SweepDetail out;
+  out.position = to;
   Vec3F vel = to - from;
   if (LengthSquared(vel) < 1.0e-10f) {
-    return to;
+    return out;
   }
   MovingSphere sph(from, radius, vel);
   SphereTriangleHit best;
@@ -346,10 +357,19 @@ Vec3F SweepSphere(const CollideSoup &soup, const Vec3F &from,
     }
   });
   if (!best.hit || best.time >= 1.0f) {
-    return to;
+    return out;
   }
+  out.hit = best;
   float t = std::max(0.0f, best.time * 0.9f);
-  return from + vel * t;
+  out.position = from + vel * t;
+  return out;
+}
+
+}  // namespace
+
+Vec3F SweepSphere(const CollideSoup &soup, const Vec3F &from,
+    const Vec3F &to, float radius) {
+  return SweepSphereDetail(soup, from, to, radius).position;
 }
 
 bool UnstickSphereBody(const CollideSoup &soup, Vec3F *center, float radius,
@@ -477,18 +497,66 @@ bool QuerySphereHeightBelow(const CollideSoup &soup, float x, float z,
   return false;
 }
 
-Vec3F DropSphereBody(const CollideSoup &soup, const Vec3F &start,
+SphereDropResult DropSphereBody(const CollideSoup &soup, const Vec3F &start,
     float max_drop, float radius) {
+  SphereDropResult result;
+  result.position = start;
+  result.kind = SphereDropResult::Kind::kBlockedAtStart;
   if (max_drop <= 1.0e-4f) {
-    return start;
+    return result;
   }
   Vec3F dest = start;
   dest.y -= max_drop;
-  Vec3F at = SweepSphere(soup, start, dest, radius);
-  at = ClampSegmentToSurface(soup, start, at);
+  SweepDetail sweep = SweepSphereDetail(soup, start, dest, radius);
+  Vec3F at = ClampSegmentToSurface(soup, start, sweep.position);
   UnstickSphereBody(soup, &at, radius);
   at = ClampSegmentToSurface(soup, start, at);
-  return at;
+  result.position = at;
+  result.fall = start.y - at.y;
+  if (sweep.hit.hit) {
+    result.normal = NormalizeSafe(sweep.hit.normal);
+  }
+  float slack = std::max(1.0e-6f, max_drop * 1.0e-5f);
+  if (result.fall <= slack) {
+    result.fall = 0.0f;
+    result.position = start;
+    result.kind = SphereDropResult::Kind::kBlockedAtStart;
+  } else if (!sweep.hit.hit && result.fall >= max_drop - slack) {
+    result.kind = SphereDropResult::Kind::kNothingBelow;
+    result.normal = Vec3F(0.0f, 0.0f, 0.0f);
+  } else {
+    result.kind = SphereDropResult::Kind::kLanded;
+  }
+  return result;
+}
+
+void MeasureSphereFloorBelow(const CollideSoup &soup, const Vec3F &center,
+    float radius, const PhysicsStepConfig &config,
+    SphereBodySupport *support) {
+  if (support == nullptr) {
+    return;
+  }
+  support->has_floor_below = false;
+  support->floor_distance = 0.0f;
+  if (config.support_probe <= 0.0f) {
+    return;
+  }
+  // The sweep starts a skin above the center so a body resting inside the
+  // contact skin is not measured from inside the surface it stands on: a
+  // sweep that begins already touching reports the touch at time zero, and
+  // the reading would then saturate at whatever the lift-off was. A skin is
+  // the smallest lift that clears legitimate penetration, so the worst a
+  // sideways graze can now cost is one skin of made-up depth instead of the
+  // half unit Hover Racer's own probe used to invent.
+  float lift = config.skin;
+  float surface = 0.0f;
+  if (!QuerySphereHeightBelow(soup, center.x, center.z, center.y + lift,
+      config.support_probe + lift, radius, config.floor_normal_y,
+      &surface)) {
+    return;
+  }
+  support->has_floor_below = true;
+  support->floor_distance = center.y - (surface + radius);
 }
 
 }  // namespace arctic

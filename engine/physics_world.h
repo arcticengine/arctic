@@ -71,6 +71,14 @@ class PhysicsWorld {
   void RemoveSphere(PhysicsBodyId id);
   bool IsAlive(PhysicsBodyId id) const;
 
+  /// Moves a body without sweeping anything: this is a teleport, not a
+  /// motion, and geometry between the old and new place is not consulted.
+  /// Calling it every frame to carry a game's own idea of where a body
+  /// belongs defeats the solver, so drive bodies with SetWishVelocity and
+  /// keep this for spawns, resets and deliberate jumps. The measured part
+  /// of the body's support is refreshed here so a hover control reading it
+  /// on the frame right after a teleport is not answered from the old
+  /// place.
   void SetPosition(PhysicsBodyId id, const Vec3F &position);
   void SetRadius(PhysicsBodyId id, float radius);
   void SetWishVelocity(PhysicsBodyId id, const Vec3F &wish_velocity);
@@ -104,7 +112,10 @@ class PhysicsWorld {
       float radius) const;
   bool HeightBelowQuery(float x, float z, float from_y, float max_drop,
       float radius, float *out_height) const;
-  Vec3F DropSphereQuery(const Vec3F &start, float max_drop,
+  /// Drops a sphere that is not one of the registered bodies straight down.
+  /// See SphereDropResult for why the answer is a kind and not just a
+  /// place: a drop that could not begin is not a drop that found nothing.
+  SphereDropResult DropSphereQuery(const Vec3F &start, float max_drop,
       float radius) const;
   /// Pushes center out of whatever it overlaps right now; useful to settle
   /// a body placed by teleport before the first Step.

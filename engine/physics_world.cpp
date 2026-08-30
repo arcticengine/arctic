@@ -93,7 +93,10 @@ PhysicsWorld::SphereBody &PhysicsWorld::BodyAt(PhysicsBodyId id) {
 }
 
 void PhysicsWorld::SetPosition(PhysicsBodyId id, const Vec3F &position) {
-  BodyAt(id).position = position;
+  SphereBody &body = BodyAt(id);
+  body.position = position;
+  MeasureSphereFloorBelow(soup_, body.position, body.radius, config_,
+      &body.last_result.support);
 }
 
 void PhysicsWorld::SetRadius(PhysicsBodyId id, float radius) {
@@ -213,8 +216,8 @@ bool PhysicsWorld::HeightBelowQuery(float x, float z, float from_y,
       config_.floor_normal_y, out_height);
 }
 
-Vec3F PhysicsWorld::DropSphereQuery(const Vec3F &start, float max_drop,
-    float radius) const {
+SphereDropResult PhysicsWorld::DropSphereQuery(const Vec3F &start,
+    float max_drop, float radius) const {
   return DropSphereBody(soup_, start, max_drop, radius);
 }
 
