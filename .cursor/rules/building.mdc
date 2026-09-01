@@ -6,7 +6,7 @@ alwaysApply: false
 
 ## Building Arctic Engine Projects
 
-Buildable projects: `wizard/`, `tests/`, `benchmark/`, `filetest/`, `fuzz_tests/`, `antarctica_pyramids/`, and a project made by the wizard. Do not try to build `engine/` or `template_project_name/` directly -- they are not standalone targets.
+Buildable projects: `wizard/`, `tests/`, `benchmark/`, `filetest/`, `fuzz_tests/`, `antarctica_pyramids/`, `headless_server/`, and a project made by the wizard. Do not try to build `engine/` or `template_project_name/` directly -- they are not standalone targets.
 
 Always chain cmake/make/run in a single shell command using `&&` to avoid multiple permission prompts.
 

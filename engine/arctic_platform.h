@@ -69,6 +69,30 @@ void ExitProgram(Si32 exit_code = 0);
 /// three: the backbuffer is a plain piece of memory, nothing needs a display
 /// to be attached, and anything that requires a GL context fails, so this is
 /// the mode for a console subcommand or a machine with no display at all.
+///
+/// The pace of the loop differs along with them, and this is the part that
+/// surprises people. In kWindowed and in kHiddenWindow there is a swap of
+/// buffers inside ShowFrame, so vertical synchronization paces the loop by
+/// itself even when nobody is looking at the window. In kNoWindow ShowFrame
+/// draws nothing and waits for nothing: a `while (true) { ShowFrame(); }` loop
+/// spins as fast as the processor allows and eats a whole core for nothing. A
+/// server or a subcommand that keeps looping has to pace itself, which is what
+/// Time() and Sleep() are for:
+///
+/// @code
+/// const double tick = 1.0 / 60.0;
+/// double next_tick = Time();
+/// while (is_running) {
+///   Step();
+///   next_tick += tick;
+///   const double idle = next_tick - Time();
+///   if (idle > 0.0) {
+///     Sleep(idle);
+///   } else {
+///     next_tick = Time();  // fell behind, do not try to catch up
+///   }
+/// }
+/// @endcode
 enum class StartupMode : Si32 {
   kWindowed = 0,
   kHiddenWindow = 1,
@@ -257,6 +281,37 @@ bool IsVSyncSupported();
 /// @param is_enable true enables VSync, false disables VSync
 /// @return true if VSync mode is successfuly set
 bool SetVSync(bool is_enable);
+
+/// @brief Sets the text in the title bar of the main window
+/// @param [in] title UTF-8 text for the title bar, nullptr or empty for the
+///   default one
+///
+/// Works before the window exists as well as while it is on the screen: called
+/// early, it decides what the window is created with; called later, it renames
+/// the window at once. Two copies of one program are told apart by this and by
+/// nothing else, which is a reason for a program that can run twice to say
+/// something about itself here -- which player it is, which file it opened.
+///
+/// The two windowless startup modes keep the title as a value and have nothing
+/// to show it on. There is no way to read the title back from the system, so
+/// WindowTitle() answers from the engine's own copy.
+void SetWindowTitle(const char *title);
+
+/// @brief Returns the text of the title bar of the main window
+/// @return The title set with SetWindowTitle, or the default one
+///
+/// The default is the file name of the running executable, without a directory
+/// and without the `.exe` suffix, so a program is named after itself rather
+/// than after the engine. Where even that is unknown, which is the web, the
+/// answer is "Arctic Engine".
+std::string WindowTitle();
+
+/// @brief Puts the title on the window of the platform
+/// @param [in] title UTF-8 text for the title bar
+///
+/// The platform half of SetWindowTitle, called by it. Does nothing when there is
+/// no window. An application has no reason to call this.
+void ApplyWindowTitle(const std::string &title);
 
 /// @brief Returns true if the application is running in Full Screen mode
 /// @return true if the application is running in Full Screen mode

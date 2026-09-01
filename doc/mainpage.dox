@@ -229,6 +229,152 @@ Project examples cover a wide range of functionalities, including basic graphic 
 Quick Tutorials
 --------------
 
+\anchor coordinates
+### Where Zero Is and Which Way Is Up
+
+One convention holds for everything the engine draws and for everything it says
+about the mouse: coordinates are pixels of the backbuffer, (0, 0) is its
+**bottom-left** corner, x grows to the right and y grows **upward**. There is no
+second coordinate system to remember. `Sprite::Draw`, `HwSprite::Draw`,
+`Font::Draw`, `DrawRectangle` and the whole family of shapes, `Panel` and every
+other GUI element, `MousePos()` and `InputMessage::Mouse::backbuffer_pos` all
+live in it. `ScreenSize()` is its extent, so the topmost row of pixels is
+`ScreenSize().y - 1`.
+
+Two things follow from y growing upward, and both have cost people an afternoon.
+
+A layout measured from the top of the screen, which is what a mock-up or a
+window toolkit gives you, is upside down here. Convert it once, at the boundary,
+instead of subtracting by hand at every call site:
+
+~~~~~{.cpp}
+    // "the panel starts 40 pixels below the top and is 120 pixels tall"
+    Vec2Si32 panel_size(300, 120);
+    Vec2Si32 panel_pos = FromTopLeft(Vec2Si32(20, 40), panel_size);
+    DrawRectangle(panel_pos, panel_pos + panel_size - Vec2Si32(1, 1),
+                  Rgba(0, 0, 0, 160));
+
+    // a single point, no box involved
+    Vec2Si32 caret = FromTopLeft(Vec2Si32(20, 40));
+
+    // and back, when a number has to be printed the way the mock-up counts
+    Vec2Si32 from_top = ToTopLeft(caret);
+~~~~~
+
+`FromTopLeft(pos)` moves a point; `FromTopLeft(pos, size)` moves a box whose
+*top* edge is the one that was measured, and that is the overload people need
+and forget. Both are involutions, so applying `FromTopLeft` twice gives back the
+original, and `ToTopLeft` is the same conversion under a name that reads better
+in the other direction. The overload taking a destination sprite converts within
+that sprite instead of within the screen.
+
+A sprite is placed by its **pivot**, not by its bottom-left corner. They are the
+same point only while the pivot is (0, 0), which is the default for `Create` and
+for a png, but `Sprite::Load` takes the pivot from the origin field of a tga, so
+one asset can land where you asked and the next one a hundred pixels away with
+identical code. This is also why a hand-written "is the click inside a box at
+the draw position" test misses the character it is supposed to hit. Ask the
+engine instead, it accounts for the pivot and for the reference rectangle:
+
+~~~~~{.cpp}
+    hero.Draw(hero_pos);
+    if (IsKeyDownward(kKeyMouseLeft) &&
+        IsPointInSprite(hero, hero_pos, MousePos())) {
+      Select(hero);
+    }
+~~~~~
+
+`HwSprite::Load` differs here: it leaves the pivot at zero even for a tga, while
+`LoadFromSoftwareSprite` carries it over.
+
+Three details worth knowing before they surprise you. Rectangle-shaped calls
+take **inclusive** corners, so `DrawRectangle(Vec2Si32(0, 0), Vec2Si32(0, 0),
+color)` paints one pixel and a box of size `s` at `p` ends at `p + s - (1, 1)`.
+`WindowSize()` is not `ScreenSize()`: the former counts real pixels of the
+display, twice the size in points on a Retina screen, and the engine stretches
+the backbuffer into the window, so mouse positions are converted for you and the
+game never sees window pixels unless it asks. And `SetInverseY(true)` is not a
+"zero at the top" mode: it flips the finished frame, text and all, mirroring
+every glyph. The converters above are what a top-down layout wants.
+
+### Shapes, Without a Sprite for Every Box
+
+A wall, a bar, a marker or a dimmed background needs no image file and no sprite
+created for it. The shapes are one call each, and they all take the color
+directly:
+
+~~~~~{.cpp}
+    DrawRectangle(Vec2Si32(10, 10), Vec2Si32(110, 40), Rgba(0, 0, 0, 160));
+    DrawLine(Vec2Si32(0, 0), Vec2Si32(100, 100), Rgba(255, 255, 255));
+    DrawTriangle(a, b, c, Rgba(200, 0, 0));
+    DrawCircle(Vec2Si32(300, 300), 40, Rgba(0, 255, 128));
+    DrawOval(Vec2Si32(300, 300), Vec2Si32(60, 30), Rgba(0, 128, 255));
+    SetPixel(7, 7, Rgba(255, 255, 255));
+~~~~~
+
+`DrawLine` and `DrawTriangle` also come in a gradient form, taking a color per
+end or per vertex, and `DrawTriangle` can take a textured form as well.
+`DrawBlock` (a rounded rectangle) and `DrawArrow` exist only in the form that
+draws into a sprite you name, so pass `GetEngine()->GetBackbuffer()` to put them
+on the screen.
+
+Two things about them are worth saying out loud. Rectangle corners are
+**inclusive**: `DrawRectangle(p, p, color)` paints exactly one pixel, and a box
+of size `s` at `p` ends at `p + s - (1, 1)`. And all of the above are the
+software path: they write into the backbuffer, which is composed above every
+hardware sprite. In the hardware path there is one of them,
+`DrawRectangleHw(ll, ur, color)`, which queues a filled rectangle like any
+`HwSprite` and needs no texture of yours:
+
+~~~~~{.cpp}
+    DrawRectangleHw(Vec2Si32(0, 0), Vec2Si32(319, 39), Rgba(20, 20, 40, 255));
+    hud.Draw(Vec2Si32(8, 8));  // a HwSprite above the fill, being later
+~~~~~
+
+`DrawRectangleHw` has a second form taking a destination `HwSprite`, for
+preparing a texture rather than drawing a frame. That one takes effect at once
+rather than in frame order, and it writes the color instead of blending it.
+
+### What Ends Up on Top
+
+There are no layers, and the order is fixed rather than configurable, so it is
+worth knowing exactly what it is.
+
+Among hardware sprites, later covers earlier: the order of `Draw` calls is the
+order of drawing, and consecutive calls sharing a texture, a blending mode and a
+color are merged into one GPU batch, which never reorders anything. Everything
+drawn through the software path -- `Sprite::Draw`, `Font::Draw`, `DrawRectangle`
+and the other shapes, and the GUI -- goes into the software backbuffer, and that
+backbuffer is composed **above all hardware sprites**, whatever the call order
+was. A hardware sprite can not be put above software drawing within one frame.
+
+Within the software backbuffer itself, later covers earlier again, so a caption
+that must not be hidden by other software drawing is drawn at the end of the
+frame. Where a picture is wanted above the software layer, the way to get it is
+to draw it into the backbuffer as a `Sprite` rather than as a `HwSprite`.
+
+### Naming the Window
+
+The title bar says the name of the program by default -- the file name of the
+executable, not "Arctic Engine" -- and a program can say something more useful
+there at any time:
+
+~~~~~{.cpp}
+    SetWindowTitle("Old Gate: player 2");
+    ...
+    SetWindowTitle(("Old Gate: " + level_name).c_str());
+~~~~~
+
+It works before the window exists as well, so a call at the start of `EasyMain`
+decides what the window is created with, and a later call renames it on the
+spot. `WindowTitle()` gives back what was set, or the default; there is no way
+to ask the system about the real title, so this is the engine's own copy.
+`SetWindowTitle("")` and `SetWindowTitle(nullptr)` both mean "the default
+again". In a windowless run the title is kept and shown to nobody.
+
+This matters most for a program that runs twice on one machine: two identical
+windows are indistinguishable, and one line at startup fixes it for good.
+
 ### Command Line Arguments and File Paths
 
 The current directory of a running Arctic application is not the directory the
@@ -296,9 +442,12 @@ otherwise `CanonicalizeArgvPath()` falls back to the current directory.
 
 A subcommand like `mygame convert a.png b.tga` has nothing to draw, and a window
 that opens and closes right away is worse than no window at all, on a machine
-with a display or without one. The engine asks before it creates the window, the
-GL context and the sound device, and the answer comes from a function of yours
-registered before `main` runs:
+with a display or without one. A dedicated server has even less business opening
+one. And a scripted run that has to draw but must not be watched needs the
+opposite: the window and the GL context, just not on the screen. The engine asks
+which of the three it is before it creates the window, the GL context and the
+sound device, and the answer comes from a function of yours registered before
+`main` runs:
 
 ~~~~~{.cpp}
     #include "engine/easy.h"
@@ -306,15 +455,33 @@ registered before `main` runs:
 
     namespace {
 
-    bool WantsHeadlessRun() {
+    StartupMode DecideStartupMode() {
       Engine *engine = GetEngine();  // the command line is already here
-      return engine->GetArgc() >= 2 &&
-             std::string(engine->GetArgv()[1]) == "convert";
+      for (Si32 i = 1; i < engine->GetArgc(); ++i) {
+        const std::string arg = engine->GetArgv()[i];
+        if (arg == "-NSDocumentRevisionsDebugMode") {
+          if (i + 1 < engine->GetArgc()
+              && std::string(engine->GetArgv()[i + 1]) == "YES") {
+            ++i;  // Xcode adds this pair on a Debug Run, it means nothing here
+          }
+          continue;
+        }
+        if (arg.size() >= 5 && arg.compare(0, 5, "-psn_") == 0) {
+          continue;  // and this is what Finder used to add
+        }
+        if (arg == "convert" || arg == "serve") {
+          return StartupMode::kNoWindow;
+        }
+        if (arg == "--selftest") {
+          return StartupMode::kHiddenWindow;
+        }
+      }
+      return StartupMode::kWindowed;
     }
 
     }  // namespace
 
-    ARCTIC_HEADLESS_DECIDER(WantsHeadlessRun)
+    ARCTIC_STARTUP_MODE_DECIDER(DecideStartupMode)
 
     void EasyMain() {
       if (GetEngine()->IsHeadless()) {
@@ -325,15 +492,52 @@ registered before `main` runs:
     }
 ~~~~~
 
+Skipping those two injected arguments is not decoration: a decider that treats
+any extra argv as a console run sends every Debug Run from Xcode into a windowless
+mode, and the program that opened a window yesterday opens none today.
+
 Everything else about such a run is the same as usual: the same current
 directory, the same log, the same argv rules, and the backbuffer is a piece of
-memory nothing presents. Setting both `ARCTIC_HEADLESS` and `ARCTIC_DISABLE_HW`
-in the environment asks for it from outside, without a decider.
+memory nothing presents. `ARCTIC_HEADLESS` in the environment asks for a hidden
+window from outside, and together with `ARCTIC_DISABLE_HW` it asks for no window
+at all; the environment wins over the decider, so a run can always be hidden
+without touching the code.
+
+One thing does change, and it is easy to miss. In a windowed run, hidden window
+included, `ShowFrame()` swaps the buffers, so vertical synchronization paces the
+loop and a `while (true)` loop runs at the refresh rate of the display. With
+`kNoWindow` there is nothing to swap: `ShowFrame()` draws nothing, waits for
+nothing, and the same loop spins as fast as the processor allows, burning a core
+for no reason. A server or any other windowless loop has to pace itself with
+`Time()` and `Sleep()`:
+
+~~~~~{.cpp}
+    const double tick = 1.0 / 60.0;
+    double next_tick = Time();
+    while (is_running) {
+      Step();
+      next_tick += tick;
+      const double idle = next_tick - Time();
+      if (idle > 0.0) {
+        Sleep(idle);
+      } else {
+        next_tick = Time();  // fell behind, do not try to catch the time up
+      }
+    }
+~~~~~
+
+The `headless_server` project in the tree is exactly this, in full: a decider
+that returns `kNoWindow`, a `ListenerSocket` on a port, a fixed tick paced the
+way above, and a client mode in the same executable so that the example can be
+run against itself.
 
 `ExitProgram(code)` is how a subcommand reports its verdict: the code reaches the
 shell, the log is flushed and the sound device is released on the way out. Never
 `std::exit` or `std::_Exit` instead, and remember that `EasyMain` is `void` and
-can not return a value; returning from it means `ExitProgram(0)`.
+can not return a value; returning from it means `ExitProgram(0)`. A windowless
+loop also has no window to close, so `IsMainWindowCloseRequested()` never becomes
+true and the Escape key never arrives: such a loop ends on a command it received,
+on a signal, or on a budget of ticks it set itself.
 
 ### Image Files
 
@@ -614,6 +818,53 @@ Such a key is read as a key, with `IsKeyDownward(kKeyTab)` and its like.
 Keys that are modifiers have a generic form as well as a left and a right one, so
 `IsKeyDown(kKeyControl)` is true for either Control key, and the same holds for
 Shift and Alt.
+
+### Holding a Key, and Driving the Game Without a Human
+
+Three questions about a key are three different functions, and picking the wrong
+one is the usual reason a step "walk to the gate" does nothing.
+`IsKeyDownward(key)` is true on the one frame the key went down, which is what a
+menu choice or a jump wants. `IsKeyDown(key)` is true for as long as the key is
+held, which is what walking wants. `KeyDownSeconds(key)` says how long it has
+been held, in seconds, and zero while it is up, which is what a charged shot, a
+hold-to-confirm or a repeat-after-a-delay wants:
+
+~~~~~{.cpp}
+    if (IsKeyDown(kKeyRight)) {
+      hero.x += 4;                          // every frame the key is held
+    }
+    if (KeyDownSeconds(kKeySpace) > 0.7) {
+      charge = std::min(1.0, KeyDownSeconds(kKeySpace) - 0.7);
+    }
+    if (IsKeyUpward(kKeySpace) && charge > 0.0) {
+      FireCharged(charge);                  // released, so let it go
+    }
+~~~~~
+
+None of this needs a human to press anything. `SetKey(key, true)` puts a key
+into the down state as if it had been pressed at the end of the last frame, and
+it *stays* down until `SetKey(key, false)`, so a script can hold a key across as
+many frames as walking to the gate takes:
+
+~~~~~{.cpp}
+    SetKey(kKeyRight, true);
+    for (Si32 frame = 0; frame < 60; ++frame) {
+      Step();          // the game sees IsKeyDown(kKeyRight) all sixty frames
+      ShowFrame();
+    }
+    SetKey(kKeyRight, false);
+~~~~~
+
+`ClearKeyStateTransitions()` forgets the edges of the current frame -- what
+`IsKeyDownward` and `IsKeyUpward` report -- while leaving held keys held, which
+is how a test hands the game a clean frame without waiting for the next
+`ShowFrame`. `PushInputMessage()` goes one level lower and feeds the queue a
+whole message, keyboard or mouse, which is the way to test typed text and clicks
+at particular places; the message is processed by the next `ShowFrame`, exactly
+as a real one is.
+
+An automatic run wants no window, and the engine has a mode for that as well;
+see "Console Subcommands and Exit Codes" below and `StartupMode`.
 
 ### Ending the Program
 

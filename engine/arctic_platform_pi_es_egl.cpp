@@ -94,8 +94,18 @@ EGLSurface g_egl_surface;
 void HeadlessPlatformInit() {
 }
 
+void ApplyWindowTitle(const std::string &title) {
+  if (!g_x_display || !g_x_window) {
+    return;
+  }
+  XStoreName(g_x_display, g_x_window, title.c_str());
+  XSetIconName(g_x_display, g_x_window, title.c_str());
+  XFlush(g_x_display);
+}
+
 void CreateMainWindow(SystemInfo *system_info) {
-  const char *title = "Arctic Engine";
+  const std::string window_title = WindowTitle();
+  const char *title = window_title.c_str();
 
   g_x_display = XOpenDisplay(NULL);
   Check(g_x_display != NULL, "Can't open display.");

@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <algorithm>
 #include <chrono>  // NOLINT
 #include <deque>
 #include <fstream>
@@ -57,12 +58,17 @@ struct KeyState {
   bool previous_state_is_down = false;
   bool was_pressed_this_frame = false;
   bool was_released_this_frame = false;
+  // The moment the key went down, in the seconds Time() counts. Meaningless
+  // while the key is up, and left alone by a repeated press, so that a key held
+  // through several frames keeps the moment it was actually pressed.
+  double down_since = 0.0;
 
   void Init() {
     current_state_is_down = false;
     previous_state_is_down = false;
     was_pressed_this_frame = false;
     was_released_this_frame = false;
+    down_since = 0.0;
   }
 
   void OnShowFrame() {
@@ -74,6 +80,9 @@ struct KeyState {
   void OnControllerState(bool is_down) {
     was_pressed_this_frame = was_pressed_this_frame || (current_state_is_down == false && is_down == true);
     was_released_this_frame = was_released_this_frame || (current_state_is_down == true && is_down == false);
+    if (is_down && !current_state_is_down) {
+      down_since = Time();
+    }
     current_state_is_down = is_down;
   }
 
@@ -83,11 +92,22 @@ struct KeyState {
     } else {
       was_released_this_frame = true;
     }
+    if (is_down && !current_state_is_down) {
+      down_since = Time();
+    }
     current_state_is_down = is_down;
   }
 
   bool IsDown() const {
     return current_state_is_down;
+  }
+
+  double DownSeconds() const {
+    if (!current_state_is_down) {
+      return 0.0;
+    }
+    const double held = Time() - down_since;
+    return held > 0.0 ? held : 0.0;
   }
 
   bool WasPressed() const {
@@ -678,6 +698,25 @@ void DrawTriangle(Sprite to_sprite, Vec2Si32 a, Vec2Si32 b, Vec2Si32 c,
 
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
   DrawRectangle(GetEngine()->GetBackbuffer(), ll, ur, color);
+}
+
+void DrawRectangleHw(Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
+  if (color.a == 0 || GetEngine()->IsSoftwareOnly()) {
+    return;
+  }
+  HwSprite solid = GetEngine()->SolidHwSprite();
+  if (solid.Width() == 0) {
+    return;
+  }
+  const Vec2Si32 lower(std::min(ll.x, ur.x), std::min(ll.y, ur.y));
+  const Vec2Si32 upper(std::max(ll.x, ur.x), std::max(ll.y, ur.y));
+  solid.Draw(lower, upper - lower + Vec2Si32(1, 1),
+      kDrawBlendingModeSolidColor, kFilterNearest, color);
+}
+
+void DrawRectangleHw(const HwSprite &to_sprite, Vec2Si32 ll, Vec2Si32 ur,
+    Rgba color) {
+  GetEngine()->FillHwSpriteRect(to_sprite, ll, ur, color);
 }
 
 void DrawRectangle(Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color) {
@@ -1320,6 +1359,45 @@ bool IsKeyDown(const std::string &keys) {
   return IsKeyDown(keys.c_str());
 }
 
+static double KeyDownSecondsImpl(Ui32 key_code) {
+  if (key_code >= kKeyCount) {
+    return 0.0;
+  }
+  return g_key_state[key_code].DownSeconds();
+}
+
+double KeyDownSeconds(const KeyCode key_code) {
+  return KeyDownSecondsImpl(static_cast<Ui32>(key_code));
+}
+
+double KeyDownSeconds(const char *keys) {
+  double longest = 0.0;
+  for (const char *key = keys; *key != 0; ++key) {
+    const double held = KeyDownSeconds(*key);
+    if (held > longest) {
+      longest = held;
+    }
+  }
+  return longest;
+}
+
+double KeyDownSeconds(const char key) {
+  if (key >= 'a' && key <= 'z') {
+    return KeyDownSecondsImpl(static_cast<Ui32>(key)
+      + static_cast<Ui32>('A')
+      - static_cast<Ui32>('a'));
+  }
+  return KeyDownSecondsImpl(static_cast<Ui32>(key));
+}
+
+double KeyDownSeconds(const Si32 key_code) {
+  return KeyDownSecondsImpl(static_cast<Ui32>(key_code));
+}
+
+double KeyDownSeconds(const std::string &keys) {
+  return KeyDownSeconds(keys.c_str());
+}
+
 bool IsAnyKeyDownward() {
   for (Si32 key = 0; key < kKeyCount; ++key) {
     if (key == kKeyMouseLeft || key == kKeyMouseRight
@@ -1443,6 +1521,72 @@ void ResizeScreen(const Vec2Si32 size) {
 
 void SetInverseY(bool is_inverse) {
   GetEngine()->SetInverseY(is_inverse);
+}
+
+void SetWindowTitle(const char *title) {
+  GetEngine()->SetWindowTitle(title ? std::string(title) : std::string());
+  ApplyWindowTitle(GetEngine()->GetWindowTitle());
+}
+
+std::string WindowTitle() {
+  return GetEngine()->GetWindowTitle();
+}
+
+Vec2Si32 FromTopLeft(Vec2Si32 pos_from_top_left) {
+  return Vec2Si32(pos_from_top_left.x,
+    ScreenSize().y - 1 - pos_from_top_left.y);
+}
+
+Vec2Si32 FromTopLeft(Vec2Si32 pos_from_top_left, Vec2Si32 size) {
+  return Vec2Si32(pos_from_top_left.x,
+    ScreenSize().y - pos_from_top_left.y - size.y);
+}
+
+Vec2Si32 FromTopLeft(const Sprite &to_sprite, Vec2Si32 pos_from_top_left) {
+  if (to_sprite.Height() == 0) {
+    return pos_from_top_left;
+  }
+  return Vec2Si32(pos_from_top_left.x,
+    to_sprite.Height() - 1 - pos_from_top_left.y);
+}
+
+Vec2Si32 FromTopLeft(const Sprite &to_sprite, Vec2Si32 pos_from_top_left,
+    Vec2Si32 size) {
+  if (to_sprite.Height() == 0) {
+    return pos_from_top_left;
+  }
+  return Vec2Si32(pos_from_top_left.x,
+    to_sprite.Height() - pos_from_top_left.y - size.y);
+}
+
+Vec2Si32 ToTopLeft(Vec2Si32 engine_pos) {
+  return FromTopLeft(engine_pos);
+}
+
+Vec2Si32 ToTopLeft(Vec2Si32 engine_pos, Vec2Si32 size) {
+  return FromTopLeft(engine_pos, size);
+}
+
+bool IsPointInSprite(const Sprite &sprite, Vec2Si32 drawn_at,
+    Vec2Si32 point) {
+  Vec2Si32 size = sprite.Size();
+  if (size.x <= 0 || size.y <= 0) {
+    return false;
+  }
+  Vec2Si32 lower_left = drawn_at - sprite.Pivot();
+  return point.x >= lower_left.x && point.x < lower_left.x + size.x
+    && point.y >= lower_left.y && point.y < lower_left.y + size.y;
+}
+
+bool IsPointInSprite(const HwSprite &sprite, Vec2Si32 drawn_at,
+    Vec2Si32 point) {
+  Vec2Si32 size = sprite.Size();
+  if (size.x <= 0 || size.y <= 0) {
+    return false;
+  }
+  Vec2Si32 lower_left = drawn_at - sprite.Pivot();
+  return point.x >= lower_left.x && point.x < lower_left.x + size.x
+    && point.y >= lower_left.y && point.y < lower_left.y + size.y;
 }
 
 void Clear() {

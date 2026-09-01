@@ -24,6 +24,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include <algorithm>
 #include <atomic>
 #include <cstdlib>
 #include <cstring>
@@ -155,6 +156,45 @@ void Engine::SetInitialPath(const std::string &initial_path) {
 
 std::string Engine::GetInitialPath() const {
   return initial_path_;
+}
+
+namespace {
+
+// The file name of the running program, with no directory in front of it and no
+// ".exe" behind it. A bundled macOS application has its executable at
+// <name>.app/Contents/MacOS/<name>, so the name comes out right there as well.
+std::string ExecutableFileName() {
+  const std::string path = GetExecutablePath();
+  if (path.empty()) {
+    return std::string();
+  }
+  size_t name_begin = path.find_last_of("/\\");
+  name_begin = (name_begin == std::string::npos) ? 0 : name_begin + 1;
+  std::string name = path.substr(name_begin);
+  if (name.size() > 4) {
+    const std::string tail = name.substr(name.size() - 4);
+    if (StrCaseCmp(tail.c_str(), ".exe") == 0) {
+      name = name.substr(0, name.size() - 4);
+    }
+  }
+  return name;
+}
+
+}  // namespace
+
+std::string Engine::GetWindowTitle() {
+  if (window_title_.empty()) {
+    window_title_ = ExecutableFileName();
+    if (window_title_.empty()) {
+      // The web has no executable path to name the program after.
+      window_title_ = "Arctic Engine";
+    }
+  }
+  return window_title_;
+}
+
+void Engine::SetWindowTitle(const std::string &title) {
+  window_title_ = title;
 }
 
 void Engine::SetRandomSeed(Ui64 seed) {
@@ -662,6 +702,44 @@ void Engine::Compose2d(GlFramebuffer *target) {
                   GL_UNSIGNED_INT,
                   0));  // Offset into the bound index buffer
   }
+}
+
+const HwSprite &Engine::SolidHwSprite() {
+  if (solid_hw_sprite_.Width() == 0 && !is_software_only_) {
+    Sprite one_pixel;
+    one_pixel.Create(1, 1);
+    one_pixel.Clear(Rgba(255, 255, 255, 255));
+    solid_hw_sprite_.LoadFromSoftwareSprite(one_pixel);
+  }
+  return solid_hw_sprite_;
+}
+
+void Engine::FillHwSpriteRect(const HwSprite &to_sprite, Vec2Si32 ll,
+    Vec2Si32 ur, Rgba color) {
+  if (is_software_only_ || !to_sprite.sprite_instance()) {
+    return;
+  }
+  const Vec2Si32 size = to_sprite.Size();
+  const Si32 x1 = std::max(std::min(ll.x, ur.x), 0);
+  const Si32 x2 = std::min(std::max(ll.x, ur.x) + 1, size.x);
+  const Si32 y1 = std::max(std::min(ll.y, ur.y), 0);
+  const Si32 y2 = std::min(std::max(ll.y, ur.y) + 1, size.y);
+  if (x1 >= x2 || y1 >= y2) {
+    return;
+  }
+  const Vec2Si32 base = to_sprite.RefPos();
+  to_sprite.sprite_instance()->framebuffer().Bind();
+  ARCTIC_GL_CHECK_ERROR(glEnable(GL_SCISSOR_TEST));
+  ARCTIC_GL_CHECK_ERROR(glScissor(base.x + x1, base.y + y1,
+      x2 - x1, y2 - y1));
+  ARCTIC_GL_CHECK_ERROR(glClearColor(
+      static_cast<float>(color.r) / 255.0f,
+      static_cast<float>(color.g) / 255.0f,
+      static_cast<float>(color.b) / 255.0f,
+      static_cast<float>(color.a) / 255.0f));
+  ARCTIC_GL_CHECK_ERROR(glClear(GL_COLOR_BUFFER_BIT));
+  ARCTIC_GL_CHECK_ERROR(glDisable(GL_SCISSOR_TEST));
+  GlFramebuffer::BindDefault();
 }
 
 Sprite Engine::TakeScreenshot() {

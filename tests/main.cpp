@@ -20,6 +20,7 @@
 #include "engine/arctic_pi.h"
 #include "engine/arctic_platform.h"
 #include "engine/arctic_platform_def.h"
+#include "engine/arctic_platform_tcpip.h"
 
 #include "engine/arctic_types.h"
 #include "engine/easy.h"
@@ -3841,6 +3842,1092 @@ void test_typed_text_and_generic_modifiers() {
   letter.keyboard.key_state = 2;
   PushInputMessage(letter);
   ShowFrame();
+}
+
+// Coordinates grow upward here while a mock-up counts downward from the top, so
+// the engine converts instead of leaving it to subtraction at every call site.
+// A point and a box are two different conversions, and the box is the one that
+// gets it wrong.
+void test_top_left_coordinate_helpers() {
+  ResizeScreen(320, 200);
+  TEST_CHECK_(ScreenSize() == Vec2Si32(320, 200),
+      "the backbuffer is %d x %d, the rest of this test assumes 320 x 200",
+      ScreenSize().x, ScreenSize().y);
+
+  // Row 0 from the top is the topmost row of pixels.
+  TEST_CHECK_(FromTopLeft(Vec2Si32(7, 0)) == Vec2Si32(7, 199),
+      "the top row went to y = %d instead of 199",
+      FromTopLeft(Vec2Si32(7, 0)).y);
+  TEST_CHECK_(FromTopLeft(Vec2Si32(7, 199)) == Vec2Si32(7, 0),
+      "the bottom row went to y = %d instead of 0",
+      FromTopLeft(Vec2Si32(7, 199)).y);
+  for (Si32 y = 0; y < 200; y += 37) {
+    const Vec2Si32 point(11, y);
+    TEST_CHECK_(FromTopLeft(FromTopLeft(point)) == point,
+        "converting (11, %d) twice moved it to (%d, %d)", y,
+        FromTopLeft(FromTopLeft(point)).x, FromTopLeft(FromTopLeft(point)).y);
+    TEST_CHECK_(ToTopLeft(FromTopLeft(point)) == point,
+        "ToTopLeft did not undo FromTopLeft at y = %d", y);
+  }
+
+  // "twenty from the left, forty below the top, three hundred by a hundred and
+  // twenty": the measured edge is the top one, so the position a Draw call
+  // wants is 200 - 40 - 120 = 40.
+  const Vec2Si32 kSize(300, 120);
+  const Vec2Si32 kFromTop(20, 40);
+  const Vec2Si32 box = FromTopLeft(kFromTop, kSize);
+  TEST_CHECK_(box == Vec2Si32(20, 40),
+      "a box measured 40 below the top landed at (%d, %d)", box.x, box.y);
+  TEST_CHECK_(box.y + kSize.y == ScreenSize().y - kFromTop.y,
+      "the top edge of the box is at %d, and 40 below the top is %d",
+      box.y + kSize.y, ScreenSize().y - kFromTop.y);
+  TEST_CHECK_(ToTopLeft(box, kSize) == kFromTop,
+      "the box did not survive the trip back: (%d, %d)",
+      ToTopLeft(box, kSize).x, ToTopLeft(box, kSize).y);
+
+  // Negative control. The point conversion applied to a box puts its top edge
+  // a whole height away from the measured one, which is exactly the mistake
+  // the two overloads exist to prevent; if this ever agreed, the box overload
+  // would be testing nothing.
+  const Vec2Si32 as_a_point = FromTopLeft(kFromTop);
+  TEST_CHECK_(as_a_point.y + kSize.y != ScreenSize().y - kFromTop.y,
+      "the point conversion placed a box correctly, so this test proves "
+      "nothing about the box overload");
+
+  // Inside a sprite the same conversion turns around the height of the sprite.
+  Sprite target;
+  target.Create(64, 32);
+  TEST_CHECK_(FromTopLeft(target, Vec2Si32(3, 0)) == Vec2Si32(3, 31),
+      "the top row of a 32 pixel sprite went to y = %d",
+      FromTopLeft(target, Vec2Si32(3, 0)).y);
+  TEST_CHECK(FromTopLeft(target, Vec2Si32(3, 31)) == Vec2Si32(3, 0));
+  TEST_CHECK_(FromTopLeft(target, Vec2Si32(3, 4), Vec2Si32(10, 8))
+          == Vec2Si32(3, 20),
+      "a box 4 below the top of a 32 pixel sprite landed at y = %d",
+      FromTopLeft(target, Vec2Si32(3, 4), Vec2Si32(10, 8)).y);
+
+  Sprite empty;
+  TEST_CHECK_(FromTopLeft(empty, Vec2Si32(5, 6)) == Vec2Si32(5, 6),
+      "an empty sprite has no height to turn a point around");
+}
+
+// A sprite is placed by its pivot, so a click test written as a box at the draw
+// position misses by the pivot. The check below does not repeat the arithmetic
+// of the engine: it draws the sprite and compares the pixels that came out with
+// what IsPointInSprite claims, pixel by pixel.
+void test_is_point_in_sprite_follows_the_drawing() {
+  const Rgba kBackground(0, 0, 0, 255);
+  const Rgba kBody(255, 0, 0, 255);
+  const Vec2Si32 kDrawnAt(100, 50);
+
+  Sprite hero;
+  hero.Create(16, 24);
+  hero.Clear(kBody);
+  // What a tga brings by itself through its origin field: feet in the middle
+  // of the bottom edge.
+  hero.SetPivot(Vec2Si32(8, 0));
+
+  Sprite canvas;
+  canvas.Create(200, 120);
+  canvas.Clear(kBackground);
+  hero.Draw(canvas, kDrawnAt);
+
+  Si32 painted_pixels = 0;
+  Si32 disagreements = 0;
+  Vec2Si32 first_disagreement(-1, -1);
+  const Rgba *pixels = canvas.RgbaData();
+  const Si32 stride = canvas.StridePixels();
+  for (Si32 y = 0; y < canvas.Height(); ++y) {
+    for (Si32 x = 0; x < canvas.Width(); ++x) {
+      const bool is_painted = pixels[y * stride + x] == kBody;
+      if (is_painted) {
+        ++painted_pixels;
+      }
+      const bool is_claimed =
+          IsPointInSprite(hero, kDrawnAt, Vec2Si32(x, y));
+      if (is_painted != is_claimed) {
+        ++disagreements;
+        if (first_disagreement.x < 0) {
+          first_disagreement = Vec2Si32(x, y);
+        }
+      }
+    }
+  }
+  TEST_CHECK_(painted_pixels == 16 * 24,
+      "the sprite painted %d pixels instead of %d, so the comparison below "
+      "is meaningless", painted_pixels, 16 * 24);
+  TEST_CHECK_(disagreements == 0,
+      "IsPointInSprite disagrees with the drawing at %d pixels, first at "
+      "(%d, %d)", disagreements, first_disagreement.x, first_disagreement.y);
+
+  // Negative control: the same test written the way it gets written by hand,
+  // as a box at the draw position, must fail on the pixels the pivot moved.
+  Si32 naive_disagreements = 0;
+  for (Si32 y = 0; y < canvas.Height(); ++y) {
+    for (Si32 x = 0; x < canvas.Width(); ++x) {
+      const bool is_painted = pixels[y * stride + x] == kBody;
+      const bool is_claimed = x >= kDrawnAt.x
+        && x < kDrawnAt.x + hero.Width()
+        && y >= kDrawnAt.y && y < kDrawnAt.y + hero.Height();
+      if (is_painted != is_claimed) {
+        ++naive_disagreements;
+      }
+    }
+  }
+  TEST_CHECK_(naive_disagreements > 0,
+      "a hit test that ignores the pivot agreed with the drawing, so this "
+      "test proves nothing about the pivot");
+
+  // A pivot at zero is the case where the two agree, and it must still be
+  // right rather than merely different.
+  Sprite plain;
+  plain.Create(16, 24);
+  plain.Clear(kBody);
+  canvas.Clear(kBackground);
+  plain.Draw(canvas, kDrawnAt);
+  disagreements = 0;
+  for (Si32 y = 0; y < canvas.Height(); ++y) {
+    for (Si32 x = 0; x < canvas.Width(); ++x) {
+      const bool is_painted = pixels[y * stride + x] == kBody;
+      if (is_painted != IsPointInSprite(plain, kDrawnAt, Vec2Si32(x, y))) {
+        ++disagreements;
+      }
+    }
+  }
+  TEST_CHECK_(disagreements == 0,
+      "with the pivot at zero IsPointInSprite still disagrees with the "
+      "drawing at %d pixels", disagreements);
+
+  Sprite nothing;
+  TEST_CHECK_(!IsPointInSprite(nothing, kDrawnAt, kDrawnAt),
+      "an empty sprite covers no point at all");
+
+  // The hardware overload answers about the same rectangle. A run without a
+  // GL context has no hardware sprites to ask.
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped the HwSprite half: this run has no OpenGL context");
+    return;
+  }
+  HwSprite hw_hero;
+  hw_hero.LoadFromSoftwareSprite(hero);
+  TEST_CHECK_(hw_hero.Pivot() == hero.Pivot(),
+      "LoadFromSoftwareSprite lost the pivot: (%d, %d)",
+      hw_hero.Pivot().x, hw_hero.Pivot().y);
+  for (Si32 y = 0; y < canvas.Height(); ++y) {
+    for (Si32 x = 0; x < canvas.Width(); ++x) {
+      const Vec2Si32 point(x, y);
+      if (IsPointInSprite(hw_hero, kDrawnAt, point)
+          != IsPointInSprite(hero, kDrawnAt, point)) {
+        TEST_CHECK_(false,
+            "the hardware and the software answers differ at (%d, %d)", x, y);
+        return;
+      }
+    }
+  }
+}
+
+// The mouse reaches the game in the pixels the game draws in: backbuffer
+// pixels, y upward, clamped to the backbuffer. A position that arrives in
+// window pixels, or counted from the top, or unclamped over a letterbox bar,
+// is what makes a click land beside the thing it was aimed at.
+void test_mouse_arrives_in_backbuffer_pixels() {
+  ResizeScreen(320, 200);
+  const Vec2Si32 size = ScreenSize();
+  TEST_CHECK_(size == Vec2Si32(320, 200), "the backbuffer is %d x %d",
+      size.x, size.y);
+
+  // The engine takes a mouse position as a fraction of the window along each
+  // axis, y upward, and hands the game backbuffer pixels.
+  auto move_mouse_to = [](float x, float y) {
+    InputMessage message;
+    message.kind = InputMessage::kMouse;
+    message.mouse.pos = Vec2F(x, y);
+    PushInputMessage(message);
+    ShowFrame();
+  };
+
+  move_mouse_to(0.0f, 0.0f);
+  TEST_CHECK_(MousePos() == Vec2Si32(0, 0),
+      "the bottom-left corner of the window came out as (%d, %d)",
+      MousePos().x, MousePos().y);
+
+  move_mouse_to(1.0f, 1.0f);
+  TEST_CHECK_(MousePos() == size - Vec2Si32(1, 1),
+      "the top-right corner of the window came out as (%d, %d) instead of "
+      "(%d, %d)", MousePos().x, MousePos().y, size.x - 1, size.y - 1);
+
+  // Y grows upward: the upper half of the window is the upper half of the
+  // backbuffer, not the lower one.
+  move_mouse_to(0.5f, 0.8f);
+  const Si32 high_y = MousePos().y;
+  move_mouse_to(0.5f, 0.2f);
+  const Si32 low_y = MousePos().y;
+  TEST_CHECK_(high_y > size.y / 2,
+      "a cursor in the upper part of the window reported y = %d of %d",
+      high_y, size.y);
+  TEST_CHECK_(low_y < size.y / 2,
+      "a cursor in the lower part of the window reported y = %d of %d",
+      low_y, size.y);
+  TEST_CHECK_(high_y > low_y,
+      "y did not grow upward: %d up against %d down", high_y, low_y);
+
+  // A position outside the window, which is what the bars of a letterboxed
+  // window and a dragged cursor produce, is clamped to the backbuffer instead
+  // of naming a pixel that does not exist.
+  move_mouse_to(-0.5f, 1.5f);
+  TEST_CHECK_(MousePos().x == 0 && MousePos().y == size.y - 1,
+      "a position outside the window came out as (%d, %d), which is not "
+      "clamped to the backbuffer", MousePos().x, MousePos().y);
+
+  // The same number is in the message queue, which is where the GUI reads it,
+  // so a game handling messages itself sees exactly what MousePos() says.
+  move_mouse_to(0.25f, 0.75f);
+  Si32 mouse_messages = 0;
+  for (Si32 i = 0; i < InputMessageCount(); ++i) {
+    const InputMessage &message = GetInputMessage(i);
+    if (message.kind != InputMessage::kMouse) {
+      continue;
+    }
+    ++mouse_messages;
+    TEST_CHECK_(message.mouse.backbuffer_pos == MousePos(),
+        "the message says (%d, %d) while MousePos says (%d, %d)",
+        message.mouse.backbuffer_pos.x, message.mouse.backbuffer_pos.y,
+        MousePos().x, MousePos().y);
+  }
+  TEST_CHECK_(mouse_messages == 1,
+      "the frame carried %d mouse messages instead of one", mouse_messages);
+
+  // Negative control for the direction of y: the position a game would compute
+  // by counting from the top must differ from the one the engine reports,
+  // otherwise the checks above hold for both conventions and prove nothing.
+  const Si32 from_the_top = size.y - 1 - MousePos().y;
+  TEST_CHECK_(from_the_top != MousePos().y,
+      "a cursor was placed exactly in the middle of the window, where the two "
+      "conventions agree, so this test proves nothing about the direction");
+}
+
+// A filled rectangle in the hardware path, which used to require a texture per
+// wall. The check reads the frame back, so it also pins down the composition
+// order: the software backbuffer covers the hardware fill, never the other way
+// round.
+void test_hw_rectangle_fill_and_composition_order() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  // A backbuffer of window size makes the frame a pixel to pixel copy of it,
+  // so a screenshot can be read by backbuffer coordinates.
+  const Vec2Si32 window = WindowSize();
+  TEST_CHECK_(window.x > 32 && window.y > 32,
+      "the window is %d x %d, too small for this test", window.x, window.y);
+  ResizeScreen(window);
+
+  const Rgba kFill(0, 0, 255, 255);
+  const Rgba kSoftware(255, 255, 0, 255);
+  // The fill covers the left half of a band across the middle of the screen,
+  // and a software rectangle covers the middle third of that same band, so the
+  // three cases are one screenshot apart.
+  const Si32 band_bottom = window.y / 4;
+  const Si32 band_top = window.y / 2;
+  const Vec2Si32 fill_ll(0, band_bottom);
+  const Vec2Si32 fill_ur(window.x / 2, band_top);
+  const Vec2Si32 sw_ll(window.x / 6, band_bottom);
+  const Vec2Si32 sw_ur(window.x / 3, band_top);
+
+  Clear();
+  DrawRectangleHw(fill_ll, fill_ur, kFill);
+  DrawRectangle(sw_ll, sw_ur, kSoftware);
+  Sprite frame = Screenshot();
+  ShowFrame();
+
+  TEST_CHECK_(frame.Size() == window,
+      "the screenshot is %d x %d while the window is %d x %d",
+      frame.Width(), frame.Height(), window.x, window.y);
+  if (frame.Size() != window) {
+    return;
+  }
+
+  const Rgba *pixels = frame.RgbaData();
+  const Si32 stride = frame.StridePixels();
+  auto pixel_at = [&](Vec2Si32 pos) {
+    return pixels[pos.y * stride + pos.x];
+  };
+  auto is_color = [](Rgba got, Rgba want) {
+    // The frame goes through a texture, so allow a rounding step per channel.
+    return std::abs(static_cast<int>(got.r) - static_cast<int>(want.r)) <= 1
+      && std::abs(static_cast<int>(got.g) - static_cast<int>(want.g)) <= 1
+      && std::abs(static_cast<int>(got.b) - static_cast<int>(want.b)) <= 1;
+  };
+
+  // Inside the fill and outside the software rectangle: the fill is visible,
+  // which is the whole point of the function.
+  const Vec2Si32 fill_only((fill_ll.x + sw_ll.x) / 2,
+      (band_bottom + band_top) / 2);
+  TEST_CHECK_(is_color(pixel_at(fill_only), kFill),
+      "the hardware fill at (%d, %d) came out as %d %d %d",
+      fill_only.x, fill_only.y, pixel_at(fill_only).r, pixel_at(fill_only).g,
+      pixel_at(fill_only).b);
+
+  // The corners of the fill belong to it, since the corners are inclusive.
+  TEST_CHECK_(is_color(pixel_at(Vec2Si32(fill_ur.x, band_top)), kFill),
+      "the upper right corner of the fill is %d %d %d, and the corners are "
+      "inclusive", pixel_at(Vec2Si32(fill_ur.x, band_top)).r,
+      pixel_at(Vec2Si32(fill_ur.x, band_top)).g,
+      pixel_at(Vec2Si32(fill_ur.x, band_top)).b);
+  TEST_CHECK_(!is_color(pixel_at(Vec2Si32(fill_ur.x + 1, band_top)), kFill),
+      "the fill leaked one pixel past its upper right corner");
+  TEST_CHECK_(!is_color(pixel_at(Vec2Si32(fill_only.x, band_bottom - 1)),
+          kFill),
+      "the fill leaked one pixel below its lower edge");
+
+  // Where the two overlap, the software rectangle wins whatever the call order
+  // was, because the backbuffer is composed above the hardware sprites.
+  const Vec2Si32 both((sw_ll.x + sw_ur.x) / 2, (band_bottom + band_top) / 2);
+  TEST_CHECK_(is_color(pixel_at(both), kSoftware),
+      "in the overlap the frame shows %d %d %d, and the software backbuffer "
+      "is supposed to be composed above the hardware fill",
+      pixel_at(both).r, pixel_at(both).g, pixel_at(both).b);
+
+  // Negative control: a screenshot of a frame with neither rectangle must not
+  // show the colors, otherwise the checks above would pass on an empty frame.
+  Clear();
+  Sprite empty_frame = Screenshot();
+  ShowFrame();
+  const Rgba *empty_pixels = empty_frame.RgbaData();
+  const Si32 empty_stride = empty_frame.StridePixels();
+  TEST_CHECK_(!is_color(empty_pixels[fill_only.y * empty_stride + fill_only.x],
+          kFill),
+      "a frame with no rectangles in it already showed the fill color");
+  TEST_CHECK_(!is_color(empty_pixels[both.y * empty_stride + both.x],
+          kSoftware),
+      "a frame with no rectangles in it already showed the software color");
+
+  // The hardware sprite overload writes into a texture instead of the frame,
+  // and a texture is read by drawing it: fill a sprite, put it on the screen
+  // and look at the frame.
+  HwSprite canvas;
+  canvas.Create(16, 16);
+  canvas.Clear(Rgba(0, 0, 0, 255));
+  const Rgba kPatch(0, 255, 0, 255);
+  DrawRectangleHw(canvas, Vec2Si32(4, 4), Vec2Si32(11, 11), kPatch);
+  Clear();
+  canvas.Draw(Vec2Si32(0, 0), kDrawBlendingModeCopyRgba);
+  Sprite patched = Screenshot();
+  ShowFrame();
+  const Rgba *patch_pixels = patched.RgbaData();
+  const Si32 patch_stride = patched.StridePixels();
+  TEST_CHECK_(is_color(patch_pixels[8 * patch_stride + 8], kPatch),
+      "the middle of the filled area of the sprite came out as %d %d %d",
+      patch_pixels[8 * patch_stride + 8].r,
+      patch_pixels[8 * patch_stride + 8].g,
+      patch_pixels[8 * patch_stride + 8].b);
+  TEST_CHECK_(!is_color(patch_pixels[1 * patch_stride + 1], kPatch),
+      "the fill spread outside the rectangle asked for");
+  TEST_CHECK_(is_color(patch_pixels[11 * patch_stride + 11], kPatch),
+      "the upper right corner of the rectangle is outside the fill, and the "
+      "corners are inclusive");
+  TEST_CHECK_(!is_color(patch_pixels[12 * patch_stride + 12], kPatch),
+      "the fill went one pixel past the corner it was given");
+}
+
+// Two copies of one program are told apart by the title of the window and by
+// nothing else, so the default is the name of the program rather than the name
+// of the engine, and an application can say something of its own there. Whether
+// the platform showed it cannot be read back from the system, so what is
+// checked here is the value the engine keeps and hands to the window.
+void test_window_title_names_the_program() {
+  const std::string default_title = WindowTitle();
+  TEST_CHECK_(!default_title.empty(), "the default window title is empty");
+
+  const std::string executable = GetExecutablePath();
+  if (!executable.empty()) {
+    const size_t slash = executable.find_last_of("/\\");
+    const std::string file_name = (slash == std::string::npos)
+      ? executable : executable.substr(slash + 1);
+    TEST_CHECK_(default_title == file_name,
+        "the default title is '%s' while the program is '%s'",
+        default_title.c_str(), file_name.c_str());
+    TEST_CHECK_(default_title != "Arctic Engine",
+        "the default title still names the engine instead of the program");
+    TEST_CHECK_(default_title.find('/') == std::string::npos,
+        "the default title is a whole path, '%s'", default_title.c_str());
+  }
+
+  const std::string mine = "Hover Racer \xe2\x80\x94 player 2";
+  SetWindowTitle(mine.c_str());
+  TEST_CHECK_(WindowTitle() == mine,
+      "the title set to '%s' reads back as '%s'", mine.c_str(),
+      WindowTitle().c_str());
+
+  // An empty title, and a missing one, mean the default rather than a nameless
+  // window; a program that has nothing to say stays recognisable.
+  SetWindowTitle("");
+  TEST_CHECK_(WindowTitle() == default_title,
+      "an empty title gave '%s' instead of the default '%s'",
+      WindowTitle().c_str(), default_title.c_str());
+  SetWindowTitle(mine.c_str());
+  SetWindowTitle(nullptr);
+  TEST_CHECK_(WindowTitle() == default_title,
+      "a null title gave '%s' instead of the default '%s'",
+      WindowTitle().c_str(), default_title.c_str());
+}
+
+// How long a key has been held is a question every game with a charged shot or
+// a repeat-after-delay had to answer for itself, remembering the moment of the
+// press by hand. The engine remembers it now.
+void test_key_down_seconds_measures_the_hold() {
+  SetKey(kKeySpace, false);
+  ShowFrame();
+  TEST_CHECK_(KeyDownSeconds(kKeySpace) == 0.0,
+      "a key that is not held reported %f seconds",
+      KeyDownSeconds(kKeySpace));
+
+  SetKey(kKeySpace, true);
+  const double at_the_press = KeyDownSeconds(kKeySpace);
+  TEST_CHECK_(at_the_press >= 0.0 && at_the_press < 0.05,
+      "right after the press the hold is %f seconds", at_the_press);
+
+  Sleep(0.05);
+  ShowFrame();
+  const double after_a_frame = KeyDownSeconds(kKeySpace);
+  TEST_CHECK_(after_a_frame >= 0.05,
+      "after fifty milliseconds of holding the answer is %f seconds",
+      after_a_frame);
+  TEST_CHECK_(after_a_frame > at_the_press,
+      "the hold did not grow: %f then %f", at_the_press, after_a_frame);
+  TEST_CHECK_(IsKeyDown(kKeySpace),
+      "the key stopped being down while nothing released it");
+  TEST_CHECK_(!IsKeyDownward(kKeySpace),
+      "a key held since the previous frame must not be a fresh press");
+
+  Sleep(0.05);
+  ShowFrame();
+  const double after_two_frames = KeyDownSeconds(kKeySpace);
+  TEST_CHECK_(after_two_frames > after_a_frame,
+      "the hold stopped growing across frames: %f then %f",
+      after_a_frame, after_two_frames);
+
+  SetKey(kKeySpace, false);
+  ShowFrame();
+  TEST_CHECK_(KeyDownSeconds(kKeySpace) == 0.0,
+      "a released key still reports %f seconds", KeyDownSeconds(kKeySpace));
+
+  // Negative control for the reset: a version that kept the old moment of the
+  // press would answer with the whole time since the first press, which is
+  // more than what has passed since this one.
+  SetKey(kKeySpace, true);
+  const double second_press = KeyDownSeconds(kKeySpace);
+  TEST_CHECK_(second_press < after_two_frames,
+      "the second press reports %f seconds, and the first hold was %f, so the "
+      "moment of the press was not taken anew", second_press,
+      after_two_frames);
+  SetKey(kKeySpace, false);
+  ShowFrame();
+
+  // The string form asks about several keys at once and answers with the
+  // longest hold, the same way IsKeyDown answers about any of them.
+  SetKey('a', true);
+  Sleep(0.05);
+  SetKey('d', true);
+  ShowFrame();
+  // The clock runs between the calls, so the three readings are compared with
+  // a millisecond of slack rather than for equality.
+  const double both = KeyDownSeconds("ad");
+  const double held_a = KeyDownSeconds('a');
+  const double held_d = KeyDownSeconds('d');
+  TEST_CHECK_(held_a > held_d,
+      "the key pressed earlier is held for %f while the later one is %f",
+      held_a, held_d);
+  TEST_CHECK_(both > held_d + 0.03 && both <= held_a
+          && both > held_a - 0.005,
+      "asking about both keys gave %f, and the two holds are %f and %f, so it "
+      "is not the longer of them", both, held_a, held_d);
+  TEST_CHECK_(KeyDownSeconds("qz") == 0.0,
+      "keys nobody pressed reported %f seconds", KeyDownSeconds("qz"));
+  SetKey('a', false);
+  SetKey('d', false);
+  ShowFrame();
+}
+
+namespace {
+
+// A port nothing else is using, so a socket test does not fail because some
+// other program on the machine got to the port first.
+bool BindLoopbackListener(ListenerSocket *listener, uint16_t *out_port) {
+  for (uint16_t port = 34567; port < 34667; ++port) {
+    ListenerSocket candidate(AddressFamily::kIpV4, SocketProtocol::kTcp);
+    if (!candidate.IsValid()) {
+      return false;
+    }
+    if (candidate.Bind("127.0.0.1", port) == SocketResult::kSocketOk) {
+      *listener = std::move(candidate);
+      *out_port = port;
+      return true;
+    }
+  }
+  return false;
+}
+
+// Waits a while for a connection instead of blocking for good: the listener is
+// non-blocking, so an Accept with nobody waiting comes back invalid.
+ConnectionSocket AcceptWithin(const ListenerSocket &listener, double seconds) {
+  const double deadline = Time() + seconds;
+  while (Time() < deadline) {
+    ConnectionSocket accepted = listener.Accept();
+    if (accepted.IsValid()) {
+      return accepted;
+    }
+    Sleep(0.002);
+  }
+  return ConnectionSocket();
+}
+
+// Reads until the bytes expected have arrived, the connection says something
+// other than "ok", or the time runs out.
+SocketResult ReadWithin(ConnectionSocket *socket, size_t expected_size,
+    double seconds, std::string *out_text) {
+  out_text->clear();
+  const double deadline = Time() + seconds;
+  while (out_text->size() < expected_size && Time() < deadline) {
+    char buffer[64];
+    size_t read_size = 0;
+    const SocketResult result = socket->Read(buffer, sizeof(buffer),
+        &read_size);
+    if (result != SocketResult::kSocketOk) {
+      return result;
+    }
+    if (read_size == 0) {
+      Sleep(0.002);
+      continue;
+    }
+    out_text->append(buffer, read_size);
+  }
+  return SocketResult::kSocketOk;
+}
+
+// A short message still goes out in pieces if the socket feels like it.
+bool WriteAll(ConnectionSocket *socket, const std::string &text) {
+  size_t total = 0;
+  const double deadline = Time() + 1.0;
+  while (total < text.size() && Time() < deadline) {
+    size_t written = 0;
+    if (socket->Write(text.data() + total, text.size() - total, &written)
+        != SocketResult::kSocketOk) {
+      return false;
+    }
+    total += written;
+  }
+  return total == text.size();
+}
+
+}  // namespace
+
+// The whole life of a connection over the loopback interface, because a server
+// example is worth nothing if these do not hold: a port is bound once and the
+// second attempt is refused, a connection is accepted, both ends can write and
+// read, closing one end is visible at the other, and a connect to a port
+// nobody listens on fails instead of hanging.
+void test_loopback_sockets_connect_talk_and_close() {
+  ListenerSocket listener;
+  uint16_t port = 0;
+  TEST_CHECK_(BindLoopbackListener(&listener, &port),
+      "no port in the range could be bound on 127.0.0.1: %s",
+      listener.GetLastError().c_str());
+  if (!listener.IsValid()) {
+    return;
+  }
+  TEST_CHECK(listener.SetSoNonblocking(true) == SocketResult::kSocketOk);
+
+  // The port is taken now, and the engine has to say so rather than quietly
+  // producing a second listener that receives nothing.
+  ListenerSocket intruder(AddressFamily::kIpV4, SocketProtocol::kTcp);
+  TEST_CHECK_(intruder.Bind("127.0.0.1", port) == SocketResult::kSocketError,
+      "binding port %d a second time was allowed", static_cast<int>(port));
+  TEST_CHECK_(!intruder.GetLastError().empty(),
+      "the refused bind left no explanation in GetLastError");
+
+  ConnectionSocket client(AddressFamily::kIpV4, SocketProtocol::kTcp);
+  TEST_CHECK_(client.IsValid(), "no socket: %s", client.GetLastError().c_str());
+  const SocketConnectResult connected = client.Connect("127.0.0.1", port);
+  TEST_CHECK_(connected == SocketConnectResult::kSocketOk,
+      "connect to the listening port answered %d: %s",
+      static_cast<int>(connected), client.GetLastError().c_str());
+  TEST_CHECK_(client.GetState() == SocketState::kConnected,
+      "a connected socket does not report kConnected");
+  TEST_CHECK(client.SetSoNonblocking(true) == SocketResult::kSocketOk);
+
+  ConnectionSocket served = AcceptWithin(listener, 2.0);
+  TEST_CHECK_(served.IsValid(),
+      "the listener never handed over the connection: %s",
+      listener.GetLastError().c_str());
+  if (!served.IsValid()) {
+    return;
+  }
+  TEST_CHECK_(served.GetState() == SocketState::kConnected,
+      "an accepted connection does not report kConnected");
+  TEST_CHECK(served.SetSoNonblocking(true) == SocketResult::kSocketOk);
+
+  TEST_CHECK_(WriteAll(&client, "ping"), "the client could not write: %s",
+      client.GetLastError().c_str());
+  std::string question;
+  const SocketResult got_question = ReadWithin(&served, 4, 2.0, &question);
+  TEST_CHECK_(got_question == SocketResult::kSocketOk,
+      "reading the request answered %d: %s", static_cast<int>(got_question),
+      served.GetLastError().c_str());
+  TEST_CHECK_(question == "ping", "the server got '%s' instead of 'ping'",
+      question.c_str());
+
+  TEST_CHECK_(WriteAll(&served, "pong-42"), "the server could not write: %s",
+      served.GetLastError().c_str());
+  std::string answer;
+  const SocketResult got_answer = ReadWithin(&client, 7, 2.0, &answer);
+  TEST_CHECK_(got_answer == SocketResult::kSocketOk,
+      "reading the answer answered %d: %s", static_cast<int>(got_answer),
+      client.GetLastError().c_str());
+  TEST_CHECK_(answer == "pong-42", "the client got '%s' instead of 'pong-42'",
+      answer.c_str());
+
+  // The other end goes away. This has to be told apart from "no data yet",
+  // which is what a server loop hangs on when it is not.
+  {
+    ConnectionSocket closing = std::move(client);
+  }
+  std::string nothing;
+  const SocketResult after_close = ReadWithin(&served, 1, 2.0, &nothing);
+  TEST_CHECK_(after_close == SocketResult::kSocketConnectionReset,
+      "reading a connection closed by the other end answered %d, and "
+      "kSocketConnectionReset (%d) was expected", static_cast<int>(after_close),
+      static_cast<int>(SocketResult::kSocketConnectionReset));
+  TEST_CHECK_(nothing.empty(), "the closed connection produced '%s'",
+      nothing.c_str());
+  TEST_CHECK_(!served.IsValid(),
+      "a connection the other end closed is still valid");
+  TEST_CHECK_(served.GetState() == SocketState::kDisconnected,
+      "a connection the other end closed does not report kDisconnected");
+
+  // And with the listener gone, the same port refuses a connection.
+  {
+    ListenerSocket closing = std::move(listener);
+  }
+  ConnectionSocket hopeful(AddressFamily::kIpV4, SocketProtocol::kTcp);
+  const SocketConnectResult refused = hopeful.Connect("127.0.0.1", port);
+  TEST_CHECK_(refused == SocketConnectResult::kSocketError,
+      "connecting to port %d with nothing listening answered %d",
+      static_cast<int>(port), static_cast<int>(refused));
+  TEST_CHECK_(!hopeful.GetLastError().empty(),
+      "the refused connect left no explanation in GetLastError");
+  TEST_CHECK_(hopeful.GetState() == SocketState::kDisconnected,
+      "a socket that failed to connect does not report kDisconnected");
+}
+
+// "Is this click mine or the interface's?" is the question a game asks before
+// selecting something in the world, and IsInside answers it about a point. The
+// answer has to agree with what the input walk actually does, so every case is
+// checked against ApplyInput as well.
+void test_panel_is_inside_answers_for_the_interface() {
+  auto click_at = [](Vec2Si32 at) {
+    InputMessage message;
+    message.kind = InputMessage::kMouse;
+    message.mouse.backbuffer_pos = at;
+    message.keyboard.key = kKeyMouseLeft;
+    message.keyboard.key_state = 1;
+    return message;
+  };
+  std::deque<GuiMessage> gui_messages;
+
+  auto root = std::make_shared<Panel>(1, Vec2Si32(0, 0), Vec2Si32(320, 200));
+  // A bare panel is not clickable, so it takes nothing and a click over it
+  // belongs to the world. This is the case that surprises people, and it is the
+  // behaviour of the input walk, not an opinion of this function.
+  TEST_CHECK_(!root->IsInside(Vec2Si32(10, 10)),
+      "an empty non-clickable panel claimed a click");
+  TEST_CHECK_(!root->ApplyInput(click_at(Vec2Si32(10, 10)), &gui_messages),
+      "the input walk applied a click on a non-clickable panel, so IsInside "
+      "and the walk disagree");
+
+  Sprite face;
+  face.Create(40, 20);
+  auto button = std::make_shared<Button>(2, Vec2Si32(100, 50), face);
+  root->AddChild(button);
+  TEST_CHECK_(button->GetSize() == Vec2Si32(40, 20),
+      "the button is %d x %d, and the coordinates below assume 40 x 20",
+      button->GetSize().x, button->GetSize().y);
+
+  TEST_CHECK_(root->IsInside(Vec2Si32(100, 50)),
+      "the lower left pixel of a button is outside it");
+  TEST_CHECK_(root->IsInside(Vec2Si32(139, 69)),
+      "the upper right pixel of a button is outside it");
+  TEST_CHECK_(!root->IsInside(Vec2Si32(140, 70)),
+      "the pixel past the upper right corner of a button belongs to it");
+  TEST_CHECK_(!root->IsInside(Vec2Si32(99, 50)),
+      "the pixel left of a button belongs to it");
+  TEST_CHECK_(root->ApplyInput(click_at(Vec2Si32(110, 60)), &gui_messages),
+      "a click on a button was not taken by the interface");
+  TEST_CHECK_(!root->ApplyInput(click_at(Vec2Si32(200, 150)), &gui_messages),
+      "a click far from every panel was taken by the interface");
+
+  // A clickable panel deep in the tree is found, and its position is the sum of
+  // the positions on the way down.
+  auto dialog = std::make_shared<Panel>(3, Vec2Si32(20, 20),
+      Vec2Si32(100, 100));
+  auto slot = std::make_shared<Panel>(4, Vec2Si32(5, 5), Vec2Si32(10, 10), 0,
+      Sprite(), true);
+  dialog->AddChild(slot);
+  root->AddChild(dialog);
+  TEST_CHECK_(root->IsInside(Vec2Si32(25, 25)),
+      "a clickable panel at 20 plus 5 was not found at 25");
+  TEST_CHECK_(root->IsInside(Vec2Si32(34, 34)),
+      "the far corner of the nested panel was not found");
+  TEST_CHECK_(!root->IsInside(Vec2Si32(35, 35)),
+      "the point past the nested panel belongs to it");
+  TEST_CHECK_(root->ApplyInput(click_at(Vec2Si32(30, 30)), &gui_messages),
+      "a click on the nested panel was not taken");
+
+  // Hiding a panel hides what is inside it, and neither takes clicks any more.
+  dialog->SetVisible(false);
+  TEST_CHECK_(!root->IsInside(Vec2Si32(28, 28)),
+      "a panel inside a hidden one still claims clicks");
+  TEST_CHECK_(!root->ApplyInput(click_at(Vec2Si32(28, 28)), &gui_messages),
+      "the input walk went into a hidden panel");
+  dialog->SetVisible(true);
+  TEST_CHECK_(root->IsInside(Vec2Si32(28, 28)),
+      "the nested panel did not come back with the dialog");
+
+  button->SetVisible(false);
+  TEST_CHECK_(!root->IsInside(Vec2Si32(110, 60)),
+      "a hidden button still claims clicks");
+  TEST_CHECK_(!root->ApplyInput(click_at(Vec2Si32(110, 60)), &gui_messages),
+      "the input walk clicked a hidden button");
+  button->SetVisible(true);
+
+  // Negative control: the obvious hand-written test, "is the point inside the
+  // root rectangle", answers yes for points that belong to the world, so the
+  // checks above are not something any implementation would pass.
+  const Vec2Si32 world_point(200, 150);
+  const bool naive_says_interface = world_point.x >= root->GetPos().x
+    && world_point.y >= root->GetPos().y
+    && world_point.x < root->GetPos().x + root->GetSize().x
+    && world_point.y < root->GetPos().y + root->GetSize().y;
+  TEST_CHECK_(naive_says_interface && !root->IsInside(world_point),
+      "a point inside the root rectangle but on no panel: the rectangle test "
+      "says %d and IsInside says %d, and they were supposed to differ",
+      naive_says_interface ? 1 : 0, root->IsInside(world_point) ? 1 : 0);
+}
+
+namespace {
+
+Rgba BackbufferPixel(Vec2Si32 at) {
+  Sprite backbuffer = GetEngine()->GetBackbuffer();
+  return backbuffer.RgbaData()[backbuffer.StridePixels() * at.y + at.x];
+}
+
+InputMessage LeftClickAt(Vec2Si32 at) {
+  InputMessage message;
+  message.kind = InputMessage::kMouse;
+  message.mouse.backbuffer_pos = at;
+  message.keyboard.key = kKeyMouseLeft;
+  message.keyboard.key_state = 1;
+  message.keyboard.state[kKeyMouseLeft] = 1;
+  return message;
+}
+
+InputMessage TypedLetter(char letter, KeyCode key) {
+  InputMessage message;
+  message.kind = InputMessage::kKeyboard;
+  message.keyboard.key = key;
+  message.keyboard.key_state = 1;
+  message.keyboard.characters[0] = letter;
+  return message;
+}
+
+}  // namespace
+
+// A hidden panel is not there: it is not drawn and it takes no input. Button,
+// Checkbox and Scrollbar keep that promise through their state, Text checks the
+// flag, and Editbox and Progressbar used to draw and (the editbox) take clicks
+// and keystrokes while hidden, because only the base class part of them looked
+// at the flag.
+void test_hidden_editbox_and_progressbar_are_not_there() {
+  ResizeScreen(320, 200);
+  const Rgba kBlack(0, 0, 0, 255);
+  const Rgba kRed(255, 0, 0, 255);
+  const Rgba kGreen(0, 255, 0, 255);
+  Font font;
+  font.CreateEmpty(4, 5);
+  Sprite red;
+  red.Create(60, 12);
+  red.Clear(kRed);
+  Sprite green;
+  green.Create(60, 12);
+  green.Clear(kGreen);
+
+  auto root = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(320, 200));
+  auto box = std::make_shared<Editbox>(1, Vec2Si32(10, 10), 1, red, red,
+      font, kTextOriginBottom, Rgba(255, 255, 255), std::string());
+  root->AddChild(box);
+  auto bar = std::make_shared<Progressbar>(2, Vec2Si32(100, 10), red, green,
+      std::vector<Rgba>(1, Rgba(255, 255, 255)), font, 1.0f, 0.0f);
+  root->AddChild(bar);
+  const Vec2Si32 in_box(20, 15);
+  const Vec2Si32 in_bar(110, 15);
+
+  // Positive control: visible, both are drawn where they are.
+  GetEngine()->GetBackbuffer().Clear(kBlack);
+  root->Draw(Vec2Si32(0, 0));
+  TEST_CHECK_(BackbufferPixel(in_box).rgba == kRed.rgba,
+      "a visible editbox did not draw its face, so hiding it proves nothing");
+  TEST_CHECK_(BackbufferPixel(in_bar).rgba == kRed.rgba,
+      "a visible progressbar at zero did not draw its incomplete face");
+
+  box->SetVisible(false);
+  bar->SetVisible(false);
+  GetEngine()->GetBackbuffer().Clear(kBlack);
+  root->Draw(Vec2Si32(0, 0));
+  TEST_CHECK_(BackbufferPixel(in_box).rgba == kBlack.rgba,
+      "a hidden editbox is still drawn");
+  TEST_CHECK_(BackbufferPixel(in_bar).rgba == kBlack.rgba,
+      "a hidden progressbar is still drawn");
+
+  // A click on a hidden editbox falls through to the world and focuses nothing.
+  std::deque<GuiMessage> gui_messages;
+  TEST_CHECK_(!root->ApplyInput(LeftClickAt(in_box), &gui_messages),
+      "a click on a hidden editbox was taken by the interface");
+  TEST_CHECK_(!box->IsFocused(), "a click focused a hidden editbox");
+  TEST_CHECK_(!root->IsInside(in_box), "IsInside counts a hidden editbox");
+
+  // The same click on the visible box is taken and focuses it.
+  box->SetVisible(true);
+  TEST_CHECK_(root->ApplyInput(LeftClickAt(in_box), &gui_messages),
+      "a click on a visible editbox was not taken");
+  TEST_CHECK_(box->IsFocused(), "a click did not focus a visible editbox");
+
+  // A box hidden while it holds the focus does not type either.
+  box->SetVisible(false);
+  root->ApplyInput(TypedLetter('a', kKeyA), &gui_messages);
+  TEST_CHECK_(box->GetText().empty(),
+      "a hidden editbox typed '%s'", box->GetText().c_str());
+  box->SetVisible(true);
+  root->ApplyInput(TypedLetter('a', kKeyA), &gui_messages);
+  TEST_CHECK_(box->GetText() == std::string("a"),
+      "the visible editbox did not type, so the hidden check proves nothing");
+
+  // Back in view, both draw again.
+  bar->SetVisible(true);
+  GetEngine()->GetBackbuffer().Clear(kBlack);
+  root->Draw(Vec2Si32(0, 0));
+  TEST_CHECK(BackbufferPixel(in_box).rgba == kRed.rgba);
+  TEST_CHECK(BackbufferPixel(in_bar).rgba == kRed.rgba);
+}
+
+// IsInside promises to agree with the input walk about every panel. Editbox and
+// Scrollbar take clicks in ApplyInput but are not marked clickable, so the base
+// answer called them transparent and a click on a field went to the world too.
+void test_is_inside_counts_editbox_and_scrollbar() {
+  Font font;
+  font.CreateEmpty(4, 5);
+  Sprite face;
+  face.Create(60, 12);
+  Sprite track;
+  track.Create(12, 100);
+  Sprite knob;
+  knob.Create(12, 12);
+  std::deque<GuiMessage> gui_messages;
+
+  auto root = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(320, 200));
+  auto box = std::make_shared<Editbox>(1, Vec2Si32(10, 10), 1, face, face,
+      font, kTextOriginBottom, Rgba(255, 255, 255), std::string());
+  root->AddChild(box);
+  auto bar = std::make_shared<Scrollbar>(2, Vec2Si32(200, 20), 2,
+      track, track, knob, knob, knob, knob, knob, knob, knob, knob, knob,
+      0, 10, 0, Scrollbar::kScrollVertical);
+  root->AddChild(bar);
+  TEST_CHECK_(box->GetSize() == Vec2Si32(60, 12) &&
+      bar->GetSize() == Vec2Si32(12, 100),
+      "the sizes are %d x %d and %d x %d, the coordinates below assume "
+      "60 x 12 and 12 x 100", box->GetSize().x, box->GetSize().y,
+      bar->GetSize().x, bar->GetSize().y);
+
+  // Every corner pixel and one past it, the same way the walk sees them.
+  const Vec2Si32 box_points[] = {
+    Vec2Si32(10, 10), Vec2Si32(69, 21), Vec2Si32(40, 15)
+  };
+  for (const Vec2Si32 &at : box_points) {
+    TEST_CHECK_(root->ApplyInput(LeftClickAt(at), &gui_messages),
+        "the walk did not take a click on the editbox at (%d, %d)", at.x, at.y);
+    TEST_CHECK_(root->IsInside(at),
+        "IsInside says (%d, %d) on the editbox belongs to the world",
+        at.x, at.y);
+  }
+  const Vec2Si32 bar_points[] = {
+    Vec2Si32(200, 20), Vec2Si32(211, 119), Vec2Si32(205, 70)
+  };
+  for (const Vec2Si32 &at : bar_points) {
+    TEST_CHECK_(root->ApplyInput(LeftClickAt(at), &gui_messages),
+        "the walk did not take a click on the scrollbar at (%d, %d)",
+        at.x, at.y);
+    TEST_CHECK_(root->IsInside(at),
+        "IsInside says (%d, %d) on the scrollbar belongs to the world",
+        at.x, at.y);
+  }
+  const Vec2Si32 outside[] = {
+    Vec2Si32(9, 10), Vec2Si32(70, 21), Vec2Si32(40, 22),
+    Vec2Si32(199, 20), Vec2Si32(212, 119), Vec2Si32(205, 120)
+  };
+  for (const Vec2Si32 &at : outside) {
+    TEST_CHECK_(!root->ApplyInput(LeftClickAt(at), &gui_messages),
+        "the walk took a click beside a panel at (%d, %d)", at.x, at.y);
+    TEST_CHECK_(!root->IsInside(at),
+        "IsInside claims (%d, %d) beside every panel", at.x, at.y);
+  }
+
+  // Hidden, both stop counting, and IsInside follows.
+  box->SetVisible(false);
+  bar->SetVisible(false);
+  TEST_CHECK(!root->ApplyInput(LeftClickAt(Vec2Si32(40, 15)), &gui_messages));
+  TEST_CHECK_(!root->IsInside(Vec2Si32(40, 15)),
+      "IsInside counts a hidden editbox");
+  TEST_CHECK(!root->ApplyInput(LeftClickAt(Vec2Si32(205, 70)), &gui_messages));
+  TEST_CHECK_(!root->IsInside(Vec2Si32(205, 70)),
+      "IsInside counts a hidden scrollbar");
+}
+
+// An anchor means "keep these distances to the edges of the parent". The
+// distances used to be measured only inside SetAnchor and only when the panel
+// already had a parent, so SetAnchor before AddChild measured nothing, and a
+// SetPos after SetAnchor was undone by the next resize of the parent. A dock
+// used to take effect only at the next resize of the parent as well.
+void test_panel_anchor_and_dock_follow_the_calls() {
+  // SetAnchor before AddChild: the distances are measured when the panel gets
+  // its parent, from where it is at that moment.
+  auto parent = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(400, 300));
+  auto early = std::make_shared<Panel>(1, Vec2Si32(20, 30), Vec2Si32(100, 50));
+  early->SetAnchor(kAnchorTop | kAnchorRight);
+  parent->AddChild(early);
+  parent->SetSize(Vec2Si32(500, 400));
+  TEST_CHECK_(early->GetPos() == Vec2Si32(120, 130),
+      "a panel anchored before AddChild went to (%d, %d) instead of "
+      "(120, 130) when the parent grew by 100", early->GetPos().x,
+      early->GetPos().y);
+  TEST_CHECK_(early->GetSize() == Vec2Si32(100, 50),
+      "a top-right anchor changed the size to %d x %d",
+      early->GetSize().x, early->GetSize().y);
+
+  // SetPos after SetAnchor: the new place is the one to keep.
+  auto moved = std::make_shared<Panel>(2, Vec2Si32(20, 30), Vec2Si32(100, 50));
+  parent->AddChild(moved);
+  moved->SetAnchor(kAnchorTop | kAnchorRight);
+  moved->SetPos(50, 60);
+  parent->SetSize(Vec2Si32(600, 500));
+  TEST_CHECK_(moved->GetPos() == Vec2Si32(150, 160),
+      "a panel moved after SetAnchor went to (%d, %d) instead of (150, 160)",
+      moved->GetPos().x, moved->GetPos().y);
+  // And the one anchored earlier keeps following.
+  TEST_CHECK_(early->GetPos() == Vec2Si32(220, 230),
+      "the early panel is at (%d, %d) after the second resize",
+      early->GetPos().x, early->GetPos().y);
+
+  // Stretching anchors measured at AddChild time keep both distances.
+  auto stretched = std::make_shared<Panel>(3, Vec2Si32(10, 20),
+      Vec2Si32(580, 460));
+  stretched->SetAnchor(kAnchorLeft | kAnchorRight | kAnchorBottom | kAnchorTop);
+  parent->AddChild(stretched);
+  parent->SetSize(Vec2Si32(300, 200));
+  TEST_CHECK_(stretched->GetPos() == Vec2Si32(10, 20) &&
+      stretched->GetSize() == Vec2Si32(280, 160),
+      "a fully anchored panel is at (%d, %d) sized %d x %d, expected "
+      "(10, 20) and 280 x 160", stretched->GetPos().x, stretched->GetPos().y,
+      stretched->GetSize().x, stretched->GetSize().y);
+
+  // A dock takes effect at once, whether set after or before AddChild.
+  auto dock_parent = std::make_shared<Panel>(10, Vec2Si32(0, 0),
+      Vec2Si32(400, 300));
+  auto late_dock = std::make_shared<Panel>(11, Vec2Si32(5, 5),
+      Vec2Si32(100, 50));
+  dock_parent->AddChild(late_dock);
+  late_dock->SetDock(kDockTop | kDockRight);
+  TEST_CHECK_(late_dock->GetPos() == Vec2Si32(300, 250),
+      "SetDock left the panel at (%d, %d), expected (300, 250) at once",
+      late_dock->GetPos().x, late_dock->GetPos().y);
+  auto early_dock = std::make_shared<Panel>(12, Vec2Si32(5, 5),
+      Vec2Si32(100, 50));
+  early_dock->SetDock(kDockLeft | kDockRight | kDockBottom);
+  dock_parent->AddChild(early_dock);
+  TEST_CHECK_(early_dock->GetPos() == Vec2Si32(0, 0) &&
+      early_dock->GetSize() == Vec2Si32(400, 50),
+      "a panel docked before AddChild is at (%d, %d) sized %d x %d, expected "
+      "(0, 0) and 400 x 50", early_dock->GetPos().x, early_dock->GetPos().y,
+      early_dock->GetSize().x, early_dock->GetSize().y);
+  dock_parent->SetSize(Vec2Si32(200, 100));
+  TEST_CHECK(late_dock->GetPos() == Vec2Si32(100, 50));
+  TEST_CHECK(early_dock->GetSize() == Vec2Si32(200, 50));
+
+  // Negative control: a panel with no anchor and no dock stays where it was.
+  auto plain = std::make_shared<Panel>(13, Vec2Si32(7, 8), Vec2Si32(10, 10));
+  dock_parent->AddChild(plain);
+  dock_parent->SetSize(Vec2Si32(300, 300));
+  TEST_CHECK_(plain->GetPos() == Vec2Si32(7, 8),
+      "a plain panel moved to (%d, %d) on a parent resize",
+      plain->GetPos().x, plain->GetPos().y);
+}
+
+// Tab walks the visible interface. A hidden panel, and everything inside a
+// hidden panel, can not be seen or typed into, so the focus must skip it.
+void test_tab_skips_hidden_panels() {
+  Sprite face;
+  face.Create(40, 20);
+  Font font;
+  font.CreateEmpty(4, 5);
+  auto root = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(320, 200));
+  auto make_button = [&](Ui64 tag, Ui32 tab_order) {
+    return std::make_shared<Button>(tag, Vec2Si32(10, Si32(tag) * 30), face,
+        Sprite(), Sprite(), Sound(), Sound(), kKeyNone, tab_order);
+  };
+  auto first = make_button(1, 1);
+  // An editbox rather than a button: a hidden button already drops out of the
+  // walk through IsEnabled(), an editbox does not.
+  auto hidden = std::make_shared<Editbox>(2, Vec2Si32(10, 60), 2, face, face,
+      font, kTextOriginBottom, Rgba(255, 255, 255), std::string());
+  auto dialog = std::make_shared<Panel>(3, Vec2Si32(100, 0),
+      Vec2Si32(100, 100));
+  auto inside_hidden_dialog = make_button(4, 3);
+  dialog->AddChild(inside_hidden_dialog);
+  auto last = make_button(5, 4);
+  root->AddChild(first);
+  root->AddChild(hidden);
+  root->AddChild(dialog);
+  root->AddChild(last);
+
+  // Positive control: with everything visible, Tab visits all four in order.
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(first->IsFocused(), "the first Tab did not focus tab order 1");
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(hidden->IsFocused(), "the second Tab skipped a visible button");
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(inside_hidden_dialog->IsFocused(),
+      "the third Tab skipped a button inside a visible dialog");
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK(last->IsFocused());
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(first->IsFocused(), "Tab did not wrap around to the first");
+
+  hidden->SetVisible(false);
+  dialog->SetVisible(false);
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(!hidden->IsFocused(), "Tab focused a hidden button");
+  TEST_CHECK_(!inside_hidden_dialog->IsFocused(),
+      "Tab focused a button inside a hidden dialog");
+  TEST_CHECK_(last->IsFocused(),
+      "Tab from the first visible button did not land on the last one");
+  TEST_CHECK(root->SwitchCurrentTab(false));
+  TEST_CHECK_(first->IsFocused() && !hidden->IsFocused() &&
+      !inside_hidden_dialog->IsFocused(),
+      "Shift+Tab went through the hidden panels on the way back");
+
+  // Shown again, they are back in the walk.
+  hidden->SetVisible(true);
+  dialog->SetVisible(true);
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(hidden->IsFocused(), "a button shown again is still skipped");
 }
 
 // How a run starts is decided before main gets going, from a function the
@@ -10396,6 +11483,23 @@ TEST_LIST = {
   {"Editbox takes text from any keyboard layout", test_editbox_accepts_any_layout},
   {"Typed characters of a message", test_typed_characters_of_a_message},
   {"Typed text and generic modifiers", test_typed_text_and_generic_modifiers},
+  {"Top left coordinate helpers", test_top_left_coordinate_helpers},
+  {"IsPointInSprite follows the drawing", test_is_point_in_sprite_follows_the_drawing},
+  {"Mouse arrives in backbuffer pixels", test_mouse_arrives_in_backbuffer_pixels},
+  {"Hardware rectangle fill and composition order", test_hw_rectangle_fill_and_composition_order},
+  {"Window title names the program", test_window_title_names_the_program},
+  {"KeyDownSeconds measures the hold", test_key_down_seconds_measures_the_hold},
+  {"Loopback sockets connect, talk and close",
+    test_loopback_sockets_connect_talk_and_close},
+  {"Panel IsInside answers whose click it is",
+    test_panel_is_inside_answers_for_the_interface},
+  {"Hidden editbox and progressbar are not there",
+    test_hidden_editbox_and_progressbar_are_not_there},
+  {"IsInside counts editbox and scrollbar",
+    test_is_inside_counts_editbox_and_scrollbar},
+  {"Panel anchor and dock follow the calls",
+    test_panel_anchor_and_dock_follow_the_calls},
+  {"Tab skips hidden panels", test_tab_skips_hidden_panels},
   {"Startup mode decider is asked at startup", test_startup_mode_decider},
   {"Log file is findable, clearable and rotated",
       test_log_file_is_findable_clearable_and_rotated},

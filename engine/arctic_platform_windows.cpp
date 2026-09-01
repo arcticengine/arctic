@@ -682,6 +682,15 @@ void ToggleFullscreen() {
   SetFullScreen(!g_is_full_screen);
 }
 
+void ApplyWindowTitle(const std::string &title) {
+  if (!g_system_info.window_handle) {
+    return;
+  }
+  // The window belongs to the main thread while EasyMain runs on another one,
+  // and this crosses that boundary, which SetWindowText is allowed to do.
+  SetWindowTextA(g_system_info.window_handle, title.c_str());
+}
+
 bool IsFullScreen() {
   return g_is_full_screen;
 }
@@ -962,7 +971,7 @@ void HeadlessPlatformInit() {
 }
 
 void CreateMainWindow(SystemInfo *system_info) {
-  char title_bar_text[] = {"Arctic Engine"};
+  const std::string title_bar_string = WindowTitle();
   char window_class_name[] = {"ArcticEngineWindowClass"};
   char inner_window_class_name[] = {"ArcticEngineInnterWindowClass"};
 
@@ -1017,7 +1026,7 @@ void CreateMainWindow(SystemInfo *system_info) {
   g_window_height = screen_height;
 
   HWND window_handle = CreateWindowExA(WS_EX_APPWINDOW,
-    window_class_name, title_bar_text,
+    window_class_name, title_bar_string.c_str(),
     WS_OVERLAPPEDWINDOW,
     0, 0, screen_width, screen_height, nullptr, nullptr,
     system_info->instance_handle, nullptr);

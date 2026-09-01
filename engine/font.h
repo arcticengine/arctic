@@ -182,6 +182,13 @@ struct Glyph {
 /// @addtogroup global_drawing
 /// @{
 
+// Text is drawn in backbuffer pixels with (0, 0) at the bottom-left corner and
+// y growing upward, like everything else the engine draws. The y of a Draw call
+// means what TextOrigin below says it means, which is how a caption is put
+// above a point without measuring the text first. See the "Where Zero Is and
+// Which Way Is Up" section of the documentation, and FromTopLeft() in
+// engine/easy_util.h for a layout measured from the top of the screen.
+
 /// @brief The origin point used for rendering.
 ///
 /// Determines which point of the text block is placed at the

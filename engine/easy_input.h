@@ -134,6 +134,45 @@ bool IsKeyDown(const Si32 key_code);
 ///       For one-time actions (e.g., menu selection, jumping), use IsKeyDownward() instead.
 bool IsKeyDown(const std::string &keys);
 
+/// Tells how long a key has been held down
+/// @param key_code The key code to ask about
+/// @return Seconds since the key went down, zero while the key is up
+/// @note Measured in the seconds Time() counts, from the moment the key went
+///       down to the moment of the call, so it grows within one frame as well as
+///       between frames. A key pressed again after being released starts over. A
+///       key that goes down and up within one frame is up by the time anything
+///       asks, and answers zero.
+/// @note This is what "charge a shot while the button is held", "repeat after a
+///       delay" and "hold to confirm" need. IsKeyDown() says whether a key is
+///       held and nothing about how long, which used to leave every game
+///       remembering the moment of the press itself.
+/// @code
+///   if (KeyDownSeconds(kKeySpace) > 1.0) {
+///     FireCharged();
+///   }
+/// @endcode
+double KeyDownSeconds(const KeyCode key_code);
+
+/// Tells how long any of the specified keys has been held down
+/// @param keys A C-string containing one or more key character codes to check
+/// @return Seconds of the longest of the holds, zero when none of them is down
+double KeyDownSeconds(const char *keys);
+
+/// Tells how long a key has been held down
+/// @param key The key character code to ask about
+/// @return Seconds since the key went down, zero while the key is up
+double KeyDownSeconds(const char key);
+
+/// Tells how long a key has been held down
+/// @param key_code The integer key code to ask about
+/// @return Seconds since the key went down, zero while the key is up
+double KeyDownSeconds(const Si32 key_code);
+
+/// Tells how long any of the specified keys has been held down
+/// @param keys A string containing one or more key character codes to check
+/// @return Seconds of the longest of the holds, zero when none of them is down
+double KeyDownSeconds(const std::string &keys);
+
 /// Checks if a key was released during the last frame
 /// @param key_code The key code to check
 /// @return True if the key transitioned from down to up state during the last frame
@@ -216,8 +255,16 @@ void ClearKeyStateTransitions();
 /// @return The position of the axis as a float value between -1.0 and 1.0
 float ControllerAxis(Si32 controller_idx, Si32 axis_idx);
 
+// Mouse positions are in backbuffer pixels, the same ones drawing and the GUI
+// use: (0, 0) is the bottom-left corner of the backbuffer and y grows upward.
+// A position is clamped to the backbuffer, so a cursor over the letterbox bars
+// of a window whose shape differs from the backbuffer reads as the nearest edge
+// pixel. See the "Where Zero Is and Which Way Is Up" section of the
+// documentation, and FromTopLeft() in engine/easy_util.h for a layout measured
+// from the top of the screen.
+
 /// Gets the current mouse cursor position
-/// @return The mouse cursor position as a 2D vector (x, y)
+/// @return The mouse cursor position in backbuffer pixels, y upward
 Vec2Si32 MousePos();
 
 /// Gets the current mouse cursor X coordinate

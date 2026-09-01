@@ -290,8 +290,19 @@ EM_BOOL WheelCallback(int eventType, const EmscriptenWheelEvent* e, void* userDa
 void HeadlessPlatformInit() {
 }
 
+void ApplyWindowTitle(const std::string &title) {
+  // The window of a page is its tab, so the title belongs to the document. The
+  // X11 name is set as well, for the sake of the code that reads it back.
+  EM_ASM({ document.title = UTF8ToString($0); }, title.c_str());
+  if (!g_x_display || !g_x_window) {
+    return;
+  }
+  XStoreName(g_x_display, g_x_window, title.c_str());
+}
+
 void CreateMainWindow(SystemInfo *system_info) {
-  const char *title = "Arctic Engine";
+  const std::string window_title = WindowTitle();
+  const char *title = window_title.c_str();
 
   g_x_display = XOpenDisplay(NULL);
   Check(g_x_display != NULL, "Can't open display.");

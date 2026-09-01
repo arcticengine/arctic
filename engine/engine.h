@@ -64,6 +64,7 @@ class Engine {
   HwSprite hw_backbuffer_texture_;
 
   HwSprite screenshot_target_;
+  HwSprite solid_hw_sprite_;
 
   Mesh mesh_;
   std::vector<HwSpriteDrawing> hw_sprite_drawing_;
@@ -97,6 +98,7 @@ class Engine {
   std::vector<const char*> cmd_line_argv_;
   std::vector<std::string> cmd_line_arguments_;
   std::string initial_path_;
+  std::string window_title_;
 
   /// @brief Initializes thread-local random number generators for the current thread
   void InitThreadLocalRng();
@@ -127,6 +129,19 @@ class Engine {
   /// @brief Gets the initial path set for the engine.
   /// @return The initial path as a string.
   std::string GetInitialPath() const;
+
+  /// @brief The text the main window is titled with
+  /// @return The title set through SetWindowTitle, or the default one
+  /// @details The default is worked out from the path of the executable on the
+  /// first call and kept, so the answer never changes within a run unless the
+  /// application changes it.
+  std::string GetWindowTitle();
+
+  /// @brief Remembers the text the main window is titled with
+  /// @param title The new title, empty to go back to the default one
+  /// @details Only the engine's copy; showing it on a window is the business of
+  /// ApplyWindowTitle. Use the public SetWindowTitle, which does both.
+  void SetWindowTitle(const std::string &title);
 
   /// @brief Gets the number of command line arguments.
   /// @return The number of command line arguments. 
@@ -201,6 +216,27 @@ class Engine {
   HwSprite &GetHwBackbuffer() {
       return hw_backbuffer_texture_;
   }
+
+  /// @brief A one pixel opaque white hardware sprite the engine keeps around
+  /// @return The sprite, created on the first call and reused afterwards
+  /// @details Solid color drawing needs a texture to hang the geometry on even
+  /// though the shader of kDrawBlendingModeSolidColor never samples it, and
+  /// there is no reason for every game to upload a pixel of its own. Empty in a
+  /// run without a GL context.
+  const HwSprite &SolidHwSprite();
+
+  /// @brief Fills a rectangle of a hardware sprite with a color, immediately
+  /// @param to_sprite The sprite to write into, its own coordinates
+  /// @param ll The lower left corner, inclusive
+  /// @param ur The upper right corner, inclusive
+  /// @param color The color to write
+  /// @details Unlike a queued Draw, this happens at once, because the queue of
+  /// hardware drawings has no notion of a destination other than the frame. The
+  /// color is written, not blended, so an alpha in it lands in the sprite as it
+  /// is. The rectangle is clipped to the sprite and the corners may come in any
+  /// order. Does nothing without a GL context.
+  void FillHwSpriteRect(const HwSprite &to_sprite, Vec2Si32 ll, Vec2Si32 ur,
+    Rgba color);
 
   /// @brief Resizes the backbuffer to the specified dimensions.
   /// @param width The new width of the backbuffer.

@@ -30,8 +30,16 @@
 
 namespace arctic {
 
+class HwSprite;
+
 /// @addtogroup global_drawing
 /// @{
+
+// Every point here is in backbuffer pixels with (0, 0) at the bottom-left
+// corner and y growing upward, and rectangle corners are inclusive. See the
+// "Where Zero Is and Which Way Is Up" section of the documentation for the
+// whole convention and for FromTopLeft(), which converts a layout measured
+// from the top of the screen.
 
 /// @brief Draws a solid color line from point a to point b
 /// @param [in] a Starting point of the line.
@@ -118,17 +126,58 @@ void DrawTriangle(Sprite to_sprite,
   DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color);
 
 /// @brief Draws a solid color filled rectangle
-/// @param [in] ll Lower-left corner of the rectangle.
-/// @param [in] ur Upper-right corner of the rectangle.
+/// @param [in] ll Lower-left corner of the rectangle, inclusive.
+/// @param [in] ur Upper-right corner of the rectangle, inclusive.
 /// @param [in] color Color of the rectangle.
+/// @details Both corners belong to the rectangle, so equal corners paint one
+/// pixel and a box of size s at p ends at p + s - (1, 1). The corners may come
+/// in any order, the rectangle is clipped to the target, and the color is alpha
+/// blended, with a fully transparent one painting nothing.
+///
+/// This is the software path: it writes pixels into the backbuffer, which is
+/// composed above every hardware sprite. DrawRectangleHw() is the hardware
+/// counterpart.
 void DrawRectangle(Vec2Si32 ll, Vec2Si32 ur, Rgba color);
 
 /// @brief Draws a solid color filled rectangle to a sprite
 /// @param [in] to_sprite Sprite to draw the rectangle on.
-/// @param [in] ll Lower-left corner of the rectangle.
-/// @param [in] ur Upper-right corner of the rectangle.
+/// @param [in] ll Lower-left corner of the rectangle, inclusive.
+/// @param [in] ur Upper-right corner of the rectangle, inclusive.
 /// @param [in] color Color of the rectangle.
 void DrawRectangle(Sprite to_sprite, Vec2Si32 ll, Vec2Si32 ur, Rgba color);
+
+/// @brief Fills a rectangle with a color through the hardware path
+/// @param [in] ll Lower-left corner of the rectangle, inclusive.
+/// @param [in] ur Upper-right corner of the rectangle, inclusive.
+/// @param [in] color Color of the rectangle, alpha blended.
+/// @details A filled rectangle without a sprite for it. A wall, a panel, a
+/// health bar or a dimmed background is one call rather than a texture created,
+/// cleared to a color and drawn, which is what the absence of this function
+/// used to cost.
+///
+/// The rectangle joins the queue of hardware drawings, so it obeys the same
+/// order as HwSprite::Draw: a later call is above an earlier one, and the
+/// software backbuffer is composed above all of them. The engine keeps the one
+/// pixel texture such a fill needs, see Engine::SolidHwSprite.
+///
+/// Corners are inclusive and may come in any order, exactly as in
+/// DrawRectangle. A run without a GL context draws nothing, since there is no
+/// hardware path in it at all.
+void DrawRectangleHw(Vec2Si32 ll, Vec2Si32 ur, Rgba color);
+
+/// @brief Fills a rectangle of a hardware sprite with a color
+/// @param [in] to_sprite Hardware sprite to fill a part of.
+/// @param [in] ll Lower-left corner of the rectangle, inclusive.
+/// @param [in] ur Upper-right corner of the rectangle, inclusive.
+/// @param [in] color Color to write.
+/// @details For preparing a texture rather than drawing a frame, so it differs
+/// from the screen overload in two ways worth knowing. It takes effect at once
+/// instead of waiting for the frame to be composed, because the queue of
+/// hardware drawings knows only one destination, the frame itself. And the
+/// color is written rather than blended, so a color with alpha lands in the
+/// sprite as it is, which is what a texture with holes in it needs.
+void DrawRectangleHw(const HwSprite &to_sprite, Vec2Si32 ll, Vec2Si32 ur,
+  Rgba color);
 
 /// @brief Returns color of a pixel at coordinates specified
 /// @param [in] x X-coordinate of the pixel.

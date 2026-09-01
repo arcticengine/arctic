@@ -167,10 +167,33 @@ class Sprite {
   /// @return Pivot point coordinates
   Vec2Si32 Pivot() const;
 
+  // Where a Draw call puts a sprite, and which way is up. Worth reading once,
+  // because both halves of it have placed things a screen away from where
+  // they were meant to be. The same ground is covered by the "Where Zero Is
+  // and Which Way Is Up" section of the documentation.
+  //
+  // Coordinates count pixels from the bottom-left corner of the destination,
+  // x to the right and y *upward*. A layout measured from the top of the
+  // screen is upside down for this: convert it with FromTopLeft() from
+  // engine/easy_util.h rather than by hand.
+  //
+  // The position handed to Draw is where the sprite's *pivot* lands, not
+  // where its bottom-left corner lands. The two coincide only while the pivot
+  // is (0, 0). That is the default for Create() and for a png, but a tga
+  // carries an origin field which becomes the pivot (see Load), so the very
+  // same call places two files differently. SetPivot() moves it, Pivot()
+  // reads it, and IsPointInSprite() from engine/easy_util.h hit-tests a drawn
+  // sprite the way Draw actually placed it -- a click test written as "is the
+  // point inside a box at the draw position" misses by the pivot.
+  //
+  // A source rectangle (the from_* parameters) is measured from the
+  // bottom-left corner of the source sprite and has nothing to do with the
+  // pivot.
+
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -180,8 +203,8 @@ class Sprite {
     Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -191,8 +214,8 @@ class Sprite {
     Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
@@ -205,8 +228,8 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param from_x X coordinate of the bottom-left corner of the source area
@@ -226,8 +249,8 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param from_x X coordinate of the bottom-left corner of the source area
@@ -245,7 +268,7 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -256,7 +279,7 @@ class Sprite {
 
   /// @brief Draw the sprite to another sprite
   /// @param to_sprite Destination sprite
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -266,7 +289,7 @@ class Sprite {
     Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -276,7 +299,7 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -287,7 +310,7 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param to_size Size of the destination area
   /// @param from_pos Position of the bottom-left corner of the source area
   /// @param from_size Size of the source area
@@ -301,8 +324,8 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another sprite
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param from_x X coordinate of the bottom-left corner of the source area
@@ -322,7 +345,8 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff)) const;
 
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation
-  /// @param to Position of the bottom-left corner of the destination area
+  /// @param to Position the sprite's pivot is placed at, also the center of
+  /// the rotation, y grows upward
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -333,8 +357,8 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param angle_radians Angle in radians to rotate the sprite
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -344,7 +368,8 @@ class Sprite {
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
-  /// @param to Position of the bottom-left corner of the destination area
+  /// @param to Position the sprite's pivot is placed at, also the center of
+  /// the rotation, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
@@ -356,8 +381,8 @@ class Sprite {
             DrawFilterMode filter_mode = kFilterNearest,
             Rgba in_color = Rgba(0xffffffff));
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
@@ -375,8 +400,8 @@ class Sprite {
             Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite

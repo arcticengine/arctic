@@ -51,8 +51,15 @@ struct HwSpriteDrawing;
 ///
 /// The Draw() API intentionally mirrors Sprite, so switching from software to
 /// hardware rendering in most cases only requires replacing Sprite with HwSprite
-/// in your declarations. HwSprite also supports drawing to other HwSprite
-/// instances (render-to-texture) and rotation.
+/// in your declarations. Rotation is supported.
+///
+/// A Draw call does not put pixels anywhere by itself: it appends the sprite to
+/// a queue which is drawn when the frame is composed, in call order. The
+/// overloads taking a destination HwSprite are part of that queue as well, and
+/// the queue has one destination, the frame, so the destination they name is
+/// **ignored** -- they are not render-to-texture. Preparing a texture goes
+/// through the operations that touch it at once instead: Clear(), Clone(),
+/// LoadFromSoftwareSprite() and DrawRectangleHw() with a destination sprite.
 ///
 /// HwSprite can be loaded from image files, created as an empty texture, or
 /// converted from an existing software Sprite via LoadFromSoftwareSprite().
@@ -89,6 +96,11 @@ class HwSprite {
 
   /// @brief Load sprite data from file
   /// @param file_name Name of the file to load, *.tga and *.png are supported
+  ///
+  /// The pivot is left at zero whatever the file was. This differs from
+  /// Sprite::Load, which takes the pivot from the origin field of a tga, so
+  /// the same tga drawn as a Sprite and as a HwSprite may land differently.
+  /// Call SetPivot explicitly if the pivot matters.
   void Load(const char *file_name);
 
   /// @brief Load sprite data from file
@@ -97,6 +109,9 @@ class HwSprite {
 
   /// @brief Load sprite data from a software Sprite, uploading its pixels to the GPU
   /// @param sw_sprite The software Sprite whose pixel data will be uploaded
+  ///
+  /// The reference rectangle and the pivot of the software sprite are kept,
+  /// so a tga loaded as a Sprite brings its origin here.
   void LoadFromSoftwareSprite(Sprite sw_sprite);
 
   /// @brief Make current sprite an empty sprite of the specified size
@@ -146,10 +161,25 @@ class HwSprite {
   /// @return Pivot point coordinates
   Vec2Si32 Pivot() const;
 
+  // Where a Draw call puts a sprite, and which way is up. The rules are the
+  // ones Sprite follows, see the same note in engine/easy_sprite.h: pixels
+  // count from the bottom-left corner of the destination with y growing
+  // upward (FromTopLeft() in engine/easy_util.h converts a layout measured
+  // from the top), and the position given is where the sprite's *pivot*
+  // lands, which is its bottom-left corner only while the pivot is (0, 0).
+  // IsPointInSprite() hit-tests a drawn sprite the way Draw placed it.
+  //
+  // One thing is specific to hardware sprites: a Draw call queues the sprite
+  // for the frame instead of writing pixels there and then, so among
+  // hardware sprites the later call is the one on top, and everything drawn
+  // through the software path (Sprite, Font::Draw, DrawRectangle) is
+  // composed above all of them regardless of call order. See ShowFrame.
+
   /// @brief Draw the sprite to another HwSprite
-  /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_sprite Named destination, ignored: the drawing joins the queue
+  /// of the frame like any other. See the note above the first Draw overload.
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -159,8 +189,8 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -170,8 +200,8 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer with scaling
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
@@ -184,8 +214,8 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer with scaling and source rectangle
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param from_x X coordinate of the bottom-left corner of the source area
@@ -204,9 +234,10 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another HwSprite with scaling and source rectangle
-  /// @param to_sprite Destination sprite
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_sprite Named destination, ignored: the drawing joins the queue
+  /// of the frame like any other. See the note above the first Draw overload.
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param from_x X coordinate of the bottom-left corner of the source area
@@ -223,8 +254,9 @@ class HwSprite {
       DrawBlendingMode blending_mode, DrawFilterMode filter_mode, Rgba in_color);
 
   /// @brief Draw the sprite to another HwSprite
-  /// @param to_sprite Destination sprite
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_sprite Named destination, ignored: the drawing joins the queue
+  /// of the frame like any other. See the note above the first Draw overload.
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -234,8 +266,9 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another HwSprite with scaling
-  /// @param to_sprite Destination sprite
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_sprite Named destination, ignored: the drawing joins the queue
+  /// of the frame like any other. See the note above the first Draw overload.
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use
   /// @param filter_mode Filter mode to use
@@ -245,7 +278,7 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -255,7 +288,7 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer with scaling
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param to_size Size of the destination area
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -266,7 +299,7 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer with scaling and source rectangle
-  /// @param to_pos Position of the bottom-left corner of the destination area
+  /// @param to_pos Position the sprite's pivot is placed at, y grows upward
   /// @param to_size Size of the destination area
   /// @param from_pos Position of the bottom-left corner of the source area
   /// @param from_size Size of the source area
@@ -280,15 +313,16 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another HwSprite with scaling and source rectangle
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param from_x X coordinate of the bottom-left corner of the source area
   /// @param from_y Y coordinate of the bottom-left corner of the source area
   /// @param from_width Width of the source area
   /// @param from_height Height of the source area
-  /// @param to_sprite Destination sprite
+  /// @param to_sprite Named destination, ignored: the drawing joins the queue
+  /// of the frame like any other. See the note above the first Draw overload.
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)
@@ -301,7 +335,8 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff)) const;
 
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation
-  /// @param to Position of the bottom-left corner of the destination area
+  /// @param to Position the sprite's pivot is placed at, also the center of
+  /// the rotation, y grows upward
   /// @param angle_radians Angle in radians to rotate the sprite (0 by default)
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -312,8 +347,8 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param angle_radians Angle in radians to rotate the sprite (0 by default)
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
@@ -324,7 +359,8 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
-  /// @param to Position of the bottom-left corner of the destination area
+  /// @param to Position the sprite's pivot is placed at, also the center of
+  /// the rotation, y grows upward
   /// @param to_wdith Width of the destination area
   /// @param to_hegiht Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
@@ -338,8 +374,8 @@ class HwSprite {
 
   /// @brief Draw the sprite to the backbuffer at a specific position with rotation and size
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_wdith Width of the destination area
   /// @param to_hegiht Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
@@ -356,12 +392,13 @@ class HwSprite {
       Rgba in_color = Rgba(0xffffffff));
 
   /// @brief Draw the sprite to another HwSprite at a specific position with rotation and size
-  /// @param to_x X coordinate of the bottom-left corner of the destination area
-  /// @param to_y Y coordinate of the bottom-left corner of the destination area
+  /// @param to_x X coordinate the sprite's pivot is placed at
+  /// @param to_y Y coordinate the sprite's pivot is placed at, y grows upward
   /// @param to_width Width of the destination area
   /// @param to_height Height of the destination area
   /// @param angle_radians Angle in radians to rotate the sprite
-  /// @param to_sprite Destination sprite
+  /// @param to_sprite Named destination, ignored: the drawing joins the queue
+  /// of the frame like any other. See the note above the first Draw overload.
   /// @param blending_mode Blending mode to use (kDrawBlendingModeAlphaBlend by default)
   /// @param filter_mode Filter mode to use (kFilterNearest by default)
   /// @param in_color Color to use for drawing, applied in kDrawBlendingModeColorize (0xffffffff by default)

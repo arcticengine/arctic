@@ -781,6 +781,7 @@ void CreateMainWindow(SystemInfo *system_info) {
         NSWindowCollectionBehaviorFullScreenPrimary];
       [g_main_window setDelegate:
         ((id<NSWindowDelegate>)g_app_delegate)];
+      ApplyWindowTitle(WindowTitle());
     }
 
     NSOpenGLPixelFormatAttribute format_attribute[] = {
@@ -929,6 +930,19 @@ bool SetVSync(bool is_enable) {
     setValues: &swap_interval
       forParameter: NSOpenGLContextParameterSwapInterval];
   return true;
+}
+
+void ApplyWindowTitle(const std::string &title) {
+  if (g_main_window == nil) {
+    return;
+  }
+  @autoreleasepool {
+    NSString *text = [NSString stringWithUTF8String: title.c_str()];
+    if (text == nil) {
+      return;  // not valid UTF-8, and a window keeps the title it had
+    }
+    [g_main_window setTitle: text];
+  }
 }
 
 bool IsFullScreen() {

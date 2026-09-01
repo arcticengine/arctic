@@ -82,8 +82,13 @@ class ConnectionSocket {
   explicit ConnectionSocket(AddressFamily family, SocketProtocol protocol);
 
   /// @param handle The socket handle representing an existing socket
+  ///
+  /// This is how ListenerSocket::Accept hands over a connection, so the handle
+  /// belongs to a connected socket and the state says so; an invalid handle
+  /// reads back as kDisconnected anyway, see GetState.
   explicit ConnectionSocket(SocketHandle handle) {
     handle_ = handle;
+    state_ = SocketState::kConnected;
   }
   ConnectionSocket(const ConnectionSocket& other) = delete;
   ConnectionSocket(ConnectionSocket&& rhs) noexcept;

@@ -42,15 +42,25 @@ namespace arctic {
 /// @addtogroup global_gui
 /// @{
 
+// Panels live in backbuffer pixels, the very same ones the game draws in:
+// (0, 0) at the bottom-left corner, y growing upward, a position being the
+// bottom-left corner of the panel. There is no separate interface coordinate
+// space, so a world position and a panel position may be compared directly.
+// See the "Where Zero Is and Which Way Is Up" section of the documentation,
+// and FromTopLeft() in engine/easy_util.h for a layout measured from the top.
+
 /// @brief Enumeration of GUI message types.
+///
+/// What ApplyInput appends to the queue it was given, one entry per event, each
+/// naming the panel it happened to.
 enum GuiMessageKind {
-  kGuiButtonClick,
-  kGuiButtonDown,
-  kGuiScrollChange,
-  kGuiPanelLeftDown,
-  kGuiButtonHover,
-  kGuiEditboxTextChange,
-  kGuiEditboxEditDone,
+  kGuiButtonClick,  ///< A button was pressed and released: the click happened
+  kGuiButtonDown,  ///< A button went down, the release is still to come
+  kGuiScrollChange,  ///< A scrollbar was moved, ask it for the new value
+  kGuiPanelLeftDown,  ///< A clickable panel took a left button press
+  kGuiButtonHover,  ///< The cursor came onto a button
+  kGuiEditboxTextChange,  ///< The text of an edit box changed, by any means
+  kGuiEditboxEditDone,  ///< Enter was pressed, or the focus went elsewhere
 };
 
 /// @brief Enumeration of text selection modes.
@@ -311,10 +321,40 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// @param parent_absolute_pos Absolute position of the parent panel.
   virtual void Draw(Vec2Si32 parent_absolute_pos);
 
-  /// @brief Applies input to the panel.
-  /// @param message Input message to apply.
-  /// @param out_gui_messages Output queue for GUI messages.
-  /// @return True if input was applied, false otherwise.
+  /// @brief Offers one input message to this panel and everything inside it
+  /// @param message Input message to apply, as GetInputMessage() gives it.
+  /// @param out_gui_messages Queue to append what happened to, may be nullptr.
+  /// @return True when the interface took the message, false when it did not.
+  ///
+  /// This is the form a game loop calls, once per message, on the root panel:
+  /// @code
+  /// for (Si32 i = 0; i < InputMessageCount(); ++i) {
+  ///   const InputMessage &message = GetInputMessage(i);
+  ///   if (gui_root->ApplyInput(message, &gui_messages)) {
+  ///     continue;  // the interface took it, the world must not see it
+  ///   }
+  ///   HandleWorldInput(message);
+  /// }
+  /// @endcode
+  ///
+  /// The answer is the thing worth using: a click that landed on a button comes
+  /// back as true, and a click that fell past the interface comes back as false,
+  /// which is how a game keeps a press on a panel from also being a press on
+  /// whatever the panel covers. It says nothing about *which* panel took it --
+  /// that is what the queue is for. To ask about a point without offering a
+  /// message at all, IsInside() answers the same question geometrically.
+  ///
+  /// Mouse positions are read from InputMessage::Mouse::backbuffer_pos, so the
+  /// message has to be one the engine handed out; a message built by hand needs
+  /// that field filled in.
+  ///
+  /// The queue collects a GuiMessage per event, naming the panel and the kind
+  /// (kGuiButtonClick, kGuiPanelLeftDown, kGuiEditboxTextChange and the rest),
+  /// which is the way to see what the interface did without wiring a callback
+  /// into every element. Panels also call their own callbacks in the middle of
+  /// this walk, so neither the callbacks nor the code reading the queue may add
+  /// or remove panels while it is going on: remember what to do and do it after
+  /// the input loop.
   virtual bool ApplyInput(const InputMessage &message,
       std::deque<GuiMessage> *out_gui_messages);
 
@@ -417,10 +457,38 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// field inside a hidden dialog receives nothing.
   bool IsReachableForInput();
 
+  /// @brief Tells whether a point belongs to the interface
+  /// @param backbuffer_pos A point in backbuffer pixels, MousePos() for instance
+  /// @return True when a click there would be taken by this panel or by
+  ///   something inside it, false when it would fall through to the game.
+  ///
+  /// The question "is this click mine or the interface's?" without pushing a
+  /// message through the interface and reading the answer of ApplyInput():
+  /// @code
+  /// if (IsKeyDownward(kKeyMouseLeft) && !gui_root->IsInside(MousePos())) {
+  ///   SelectInTheWorld(MousePos());
+  /// }
+  /// @endcode
+  ///
+  /// A hidden panel takes nothing, and neither does anything inside it. A panel
+  /// that is not clickable takes nothing either, so a click passes through a
+  /// Text or a bare background panel and reaches the world -- which is what the
+  /// input walk does as well, and this is meant to agree with it. Buttons,
+  /// checkboxes, edit boxes and scrollbars always count.
+  ///
+  /// Positions are counted from the bottom-left corner of the backbuffer, and
+  /// the panel is assumed to be a root drawn at (0, 0), exactly as
+  /// ApplyInput(message, queue) assumes.
+  bool IsInside(Vec2Si32 backbuffer_pos);
+
   /// @brief Checks if the panel is mouse transparent at a given position.
-  /// @param parent_pos Position of the parent panel.
-  /// @param mouse_pos Mouse position relative to the parent panel.
-  /// @return True if the panel is mouse transparent at the given position, false otherwise.
+  /// @param parent_pos Absolute position of the parent panel.
+  /// @param mouse_pos Mouse position in backbuffer pixels, not relative to the parent.
+  /// @return True if a click at that point would pass through this panel and
+  ///   everything inside it, false if something would take it.
+  ///
+  /// The inverted form of IsInside, which is the one to call: this one exists
+  /// for the panels that override it and for the walk that uses it.
   virtual bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos);
 
   /// @brief Sets the enabled status of a panel with a specific tag.
@@ -967,6 +1035,12 @@ class Editbox: public Panel {
   /// @brief Keystrokes are text while the box has the focus.
   bool IsKeyboardCapturing() const override;
 
+  /// @brief A visible box takes every click inside it, as ApplyInput does.
+  /// @param parent_pos Absolute position of the parent panel.
+  /// @param mouse_pos Mouse position in backbuffer pixels.
+  /// @return True if a click at that point passes through the box.
+  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
+
   /// @brief Notices the loss of focus, which ends the editing.
   /// @param is_current_tab True if the panel becomes the current tab.
   void SetCurrentTab(bool is_current_tab) override;
@@ -1196,6 +1270,12 @@ public:
   Si32 GetThumbExtent() const;
   /// @brief True while the user is dragging the thumb.
   bool IsThumbDragging() const;
+
+  /// @brief A visible scrollbar takes every click inside it, as ApplyInput does.
+  /// @param parent_pos Absolute position of the parent panel.
+  /// @param mouse_pos Mouse position in backbuffer pixels.
+  /// @return True if a click at that point passes through the scrollbar.
+  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 
   void SetSize(Vec2Si32 size);
   void SetSize(Si32 width, Si32 height);

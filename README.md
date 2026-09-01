@@ -42,6 +42,12 @@ Arctic Engine provides two rendering paths that share a familiar API.
 
 **HwSprite** is the hardware-accelerated renderer. Texture data lives on the GPU (OpenGL / OpenGL ES), and drawing is performed via GPU draw calls. The Draw() API mirrors Sprite, so switching from software to hardware rendering in most cases only requires replacing `Sprite` with `HwSprite` in your declarations. HwSprite is used in the `antarctica_pyramids` example project. It is available through `engine/easy_hw_sprite.h` (also reachable via `engine/engine.h`, which `easy.h` includes).
 
+Both paths share one coordinate system, and so do the mouse, the text and the GUI: pixels of the backbuffer, `(0, 0)` at the **bottom-left** corner, y growing **upward**. There is no separate interface space, so a world position and a panel position are directly comparable. Two things about it are worth knowing before the first sprite lands in the wrong place. A position given to `Draw` is where the sprite's **pivot** goes, which is its bottom-left corner only while the pivot is `(0, 0)` -- and a tga brings its own pivot from the origin field of the file, so the same call places a tga and a png differently. And a layout measured from the top of the screen has to be converted rather than negated by hand: `FromTopLeft()` and `ToTopLeft()` in `engine/easy_util.h` do it, `IsPointInSprite()` hit-tests a drawn sprite the way `Draw` actually placed it, and `SetInverseY()` is not the tool for this -- it mirrors the finished frame, text included. The whole convention is in the "Where Zero Is and Which Way Is Up" section of the documentation.
+
+The order things end up in is fixed and worth remembering: among hardware sprites the later `Draw` call is the one on top, and the software backbuffer is composed above every hardware sprite regardless of call order, so `Font::Draw`, `DrawRectangle` and the GUI are always on top. `DrawRectangleHw` fills a rectangle through the hardware path without a texture of your own, for the walls and bars that would otherwise become a sprite each.
+
+The window is named by `SetWindowTitle("...")` at any time, before the window exists as well, and `WindowTitle()` reads it back. By default it is the name of the executable file rather than the name of the engine, so two programs, or two copies of one, are told apart in the window list without writing a line.
+
 ## 3D and low-level GPU access
 
 Beyond 2D sprites, the engine ships with infrastructure for 3D rendering. These headers are not part of the `easy.h` convenience include and should be included directly as needed:
@@ -113,7 +119,17 @@ A state is a value of about ten kilobytes, so keeping one per world chunk and sw
 
 ## Networking
 
-**Sockets** -- `engine/arctic_platform_tcpip.h` gives you TCP and UDP sockets over IPv4 and IPv6 with a single API across the supported platforms, for protocols of your own.
+**Sockets** -- `engine/arctic_platform_tcpip.h` gives you TCP and UDP sockets over IPv4 and IPv6 with a single API across the supported platforms, for protocols of your own. The header is not part of `easy.h`, so include it where you need it.
+
+**A server with no window** -- the `headless_server` project in this repository is a complete one, in about two hundred lines: a startup mode decider that returns `StartupMode::kNoWindow`, a `ListenerSocket` on a port, non-blocking accepts and reads, a tick paced by `Time()` and `Sleep()`, and an exit on a command from a client or on a budget of ticks. The same executable run with `--client` talks to it, so the example is runnable by itself:
+
+```
+cd headless_server && cmake . && make -j 8
+./headless_server.app/Contents/MacOS/headless_server --port 21112 &
+./headless_server.app/Contents/MacOS/headless_server --client --port 21112
+```
+
+Pacing the loop by hand is not optional there. With a window, hidden or not, `ShowFrame()` swaps the buffers and vertical synchronization sets the pace; with `kNoWindow` there is nothing to swap and nothing to wait for, so a loop without a `Sleep()` of its own spins at the speed of the processor and eats a whole core.
 
 **HTTP** -- `engine/httplib.h` is a vendored copy of cpp-httplib, a header-only HTTP/HTTPS library: `httplib::Client` makes requests, `httplib::Server` serves them. The whole library is one large header, so include it directly (it is not part of `easy.h`) and in as few translation units as you can, to keep compile times sane.
 

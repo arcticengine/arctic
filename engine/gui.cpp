@@ -163,10 +163,15 @@ Vec2Si32 Panel::GetPos() const {
 
 void Panel::SetPos(Vec2Si32 pos) {
   pos_ = pos;
+  if (anchor_) {
+    // The anchor keeps the distances to the parent edges, and the new place is
+    // the one to keep from now on.
+    SetAnchor(anchor_);
+  }
 }
 
 void Panel::SetPos(Si32 x, Si32 y) {
-  pos_ = Vec2Si32(x, y);
+  SetPos(Vec2Si32(x, y));
 }
 
 void Panel::SetWidth(Si32 width) {
@@ -298,6 +303,11 @@ bool Panel::SwitchCurrentTab(bool is_forward) {
 void Panel::FindNeighbors(Ui32 current_tab_order,
                           Panel **in_out_prev, Panel **in_out_next) {
   for (auto it = children_.begin(); it != children_.end(); ++it) {
+    if (!(*it)->IsVisible()) {
+      // Nothing inside a hidden panel can be seen or typed into, so the focus
+      // has no business there.
+      continue;
+    }
     Ui32 order = (*it)->GetTabOrder();
     if (order != 0 && current_tab_order != order && (*it)->IsEnabled()) {
       if (*in_out_prev) {
@@ -384,7 +394,7 @@ void Panel::AddChild(std::shared_ptr<Panel> child) {
   Check(child.get() != this, "AddChild called with child == this");
   Check(child->parent_ == nullptr, "AddChild called with child that already has a parent");
   children_.push_back(child);
-  child->parent_ = this;
+  child->BecomeChild(this);
 }
 
 void Panel::RemoveChild(std::shared_ptr<Panel> child) {
@@ -414,6 +424,10 @@ void Panel::SetVisible(bool is_visible) {
 
 bool Panel::IsVisible() {
   return is_visible_;
+}
+
+bool Panel::IsInside(Vec2Si32 backbuffer_pos) {
+  return !IsMouseTransparentAt(Vec2Si32(0, 0), backbuffer_pos);
 }
 
 bool Panel::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
@@ -457,7 +471,11 @@ void Panel::BecomeChild(Panel *parent) {
   Check(parent_ == nullptr, "Not null parent_ in BecomeChild");
   parent_ = parent;
   if (anchor_) {
+    // An anchor set before the panel had a parent is measured now, from where
+    // the panel stands at this moment.
     SetAnchor(anchor_);
+  } else if (dock_) {
+    ParentSizeChanged(parent_->GetSize(), parent_->GetSize());
   }
 }
 
@@ -478,6 +496,10 @@ void Panel::SetDock(DockKind dock) {
   dock_ = dock;
   if (dock_) {
     anchor_ = kAnchorNone;
+    if (parent_) {
+      // A dock is a place, not a rule for the next resize: take it now.
+      ParentSizeChanged(parent_->GetSize(), parent_->GetSize());
+    }
   }
 }
 
@@ -1027,6 +1049,9 @@ Progressbar::Progressbar(Ui64 tag, std::shared_ptr<GuiTheme> theme)
 }
 
 void Progressbar::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!is_visible_) {
+    return;
+  }
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
   Si32 w1 = GetSize().x;
   if (current_value_ >= 0.0f
@@ -1128,6 +1153,9 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
                          bool is_top_level, bool *in_out_is_applied,
                          std::deque<GuiMessage> *out_gui_messages,
                          std::shared_ptr<Panel> *out_current_tab) {
+  if (!is_visible_) {
+    return;
+  }
   Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
                     out_gui_messages, out_current_tab);
   // Remembered so that any caret / text / selection change made below can
@@ -1449,6 +1477,22 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
 
 bool Editbox::IsKeyboardCapturing() const {
   return true;
+}
+
+bool Editbox::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
+  if (!is_visible_) {
+    return true;
+  }
+  Vec2Si32 pos = parent_pos + pos_;
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
+      return false;
+    }
+  }
+  Vec2Si32 relative_pos = mouse_pos - pos;
+  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+    relative_pos.x < size_.x && relative_pos.y < size_.y;
+  return !is_inside;
 }
 
 void Editbox::SetCurrentTab(bool is_current_tab) {
@@ -1984,6 +2028,9 @@ void Editbox::DrawMultiline(Vec2Si32 pos) {
 }
 
 void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!is_visible_) {
+    return;
+  }
   Vec2Si32 pos = parent_absolute_pos + pos_;
   if (is_current_tab_) {
     focused_.Draw(pos);
@@ -2471,6 +2518,22 @@ Si32 Scrollbar::GetThumbExtent() const {
 
 bool Scrollbar::IsThumbDragging() const {
   return state_ == kMiddleDragged;
+}
+
+bool Scrollbar::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
+  if (!is_visible_) {
+    return true;
+  }
+  Vec2Si32 pos = parent_pos + pos_;
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
+      return false;
+    }
+  }
+  Vec2Si32 relative_pos = mouse_pos - pos;
+  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
+    relative_pos.x < size_.x && relative_pos.y < size_.y;
+  return !is_inside;
 }
 
 void Scrollbar::SetSize(Vec2Si32 size) {

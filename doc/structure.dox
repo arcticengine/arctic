@@ -40,7 +40,10 @@ To begin using Arctic Engine, create a new project using the Wizard located in t
  - Text rendering
  - Screen management
  
- The drawing system uses a simple coordinate system with (0,0) at the bottome-left corner.
+ Drawing, mouse input, text and the GUI all share one coordinate system: pixels of the
+ backbuffer, (0,0) at its bottom-left corner, y growing upward. Sprites are placed by
+ their pivot rather than by their bottom-left corner. See @ref coordinates for the whole
+ convention and for the helpers that convert a layout measured from the top of the screen.
  @{
  @}
 

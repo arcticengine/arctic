@@ -283,9 +283,16 @@ struct InputMessage {
     };
 
     /// @brief Structure containing mouse input information
+    ///
+    /// Both positions grow upward: the bottom edge of the window is y = 0.
+    /// A message taken from the engine with GetInputMessage() carries
+    /// backbuffer_pos already filled in, and that is the field to use, since
+    /// it is in the same pixels as drawing and the GUI. A message obtained
+    /// with the low level PopInputMessage() carries only pos, and
+    /// Engine::MouseToBackbuffer() converts it.
     struct Mouse {
-        Vec2F pos = Vec2F(0.0f, 0.0f);                    ///< Mouse position in floating-point coordinates
-        Vec2Si32 backbuffer_pos = Vec2Si32(0, 0);      ///< Mouse position in backbuffer coordinates (Not set by the engine)
+        Vec2F pos = Vec2F(0.0f, 0.0f);                    ///< Mouse position in the window, 0 to 1 along each axis, y upward
+        Vec2Si32 backbuffer_pos = Vec2Si32(0, 0);      ///< Mouse position in backbuffer pixels, y upward, clamped to the backbuffer; filled in by ShowFrame() for messages read with GetInputMessage()
         Si32 wheel_delta = 0;         ///< Mouse wheel delta (vertical)
         Si32 wheel_delta_x = 0;       ///< Horizontal mouse wheel delta (positive = scroll right)
         float zoom_delta = 0.0f;      ///< Pinch/zoom delta (positive = zoom in)

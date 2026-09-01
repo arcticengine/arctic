@@ -31,6 +31,9 @@
 
 namespace arctic {
 
+class Sprite;
+class HwSprite;
+
 /// @addtogroup global_utility
 /// @{
 
@@ -65,9 +68,113 @@ void ResizeScreen(const Si32 width, const Si32 height);
 /// window size actually changes, as recreating textures every frame is not free.
 void ResizeScreen(const Vec2Si32 size);
 
-/// @brief Enables/disables Y-coordinate inversion. By default Y-axis is directed upward.
-/// @param is_inverse If true, inverts the Y-axis; if false, Y-axis is directed upward (default)
+/// @brief Flips the finished frame upside down when it is composed
+/// @param is_inverse true to flip the frame, false for the normal picture (default)
+/// @details This is not a coordinate mode and it will not turn the engine into a
+/// "zero at the top" one. Nothing about drawing changes: coordinates still count
+/// from the bottom-left corner with y upward, the mouse still answers in those
+/// same coordinates, and the GUI still sits where it sat. What changes is the
+/// texture mapping of the composition step, so the whole software backbuffer is
+/// mirrored vertically and every HwSprite is mirrored along with it: text comes
+/// out written backwards and a click lands nowhere near the thing under the
+/// cursor. It exists for a frame that has to be presented flipped, a video
+/// encoder or a projector setup for example, and it acts only where the frame is
+/// composed on the GPU.
+///
+/// To place a layout measured from the top of the screen, convert the
+/// coordinates instead: see FromTopLeft() and ToTopLeft() below.
 void SetInverseY(bool is_inverse);
+
+/// @brief Converts a point measured from the top-left corner of the screen
+/// @param pos_from_top_left A point whose y counts pixels downward from the top
+/// @return The same point in engine coordinates, y counted upward from the bottom
+/// @details Engine coordinates count from the bottom-left corner of the
+/// backbuffer with y growing upward, while a mock-up, a window toolkit or a web
+/// page counts from the top-left corner downward. Convert once, at the boundary
+/// between the two, instead of writing ScreenSize().y - y at every call site.
+///
+/// The conversion is its own inverse, so FromTopLeft(FromTopLeft(p)) == p, and
+/// ToTopLeft() is the same arithmetic under a name that reads better going the
+/// other way. Row 0 from the top is the topmost row of pixels, ScreenSize().y-1
+/// in engine coordinates.
+///
+/// This overload moves a *point*. Use the overload taking a size for a picture
+/// or a caption whose *top* edge is the measured one.
+Vec2Si32 FromTopLeft(Vec2Si32 pos_from_top_left);
+
+/// @brief Converts the top-left corner of a box into the engine position of the box
+/// @param pos_from_top_left The top-left corner of the box, y counted downward from the top
+/// @param size The size of the box in pixels
+/// @return The bottom-left corner of the box in engine coordinates
+/// @details This is the overload a layout actually needs, and the one people
+/// forget: "40 pixels below the top and 120 pixels tall" is the *top* edge, so
+/// the position a Draw call wants is size.y lower. The result equals
+/// ScreenSize().y - pos_from_top_left.y - size.y, and the box then occupies rows
+/// from the result up to the result plus size minus one pixel.
+///
+/// The conversion is its own inverse for the same size, so a position converted
+/// twice comes back.
+Vec2Si32 FromTopLeft(Vec2Si32 pos_from_top_left, Vec2Si32 size);
+
+/// @brief Converts a point measured from the top-left corner of a sprite
+/// @param to_sprite The sprite the point is measured in, normally a draw target
+/// @param pos_from_top_left A point whose y counts pixels downward from the top of the sprite
+/// @return The same point in the coordinates the sprite is drawn to
+/// @details The same conversion as the screen one, done inside a sprite: a
+/// sprite is its own little backbuffer with zero at its bottom-left corner. An
+/// empty sprite gives the point back unchanged.
+Vec2Si32 FromTopLeft(const Sprite &to_sprite, Vec2Si32 pos_from_top_left);
+
+/// @brief Converts the top-left corner of a box measured inside a sprite
+/// @param to_sprite The sprite the box is measured in, normally a draw target
+/// @param pos_from_top_left The top-left corner of the box, y counted downward from the top
+/// @param size The size of the box in pixels
+/// @return The bottom-left corner of the box in the coordinates of the sprite
+Vec2Si32 FromTopLeft(const Sprite &to_sprite, Vec2Si32 pos_from_top_left,
+  Vec2Si32 size);
+
+/// @brief Converts an engine point into one measured from the top-left corner
+/// @param engine_pos A point in engine coordinates, y counted upward
+/// @return The same point with y counting pixels downward from the top
+/// @details For reporting a position the way a mock-up or a tool counts it. The
+/// arithmetic is the one FromTopLeft() does; the two names exist so that the
+/// direction of the conversion is readable at the call site.
+Vec2Si32 ToTopLeft(Vec2Si32 engine_pos);
+
+/// @brief Converts a box position into the position of its top-left corner
+/// @param engine_pos The bottom-left corner of the box in engine coordinates
+/// @param size The size of the box in pixels
+/// @return The top-left corner of the box, y counting downward from the top
+Vec2Si32 ToTopLeft(Vec2Si32 engine_pos, Vec2Si32 size);
+
+/// @brief Tells whether a point is inside a sprite drawn at a given position
+/// @param sprite The sprite as it was drawn
+/// @param drawn_at The position passed to Draw, where the pivot of the sprite landed
+/// @param point The point to test, MousePos() for instance
+/// @return true when the point is within the rectangle the sprite covered
+/// @details A sprite is placed by its pivot, so the rectangle it covers starts
+/// at drawn_at minus the pivot, and a hand-written test that treats drawn_at as
+/// the bottom-left corner misses by the pivot -- which is how a click stops
+/// hitting a character loaded from a tga. This function accounts for the pivot
+/// and for the reference rectangle of the sprite, so the answer matches what
+/// Draw did.
+///
+/// The test is the bounding rectangle, not the shape: a transparent pixel of the
+/// sprite still counts as a hit. Look at the alpha of the pixel afterwards when
+/// that matters. An empty sprite covers nothing and answers false. A sprite
+/// drawn scaled, rotated or into another sprite is a different rectangle than
+/// the one this function assumes.
+bool IsPointInSprite(const Sprite &sprite, Vec2Si32 drawn_at, Vec2Si32 point);
+
+/// @brief Tells whether a point is inside a hardware sprite drawn at a position
+/// @param sprite The sprite as it was drawn
+/// @param drawn_at The position passed to Draw, where the pivot of the sprite landed
+/// @param point The point to test, MousePos() for instance
+/// @return true when the point is within the rectangle the sprite covered
+/// @details The HwSprite counterpart of the Sprite overload, with the same
+/// rules. Note that HwSprite::Load leaves the pivot at zero even for a tga,
+/// while Sprite::Load takes the pivot from the file.
+bool IsPointInSprite(const HwSprite &sprite, Vec2Si32 drawn_at, Vec2Si32 point);
 
 /// @brief Returns time in seconds since the game start
 /// @return Time in seconds as a double
