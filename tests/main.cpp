@@ -4930,6 +4930,149 @@ void test_tab_skips_hidden_panels() {
   TEST_CHECK_(hidden->IsFocused(), "a button shown again is still skipped");
 }
 
+namespace {
+
+// A panel kind of its own, the way a game would write one: it only overrides
+// HandleInput and counts the calls.
+class CountingPanel : public Panel {
+ public:
+  Si32 calls = 0;
+  bool is_enabled = true;
+
+  CountingPanel(Vec2Si32 pos, Vec2Si32 size)
+    : Panel(0, pos, size) {
+  }
+
+  bool IsEnabled() override {
+    return is_enabled;
+  }
+
+ protected:
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level, bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override {
+    ++calls;
+    Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+        out_gui_messages, out_current_tab);
+  }
+};
+
+}  // namespace
+
+// Whether a panel is there to take input is decided once, in ApplyInput, and
+// not by every panel kind for itself. A kind that overrides HandleInput never
+// hears about a message while it is hidden or disabled, and neither do the
+// kinds the engine ships with.
+void test_hidden_and_disabled_panels_never_handle_input() {
+  auto root = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(320, 200));
+  auto counting = std::make_shared<CountingPanel>(Vec2Si32(10, 10),
+      Vec2Si32(50, 50));
+  root->AddChild(counting);
+  std::deque<GuiMessage> gui_messages;
+  const InputMessage click = LeftClickAt(Vec2Si32(20, 20));
+
+  root->ApplyInput(click, &gui_messages);
+  TEST_CHECK_(counting->calls == 1,
+      "a visible enabled panel handled the message %d times, expected 1",
+      (int)counting->calls);
+
+  counting->SetVisible(false);
+  root->ApplyInput(click, &gui_messages);
+  TEST_CHECK_(counting->calls == 1, "a hidden panel handled a message");
+  counting->SetVisible(true);
+
+  counting->is_enabled = false;
+  root->ApplyInput(click, &gui_messages);
+  TEST_CHECK_(counting->calls == 1, "a disabled panel handled a message");
+  counting->is_enabled = true;
+
+  // A hidden parent stops the walk before the child is asked.
+  root->SetVisible(false);
+  root->ApplyInput(click, &gui_messages);
+  TEST_CHECK_(counting->calls == 1,
+      "a panel inside a hidden one handled a message");
+  root->SetVisible(true);
+  root->ApplyInput(click, &gui_messages);
+  TEST_CHECK_(counting->calls == 2,
+      "the panel did not come back with its parent: %d calls",
+      (int)counting->calls);
+
+  // The engine kinds: a disabled checkbox does not toggle, a disabled
+  // scrollbar does not move, and neither says anything.
+  Sprite face;
+  face.Create(20, 20);
+  Sprite track;
+  track.Create(12, 100);
+  Sprite knob;
+  knob.Create(12, 12);
+  auto checkbox = std::make_shared<Checkbox>(3, Vec2Si32(100, 10), 2,
+      face, face);
+  root->AddChild(checkbox);
+  auto scrollbar = std::make_shared<Scrollbar>(4, Vec2Si32(200, 20), 3,
+      track, track, knob, knob, knob, knob, knob, knob, knob, knob, knob,
+      0, 10, 5, Scrollbar::kScrollVertical);
+  root->AddChild(scrollbar);
+  Si32 checkbox_downs = 0;
+  Si32 scroll_changes = 0;
+  checkbox->OnButtonDown = [&checkbox_downs]() { ++checkbox_downs; };
+  scrollbar->OnScrollChange = [&scroll_changes]() { ++scroll_changes; };
+
+  // Positive control: enabled, a press is heard and the arrow moves the value.
+  gui_messages.clear();
+  root->ApplyInput(LeftClickAt(Vec2Si32(110, 20)), &gui_messages);
+  TEST_CHECK_(checkbox_downs == 1, "a press on an enabled checkbox was lost");
+  TEST_CHECK_(!gui_messages.empty() && gui_messages.back().kind == kGuiButtonDown,
+      "no kGuiButtonDown was queued for an enabled checkbox");
+  // The press lands on the dec arrow of a vertical scrollbar, which is at the
+  // bottom of the track.
+  root->ApplyInput(LeftClickAt(Vec2Si32(205, 25)), &gui_messages);
+  TEST_CHECK_(scroll_changes == 1 && scrollbar->GetValue() == 4,
+      "a press on the arrow of an enabled scrollbar changed the value %d "
+      "times, value is %d", (int)scroll_changes, (int)scrollbar->GetValue());
+
+  checkbox->SetEnabled(false);
+  scrollbar->SetEnabled(false);
+  gui_messages.clear();
+  root->ApplyInput(LeftClickAt(Vec2Si32(110, 20)), &gui_messages);
+  root->ApplyInput(LeftClickAt(Vec2Si32(205, 25)), &gui_messages);
+  TEST_CHECK_(checkbox_downs == 1, "a disabled checkbox heard a press");
+  TEST_CHECK_(scroll_changes == 1 && scrollbar->GetValue() == 4,
+      "a disabled scrollbar moved to %d", (int)scrollbar->GetValue());
+  TEST_CHECK_(gui_messages.empty(),
+      "%d messages were queued by disabled panels", (int)gui_messages.size());
+
+  // Tab does not stop on a disabled panel either. The press above gave the
+  // scrollbar the focus, so the walk is started from nothing.
+  auto first = std::make_shared<Button>(5, Vec2Si32(10, 100), face, Sprite(),
+      Sprite(), Sound(), Sound(), kKeyNone, 1);
+  auto last = std::make_shared<Button>(6, Vec2Si32(50, 100), face, Sprite(),
+      Sprite(), Sound(), Sound(), kKeyNone, 4);
+  root->AddChild(first);
+  root->AddChild(last);
+  root->MakeCurrentTab(nullptr);
+  TEST_CHECK_(root->FindCurrentTab() == nullptr,
+      "the focus was not cleared, so the Tab walk below starts from the wrong "
+      "place");
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(first->IsFocused(), "the first Tab did not land on tab order 1");
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(last->IsFocused() && !checkbox->IsFocused() &&
+      !scrollbar->IsFocused(),
+      "Tab stopped on a disabled checkbox or scrollbar");
+
+  // Enabled again, they are back in the walk: this is the negative control for
+  // the check above.
+  checkbox->SetEnabled(true);
+  scrollbar->SetEnabled(true);
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK(first->IsFocused());
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(checkbox->IsFocused(), "an enabled checkbox is skipped by Tab");
+  TEST_CHECK(root->SwitchCurrentTab(true));
+  TEST_CHECK_(scrollbar->IsFocused(), "an enabled scrollbar is skipped by Tab");
+}
+
 // How a run starts is decided before main gets going, from a function the
 // application registers. The registration is the only part of it a test can
 // reach; the startup code that asks the question runs once, before this.
@@ -11500,6 +11643,8 @@ TEST_LIST = {
   {"Panel anchor and dock follow the calls",
     test_panel_anchor_and_dock_follow_the_calls},
   {"Tab skips hidden panels", test_tab_skips_hidden_panels},
+  {"Hidden and disabled panels never handle input",
+    test_hidden_and_disabled_panels_never_handle_input},
   {"Startup mode decider is asked at startup", test_startup_mode_decider},
   {"Log file is findable, clearable and rotated",
       test_log_file_is_findable_clearable_and_rotated},

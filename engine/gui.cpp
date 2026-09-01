@@ -229,9 +229,36 @@ void Panel::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
                        std::shared_ptr<Panel> *out_current_tab) {
   Check(in_out_is_applied,
         "ApplyInput must not be called with in_out_is_applied == nullptr");
-  if (!is_visible_) {
+  Check(out_current_tab,
+        "ApplyInput must not be called with out_current_tab == nullptr");
+  if (!IsVisible() || !IsEnabled()) {
     return;
   }
+  HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+              out_gui_messages, out_current_tab);
+}
+
+bool Panel::IsWithin(Vec2Si32 relative_pos) const {
+  return relative_pos.x >= 0 && relative_pos.y >= 0 &&
+    relative_pos.x < size_.x && relative_pos.y < size_.y;
+}
+
+bool Panel::TakesMouse() const {
+  return is_clickable_;
+}
+
+void Panel::Emit(GuiMessageKind kind,
+                 std::deque<GuiMessage> *out_gui_messages) {
+  if (out_gui_messages) {
+    out_gui_messages->emplace_back(shared_from_this(), kind);
+  }
+}
+
+void Panel::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+                        bool is_top_level,
+                        bool *in_out_is_applied,
+                        std::deque<GuiMessage> *out_gui_messages,
+                        std::shared_ptr<Panel> *out_current_tab) {
   Vec2Si32 pos = parent_pos + pos_;
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     (**it).ApplyInput(pos, message, false, in_out_is_applied,
@@ -239,19 +266,13 @@ void Panel::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   }
   if (!*in_out_is_applied &&
       is_clickable_ &&
-      message.kind == InputMessage::kMouse) {
-    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
-    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
-    if (is_inside) {
-      if (message.keyboard.key == kKeyMouseLeft &&
-          message.keyboard.key_state == 1) {
-        if (out_gui_messages) {
-          out_gui_messages->emplace_back(shared_from_this(), kGuiPanelLeftDown);
-        }
-        OnPanelLeftDown();
-        *in_out_is_applied = true;
-      }
+      message.kind == InputMessage::kMouse &&
+      IsWithin(message.mouse.backbuffer_pos - pos)) {
+    if (message.keyboard.key == kKeyMouseLeft &&
+        message.keyboard.key_state == 1) {
+      Emit(kGuiPanelLeftDown, out_gui_messages);
+      OnPanelLeftDown();
+      *in_out_is_applied = true;
     }
   }
   if (is_top_level) {
@@ -440,15 +461,7 @@ bool Panel::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
       return false;
     }
   }
-  if (is_clickable_) {
-    Vec2Si32 relative_pos = mouse_pos - pos;
-    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
-    if (is_inside) {
-      return false;
-    }
-  }
-  return true;
+  return !(TakesMouse() && IsWithin(mouse_pos - pos));
 }
 
 void Panel::SetEnabled(bool) {
@@ -583,24 +596,17 @@ bool Button::IsEnabled() {
   return state_ != Button::kDisabled && state_ != Button::kHidden;
 }
 
-void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
-                        bool is_top_level,
-                        bool *in_out_is_applied,
-                        std::deque<GuiMessage> *out_gui_messages,
-                        std::shared_ptr<Panel> *out_current_tab) {
-  if (state_ == kHidden || state_ == kDisabled) {
-    return;
-  }
-  Check(in_out_is_applied,
-        "ApplyInput must not be called with in_out_is_applied == nullptr");
-  Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
-                    out_gui_messages, out_current_tab);
+void Button::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+                         bool is_top_level,
+                         bool *in_out_is_applied,
+                         std::deque<GuiMessage> *out_gui_messages,
+                         std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+                     out_gui_messages, out_current_tab);
   ButtonState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
-    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
-    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
+    bool is_inside = IsWithin(message.mouse.backbuffer_pos - pos);
     if (is_inside && !*in_out_is_applied) {
       *out_current_tab = Panel::Invalid();
       is_current_tab_ = false;
@@ -609,9 +615,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
         *in_out_is_applied = true;
       } else {
         state_ = kHovered;
-        if (out_gui_messages) {
-          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonHover);
-        }
+        Emit(kGuiButtonHover, out_gui_messages);
         *in_out_is_applied = true;
       }
       if (message.keyboard.key == kKeyMouseLeft &&
@@ -619,17 +623,13 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           prev_state == kDown) {
         *in_out_is_applied = true;
         up_sound_.Play(GetGuiSoundVolume());
-        if (out_gui_messages) {
-          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
-        }
+        Emit(kGuiButtonClick, out_gui_messages);
         OnButtonClick();
       }
     } else {
       if (is_current_tab_) {
         state_ = kHovered;
-        if (out_gui_messages) {
-          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonHover);
-        }
+        Emit(kGuiButtonHover, out_gui_messages);
       } else {
         state_ = kNormal;
       }
@@ -637,9 +637,7 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (state_ != prev_state) {
       if (state_ == kDown) {
         down_sound_.Play(GetGuiSoundVolume());
-        if (out_gui_messages) {
-          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
-        }
+        Emit(kGuiButtonDown, out_gui_messages);
         OnButtonDown();
       }
       if (prev_state == kDown) {
@@ -662,32 +660,30 @@ void Button::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             if (is_hotkey && GetTabOrder() != 0) {
               *out_current_tab = shared_from_this();
             }
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
-            }
+            Emit(kGuiButtonDown, out_gui_messages);
             OnButtonDown();
           }
         } else {
           if (prev_state == kDown) {
             *in_out_is_applied = true;
             up_sound_.Play(GetGuiSoundVolume());
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
-            }
+            Emit(kGuiButtonClick, out_gui_messages);
             OnButtonClick();
             if (GetTabOrder() == 0 || !is_current_tab_) {
               state_ = kNormal;
             } else {
               state_ = kHovered;
-              if (out_gui_messages) {
-                out_gui_messages->emplace_back(shared_from_this(), kGuiButtonHover);
-              }
+              Emit(kGuiButtonHover, out_gui_messages);
             }
           }
         }
       }
     }
   }
+}
+
+bool Button::TakesMouse() const {
+  return true;
 }
 
 void Button::SetCurrentTab(bool is_current_tab) {
@@ -720,26 +716,6 @@ bool Button::IsVisible() {
   Check(is_visible == should_be_visible,
         "Button visibility state inconsitency detected!");
   return is_visible;
-}
-
-bool Button::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
-  if (!is_visible_) {
-    return true;
-  }
-  Vec2Si32 pos = parent_pos + pos_;
-  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
-    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
-      return false;
-    }
-  }
-
-  Vec2Si32 relative_pos = mouse_pos - pos;
-  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-  relative_pos.x < size_.x && relative_pos.y < size_.y;
-  if (is_inside) {
-    return false;
-  }
-  return true;
 }
 
 void Button::SetTextColor(Rgba rgba) {
@@ -1149,15 +1125,12 @@ Editbox::Editbox(Ui64 tag, std::shared_ptr<GuiTheme> theme)
   focused_ = theme->editbox_focused_.DrawExternalSize(size_);
 }
 
-void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
-                         bool is_top_level, bool *in_out_is_applied,
-                         std::deque<GuiMessage> *out_gui_messages,
-                         std::shared_ptr<Panel> *out_current_tab) {
-  if (!is_visible_) {
-    return;
-  }
-  Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
-                    out_gui_messages, out_current_tab);
+void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+                          bool is_top_level, bool *in_out_is_applied,
+                          std::deque<GuiMessage> *out_gui_messages,
+                          std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+                     out_gui_messages, out_current_tab);
   // Remembered so that any caret / text / selection change made below can
   // restart the "caret is solid" cooldown from a single place.
   const Si32 cursor_was = cursor_pos_;
@@ -1176,9 +1149,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
-    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
-    if (is_inside && !*in_out_is_applied) {
+    if (IsWithin(relative_pos) && !*in_out_is_applied) {
       *out_current_tab = shared_from_this();
       is_current_tab_ = true;
       *in_out_is_applied = true;
@@ -1405,10 +1376,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           } else {
             // Single line, or AcceptsReturn off: Enter ends the editing and is
             // still left to the host, which may have a use of its own for it.
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(),
-                                             kGuiEditboxEditDone);
-            }
+            Emit(kGuiEditboxEditDone, out_gui_messages);
             OnEditDone();
           }
         } else if (!ctrl && (is_digits_ ? ((key >= kKey0 && key <= kKey9) ||
@@ -1467,10 +1435,7 @@ void Editbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
     TouchCaret();
   }
   if (may_change_text && text_ != text_was) {
-    if (out_gui_messages) {
-      out_gui_messages->emplace_back(shared_from_this(),
-                                     kGuiEditboxTextChange);
-    }
+    Emit(kGuiEditboxTextChange, out_gui_messages);
     OnTextChange();
   }
 }
@@ -1479,20 +1444,8 @@ bool Editbox::IsKeyboardCapturing() const {
   return true;
 }
 
-bool Editbox::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
-  if (!is_visible_) {
-    return true;
-  }
-  Vec2Si32 pos = parent_pos + pos_;
-  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
-    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
-      return false;
-    }
-  }
-  Vec2Si32 relative_pos = mouse_pos - pos;
-  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
-  return !is_inside;
+bool Editbox::TakesMouse() const {
+  return true;
 }
 
 void Editbox::SetCurrentTab(bool is_current_tab) {
@@ -2520,20 +2473,8 @@ bool Scrollbar::IsThumbDragging() const {
   return state_ == kMiddleDragged;
 }
 
-bool Scrollbar::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
-  if (!is_visible_) {
-    return true;
-  }
-  Vec2Si32 pos = parent_pos + pos_;
-  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
-    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
-      return false;
-    }
-  }
-  Vec2Si32 relative_pos = mouse_pos - pos;
-  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
-  return !is_inside;
+bool Scrollbar::TakesMouse() const {
+  return true;
 }
 
 void Scrollbar::SetSize(Vec2Si32 size) {
@@ -2546,19 +2487,14 @@ void Scrollbar::SetSize(Si32 width, Si32 height) {
   Panel::SetSize(width, height);
 }
 
-void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
-                           const InputMessage &message,
-                           bool is_top_level,
-                           bool *in_out_is_applied,
-                           std::deque<GuiMessage> *out_gui_messages,
-                           std::shared_ptr<Panel> *out_current_tab) {
-  if (state_ == kHidden || state_ == kDisabled) {
-    return;
-  }
-  Check(in_out_is_applied,
-        "ApplyInput must not be called with in_out_is_applied == nullptr");
-  Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
-                    out_gui_messages, out_current_tab);
+void Scrollbar::HandleInput(Vec2Si32 parent_pos,
+                            const InputMessage &message,
+                            bool is_top_level,
+                            bool *in_out_is_applied,
+                            std::deque<GuiMessage> *out_gui_messages,
+                            std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+                     out_gui_messages, out_current_tab);
   Si32 eth = EffectiveThumbPx();
   Si32 s1 = 1 + normal_button_dec_.Size()[dir_];
   Si32 s4 = size_[dir_] - 1 - normal_button_inc_.Size()[dir_];
@@ -2572,8 +2508,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
     Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
-    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
+    bool is_inside = IsWithin(relative_pos);
 
     if (is_inside) {
       UpdateHoverZone(relative_pos, s1, s2, s3, s4);
@@ -2591,11 +2526,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
           dv = 1;
         }
       }
-      value_ = Clamp(value_ + Si32(dv), min_value_, max_value_);
-      if (out_gui_messages) {
-        out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-      }
-      OnScrollChange();
+      SetValueAndNotify(value_ + Si32(dv), out_gui_messages);
     }
 
     if (!*in_out_is_applied &&
@@ -2606,11 +2537,7 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
       *in_out_is_applied = true;
       Si32 drag_s = relative_pos[dir_] - start_relative_s_;
       Si32 value_diff = Si32(Si64(drag_s) * (Si64(max_value_) - Si64(min_value_)) / Si64(w));
-      value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
-      if (out_gui_messages) {
-        out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-      }
-      OnScrollChange();
+      SetValueAndNotify(start_value_ + value_diff, out_gui_messages);
     } else if (message.keyboard.state[kKeyMouseLeft] != 1) {
       if (is_inside && !*in_out_is_applied) {
         *out_current_tab = shared_from_this();
@@ -2629,28 +2556,16 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         if (state_ == kMiddleDragged) {
           Si32 drag_s = relative_pos[dir_] - start_relative_s_;
           Si32 value_diff = Si32(Si64(drag_s) * (Si64(max_value_) - Si64(min_value_)) / Si64(w));
-          value_ = Clamp(start_value_ + value_diff, min_value_, max_value_);
-          if (out_gui_messages) {
-            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-          }
-          OnScrollChange();
+          SetValueAndNotify(start_value_ + value_diff, out_gui_messages);
         } else if (relative_pos[dir_] < s1) {
           state_ = kDecDown;
           if (prev_state != state_) {
-            value_ = std::max(min_value_, value_ - line_step_);
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-            }
-            OnScrollChange();
+            SetValueAndNotify(value_ - line_step_, out_gui_messages);
           }
         } else if (relative_pos[dir_] < s2) {
           state_ = kDecFast;
           if (prev_state != state_) {
-            value_ = std::max(min_value_, value_ - step_);
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-            }
-            OnScrollChange();
+            SetValueAndNotify(value_ - step_, out_gui_messages);
           }
         } else if (relative_pos[dir_] < s3) {
           state_ = kMiddleDragged;
@@ -2661,20 +2576,12 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         } else if (relative_pos[dir_] < s4) {
           state_ = kIncFast;
           if (prev_state != state_) {
-            value_ = std::min(max_value_, value_ + step_);
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-            }
-            OnScrollChange();
+            SetValueAndNotify(value_ + step_, out_gui_messages);
           }
         } else {
           state_ = kIncDown;
           if (prev_state != state_) {
-            value_ = std::min(max_value_, value_ + line_step_);
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-            }
-            OnScrollChange();
+            SetValueAndNotify(value_ + line_step_, out_gui_messages);
           }
         }
       } else {
@@ -2691,17 +2598,9 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
         KeyCode key_dec = (dir_ == kScrollVertical) ? kKeyDown : kKeyLeft;
         KeyCode key_inc = (dir_ == kScrollVertical) ? kKeyUp : kKeyRight;
         if (message.keyboard.key == key_dec) {
-          value_ = Clamp(value_ - line_step_, min_value_, max_value_);
-          if (out_gui_messages) {
-            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-          }
-          OnScrollChange();
+          SetValueAndNotify(value_ - line_step_, out_gui_messages);
         } else if (message.keyboard.key == key_inc) {
-          value_ = Clamp(value_ + line_step_, min_value_, max_value_);
-          if (out_gui_messages) {
-            out_gui_messages->emplace_back(shared_from_this(), kGuiScrollChange);
-          }
-          OnScrollChange();
+          SetValueAndNotify(value_ + line_step_, out_gui_messages);
         }
       }
     }
@@ -2713,6 +2612,13 @@ void Scrollbar::ApplyInput(Vec2Si32 parent_pos,
   if (!is_current_tab_) {
     state_ = kNormal;
   }
+}
+
+void Scrollbar::SetValueAndNotify(Si32 value,
+                                  std::deque<GuiMessage> *out_gui_messages) {
+  value_ = Clamp(value, min_value_, max_value_);
+  Emit(kGuiScrollChange, out_gui_messages);
+  OnScrollChange();
 }
 
 void Scrollbar::Draw(Vec2Si32 parent_absolute_pos) {
@@ -2850,6 +2756,10 @@ void Scrollbar::SetEnabled(bool is_enabled) {
   }
 }
 
+bool Scrollbar::IsEnabled() {
+  return state_ != kDisabled && state_ != kHidden;
+}
+
 
 
 Checkbox::Checkbox(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
@@ -2947,24 +2857,17 @@ void Checkbox::SetEnabled(bool is_enabled) {
   }
 }
 
-void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+void Checkbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
     bool is_top_level,
     bool *in_out_is_applied,
     std::deque<GuiMessage> *out_gui_messages,
     std::shared_ptr<Panel> *out_current_tab) {
-  if (state_ == kHidden || state_ == kDisabled) {
-    return;
-  }
-  Check(in_out_is_applied,
-    "ApplyInput must not be called with in_out_is_applied == nullptr");
-  Panel::ApplyInput(parent_pos, message, is_top_level, in_out_is_applied,
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
     out_gui_messages, out_current_tab);
   CheckboxState prev_state = state_;
   if (message.kind == InputMessage::kMouse) {
     Vec2Si32 pos = parent_pos + pos_;
-    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - pos;
-    bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-      relative_pos.x < size_.x && relative_pos.y < size_.y;
+    bool is_inside = IsWithin(message.mouse.backbuffer_pos - pos);
     if (is_inside && !*in_out_is_applied) {
       *out_current_tab = Panel::Invalid();
       is_current_tab_ = false;
@@ -2980,9 +2883,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
           prev_state == kDown) {
         up_sound_.Play(GetGuiSoundVolume());
         value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
-        if (out_gui_messages) {
-          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
-        }
+        Emit(kGuiButtonClick, out_gui_messages);
         OnButtonClick();
       }
     } else {
@@ -2996,9 +2897,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       if (state_ == kDown) {
         down_sound_.Play(GetGuiSoundVolume());
         *in_out_is_applied = true;
-        if (out_gui_messages) {
-          out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
-        }
+        Emit(kGuiButtonDown, out_gui_messages);
         OnButtonDown();
       }
       if (prev_state == kDown) {
@@ -3021,9 +2920,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             if (is_hotkey && GetTabOrder() != 0) {
               *out_current_tab = shared_from_this();
             }
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonDown);
-            }
+            Emit(kGuiButtonDown, out_gui_messages);
             OnButtonDown();
           }
         } else {
@@ -3031,9 +2928,7 @@ void Checkbox::ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
             *in_out_is_applied = true;
             up_sound_.Play(GetGuiSoundVolume());
             value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
-            if (out_gui_messages) {
-              out_gui_messages->emplace_back(shared_from_this(), kGuiButtonClick);
-            }
+            Emit(kGuiButtonClick, out_gui_messages);
             if (GetTabOrder() == 0 || !is_current_tab_) {
               state_ = kNormal;
             } else {
@@ -3079,24 +2974,12 @@ bool Checkbox::IsVisible() {
   return is_visible;
 }
 
-bool Checkbox::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
-  if (!is_visible_) {
-    return true;
-  }
-  Vec2Si32 pos = parent_pos + pos_;
-  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
-    if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
-      return false;
-    }
-  }
-
-  Vec2Si32 relative_pos = mouse_pos - pos;
-  bool is_inside = relative_pos.x >= 0 && relative_pos.y >= 0 &&
-    relative_pos.x < size_.x && relative_pos.y < size_.y;
-  if (is_inside) {
-    return false;
-  }
+bool Checkbox::TakesMouse() const {
   return true;
+}
+
+bool Checkbox::IsEnabled() {
+  return state_ != kDisabled && state_ != kHidden;
 }
 
 void Checkbox::SetChecked(bool is_checked) {

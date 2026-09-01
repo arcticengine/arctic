@@ -355,7 +355,7 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// this walk, so neither the callbacks nor the code reading the queue may add
   /// or remove panels while it is going on: remember what to do and do it after
   /// the input loop.
-  virtual bool ApplyInput(const InputMessage &message,
+  bool ApplyInput(const InputMessage &message,
       std::deque<GuiMessage> *out_gui_messages);
 
   /// @brief Applies input to the panel and its children.
@@ -365,7 +365,12 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// @param in_out_is_applied Input/output flag indicating if input was applied.
   /// @param out_gui_messages Output queue for GUI messages.
   /// @param out_current_tab Output pointer to the current tab panel.
-  virtual void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
+  ///
+  /// A hidden or disabled panel takes nothing, and neither does anything inside
+  /// it; this is decided here, once, and the panel kinds do not get to forget
+  /// it. What a visible and enabled panel does with the message is HandleInput,
+  /// which is the function to override.
+  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
       bool is_top_level,
       bool *in_out_is_applied,
       std::deque<GuiMessage> *out_gui_messages,
@@ -512,6 +517,44 @@ class Panel : public std::enable_shared_from_this<Panel> {
   virtual void SetDock(DockKind dock);
 
   std::function<void(void)> OnPanelLeftDown = DoNothing;
+
+ protected:
+  /// @brief Handles one input message for a visible and enabled panel
+  /// @param parent_pos Absolute position of the parent panel.
+  /// @param message Input message to apply.
+  /// @param is_top_level True for the root of the walk, which owns the Tab key.
+  /// @param in_out_is_applied Set to true once something took the message.
+  /// @param out_gui_messages Queue for what happened, may be nullptr.
+  /// @param out_current_tab Set to the panel that is to take the focus.
+  ///
+  /// ApplyInput has already checked that the panel is visible and enabled and
+  /// that the pointers are there. The base implementation walks the children
+  /// (front to back, so the panel drawn last is asked first), takes a left press
+  /// when the panel is clickable, and, at the top level, moves the focus on Tab.
+  /// An override does its own work after calling Panel::HandleInput.
+  virtual void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab);
+
+  /// @brief Tells whether a point is inside the rectangle of this panel
+  /// @param relative_pos A point counted from the bottom-left corner of the panel.
+  /// @return True for 0 <= x < width and 0 <= y < height.
+  bool IsWithin(Vec2Si32 relative_pos) const;
+
+  /// @brief Tells whether a visible panel of this kind takes clicks inside it
+  /// @return True when a click inside the rectangle belongs to the panel.
+  ///
+  /// The base answer is the clickable flag; the kinds whose HandleInput takes
+  /// every click inside them (buttons, edit boxes, scrollbars) answer true, so
+  /// that IsInside() agrees with the input walk.
+  virtual bool TakesMouse() const;
+
+  /// @brief Appends a message about this panel to the queue, if there is one
+  /// @param kind What happened.
+  /// @param out_gui_messages The queue, may be nullptr.
+  void Emit(GuiMessageKind kind, std::deque<GuiMessage> *out_gui_messages);
 };
 
 /// @brief Class representing a text panel.
@@ -667,19 +710,6 @@ class Button : public Panel {
   /// @param parent_absolute_pos Absolute position of the parent panel.
   void Draw(Vec2Si32 parent_absolute_pos) override;
 
-  /// @brief Applies input to the button panel.
-  /// @param parent_pos Position of the parent panel.
-  /// @param message Input message to apply.
-  /// @param is_top_level Flag indicating if this is a top-level panel.
-  /// @param in_out_is_applied Input/output flag indicating if input was applied.
-  /// @param out_gui_messages Output queue for GUI messages.
-  /// @param out_current_tab Output pointer to the current tab panel.
-  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
-      bool is_top_level,
-      bool *in_out_is_applied,
-      std::deque<GuiMessage> *out_gui_messages,
-      std::shared_ptr<Panel> *out_current_tab) override;
-
   /// @brief Sets the current tab status of the button panel.
   /// @param is_current_tab True if the panel is the current tab, false otherwise.
   void SetCurrentTab(bool is_current_tab) override;
@@ -699,12 +729,6 @@ class Button : public Panel {
   /// @brief Checks if the button panel is visible.
   /// @return True if the panel is visible, false otherwise.
   bool IsVisible() override;
-
-  /// @brief Checks if the button panel is mouse transparent at a given position.
-  /// @param parent_pos Position of the parent panel.
-  /// @param mouse_pos Mouse position relative to the parent panel.
-  /// @return True if the panel is mouse transparent at the given position, false otherwise.
-  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 
   /// @brief Sets the text color of the button panel.
   /// @param rgba New text color.
@@ -731,6 +755,17 @@ class Button : public Panel {
 
   std::function<void(void)> OnButtonClick = DoNothing;
   std::function<void(void)> OnButtonDown = DoNothing;
+
+ protected:
+  /// @brief Presses, releases, hovers and hotkeys; see Panel::HandleInput.
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+
+  /// @brief A button takes every click inside it.
+  bool TakesMouse() const override;
 };
 
 /// @brief Class representing a progress bar panel.
@@ -902,6 +937,16 @@ class Editbox: public Panel {
   // Applies is_digits_ / allow_list_ filters to a string in place.
   void FilterAllowedInPlace(std::string *s) const;
 
+  /// @brief Focus, caret, selection and editing; see Panel::HandleInput.
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+
+  /// @brief An edit box takes every click inside it.
+  bool TakesMouse() const override;
+
  public:
   /// @brief Constructor for Editbox panel.
   /// @param tag Unique tag for the panel.
@@ -926,19 +971,6 @@ class Editbox: public Panel {
   /// @param tag Unique tag for the panel.
   /// @param theme GUI theme for the edit box.
   Editbox(Ui64 tag, std::shared_ptr<GuiTheme> theme);
-
-  /// @brief Applies input to the edit box panel.
-  /// @param parent_pos Position of the parent panel.
-  /// @param message Input message to apply.
-  /// @param is_top_level Flag indicating if this is a top-level panel.
-  /// @param in_out_is_applied Input/output flag indicating if input was applied.
-  /// @param out_gui_messages Output queue for GUI messages.
-  /// @param out_current_tab Output pointer to the current tab panel.
-  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
-    bool is_top_level,
-    bool *in_out_is_applied,
-    std::deque<GuiMessage> *out_gui_messages,
-    std::shared_ptr<Panel> *out_current_tab) override;
 
   /// @brief Sets the text content of the edit box panel.
   /// @param text New text content.
@@ -1034,12 +1066,6 @@ class Editbox: public Panel {
 
   /// @brief Keystrokes are text while the box has the focus.
   bool IsKeyboardCapturing() const override;
-
-  /// @brief A visible box takes every click inside it, as ApplyInput does.
-  /// @param parent_pos Absolute position of the parent panel.
-  /// @param mouse_pos Mouse position in backbuffer pixels.
-  /// @return True if a click at that point passes through the box.
-  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 
   /// @brief Notices the loss of focus, which ends the editing.
   /// @param is_current_tab True if the panel becomes the current tab.
@@ -1162,6 +1188,19 @@ public:
   void DrawDecButton(Vec2Si32 absolute_pos, Vec2Si32 button_offset);
   void DrawIncButton(Vec2Si32 inc_pos, Vec2Si32 button_offset);
 
+  /// @brief Wheel, arrows, track and thumb; see Panel::HandleInput.
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+
+  /// @brief A scrollbar takes every click inside it.
+  bool TakesMouse() const override;
+
+  // Clamps the value into range, then tells the queue and the callback.
+  void SetValueAndNotify(Si32 value, std::deque<GuiMessage> *out_gui_messages);
+
  public:
   /// @brief Constructor for Scrollbar panel.
   /// @param tag Unique tag for the panel.
@@ -1199,19 +1238,6 @@ public:
 
   /// @brief Replaces theme sprites and rebuilds thumb frames (e.g. after UI scale change).
   void ApplyTheme(std::shared_ptr<GuiThemeScrollbar> theme);
-
-  /// @brief Applies input to the scrollbar panel.
-  /// @param parent_pos Position of the parent panel.
-  /// @param message Input message to apply.
-  /// @param is_top_level Flag indicating if this is a top-level panel.
-  /// @param in_out_is_applied Input/output flag indicating if input was applied.
-  /// @param out_gui_messages Output queue for GUI messages.
-  /// @param out_current_tab Output pointer to the current tab panel.
-  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
-    bool is_top_level,
-    bool *in_out_is_applied,
-    std::deque<GuiMessage> *out_gui_messages,
-    std::shared_ptr<Panel> *out_current_tab) override;
 
   /// @brief Draws the scrollbar panel.
   /// @param parent_absolute_pos Absolute position of the parent panel.
@@ -1261,6 +1287,10 @@ public:
   /// @param is_enabled True to enable the panel, false to disable it.
   void SetEnabled(bool is_enabled) override;
 
+  /// @brief Checks if the scrollbar panel is enabled.
+  /// @return True if the panel is enabled, false otherwise.
+  bool IsEnabled() override;
+
   /// @brief Regenerates the sprites of the scrollbar panel.
   void RegenerateSprites() override;
 
@@ -1270,12 +1300,6 @@ public:
   Si32 GetThumbExtent() const;
   /// @brief True while the user is dragging the thumb.
   bool IsThumbDragging() const;
-
-  /// @brief A visible scrollbar takes every click inside it, as ApplyInput does.
-  /// @param parent_pos Absolute position of the parent panel.
-  /// @param mouse_pos Mouse position in backbuffer pixels.
-  /// @return True if a click at that point passes through the scrollbar.
-  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 
   void SetSize(Vec2Si32 size);
   void SetSize(Si32 width, Si32 height);
@@ -1355,19 +1379,6 @@ class Checkbox : public Panel {
   void Draw(Vec2Si32 parent_absolute_pos)
     override;
 
-  /// @brief Applies input to the checkbox panel.
-  /// @param parent_pos Position of the parent panel.
-  /// @param message Input message to apply.
-  /// @param is_top_level Flag indicating if this is a top-level panel.
-  /// @param in_out_is_applied Input/output flag indicating if input was applied.
-  /// @param out_gui_messages Output queue for GUI messages.
-  /// @param out_current_tab Output pointer to the current tab panel.
-  void ApplyInput(Vec2Si32 parent_pos, const InputMessage &message,
-      bool is_top_level,
-      bool *in_out_is_applied,
-      std::deque<GuiMessage> *out_gui_messages,
-      std::shared_ptr<Panel> *out_current_tab) override;
-
   /// @brief Sets the current tab status of the checkbox panel.
   /// @param is_current_tab True if the panel is the current tab, false otherwise.
   void SetCurrentTab(bool is_current_tab) override;
@@ -1380,15 +1391,13 @@ class Checkbox : public Panel {
   /// @param is_enabled True to enable the panel, false to disable it.
   void SetEnabled(bool is_enabled) override;
 
+  /// @brief Checks if the checkbox panel is enabled.
+  /// @return True if the panel is enabled, false otherwise.
+  bool IsEnabled() override;
+
   /// @brief Checks if the checkbox panel is visible.
   /// @return True if the panel is visible, false otherwise.
   bool IsVisible() override;
-
-  /// @brief Checks if the checkbox panel is mouse transparent at a given position.
-  /// @param parent_pos Position of the parent panel.
-  /// @param mouse_pos Mouse position relative to the parent panel.
-  /// @return True if the panel is mouse transparent at the given position, false otherwise.
-  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 
   /// @brief Sets the checked status of the checkbox panel.
   /// @param is_checked True to check the checkbox, false to uncheck it.
@@ -1408,6 +1417,17 @@ class Checkbox : public Panel {
 
   std::function<void(void)> OnButtonClick = DoNothing;
   std::function<void(void)> OnButtonDown = DoNothing;
+
+ protected:
+  /// @brief Presses, releases, hovers and hotkeys; see Panel::HandleInput.
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+
+  /// @brief A checkbox takes every click inside it.
+  bool TakesMouse() const override;
 };
 
 /// @brief Class for creating GUI panels.
