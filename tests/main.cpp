@@ -1217,17 +1217,49 @@ void test_json_parse_string() {
   TEST_CHECK(json::parse("\"hello\"").get<std::string>() == "hello");
 }
 
+// The document is written by the test itself rather than kept in tests/data:
+// a *.json file there is hidden from a sandboxed run, and what is under test
+// is parsing from a stream, not finding a file.
 void test_json_parse_file() {
-  std::string data_dir = find_test_data_dir();
-  std::string path = data_dir + "/test_config.json";
+  const char *path = "/tmp/arctic_json_test_config.json";
+  {
+    std::ofstream out(path);
+    out << R"({
+  "window": {
+    "title": "Arctic Test",
+    "width": 1280,
+    "height": 720,
+    "fullscreen": false
+  },
+  "audio": {
+    "master_volume": 0.8,
+    "music_volume": 0.6,
+    "sfx_volume": 1.0
+  },
+  "player": {
+    "name": "Arctic Fox",
+    "level": 42,
+    "inventory": ["sword", "shield", "potion"],
+    "position": {"x": 10.5, "y": -3.25, "z": 0.0}
+  },
+  "enemies": [
+    {"type": "goblin", "hp": 30, "aggressive": true},
+    {"type": "dragon", "hp": 500, "aggressive": false}
+  ],
+  "empty_object": {},
+  "empty_array": []
+})";
+  }
 
   std::ifstream file(path);
   if (!TEST_CHECK_(file.is_open(), "Failed to open %s",
-      arctic::DescribeFilePath(path.c_str()).c_str())) {
+      arctic::DescribeFilePath(path).c_str())) {
     return;
   }
 
   json j = json::parse(file);
+  file.close();
+  std::remove(path);
 
   // Window section
   TEST_CHECK(j.contains("window"));
