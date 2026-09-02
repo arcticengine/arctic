@@ -577,14 +577,15 @@ void PositionClients() {
 /// @brief Adds a new client to the simulation
 void AddClient() {
   for (Si32 i = 0; i < g_clients.size(); ++i) {
-    if (!g_clients[i].is_active) {
-      g_clients[i].is_active = true;
-      g_clients[i].session_id = GetNextSessionId();
-      g_clients[i].last_receive_t = -3.0;
-      g_clients[i].last_delay = 0;
-      g_clients[i].is_world_state_obtained = false;
-      for (Si32 i = 0; i < kLevelSizePackets; ++i) {
-        g_clients[i].level_obtained[i] = false;
+    Client &client = g_clients[i];
+    if (!client.is_active) {
+      client.is_active = true;
+      client.session_id = GetNextSessionId();
+      client.last_receive_t = -3.0;
+      client.last_delay = 0;
+      client.is_world_state_obtained = false;
+      for (Si32 part_idx = 0; part_idx < kLevelSizePackets; ++part_idx) {
+        client.level_obtained[part_idx] = false;
       }
       PositionClients();
       return;
