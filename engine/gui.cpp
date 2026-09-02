@@ -41,6 +41,44 @@
 
 namespace arctic {
 
+namespace {
+
+// Everything drawn while a ClipScope lives lands inside one rectangle of the
+// backbuffer only. The scope swaps the backbuffer of the engine for a view of
+// that rectangle (a Sprite that shares the pixels), and restores it after.
+// Positions drawn inside the scope must be shifted by -Origin(), because the
+// view counts its pixels from its own bottom-left corner.
+class ClipScope {
+ public:
+  ClipScope(Vec2Si32 pos, Vec2Si32 size) {
+    Sprite &backbuffer = GetEngine()->GetBackbuffer();
+    saved_ = backbuffer;
+    Vec2Si32 low(std::max(pos.x, 0), std::max(pos.y, 0));
+    Vec2Si32 high(std::min(pos.x + size.x, saved_.Width()),
+                  std::min(pos.y + size.y, saved_.Height()));
+    Vec2Si32 clip_size(std::max(0, high.x - low.x), std::max(0, high.y - low.y));
+    origin_ = low;
+    Sprite view;
+    view.Reference(saved_, low, clip_size);
+    backbuffer = view;
+  }
+
+  ~ClipScope() {
+    GetEngine()->GetBackbuffer() = saved_;
+  }
+
+  // Absolute position of the bottom-left pixel of the view.
+  Vec2Si32 Origin() const {
+    return origin_;
+  }
+
+ private:
+  Sprite saved_;
+  Vec2Si32 origin_;
+};
+
+}  // namespace
+
 GuiMessage::GuiMessage(std::shared_ptr<Panel> in_panel, GuiMessageKind in_kind)
 : panel(in_panel)
 , kind(in_kind) {
@@ -71,6 +109,7 @@ Panel::Panel(Ui64 tag, std::shared_ptr<GuiTheme> theme)
 , is_visible_(true)
 , theme_(theme) {
   background_ = theme_->panel_background_.DrawExternalSize(size_);
+  tooltip_theme_ = theme_->tooltip_;
 }
 
 std::shared_ptr<Panel> Panel::invalid_panel_(new Panel(0, Vec2Si32(0, 0), Vec2Si32(0, 0)));
@@ -208,9 +247,174 @@ void Panel::Draw(Vec2Si32 parent_absolute_pos) {
   }
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
   background_.Draw(absolute_pos, size_);
-  for (auto it = children_.begin(); it != children_.end(); ++it) {
-    (**it).Draw(absolute_pos);
+  if (is_clipping_children_) {
+    ClipScope clip(absolute_pos, size_);
+    Vec2Si32 shifted_pos = absolute_pos - clip.Origin();
+    for (auto it = children_.begin(); it != children_.end(); ++it) {
+      (**it).Draw(shifted_pos);
+    }
+  } else {
+    for (auto it = children_.begin(); it != children_.end(); ++it) {
+      (**it).Draw(absolute_pos);
+    }
   }
+  if (parent_ == nullptr) {
+    // The root draws last what must lie above everything: open popups and the
+    // tooltip. A panel drawn on its own is a root in this sense.
+    DrawOverlays(absolute_pos);
+    DrawTooltip(absolute_pos);
+  }
+}
+
+const std::deque<std::shared_ptr<Panel>> &Panel::GetChildren() const {
+  return children_;
+}
+
+Panel *Panel::GetParent() const {
+  return parent_;
+}
+
+void Panel::SetClipChildren(bool is_clipping) {
+  is_clipping_children_ = is_clipping;
+}
+
+bool Panel::IsClippingChildren() const {
+  return is_clipping_children_;
+}
+
+void Panel::SetTooltip(std::string tooltip) {
+  tooltip_ = std::move(tooltip);
+}
+
+const std::string &Panel::GetTooltip() const {
+  return tooltip_;
+}
+
+void Panel::SetTooltipTheme(std::shared_ptr<GuiThemeTooltip> theme) {
+  tooltip_theme_ = std::move(theme);
+}
+
+void Panel::DrawOverlays(Vec2Si32 absolute_pos) {
+  for (auto it = children_.begin(); it != children_.end(); ++it) {
+    if ((**it).IsVisible()) {
+      (**it).DrawOverlays(absolute_pos + (**it).pos_);
+    }
+  }
+}
+
+void Panel::HandleOverlayInput(Vec2Si32 absolute_pos,
+                               const InputMessage &message,
+                               bool *in_out_is_applied,
+                               std::deque<GuiMessage> *out_gui_messages,
+                               std::shared_ptr<Panel> *out_current_tab) {
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    if ((**it).IsVisible() && (**it).IsEnabled()) {
+      (**it).HandleOverlayInput(absolute_pos + (**it).pos_, message,
+                                in_out_is_applied, out_gui_messages,
+                                out_current_tab);
+    }
+  }
+}
+
+bool Panel::IsOverlayTransparentAt(Vec2Si32 absolute_pos,
+                                   Vec2Si32 mouse_pos) {
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    if ((**it).IsVisible() &&
+        !(**it).IsOverlayTransparentAt(absolute_pos + (**it).pos_,
+                                       mouse_pos)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+Panel *Panel::FindTooltipOwnerAt(Vec2Si32 absolute_pos, Vec2Si32 mouse_pos) {
+  if (!IsVisible() || !IsWithin(mouse_pos - absolute_pos)) {
+    return nullptr;
+  }
+  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
+    Panel *owner = (**it).FindTooltipOwnerAt(absolute_pos + (**it).pos_,
+                                             mouse_pos);
+    if (owner) {
+      return owner;
+    }
+  }
+  return tooltip_.empty() ? nullptr : this;
+}
+
+void Panel::TrackTooltip(Vec2Si32 absolute_pos, const InputMessage &message) {
+  if (message.kind != InputMessage::kMouse) {
+    if (message.kind == InputMessage::kKeyboard &&
+        (message.keyboard.key_state & 1u) == 1u) {
+      // A key press hides the tooltip until the cursor moves again.
+      tooltip_owner_.reset();
+    }
+    return;
+  }
+  Panel *owner = nullptr;
+  if (!IsOverlayTransparentAt(absolute_pos, message.mouse.backbuffer_pos)) {
+    // An open popup covers the panel under it, and popups carry no tooltips.
+    owner = nullptr;
+  } else {
+    owner = FindTooltipOwnerAt(absolute_pos, message.mouse.backbuffer_pos);
+  }
+  if (owner == this) {
+    // The root itself may live on the stack, and a weak_ptr to it would not
+    // be safe; only the children are owners.
+    owner = nullptr;
+  }
+  std::shared_ptr<Panel> current = tooltip_owner_.lock();
+  bool is_button_press = message.keyboard.key != kKeyNone &&
+      (message.keyboard.key_state & 1u) == 1u;
+  if (owner == nullptr) {
+    tooltip_owner_.reset();
+    return;
+  }
+  if (current.get() != owner || is_button_press) {
+    // A new panel or a click restarts the delay; a move over the same panel
+    // only follows the cursor.
+    tooltip_owner_ = owner->shared_from_this();
+    tooltip_since_ = Time();
+  }
+  tooltip_pos_ = message.mouse.backbuffer_pos;
+}
+
+void Panel::DrawTooltip(Vec2Si32 absolute_pos) {
+  if (!tooltip_theme_ || !tooltip_theme_->font_.FontInstance()) {
+    return;
+  }
+  std::shared_ptr<Panel> owner = tooltip_owner_.lock();
+  if (!owner || owner->tooltip_.empty() || !owner->IsReachableForInput()) {
+    return;
+  }
+  if (Time() - tooltip_since_ < tooltip_theme_->delay_seconds_) {
+    return;
+  }
+  GuiThemeTooltip &t = *tooltip_theme_;
+  Vec2Si32 text_size = t.font_.EvaluateSize(owner->tooltip_.c_str(), false);
+  Vec2Si32 client(text_size.x + t.padding_ * 2, text_size.y + t.padding_ * 2);
+  Sprite frame = t.frame_.DrawClientSize(client);
+  Vec2Si32 size = frame.Size();
+  if (size.x <= 0 || size.y <= 0) {
+    size = client;
+  }
+  // Above and to the right of the cursor, pushed back inside the root.
+  Vec2Si32 pos = tooltip_pos_ + Vec2Si32(12, 16);
+  Vec2Si32 root_low = absolute_pos;
+  Vec2Si32 root_high = absolute_pos + size_;
+  if (pos.x + size.x > root_high.x) {
+    pos.x = std::max(root_low.x, root_high.x - size.x);
+  }
+  if (pos.y + size.y > root_high.y) {
+    pos.y = std::max(root_low.y, tooltip_pos_.y - 8 - size.y);
+  }
+  frame.Draw(pos, size);
+  Vec2Si32 border = (size - client) / 2;
+  t.font_.Draw(owner->tooltip_.c_str(),
+               pos.x + border.x + t.padding_,
+               pos.y + border.y + t.padding_ + text_size.y,
+               kTextOriginTop, kTextAlignmentLeft,
+               kDrawBlendingModeColorize, kFilterNearest, t.color_);
 }
 
 bool Panel::ApplyInput(const InputMessage &message,
@@ -260,6 +464,12 @@ void Panel::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
                         std::deque<GuiMessage> *out_gui_messages,
                         std::shared_ptr<Panel> *out_current_tab) {
   Vec2Si32 pos = parent_pos + pos_;
+  if (is_top_level) {
+    // Open popups lie above the tree, so they are asked first.
+    HandleOverlayInput(pos, message, in_out_is_applied, out_gui_messages,
+                       out_current_tab);
+    TrackTooltip(pos, message);
+  }
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     (**it).ApplyInput(pos, message, false, in_out_is_applied,
                       out_gui_messages, out_current_tab);
@@ -456,6 +666,9 @@ bool Panel::IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) {
     return true;
   }
   Vec2Si32 pos = parent_pos + pos_;
+  if (parent_ == nullptr && !IsOverlayTransparentAt(pos, mouse_pos)) {
+    return false;
+  }
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     if (!(**it).IsMouseTransparentAt(pos, mouse_pos)) {
       return false;
@@ -892,7 +1105,48 @@ void DrawSelection(Si32 x1, Si32 y1, Si32 x2, Si32 y2,
 }
 
 Vec2Si32 Text::EvaluateSize() {
-  return font_.EvaluateSize(text_.c_str(), false);
+  return font_.EvaluateSize(ShownText().c_str(), false);
+}
+
+void Text::SetWordWrap(bool word_wrap) {
+  word_wrap_ = word_wrap;
+}
+
+bool Text::IsWordWrap() const {
+  return word_wrap_;
+}
+
+std::string Text::ShownText() const {
+  if (!word_wrap_ || !font_.FontInstance() || size_.x <= 0) {
+    return text_;
+  }
+  std::vector<WrappedTextLine> lines = WrapText(font_, text_, size_.x);
+  std::string shown;
+  for (size_t i = 0; i < lines.size(); ++i) {
+    if (i > 0) {
+      shown += '\n';
+    }
+    shown += lines[i].text;
+  }
+  return shown;
+}
+
+Si32 Text::ToShownOffset(Si32 offset) const {
+  if (!word_wrap_ || !font_.FontInstance() || size_.x <= 0) {
+    return offset;
+  }
+  // The shown text is the source with a '\n' put in at every soft break, so
+  // an offset moves right by the number of soft breaks before it.
+  std::vector<WrappedTextLine> lines = WrapText(font_, text_, size_.x);
+  Si32 shown = offset;
+  for (size_t i = 0; i + 1 < lines.size(); ++i) {
+    const WrappedTextLine &ln = lines[i];
+    bool is_hard_break = ln.end > ln.start + (Si32)ln.text.size();
+    if (!is_hard_break && ln.end <= offset) {
+      ++shown;
+    }
+  }
+  return shown;
 }
 
 void Text::SetEnabled(bool is_enabled) {
@@ -946,27 +1200,30 @@ void Text::Draw(Vec2Si32 parent_absolute_pos) {
   }
 
   Vec2Si32 absolute_pos = parent_absolute_pos + pos_ + offset;
+  const std::string shown = ShownText();
   if (!palete_.empty()) {
-    font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
+    font_.Draw(shown.c_str(), absolute_pos.x, absolute_pos.y,
                origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest,
                (is_enabled_ || !theme_ || theme_->disabled_palete_.empty()) ? palete_ : theme_->disabled_palete_);
   } else {
-    font_.Draw(text_.c_str(), absolute_pos.x, absolute_pos.y,
+    font_.Draw(shown.c_str(), absolute_pos.x, absolute_pos.y,
                origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
   }
 
   if (selection_begin_ != selection_end_) {
+    const Si32 shown_begin = ToShownOffset(selection_begin_);
+    const Si32 shown_end = ToShownOffset(selection_end_);
     Vec2Si32 size1;
-    Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
+    Vec2Si32 pos1 = font_.EvaluateCharacterPos(shown.c_str(), shown.c_str()+shown_begin, origin_, alignment_, &size1);
     Vec2Si32 size2;
-    const char *plast = text_.c_str()+selection_end_-1;
-    while (plast > text_.c_str()+selection_begin_) {
+    const char *plast = shown.c_str()+shown_end-1;
+    while (plast > shown.c_str()+shown_begin) {
       if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
         break;
       }
       --plast;
     }
-    Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
+    Vec2Si32 pos2 = font_.EvaluateCharacterPos(shown.c_str(), plast, origin_, alignment_, &size2);
 
     Si32 x1 = absolute_pos.x + pos1.x;
     Si32 x2 = absolute_pos.x + pos2.x + size2.x;
@@ -1188,10 +1445,13 @@ void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
         Ui32 key = message.keyboard.key;
         bool ctrl = message.keyboard.state[kKeyControl] != 0;
         bool shift = message.keyboard.state[kKeyShift] != 0;
-        if (ctrl && key == kKeyZ && !shift) {
+        // A read-only box keeps the caret, the selection and Ctrl+C; whatever
+        // would change the text is not taken, so the host still sees the key.
+        const bool can_edit = !is_read_only_;
+        if (can_edit && ctrl && key == kKeyZ && !shift) {
           *in_out_is_applied = true;
           Undo();
-        } else if (ctrl && (key == kKeyY || (key == kKeyZ && shift))) {
+        } else if (can_edit && ctrl && (key == kKeyY || (key == kKeyZ && shift))) {
           *in_out_is_applied = true;
           Redo();
         } else if (ctrl && key == kKeyA) {
@@ -1208,7 +1468,7 @@ void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
                 static_cast<size_t>(selection_end_ - selection_begin_)));
           }
           edit_group_ = kEditGroupNone;
-        } else if (ctrl && key == kKeyX) {
+        } else if (can_edit && ctrl && key == kKeyX) {
           *in_out_is_applied = true;
           if (selection_begin_ != selection_end_) {
             SetClipboardText(text_.substr(
@@ -1217,7 +1477,7 @@ void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
             SnapshotBefore(kEditGroupDiscrete);
             EraseSelection();
           }
-        } else if (ctrl && key == kKeyV) {
+        } else if (can_edit && ctrl && key == kKeyV) {
           *in_out_is_applied = true;
           std::string paste = GetClipboardText();
           std::string norm;
@@ -1261,7 +1521,7 @@ void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
             cursor_pos_ += (Si32)paste.length();
           }
           edit_group_ = kEditGroupNone;
-        } else if (key == kKeyBackspace) {
+        } else if (can_edit && key == kKeyBackspace) {
           *in_out_is_applied = true;
           if (text_.length()) {
             if (selection_begin_ != selection_end_) {
@@ -1275,7 +1535,7 @@ void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
               cursor_pos_ = prev;
             }
           }
-        } else if (key == kKeyDelete) {
+        } else if (can_edit && key == kKeyDelete) {
           *in_out_is_applied = true;
           if (text_.length()) {
             if (selection_begin_ != selection_end_) {
@@ -1360,7 +1620,7 @@ void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
             MoveCursorVertical(key == kKeyUp ? -1 : 1, shift);
           }
         } else if (key == kKeyEnter) {
-          if (is_multiline_ && accepts_return_ && !ctrl) {
+          if (can_edit && is_multiline_ && accepts_return_ && !ctrl) {
             *in_out_is_applied = true;
             if (max_length_ <= 0 || (Si32)text_.length() -
                 (selection_end_ - selection_begin_) < max_length_) {
@@ -1379,7 +1639,7 @@ void Editbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
             Emit(kGuiEditboxEditDone, out_gui_messages);
             OnEditDone();
           }
-        } else if (!ctrl && (is_digits_ ? ((key >= kKey0 && key <= kKey9) ||
+        } else if (can_edit && !ctrl && (is_digits_ ? ((key >= kKey0 && key <= kKey9) ||
             (message.keyboard.characters[0] >= '0' &&
              message.keyboard.characters[0] <= '9')) : true)) {
           *in_out_is_applied = true;
@@ -1670,14 +1930,14 @@ Si32 Editbox::PrefixWidth(const std::string &line, Si32 bytes) {
       line.substr(0, static_cast<size_t>(bytes)).c_str(), true).x;
 }
 
-std::vector<Editbox::VisualLine> Editbox::WrapVisualLines() {
-  std::vector<VisualLine> lines;
-  const Si32 n = (Si32)text_.length();
+std::vector<WrappedTextLine> WrapText(Font font, const std::string &text,
+                                      Si32 max_width) {
+  std::vector<WrappedTextLine> lines;
+  const Si32 n = (Si32)text.length();
   if (n == 0) {
-    lines.push_back(VisualLine());
+    lines.push_back(WrappedTextLine());
     return lines;
   }
-  const Si32 max_width = word_wrap_ ? MultilineInnerWidth() : 0;
 
   // Split the text into segments that each carry their trailing hyphen or
   // whitespace run, so breaking between two segments loses no bytes. A '\n' is
@@ -1686,24 +1946,24 @@ std::vector<Editbox::VisualLine> Editbox::WrapVisualLines() {
   std::vector<bool> seg_hard_break;
   Si32 i = 0;
   while (i < n) {
-    if (text_[static_cast<size_t>(i)] == '\n') {
+    if (text[static_cast<size_t>(i)] == '\n') {
       segs.push_back(std::make_pair(i, i + 1));
       seg_hard_break.push_back(true);
       ++i;
       continue;
     }
     Si32 seg_start = i;
-    while (i < n && text_[static_cast<size_t>(i)] != '-'
-           && text_[static_cast<size_t>(i)] != ' '
-           && text_[static_cast<size_t>(i)] != '\t'
-           && text_[static_cast<size_t>(i)] != '\n') {
+    while (i < n && text[static_cast<size_t>(i)] != '-'
+           && text[static_cast<size_t>(i)] != ' '
+           && text[static_cast<size_t>(i)] != '\t'
+           && text[static_cast<size_t>(i)] != '\n') {
       ++i;
     }
-    if (i < n && text_[static_cast<size_t>(i)] == '-') {
+    if (i < n && text[static_cast<size_t>(i)] == '-') {
       ++i;  // keep the hyphen at the end of the segment
     } else {
-      while (i < n && (text_[static_cast<size_t>(i)] == ' '
-                       || text_[static_cast<size_t>(i)] == '\t')) {
+      while (i < n && (text[static_cast<size_t>(i)] == ' '
+                       || text[static_cast<size_t>(i)] == '\t')) {
         ++i;
       }
     }
@@ -1715,7 +1975,7 @@ std::vector<Editbox::VisualLine> Editbox::WrapVisualLines() {
   std::string buf;
   for (size_t si = 0; si < segs.size(); ++si) {
     if (seg_hard_break[si]) {
-      VisualLine ln;
+      WrappedTextLine ln;
       ln.text = buf;
       ln.start = line_start;
       // The '\n' byte belongs to this line's range but not to its text, so a
@@ -1726,13 +1986,13 @@ std::vector<Editbox::VisualLine> Editbox::WrapVisualLines() {
       buf.clear();
       continue;
     }
-    std::string seg_text = text_.substr(
+    std::string seg_text = text.substr(
         static_cast<size_t>(segs[si].first),
         static_cast<size_t>(segs[si].second - segs[si].first));
     std::string candidate = buf + seg_text;
     if (!buf.empty() && max_width > 0 &&
-        font_.EvaluateSize(candidate.c_str(), false).x > max_width) {
-      VisualLine ln;
+        font.EvaluateSize(candidate.c_str(), false).x > max_width) {
+      WrappedTextLine ln;
       ln.text = buf;
       ln.start = line_start;
       ln.end = segs[si].first;
@@ -1743,12 +2003,16 @@ std::vector<Editbox::VisualLine> Editbox::WrapVisualLines() {
       buf = candidate;
     }
   }
-  VisualLine last;
+  WrappedTextLine last;
   last.text = buf;
   last.start = line_start;
   last.end = n;
   lines.push_back(last);
   return lines;
+}
+
+std::vector<Editbox::VisualLine> Editbox::WrapVisualLines() {
+  return WrapText(font_, text_, word_wrap_ ? MultilineInnerWidth() : 0);
 }
 
 Si32 Editbox::VisualLineIndex(const std::vector<VisualLine> &lines, Si32 pos) {
@@ -1890,16 +2154,19 @@ Si32 Editbox::CaretFromPoint(Vec2Si32 relative_pos) {
                     VisualLineCaretLimit(lines, target_line));
   }
   // Single line: the character at display_pos_ is drawn at the left border.
+  // Measured on the shown text, which differs from text_ under a password char.
   Si32 border = std::max(0,
       (normal_.Height() - font_.FontInstance()->line_height_) / 2);
   Si32 want_x = relative_pos.x - border;
-  Si32 best = display_pos_;
+  const std::string shown = ShownText();
+  const Si32 display_pos = ToShownOffset(display_pos_);
+  Si32 best = display_pos;
   Si32 best_dist = std::abs(want_x);
-  Si32 i = display_pos_;
-  while (i < (Si32)text_.length()) {
-    Si32 nxt = Utf8NextCharPos(text_, i);
-    std::string part = text_.substr(static_cast<size_t>(display_pos_),
-                                    static_cast<size_t>(nxt - display_pos_));
+  Si32 i = display_pos;
+  while (i < (Si32)shown.length()) {
+    Si32 nxt = Utf8NextCharPos(shown, i);
+    std::string part = shown.substr(static_cast<size_t>(display_pos),
+                                    static_cast<size_t>(nxt - display_pos));
     Si32 px = font_.EvaluateSize(part.c_str(), false).x;
     Si32 dist = std::abs(want_x - px);
     if (dist < best_dist) {
@@ -1908,7 +2175,91 @@ Si32 Editbox::CaretFromPoint(Vec2Si32 relative_pos) {
     }
     i = nxt;
   }
-  return best;
+  return FromShownOffset(best);
+}
+
+void Editbox::SetReadOnly(bool is_read_only) {
+  is_read_only_ = is_read_only;
+}
+
+bool Editbox::IsReadOnly() const {
+  return is_read_only_;
+}
+
+void Editbox::SetPasswordChar(Ui32 password_char) {
+  password_char_ = password_char;
+}
+
+Ui32 Editbox::GetPasswordChar() const {
+  return password_char_;
+}
+
+void Editbox::SetPlaceholder(std::string placeholder) {
+  placeholder_ = std::move(placeholder);
+}
+
+const std::string &Editbox::GetPlaceholder() const {
+  return placeholder_;
+}
+
+void Editbox::SetPlaceholderColor(Rgba color) {
+  placeholder_color_ = color;
+}
+
+namespace {
+
+std::string Utf8FromCodepoint(Ui32 codepoint) {
+  Utf8Codepoint utf8;
+  utf8.WriteUtf32(codepoint);
+  return std::string(reinterpret_cast<const char*>(utf8.buffer),
+                     static_cast<size_t>(utf8.size));
+}
+
+}  // namespace
+
+std::string Editbox::ShownText() const {
+  if (password_char_ == 0 || is_multiline_) {
+    return text_;
+  }
+  const std::string mask = Utf8FromCodepoint(password_char_);
+  std::string shown;
+  Si32 i = 0;
+  const Si32 n = (Si32)text_.length();
+  while (i < n) {
+    shown += mask;
+    i = Utf8NextCharPos(text_, i);
+  }
+  return shown;
+}
+
+Si32 Editbox::ToShownOffset(Si32 offset) const {
+  if (password_char_ == 0 || is_multiline_) {
+    return offset;
+  }
+  const Si32 mask_len = (Si32)Utf8FromCodepoint(password_char_).length();
+  Si32 chars = 0;
+  Si32 i = 0;
+  const Si32 n = std::min(offset, (Si32)text_.length());
+  while (i < n) {
+    ++chars;
+    i = Utf8NextCharPos(text_, i);
+  }
+  return chars * mask_len;
+}
+
+Si32 Editbox::FromShownOffset(Si32 shown_offset) const {
+  if (password_char_ == 0 || is_multiline_) {
+    return shown_offset;
+  }
+  const Si32 mask_len = (Si32)Utf8FromCodepoint(password_char_).length();
+  Si32 chars = std::max(0, shown_offset) / std::max(1, mask_len);
+  Si32 i = 0;
+  const Si32 n = (Si32)text_.length();
+  while (chars > 0 && i < n) {
+    i = Utf8NextCharPos(text_, i);
+    --chars;
+  }
+  return i;
 }
 
 void Editbox::DrawMultiline(Vec2Si32 pos) {
@@ -1939,6 +2290,11 @@ void Editbox::DrawMultiline(Vec2Si32 pos) {
 
   Sprite backbuffer = GetEngine()->GetBackbuffer();
   Si32 last_line = std::min(total_lines, first_visible_line_ + visible_lines);
+  if (text_.empty() && !placeholder_.empty()) {
+    font_.Draw(placeholder_.c_str(), pos.x + pad, pos.y + size_.y - pad,
+               kTextOriginTop, kTextAlignmentLeft,
+               kDrawBlendingModeColorize, kFilterNearest, placeholder_color_);
+  }
   for (Si32 li = first_visible_line_; li < last_line; ++li) {
     const VisualLine &ln = lines[static_cast<size_t>(li)];
     Si32 row = li - first_visible_line_;
@@ -2000,34 +2356,43 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
       (normal_.Height() - font_.FontInstance()->line_height_) / 2);
     Si32 space_width = font_.EvaluateSize(" ", false).x;
 
+    // With a password char every character is drawn as that char, so the
+    // layout below works on the shown text and shown offsets; display_pos_ is
+    // mapped back at the end.
+    const std::string shown = ShownText();
+    const Si32 cursor_pos_shown = ToShownOffset(cursor_pos_);
+    const Si32 selection_begin_shown = ToShownOffset(selection_begin_);
+    const Si32 selection_end_shown = ToShownOffset(selection_end_);
+    Si32 display_pos = ToShownOffset(display_pos_);
+
     Si32 available_width = size_.x - border * 2 - space_width;
     Si32 displayable_width = size_.x - border * 2;
 
-    // Update display_pos_ so that both display_pos_
-    // and cursor_pos_ are both visible.
-    Si32 end_pos = (Si32)text_.length();
-    if (cursor_pos_ <= display_pos_) {
+    // Update display_pos so that both display_pos
+    // and cursor_pos_shown are both visible.
+    Si32 end_pos = (Si32)shown.length();
+    if (cursor_pos_shown <= display_pos) {
       // Move display pos to the left when cursor is at the left border.
-      display_pos_ = std::max(0, cursor_pos_ - 1);
+      display_pos = std::max(0, cursor_pos_shown - 1);
     } else {
       // Move display pos to the right when cursor is at the right border.
-      std::string part = text_.substr(static_cast<size_t>(display_pos_),
-                                      static_cast<size_t>(cursor_pos_ - display_pos_));
+      std::string part = shown.substr(static_cast<size_t>(display_pos),
+                                      static_cast<size_t>(cursor_pos_shown - display_pos));
       Si32 w = font_.EvaluateSize(part.c_str(), true).x;
       if (available_width > 0) {
-        while (w > available_width && display_pos_ < cursor_pos_) {
-          display_pos_++;
-          part = text_.substr(static_cast<size_t>(display_pos_),
-                              static_cast<size_t>(cursor_pos_ - display_pos_));
+        while (w > available_width && display_pos < cursor_pos_shown) {
+          display_pos++;
+          part = shown.substr(static_cast<size_t>(display_pos),
+                              static_cast<size_t>(cursor_pos_shown - display_pos));
           w = font_.EvaluateSize(part.c_str(), true).x;
-          end_pos = std::min(cursor_pos_ + 1, (Si32)text_.length());
+          end_pos = std::min(cursor_pos_shown + 1, (Si32)shown.length());
         }
       }
     }
-    // Display part of text with start at the display_pos_.
+    // Display part of text with start at the display_pos.
 
-    std::string display_text = text_.substr(static_cast<size_t>(display_pos_),
-                                            static_cast<size_t>(end_pos - display_pos_));
+    std::string display_text = shown.substr(static_cast<size_t>(display_pos),
+                                            static_cast<size_t>(end_pos - display_pos));
     Si32 visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
     if (available_width > 0) {
       while (visible_width > displayable_width) {
@@ -2036,32 +2401,32 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
         if (desired_len >= visible_len) {
           desired_len = visible_len - 1;
         }
-        end_pos = display_pos_ + desired_len;
-        display_text = text_.substr(static_cast<size_t>(display_pos_),
-                                    static_cast<size_t>(end_pos - display_pos_));
+        end_pos = display_pos + desired_len;
+        display_text = shown.substr(static_cast<size_t>(display_pos),
+                                    static_cast<size_t>(end_pos - display_pos));
         visible_width = font_.EvaluateSize(display_text.c_str(), false).x;
       }
     }
 
-    Si32 skip_x = PrefixWidth(text_, display_pos_);
+    Si32 skip_x = PrefixWidth(shown, display_pos);
 
     // Compute the selection rectangle up front so a blend highlight can be
     // drawn behind the text (like tentacle's name field), while invert/swap
     // modes keep their original behavior of drawing over the text.
-    bool has_sel = (selection_begin_ != selection_end_) && is_current_tab_;
+    bool has_sel = (selection_begin_shown != selection_end_shown) && is_current_tab_;
     Si32 sel_x1 = 0, sel_x2 = 0, sel_y1 = 0, sel_y2 = 0;
     if (has_sel) {
       Vec2Si32 size1;
-      Vec2Si32 pos1 = font_.EvaluateCharacterPos(text_.c_str(), text_.c_str()+selection_begin_, origin_, alignment_, &size1);
+      Vec2Si32 pos1 = font_.EvaluateCharacterPos(shown.c_str(), shown.c_str()+selection_begin_shown, origin_, alignment_, &size1);
       Vec2Si32 size2;
-      const char *plast = text_.c_str()+selection_end_-1;
-      while (plast > text_.c_str()+selection_begin_) {
+      const char *plast = shown.c_str()+selection_end_shown-1;
+      while (plast > shown.c_str()+selection_begin_shown) {
         if (*plast <= 127 && *plast > 0 && *plast != '\n' && *plast != '\r') {
           break;
         }
         --plast;
       }
-      Vec2Si32 pos2 = font_.EvaluateCharacterPos(text_.c_str(), plast, origin_, alignment_, &size2);
+      Vec2Si32 pos2 = font_.EvaluateCharacterPos(shown.c_str(), plast, origin_, alignment_, &size2);
 
       sel_x1 = pos.x + border + pos1.x;
       sel_x2 = pos.x + border + pos2.x + size2.x;
@@ -2080,11 +2445,18 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
                     selection_color_1_, selection_color_2_, backbuffer);
     }
 
-    font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
-               origin_, alignment_, kDrawBlendingModeColorize, kFilterNearest, color_);
+    if (text_.empty() && !placeholder_.empty()) {
+      font_.Draw(placeholder_.c_str(), pos.x + border, pos.y + border,
+                 origin_, alignment_, kDrawBlendingModeColorize,
+                 kFilterNearest, placeholder_color_);
+    } else {
+      font_.Draw(display_text.c_str(), pos.x + border, pos.y + border,
+                 origin_, alignment_, kDrawBlendingModeColorize,
+                 kFilterNearest, color_);
+    }
 
-    Si32 cursor_pos = std::max(0, std::min(cursor_pos_, (Si32)text_.length()));
-    Si32 cursor_x = PrefixWidth(text_, cursor_pos);
+    Si32 cursor_pos = std::max(0, std::min(cursor_pos_shown, (Si32)shown.length()));
+    Si32 cursor_x = PrefixWidth(shown, cursor_pos);
 
     // A vertical bar spanning the text line, matching the multiline caret.
     if (is_current_tab_ && IsCaretVisible()) {
@@ -2105,8 +2477,8 @@ void Editbox::Draw(Vec2Si32 parent_absolute_pos) {
       DrawSelection(sel_x1, sel_y1, sel_x2, sel_y2, selection_mode_,
                     selection_color_1_, selection_color_2_, backbuffer);
     }
+    display_pos_ = FromShownOffset(display_pos);
   }
-
   Panel::Draw(parent_absolute_pos);
 }
 
@@ -2882,7 +3254,7 @@ void Checkbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
           message.keyboard.key_state == 2 &&
           prev_state == kDown) {
         up_sound_.Play(GetGuiSoundVolume());
-        value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
+        Toggle(out_gui_messages);
         Emit(kGuiButtonClick, out_gui_messages);
         OnButtonClick();
       }
@@ -2927,7 +3299,7 @@ void Checkbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
           if (prev_state == kDown) {
             *in_out_is_applied = true;
             up_sound_.Play(GetGuiSoundVolume());
-            value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
+            Toggle(out_gui_messages);
             Emit(kGuiButtonClick, out_gui_messages);
             if (GetTabOrder() == 0 || !is_current_tab_) {
               state_ = kNormal;
@@ -3003,6 +3375,1447 @@ void Checkbox::SetText(std::string text) {
 
 void Checkbox::SetHotkey(KeyCode hotkey) {
   hotkey_ = hotkey;
+}
+
+void Checkbox::Toggle(std::deque<GuiMessage> *out_gui_messages) {
+  (void)out_gui_messages;
+  value_ = (value_ == kValueClear ? kValueChecked : kValueClear);
+}
+
+RadioButton::RadioButton(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+                         Sprite clear_normal,
+                         Sprite checked_normal,
+                         Sprite clear_down,
+                         Sprite checked_down,
+                         Sprite clear_hovered,
+                         Sprite checked_hovered,
+                         Sprite clear_disabled,
+                         Sprite checked_disabled,
+                         Sound down_sound,
+                         Sound up_sound,
+                         KeyCode hotkey,
+                         Si32 group)
+: Checkbox(tag, pos, tab_order, clear_normal, checked_normal, clear_down,
+           checked_down, clear_hovered, checked_hovered, clear_disabled,
+           checked_disabled, down_sound, up_sound, hotkey, kValueClear)
+, group_(group) {
+}
+
+RadioButton::RadioButton(Ui64 tag, std::shared_ptr<GuiTheme> theme,
+                         Si32 group)
+: Checkbox(tag, theme)
+, group_(group) {
+  normal_[0] = theme->radio_clear_normal_;
+  normal_[1] = theme->radio_checked_normal_;
+  down_[0] = theme->radio_clear_down_;
+  down_[1] = theme->radio_checked_down_;
+  hovered_[0] = theme->radio_clear_hovered_;
+  hovered_[1] = theme->radio_checked_hovered_;
+  disabled_[0] = theme->radio_clear_disabled_;
+  disabled_[1] = theme->radio_checked_disabled_;
+  if (text_) {
+    text_->SetPos(Vec2Si32(normal_[0].Size().x, 0));
+    text_->SetSize(Vec2Si32(0, normal_[0].Size().y));
+  }
+  SetSize(normal_[0].Size());
+}
+
+void RadioButton::SetGroup(Si32 group) {
+  group_ = group;
+}
+
+Si32 RadioButton::GetGroup() const {
+  return group_;
+}
+
+void RadioButton::SelectQuietly() {
+  value_ = kValueChecked;
+  if (!parent_) {
+    return;
+  }
+  const std::deque<std::shared_ptr<Panel>> &siblings = parent_->GetChildren();
+  for (auto it = siblings.begin(); it != siblings.end(); ++it) {
+    RadioButton *other = dynamic_cast<RadioButton*>(it->get());
+    if (other && other != this && other->group_ == group_) {
+      other->value_ = kValueClear;
+    }
+  }
+}
+
+void RadioButton::SetChecked(bool is_checked) {
+  if (is_checked) {
+    SelectQuietly();
+  } else {
+    value_ = kValueClear;
+  }
+}
+
+void RadioButton::Toggle(std::deque<GuiMessage> *out_gui_messages) {
+  if (value_ == kValueChecked) {
+    // Clicking the selected one of a group changes nothing.
+    return;
+  }
+  SelectQuietly();
+  Emit(kGuiRadioSelect, out_gui_messages);
+  OnSelect();
+}
+
+Image::Image(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Sprite sprite,
+             ScaleMode scale_mode)
+: Panel(tag, pos, size, 0)
+, sprite_(std::move(sprite))
+, scale_mode_(scale_mode) {
+}
+
+void Image::SetSprite(Sprite sprite) {
+  sprite_ = std::move(sprite);
+}
+
+Sprite Image::GetSprite() const {
+  return sprite_;
+}
+
+void Image::SetScaleMode(ScaleMode scale_mode) {
+  scale_mode_ = scale_mode;
+}
+
+Image::ScaleMode Image::GetScaleMode() const {
+  return scale_mode_;
+}
+
+void Image::SetDrawMode(DrawBlendingMode blending_mode,
+                        DrawFilterMode filter_mode) {
+  blending_mode_ = blending_mode;
+  filter_mode_ = filter_mode;
+}
+
+void Image::SetColor(Rgba color) {
+  color_ = color;
+}
+
+void Image::GetPictureRect(Vec2Si32 *out_pos, Vec2Si32 *out_size) const {
+  Vec2Si32 own = sprite_.Size();
+  switch (scale_mode_) {
+    case kScaleStretch:
+      *out_pos = Vec2Si32(0, 0);
+      *out_size = size_;
+      break;
+    case kScaleFit: {
+      if (own.x <= 0 || own.y <= 0) {
+        *out_pos = Vec2Si32(0, 0);
+        *out_size = Vec2Si32(0, 0);
+        break;
+      }
+      // The larger of the two ratios is the one that does not fit.
+      Vec2Si32 fitted;
+      if (Si64(own.x) * Si64(size_.y) >= Si64(own.y) * Si64(size_.x)) {
+        fitted.x = size_.x;
+        fitted.y = Si32(Si64(own.y) * Si64(size_.x) / Si64(own.x));
+      } else {
+        fitted.y = size_.y;
+        fitted.x = Si32(Si64(own.x) * Si64(size_.y) / Si64(own.y));
+      }
+      *out_size = fitted;
+      *out_pos = (size_ - fitted) / 2;
+      break;
+    }
+    case kScaleNone:
+      *out_pos = Vec2Si32(0, 0);
+      *out_size = own;
+      break;
+    case kScaleCenter:
+      *out_pos = (size_ - own) / 2;
+      *out_size = own;
+      break;
+  }
+}
+
+void Image::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!IsVisible()) {
+    return;
+  }
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  Vec2Si32 own = sprite_.Size();
+  if (own.x > 0 && own.y > 0 && size_.x > 0 && size_.y > 0) {
+    Vec2Si32 pic_pos;
+    Vec2Si32 pic_size;
+    GetPictureRect(&pic_pos, &pic_size);
+    // A view without a pivot, so that the position is the bottom-left corner.
+    Sprite plain;
+    plain.Reference(sprite_, 0, 0, own.x, own.y);
+    ClipScope clip(absolute_pos, size_);
+    Vec2Si32 at = absolute_pos + pic_pos - clip.Origin();
+    plain.Draw(at, pic_size, blending_mode_, filter_mode_, color_);
+  }
+  Panel::Draw(parent_absolute_pos);
+}
+
+Slider::Slider(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+               DecoratedFrame track, DecoratedFrame thumb_normal,
+               DecoratedFrame thumb_hovered, DecoratedFrame thumb_down,
+               DecoratedFrame thumb_disabled, Si32 thumb_length,
+               bool is_horizontal)
+: Panel(tag, pos, size, tab_order)
+, track_frame_(track)
+, thumb_length_(std::max(1, thumb_length))
+, is_horizontal_(is_horizontal) {
+  thumb_frame_[kNormal] = thumb_normal;
+  thumb_frame_[kHovered] = thumb_hovered;
+  thumb_frame_[kDown] = thumb_down;
+  thumb_frame_[kDisabled] = thumb_disabled;
+  RegenerateSprites();
+}
+
+Slider::Slider(Ui64 tag, std::shared_ptr<GuiThemeSlider> theme)
+: Panel(tag, Vec2Si32(0, 0),
+        theme->is_horizontal_ ? Vec2Si32(200, 24) : Vec2Si32(24, 200),
+        (Ui32)tag)
+, track_frame_(theme->track_)
+, thumb_length_(std::max(1, theme->thumb_length_))
+, is_horizontal_(theme->is_horizontal_)
+, theme_(theme) {
+  thumb_frame_[kNormal] = theme->thumb_normal_;
+  thumb_frame_[kHovered] = theme->thumb_hovered_;
+  thumb_frame_[kDown] = theme->thumb_down_;
+  thumb_frame_[kDisabled] = theme->thumb_disabled_;
+  RegenerateSprites();
+}
+
+Si32 Slider::Along(Vec2Si32 v) const {
+  return is_horizontal_ ? v.x : v.y;
+}
+
+Si32 Slider::TrackLength() const {
+  return std::max(0, Along(size_) - thumb_length_);
+}
+
+Si32 Slider::ThumbStart() const {
+  if (max_value_ <= min_value_) {
+    return 0;
+  }
+  Si64 range = Si64(max_value_) - Si64(min_value_);
+  Si64 offset = Si64(value_) - Si64(min_value_);
+  return Si32((offset * Si64(TrackLength()) + range / 2) / range);
+}
+
+Si32 Slider::ValueAt(Si32 thumb_start) const {
+  Si32 length = TrackLength();
+  if (length <= 0 || max_value_ <= min_value_) {
+    return min_value_;
+  }
+  Si64 range = Si64(max_value_) - Si64(min_value_);
+  Si64 clamped = std::min(std::max(Si64(thumb_start), Si64(0)), Si64(length));
+  Si64 value = Si64(min_value_) + (clamped * range + length / 2) / length;
+  return Si32(std::min(std::max(value, Si64(min_value_)), Si64(max_value_)));
+}
+
+void Slider::GetThumbRect(Vec2Si32 *out_pos, Vec2Si32 *out_size) const {
+  if (is_horizontal_) {
+    *out_pos = Vec2Si32(ThumbStart(), 0);
+    *out_size = Vec2Si32(thumb_length_, size_.y);
+  } else {
+    *out_pos = Vec2Si32(0, ThumbStart());
+    *out_size = Vec2Si32(size_.x, thumb_length_);
+  }
+}
+
+void Slider::RegenerateSprites() {
+  track_ = track_frame_.DrawExternalSize(size_);
+  Vec2Si32 thumb_pos;
+  Vec2Si32 thumb_size;
+  GetThumbRect(&thumb_pos, &thumb_size);
+  for (Si32 i = 0; i < 4; ++i) {
+    thumb_[i] = thumb_frame_[i].DrawExternalSize(thumb_size);
+  }
+}
+
+void Slider::SetRange(Si32 min_value, Si32 max_value) {
+  min_value_ = min_value;
+  max_value_ = std::max(min_value, max_value);
+  value_ = std::min(std::max(value_, min_value_), max_value_);
+}
+
+Si32 Slider::GetMinValue() const {
+  return min_value_;
+}
+
+Si32 Slider::GetMaxValue() const {
+  return max_value_;
+}
+
+void Slider::SetValue(Si32 value) {
+  value_ = std::min(std::max(value, min_value_), max_value_);
+}
+
+Si32 Slider::GetValue() const {
+  return value_;
+}
+
+void Slider::SetStep(Si32 step) {
+  step_ = std::max(1, step);
+}
+
+Si32 Slider::GetStep() const {
+  return step_;
+}
+
+bool Slider::IsHorizontal() const {
+  return is_horizontal_;
+}
+
+void Slider::SetValueAndNotify(Si32 value,
+                               std::deque<GuiMessage> *out_gui_messages) {
+  Si32 clamped = std::min(std::max(value, min_value_), max_value_);
+  if (clamped == value_) {
+    return;
+  }
+  value_ = clamped;
+  Emit(kGuiSliderChange, out_gui_messages);
+  OnSliderChange();
+}
+
+void Slider::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!IsVisible()) {
+    return;
+  }
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  track_.Draw(absolute_pos, size_);
+  Vec2Si32 thumb_pos;
+  Vec2Si32 thumb_size;
+  GetThumbRect(&thumb_pos, &thumb_size);
+  thumb_[state_].Draw(absolute_pos + thumb_pos, thumb_size);
+  Panel::Draw(parent_absolute_pos);
+}
+
+void Slider::SetEnabled(bool is_enabled) {
+  if (is_enabled) {
+    if (state_ == kDisabled) {
+      state_ = kNormal;
+    }
+  } else {
+    state_ = kDisabled;
+  }
+}
+
+bool Slider::IsEnabled() {
+  return state_ != kDisabled;
+}
+
+bool Slider::TakesMouse() const {
+  return true;
+}
+
+void Slider::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+                         bool is_top_level,
+                         bool *in_out_is_applied,
+                         std::deque<GuiMessage> *out_gui_messages,
+                         std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+                     out_gui_messages, out_current_tab);
+  if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - (parent_pos + pos_);
+    bool is_inside = IsWithin(relative_pos);
+    if (state_ == kDown) {
+      if (message.keyboard.state[kKeyMouseLeft] == 1) {
+        // Dragging: the grab point stays under the cursor.
+        SetValueAndNotify(ValueAt(Along(relative_pos) - drag_offset_),
+                          out_gui_messages);
+        *in_out_is_applied = true;
+        return;
+      }
+      state_ = is_inside ? kHovered : kNormal;
+    }
+    if (is_inside && !*in_out_is_applied) {
+      *in_out_is_applied = true;
+      state_ = kHovered;
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1) {
+        if (GetTabOrder() != 0) {
+          *out_current_tab = shared_from_this();
+          is_current_tab_ = true;
+        }
+        Vec2Si32 thumb_pos;
+        Vec2Si32 thumb_size;
+        GetThumbRect(&thumb_pos, &thumb_size);
+        Vec2Si32 in_thumb = relative_pos - thumb_pos;
+        bool is_on_thumb = in_thumb.x >= 0 && in_thumb.y >= 0 &&
+            in_thumb.x < thumb_size.x && in_thumb.y < thumb_size.y;
+        state_ = kDown;
+        if (is_on_thumb) {
+          drag_offset_ = Along(relative_pos) - Along(thumb_pos);
+        } else {
+          // A click on the track centers the thumb on the cursor.
+          drag_offset_ = thumb_length_ / 2;
+          SetValueAndNotify(ValueAt(Along(relative_pos) - drag_offset_),
+                            out_gui_messages);
+        }
+      } else if (message.mouse.wheel_delta != 0) {
+        Si64 dv = Si64(message.mouse.wheel_delta) * Si64(step_) / 120;
+        if (dv == 0) {
+          dv = message.mouse.wheel_delta > 0 ? step_ : -step_;
+        }
+        SetValueAndNotify(value_ + Si32(dv), out_gui_messages);
+      }
+    } else if (state_ == kHovered && !is_inside) {
+      state_ = kNormal;
+    }
+  } else if (message.kind == InputMessage::kKeyboard) {
+    if (!*in_out_is_applied && is_current_tab_ &&
+        (message.keyboard.key_state & 1u) == 1u) {
+      Ui32 key = message.keyboard.key;
+      Si32 dec_key = is_horizontal_ ? kKeyLeft : kKeyDown;
+      Si32 inc_key = is_horizontal_ ? kKeyRight : kKeyUp;
+      if (key == Ui32(dec_key)) {
+        *in_out_is_applied = true;
+        SetValueAndNotify(value_ - step_, out_gui_messages);
+      } else if (key == Ui32(inc_key)) {
+        *in_out_is_applied = true;
+        SetValueAndNotify(value_ + step_, out_gui_messages);
+      } else if (key == kKeyHome) {
+        *in_out_is_applied = true;
+        SetValueAndNotify(min_value_, out_gui_messages);
+      } else if (key == kKeyEnd) {
+        *in_out_is_applied = true;
+        SetValueAndNotify(max_value_, out_gui_messages);
+      }
+    }
+  }
+}
+
+namespace {
+
+const std::string &EmptyString() {
+  static const std::string empty;
+  return empty;
+}
+
+// Seconds between two clicks on the same row that make a double click.
+const double kListDoubleClickSeconds = 0.4;
+
+}  // namespace
+
+ListBox::ListBox(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+                 Font font, Rgba color, DecoratedFrame background,
+                 DecoratedFrame selection, DecoratedFrame hover)
+: Panel(tag, pos, size, tab_order)
+, font_(font)
+, background_frame_(background)
+, selection_frame_(selection)
+, hover_frame_(hover) {
+  palete_.push_back(color);
+  disabled_palete_.push_back(Rgba(128, 128, 128));
+  SetFont(font);
+}
+
+ListBox::ListBox(Ui64 tag, std::shared_ptr<GuiTheme> theme)
+: Panel(tag, Vec2Si32(0, 0), Vec2Si32(200, 150), (Ui32)tag)
+, font_(theme->text_->font_)
+, palete_(theme->text_->palete_)
+, disabled_palete_(theme->text_->disabled_palete_)
+, background_frame_(theme->listbox_background_)
+, selection_frame_(theme->listbox_selection_)
+, hover_frame_(theme->listbox_hover_)
+, theme_(theme) {
+  scrollbar_ = std::make_shared<Scrollbar>(0, theme->v_scrollbar_);
+  scrollbar_->SetMinValue(0);
+  scrollbar_->SetMaxValue(0);
+  scrollbar_->SetLineStep(1);
+  Panel::AddChild(scrollbar_);
+  // The scrollbar grows upward, the rows grow downward: the top row is shown
+  // when the scrollbar is at its maximum.
+  scrollbar_->OnScrollChange = [this]() {
+    first_visible_ = MaxFirstVisible() - scrollbar_->GetValue();
+    ClampScroll();
+  };
+  SetFont(font_);
+}
+
+Si32 ListBox::InnerLeft() const {
+  return border_.x + padding_;
+}
+
+Si32 ListBox::InnerTop() const {
+  return size_.y - border_.y - padding_;
+}
+
+Si32 ListBox::RowsWidth() const {
+  Si32 scrollbar_width = scrollbar_ ? scrollbar_->GetSize().x : 0;
+  return std::max(0, size_.x - 2 * border_.x - 2 * padding_ - scrollbar_width);
+}
+
+Si32 ListBox::VisibleRows() const {
+  Si32 inner_height = size_.y - 2 * border_.y - 2 * padding_;
+  return std::max(1, inner_height / std::max(1, row_height_));
+}
+
+Si32 ListBox::GetVisibleRows() const {
+  return VisibleRows();
+}
+
+Si32 ListBox::HeightForRows(Si32 rows) const {
+  return std::max(0, rows) * row_height_ + 2 * (border_.y + padding_);
+}
+
+Si32 ListBox::MaxFirstVisible() const {
+  return std::max(0, (Si32)items_.size() - VisibleRows());
+}
+
+Si32 ListBox::RowAt(Vec2Si32 relative_pos) const {
+  Si32 left = InnerLeft();
+  if (relative_pos.x < left || relative_pos.x >= left + RowsWidth()) {
+    return -1;
+  }
+  Si32 from_top = InnerTop() - 1 - relative_pos.y;
+  if (from_top < 0 || row_height_ <= 0) {
+    return -1;
+  }
+  Si32 row = from_top / row_height_;
+  if (row >= VisibleRows()) {
+    return -1;
+  }
+  Si32 item = first_visible_ + row;
+  if (item >= (Si32)items_.size()) {
+    return -1;
+  }
+  return item;
+}
+
+Si32 ListBox::ItemAt(Vec2Si32 relative_pos) const {
+  return RowAt(relative_pos);
+}
+
+bool ListBox::GetRowRect(Si32 index, Vec2Si32 *out_pos,
+                         Vec2Si32 *out_size) const {
+  if (index < first_visible_ || index >= first_visible_ + VisibleRows() ||
+      index >= (Si32)items_.size()) {
+    return false;
+  }
+  Si32 row = index - first_visible_;
+  *out_pos = Vec2Si32(InnerLeft(), InnerTop() - (row + 1) * row_height_);
+  *out_size = Vec2Si32(RowsWidth(), row_height_);
+  return true;
+}
+
+void ListBox::ClampScroll() {
+  first_visible_ = std::min(std::max(first_visible_, 0), MaxFirstVisible());
+}
+
+void ListBox::SyncScrollbar() {
+  if (!scrollbar_) {
+    return;
+  }
+  Si32 max_first = MaxFirstVisible();
+  scrollbar_->SetMinValue(0);
+  scrollbar_->SetMaxValue(max_first);
+  scrollbar_->SetValue(max_first - first_visible_);
+  scrollbar_->SetStep(VisibleRows());
+  scrollbar_->SetEnabled(is_enabled_ && max_first > 0);
+}
+
+void ListBox::LayoutScrollbar() {
+  if (!scrollbar_) {
+    return;
+  }
+  Si32 width = scrollbar_->GetSize().x;
+  scrollbar_->SetPos(Vec2Si32(size_.x - border_.x - width, border_.y));
+  scrollbar_->SetSize(Vec2Si32(width, std::max(0, size_.y - 2 * border_.y)));
+}
+
+void ListBox::EnsureVisible(Si32 item) {
+  if (item < 0 || item >= (Si32)items_.size()) {
+    return;
+  }
+  if (item < first_visible_) {
+    first_visible_ = item;
+  } else if (item >= first_visible_ + VisibleRows()) {
+    first_visible_ = item - VisibleRows() + 1;
+  }
+  ClampScroll();
+  SyncScrollbar();
+}
+
+void ListBox::SelectAndNotify(Si32 item,
+                              std::deque<GuiMessage> *out_gui_messages) {
+  if (item == selected_) {
+    return;
+  }
+  selected_ = item;
+  Emit(kGuiListSelectionChange, out_gui_messages);
+  OnSelectionChange();
+}
+
+void ListBox::RegenerateSprites() {
+  background_ = background_frame_.DrawExternalSize(size_);
+  border_ = background_frame_.BorderSize();
+  LayoutScrollbar();
+  Vec2Si32 row_size(std::max(1, RowsWidth()), std::max(1, row_height_));
+  selection_row_ = selection_frame_.DrawExternalSize(row_size);
+  hover_row_ = hover_frame_.DrawExternalSize(row_size);
+  ClampScroll();
+  SyncScrollbar();
+}
+
+void ListBox::SetItems(const std::vector<std::string> &items) {
+  items_ = items;
+  selected_ = -1;
+  hovered_ = -1;
+  first_visible_ = 0;
+  last_click_item_ = -1;
+  SyncScrollbar();
+}
+
+void ListBox::AddItem(const std::string &item) {
+  items_.push_back(item);
+  SyncScrollbar();
+}
+
+void ListBox::RemoveItem(Si32 index) {
+  if (index < 0 || index >= (Si32)items_.size()) {
+    return;
+  }
+  items_.erase(items_.begin() + index);
+  if (selected_ == index) {
+    selected_ = -1;
+  } else if (selected_ > index) {
+    --selected_;
+  }
+  hovered_ = -1;
+  last_click_item_ = -1;
+  ClampScroll();
+  SyncScrollbar();
+}
+
+void ListBox::ClearItems() {
+  SetItems(std::vector<std::string>());
+}
+
+Si32 ListBox::GetItemCount() const {
+  return (Si32)items_.size();
+}
+
+const std::string &ListBox::GetItem(Si32 index) const {
+  if (index < 0 || index >= (Si32)items_.size()) {
+    return EmptyString();
+  }
+  return items_[static_cast<size_t>(index)];
+}
+
+void ListBox::SetSelectedIndex(Si32 index) {
+  if (index < 0 || index >= (Si32)items_.size()) {
+    selected_ = -1;
+    return;
+  }
+  selected_ = index;
+}
+
+Si32 ListBox::GetSelectedIndex() const {
+  return selected_;
+}
+
+const std::string &ListBox::GetSelectedItem() const {
+  return GetItem(selected_);
+}
+
+void ListBox::SetRowHeight(Si32 row_height) {
+  row_height_ = std::max(1, row_height);
+  RegenerateSprites();
+}
+
+Si32 ListBox::GetRowHeight() const {
+  return row_height_;
+}
+
+void ListBox::SetFirstVisible(Si32 index) {
+  first_visible_ = index;
+  ClampScroll();
+  SyncScrollbar();
+}
+
+Si32 ListBox::GetFirstVisible() const {
+  return first_visible_;
+}
+
+void ListBox::SetFont(Font font) {
+  font_ = font;
+  Si32 line_height = font_.FontInstance() ? font_.LineHeight() : 1;
+  row_height_ = std::max(1, line_height + 2 * padding_);
+  RegenerateSprites();
+}
+
+void ListBox::SetEnabled(bool is_enabled) {
+  is_enabled_ = is_enabled;
+  hovered_ = -1;
+  SyncScrollbar();
+}
+
+bool ListBox::IsEnabled() {
+  return is_enabled_;
+}
+
+bool ListBox::TakesMouse() const {
+  return true;
+}
+
+void ListBox::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!IsVisible()) {
+    return;
+  }
+  Panel::Draw(parent_absolute_pos);
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  Si32 scrollbar_width = scrollbar_ ? scrollbar_->GetSize().x : 0;
+  Vec2Si32 clip_pos = absolute_pos + border_;
+  Vec2Si32 clip_size(size_.x - 2 * border_.x - scrollbar_width,
+                     size_.y - 2 * border_.y);
+  if (clip_size.x <= 0 || clip_size.y <= 0) {
+    return;
+  }
+  ClipScope clip(clip_pos, clip_size);
+  Vec2Si32 shift = absolute_pos - clip.Origin();
+  Si32 last = std::min((Si32)items_.size(), first_visible_ + VisibleRows());
+  for (Si32 i = first_visible_; i < last; ++i) {
+    Vec2Si32 row_pos;
+    Vec2Si32 row_size;
+    if (!GetRowRect(i, &row_pos, &row_size)) {
+      continue;
+    }
+    Vec2Si32 at = shift + row_pos;
+    if (i == selected_) {
+      selection_row_.Draw(at, row_size);
+    } else if (i == hovered_ && is_enabled_) {
+      hover_row_.Draw(at, row_size);
+    }
+    if (font_.FontInstance()) {
+      font_.Draw(items_[static_cast<size_t>(i)].c_str(),
+                 at.x + padding_, at.y + row_size.y - padding_,
+                 kTextOriginTop, kTextAlignmentLeft,
+                 kDrawBlendingModeColorize, kFilterNearest,
+                 is_enabled_ ? palete_ : disabled_palete_);
+    }
+  }
+}
+
+void ListBox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+                          bool is_top_level,
+                          bool *in_out_is_applied,
+                          std::deque<GuiMessage> *out_gui_messages,
+                          std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+                     out_gui_messages, out_current_tab);
+  if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - (parent_pos + pos_);
+    if (IsWithin(relative_pos) && !*in_out_is_applied) {
+      *in_out_is_applied = true;
+      hovered_ = RowAt(relative_pos);
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1) {
+        if (GetTabOrder() != 0) {
+          *out_current_tab = shared_from_this();
+          is_current_tab_ = true;
+        }
+        Si32 item = RowAt(relative_pos);
+        if (item >= 0) {
+          double now = Time();
+          bool is_double_click = item == last_click_item_ &&
+              now - last_click_time_ < kListDoubleClickSeconds;
+          SelectAndNotify(item, out_gui_messages);
+          Emit(kGuiListItemClick, out_gui_messages);
+          OnItemClick();
+          if (is_double_click) {
+            last_click_item_ = -1;
+            Emit(kGuiListItemActivate, out_gui_messages);
+            OnItemActivate();
+          } else {
+            last_click_item_ = item;
+            last_click_time_ = now;
+          }
+        }
+      } else if (message.mouse.wheel_delta != 0) {
+        // Wheel up shows the rows above.
+        Si32 rows = -message.mouse.wheel_delta / 120;
+        if (rows == 0) {
+          rows = message.mouse.wheel_delta > 0 ? -1 : 1;
+        }
+        SetFirstVisible(first_visible_ + rows);
+        hovered_ = RowAt(relative_pos);
+      }
+    } else {
+      hovered_ = -1;
+    }
+  } else if (message.kind == InputMessage::kKeyboard) {
+    if (!*in_out_is_applied && is_current_tab_ &&
+        (message.keyboard.key_state & 1u) == 1u && !items_.empty()) {
+      Si32 n = (Si32)items_.size();
+      Si32 target = -2;
+      switch (message.keyboard.key) {
+        case kKeyUp:
+          target = selected_ < 0 ? 0 : selected_ - 1;
+          break;
+        case kKeyDown:
+          target = selected_ < 0 ? 0 : selected_ + 1;
+          break;
+        case kKeyHome:
+          target = 0;
+          break;
+        case kKeyEnd:
+          target = n - 1;
+          break;
+        case kKeyPageUp:
+          target = (selected_ < 0 ? 0 : selected_) - VisibleRows();
+          break;
+        case kKeyPageDown:
+          target = (selected_ < 0 ? 0 : selected_) + VisibleRows();
+          break;
+        case kKeyEnter:
+          if (selected_ >= 0) {
+            *in_out_is_applied = true;
+            Emit(kGuiListItemActivate, out_gui_messages);
+            OnItemActivate();
+          }
+          break;
+        default:
+          break;
+      }
+      if (target != -2) {
+        *in_out_is_applied = true;
+        target = std::min(std::max(target, 0), n - 1);
+        SelectAndNotify(target, out_gui_messages);
+        EnsureVisible(target);
+      }
+    }
+  }
+}
+
+Dropdown::Dropdown(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+                   Font font, Rgba color,
+                   DecoratedFrame normal, DecoratedFrame hovered,
+                   DecoratedFrame down, DecoratedFrame disabled,
+                   DecoratedFrame list_background,
+                   DecoratedFrame list_selection,
+                   DecoratedFrame list_hover)
+: Panel(tag, pos, size, tab_order)
+, font_(font) {
+  palete_.push_back(color);
+  disabled_palete_.push_back(Rgba(128, 128, 128));
+  frame_[kNormal] = normal;
+  frame_[kHovered] = hovered;
+  frame_[kDown] = down;
+  frame_[kDisabled] = disabled;
+  list_ = std::make_shared<ListBox>(0, Vec2Si32(0, 0), Vec2Si32(size.x, 1), 0,
+                                    font, color, list_background,
+                                    list_selection, list_hover);
+  RegenerateSprites();
+}
+
+Dropdown::Dropdown(Ui64 tag, std::shared_ptr<GuiTheme> theme)
+: Panel(tag, Vec2Si32(0, 0), Vec2Si32(200, 32), (Ui32)tag)
+, arrow_(theme->dropdown_arrow_)
+, font_(theme->text_->font_)
+, palete_(theme->text_->palete_)
+, disabled_palete_(theme->text_->disabled_palete_)
+, theme_(theme) {
+  frame_[kNormal] = theme->button_->normal_;
+  frame_[kHovered] = theme->button_->hovered_;
+  frame_[kDown] = theme->button_->down_;
+  frame_[kDisabled] = theme->button_->disabled_;
+  list_ = std::make_shared<ListBox>(0, theme);
+  RegenerateSprites();
+}
+
+void Dropdown::RegenerateSprites() {
+  for (Si32 i = 0; i < 4; ++i) {
+    box_[i] = frame_[i].DrawExternalSize(size_);
+  }
+  if (list_) {
+    list_->SetSize(Vec2Si32(size_.x, list_->GetSize().y));
+  }
+}
+
+void Dropdown::SetItems(const std::vector<std::string> &items) {
+  items_ = items;
+  selected_ = -1;
+  if (is_open_) {
+    RefreshList();
+  }
+}
+
+void Dropdown::AddItem(const std::string &item) {
+  items_.push_back(item);
+  if (is_open_) {
+    RefreshList();
+  }
+}
+
+void Dropdown::ClearItems() {
+  SetItems(std::vector<std::string>());
+}
+
+Si32 Dropdown::GetItemCount() const {
+  return (Si32)items_.size();
+}
+
+const std::string &Dropdown::GetItem(Si32 index) const {
+  if (index < 0 || index >= (Si32)items_.size()) {
+    return EmptyString();
+  }
+  return items_[static_cast<size_t>(index)];
+}
+
+void Dropdown::SetSelectedIndex(Si32 index) {
+  if (index < 0 || index >= (Si32)items_.size()) {
+    selected_ = -1;
+  } else {
+    selected_ = index;
+  }
+  if (is_open_) {
+    list_->SetSelectedIndex(selected_);
+  }
+}
+
+Si32 Dropdown::GetSelectedIndex() const {
+  return selected_;
+}
+
+const std::string &Dropdown::GetSelectedItem() const {
+  return GetItem(selected_);
+}
+
+void Dropdown::SetMaxVisibleItems(Si32 max_visible_items) {
+  max_visible_items_ = std::max(1, max_visible_items);
+}
+
+bool Dropdown::IsOpen() const {
+  return is_open_;
+}
+
+void Dropdown::Close() {
+  if (is_open_) {
+    CloseList();
+  }
+}
+
+std::shared_ptr<ListBox> Dropdown::GetList() const {
+  return list_;
+}
+
+void Dropdown::ChooseAndNotify(Si32 index,
+                               std::deque<GuiMessage> *out_gui_messages) {
+  if (index < 0 || index >= (Si32)items_.size()) {
+    index = -1;
+  }
+  if (index == selected_) {
+    return;
+  }
+  selected_ = index;
+  Emit(kGuiDropdownChange, out_gui_messages);
+  OnChange();
+}
+
+void Dropdown::RefreshList() {
+  list_->SetItems(items_);
+  Si32 rows = std::min(max_visible_items_,
+                       std::max(1, (Si32)items_.size()));
+  list_->SetSize(Vec2Si32(size_.x, list_->HeightForRows(rows)));
+  list_->SetSelectedIndex(selected_);
+  list_->SetFirstVisible(selected_);
+}
+
+void Dropdown::OpenList(Vec2Si32 absolute_pos) {
+  is_open_ = true;
+  state_ = kDown;
+  RefreshList();
+  Si32 list_height = list_->GetSize().y;
+  // Below the box when there is room, above it otherwise.
+  if (absolute_pos.y - list_height >= 0) {
+    list_->SetPos(Vec2Si32(0, -list_height));
+  } else {
+    list_->SetPos(Vec2Si32(0, size_.y));
+  }
+  list_->SetCurrentTab(true);
+}
+
+void Dropdown::CloseList() {
+  is_open_ = false;
+  list_->SetCurrentTab(false);
+  if (state_ == kDown) {
+    state_ = kNormal;
+  }
+}
+
+Vec2Si32 Dropdown::ListParentPos(Vec2Si32 absolute_pos) const {
+  return absolute_pos;
+}
+
+void Dropdown::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!IsVisible()) {
+    return;
+  }
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  box_[state_].Draw(absolute_pos, size_);
+  const std::vector<Rgba> &palete =
+      state_ == kDisabled ? disabled_palete_ : palete_;
+  Si32 border = frame_[state_].BorderSize().x;
+  Si32 text_pad = border + 4;
+  Si32 arrow_width = arrow_.Width() > 0 ? arrow_.Width() : size_.y / 2;
+  if (font_.FontInstance() && selected_ >= 0) {
+    ClipScope clip(absolute_pos,
+                   Vec2Si32(std::max(0, size_.x - arrow_width - text_pad),
+                            size_.y));
+    Vec2Si32 at = absolute_pos - clip.Origin();
+    font_.Draw(items_[static_cast<size_t>(selected_)].c_str(),
+               at.x + text_pad, at.y + size_.y / 2,
+               kTextOriginCenter, kTextAlignmentLeft,
+               kDrawBlendingModeColorize, kFilterNearest, palete);
+  }
+  if (arrow_.Width() > 0) {
+    arrow_.Draw(absolute_pos + Vec2Si32(size_.x - text_pad - arrow_.Width(),
+                                        (size_.y - arrow_.Height()) / 2));
+  } else if (!palete.empty()) {
+    // A triangle pointing down, the height of a third of the box.
+    Si32 h = std::max(2, size_.y / 3);
+    Si32 w = h * 2 - 1;
+    Si32 x0 = absolute_pos.x + size_.x - text_pad - w;
+    Si32 y_top = absolute_pos.y + (size_.y + h) / 2;
+    DrawTriangle(Vec2Si32(x0, y_top), Vec2Si32(x0 + w, y_top),
+                 Vec2Si32(x0 + w / 2, y_top - h), palete[0]);
+  }
+  Panel::Draw(parent_absolute_pos);
+}
+
+void Dropdown::DrawOverlays(Vec2Si32 absolute_pos) {
+  Panel::DrawOverlays(absolute_pos);
+  if (is_open_) {
+    list_->Draw(ListParentPos(absolute_pos));
+  }
+}
+
+void Dropdown::HandleOverlayInput(Vec2Si32 absolute_pos,
+                                  const InputMessage &message,
+                                  bool *in_out_is_applied,
+                                  std::deque<GuiMessage> *out_gui_messages,
+                                  std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleOverlayInput(absolute_pos, message, in_out_is_applied,
+                            out_gui_messages, out_current_tab);
+  if (!is_open_ || *in_out_is_applied) {
+    return;
+  }
+  // The list reports into a queue of its own: the host hears about the
+  // dropdown, not about the list inside it.
+  std::deque<GuiMessage> list_messages;
+  if (message.kind == InputMessage::kMouse) {
+    list_->ApplyInput(ListParentPos(absolute_pos), message, false,
+                      in_out_is_applied, &list_messages, out_current_tab);
+    for (auto it = list_messages.begin(); it != list_messages.end(); ++it) {
+      if (it->kind == kGuiListItemClick) {
+        ChooseAndNotify(list_->GetSelectedIndex(), out_gui_messages);
+        CloseList();
+        break;
+      }
+    }
+    if (!*in_out_is_applied &&
+        message.keyboard.key == kKeyMouseLeft &&
+        message.keyboard.key_state == 1 &&
+        !IsWithin(message.mouse.backbuffer_pos - absolute_pos)) {
+      // A press anywhere else closes the list and goes no further. A press
+      // on the box itself is left to HandleInput, which closes it as well.
+      CloseList();
+      *in_out_is_applied = true;
+    }
+  } else if (message.kind == InputMessage::kKeyboard &&
+             (message.keyboard.key_state & 1u) == 1u) {
+    if (message.keyboard.key == kKeyEscape) {
+      CloseList();
+      *in_out_is_applied = true;
+    } else if (message.keyboard.key == kKeyEnter) {
+      if (list_->GetSelectedIndex() >= 0) {
+        ChooseAndNotify(list_->GetSelectedIndex(), out_gui_messages);
+      }
+      CloseList();
+      *in_out_is_applied = true;
+    } else {
+      list_->ApplyInput(ListParentPos(absolute_pos), message, false,
+                        in_out_is_applied, &list_messages, out_current_tab);
+    }
+  }
+}
+
+bool Dropdown::IsOverlayTransparentAt(Vec2Si32 absolute_pos,
+                                      Vec2Si32 mouse_pos) {
+  if (is_open_) {
+    Vec2Si32 relative = mouse_pos - ListParentPos(absolute_pos) -
+        list_->GetPos();
+    Vec2Si32 list_size = list_->GetSize();
+    if (relative.x >= 0 && relative.y >= 0 &&
+        relative.x < list_size.x && relative.y < list_size.y) {
+      return false;
+    }
+  }
+  return Panel::IsOverlayTransparentAt(absolute_pos, mouse_pos);
+}
+
+void Dropdown::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+                           bool is_top_level,
+                           bool *in_out_is_applied,
+                           std::deque<GuiMessage> *out_gui_messages,
+                           std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+                     out_gui_messages, out_current_tab);
+  Vec2Si32 absolute_pos = parent_pos + pos_;
+  if (message.kind == InputMessage::kMouse) {
+    bool is_inside = IsWithin(message.mouse.backbuffer_pos - absolute_pos);
+    if (is_inside && !*in_out_is_applied) {
+      *in_out_is_applied = true;
+      if (!is_open_) {
+        state_ = kHovered;
+      }
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1) {
+        if (GetTabOrder() != 0) {
+          *out_current_tab = shared_from_this();
+          is_current_tab_ = true;
+        }
+        if (is_open_) {
+          CloseList();
+          state_ = kHovered;
+        } else if (!items_.empty()) {
+          OpenList(absolute_pos);
+        }
+      }
+    } else if (!is_open_ && state_ == kHovered && !is_inside) {
+      state_ = kNormal;
+    }
+  } else if (message.kind == InputMessage::kKeyboard) {
+    if (!*in_out_is_applied && is_current_tab_ && !is_open_ &&
+        (message.keyboard.key_state & 1u) == 1u && !items_.empty()) {
+      Si32 n = (Si32)items_.size();
+      switch (message.keyboard.key) {
+        case kKeyDown:
+          *in_out_is_applied = true;
+          ChooseAndNotify(std::min(selected_ + 1, n - 1), out_gui_messages);
+          break;
+        case kKeyUp:
+          *in_out_is_applied = true;
+          ChooseAndNotify(std::max(selected_ - 1, 0), out_gui_messages);
+          break;
+        case kKeyHome:
+          *in_out_is_applied = true;
+          ChooseAndNotify(0, out_gui_messages);
+          break;
+        case kKeyEnd:
+          *in_out_is_applied = true;
+          ChooseAndNotify(n - 1, out_gui_messages);
+          break;
+        case kKeyEnter:
+        case kKeySpace:
+          *in_out_is_applied = true;
+          OpenList(absolute_pos);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+}
+
+bool Dropdown::TakesMouse() const {
+  return true;
+}
+
+void Dropdown::SetEnabled(bool is_enabled) {
+  if (is_enabled) {
+    if (state_ == kDisabled) {
+      state_ = kNormal;
+    }
+  } else {
+    Close();
+    state_ = kDisabled;
+  }
+}
+
+bool Dropdown::IsEnabled() {
+  return state_ != kDisabled;
+}
+
+void Dropdown::SetCurrentTab(bool is_current_tab) {
+  Panel::SetCurrentTab(is_current_tab);
+  if (!is_current_tab) {
+    // The focus went elsewhere, and a list nobody can type into is a list
+    // nobody expects to see.
+    Close();
+  }
+}
+
+TabControl::TabControl(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+                       Font font, Rgba color,
+                       DecoratedFrame header_normal,
+                       DecoratedFrame header_selected,
+                       DecoratedFrame header_hovered, DecoratedFrame page,
+                       Si32 header_height)
+: Panel(tag, pos, size, tab_order)
+, header_height_(std::max(1, header_height))
+, font_(font)
+, page_frame_(page) {
+  palete_.push_back(color);
+  header_frame_[0] = header_normal;
+  header_frame_[1] = header_selected;
+  header_frame_[2] = header_hovered;
+}
+
+TabControl::TabControl(Ui64 tag, std::shared_ptr<GuiTheme> theme)
+: Panel(tag, Vec2Si32(0, 0), Vec2Si32(300, 200), (Ui32)tag)
+, font_(theme->text_->font_)
+, palete_(theme->text_->palete_)
+, page_frame_(theme->tab_page_)
+, theme_(theme) {
+  header_frame_[0] = theme->tab_normal_;
+  header_frame_[1] = theme->tab_selected_;
+  header_frame_[2] = theme->tab_hovered_;
+  Si32 line_height = font_.FontInstance() ? font_.LineHeight() : 16;
+  header_height_ = line_height + 2 * header_padding_;
+}
+
+void TabControl::GetPageRect(Vec2Si32 *out_pos, Vec2Si32 *out_size) const {
+  *out_pos = Vec2Si32(0, 0);
+  *out_size = Vec2Si32(size_.x, std::max(0, size_.y - header_height_));
+}
+
+bool TabControl::GetHeaderRect(Si32 index, Vec2Si32 *out_pos,
+                               Vec2Si32 *out_size) const {
+  if (index < 0 || index >= (Si32)tabs_.size()) {
+    return false;
+  }
+  Si32 x = 0;
+  for (Si32 i = 0; i < index; ++i) {
+    x += tabs_[static_cast<size_t>(i)].width;
+  }
+  *out_pos = Vec2Si32(x, size_.y - header_height_);
+  *out_size = Vec2Si32(tabs_[static_cast<size_t>(index)].width,
+                       header_height_);
+  return true;
+}
+
+Si32 TabControl::HeaderAt(Vec2Si32 relative_pos) const {
+  if (relative_pos.y < size_.y - header_height_ || relative_pos.y >= size_.y ||
+      relative_pos.x < 0) {
+    return -1;
+  }
+  Si32 x = 0;
+  for (size_t i = 0; i < tabs_.size(); ++i) {
+    if (relative_pos.x < x + tabs_[i].width) {
+      return (Si32)i;
+    }
+    x += tabs_[i].width;
+  }
+  return -1;
+}
+
+void TabControl::LayoutTabs() {
+  for (size_t i = 0; i < tabs_.size(); ++i) {
+    Tab &tab = tabs_[i];
+    Si32 text_width = font_.FontInstance() ?
+        font_.EvaluateSize(tab.title.c_str(), false).x : 0;
+    tab.width = std::max(1, text_width + 2 * header_padding_);
+    Vec2Si32 header_size(tab.width, header_height_);
+    for (Si32 k = 0; k < 3; ++k) {
+      tab.header[k] = header_frame_[k].DrawExternalSize(header_size);
+    }
+  }
+}
+
+void TabControl::RegenerateSprites() {
+  Vec2Si32 page_pos;
+  Vec2Si32 page_size;
+  GetPageRect(&page_pos, &page_size);
+  Sprite page_background = page_frame_.DrawExternalSize(page_size);
+  for (size_t i = 0; i < tabs_.size(); ++i) {
+    tabs_[i].page->SetPos(page_pos);
+    tabs_[i].page->SetSize(page_size);
+    tabs_[i].page->SetBackground(page_background);
+  }
+  LayoutTabs();
+}
+
+std::shared_ptr<Panel> TabControl::AddTab(const std::string &title,
+                                          Ui64 tag) {
+  Tab tab;
+  tab.title = title;
+  if (tag == 0) {
+    ++next_page_tag_;
+    tag = tag_ * 1000 + next_page_tag_;
+  }
+  Vec2Si32 page_pos;
+  Vec2Si32 page_size;
+  GetPageRect(&page_pos, &page_size);
+  tab.page = std::make_shared<Panel>(tag, page_pos, page_size, 0,
+                                     page_frame_.DrawExternalSize(page_size));
+  tab.page->SetVisible(tabs_.empty());
+  Panel::AddChild(tab.page);
+  tabs_.push_back(tab);
+  if (selected_ < 0) {
+    selected_ = 0;
+  }
+  LayoutTabs();
+  return tab.page;
+}
+
+void TabControl::RemoveTab(Si32 index) {
+  if (index < 0 || index >= (Si32)tabs_.size()) {
+    return;
+  }
+  Panel::RemoveChild(tabs_[static_cast<size_t>(index)].page);
+  tabs_.erase(tabs_.begin() + index);
+  hovered_ = -1;
+  if (tabs_.empty()) {
+    selected_ = -1;
+    return;
+  }
+  if (selected_ == index) {
+    selected_ = std::min(index, (Si32)tabs_.size() - 1);
+    tabs_[static_cast<size_t>(selected_)].page->SetVisible(true);
+  } else if (selected_ > index) {
+    --selected_;
+  }
+}
+
+Si32 TabControl::GetTabCount() const {
+  return (Si32)tabs_.size();
+}
+
+std::shared_ptr<Panel> TabControl::GetPage(Si32 index) const {
+  if (index < 0 || index >= (Si32)tabs_.size()) {
+    return Panel::Invalid();
+  }
+  return tabs_[static_cast<size_t>(index)].page;
+}
+
+const std::string &TabControl::GetTitle(Si32 index) const {
+  if (index < 0 || index >= (Si32)tabs_.size()) {
+    return EmptyString();
+  }
+  return tabs_[static_cast<size_t>(index)].title;
+}
+
+void TabControl::SetTitle(Si32 index, const std::string &title) {
+  if (index < 0 || index >= (Si32)tabs_.size()) {
+    return;
+  }
+  tabs_[static_cast<size_t>(index)].title = title;
+  LayoutTabs();
+}
+
+void TabControl::SetSelectedIndex(Si32 index) {
+  if (index < 0 || index >= (Si32)tabs_.size() || index == selected_) {
+    return;
+  }
+  if (selected_ >= 0) {
+    tabs_[static_cast<size_t>(selected_)].page->SetVisible(false);
+  }
+  selected_ = index;
+  tabs_[static_cast<size_t>(selected_)].page->SetVisible(true);
+}
+
+Si32 TabControl::GetSelectedIndex() const {
+  return selected_;
+}
+
+void TabControl::SelectAndNotify(Si32 index,
+                                 std::deque<GuiMessage> *out_gui_messages) {
+  if (index == selected_ || index < 0 || index >= (Si32)tabs_.size()) {
+    return;
+  }
+  SetSelectedIndex(index);
+  Emit(kGuiTabChange, out_gui_messages);
+  OnTabChange();
+}
+
+void TabControl::SetHeaderHeight(Si32 header_height) {
+  header_height_ = std::max(1, header_height);
+  RegenerateSprites();
+}
+
+void TabControl::SetEnabled(bool is_enabled) {
+  is_enabled_ = is_enabled;
+  hovered_ = -1;
+}
+
+bool TabControl::IsEnabled() {
+  return is_enabled_;
+}
+
+void TabControl::Draw(Vec2Si32 parent_absolute_pos) {
+  if (!IsVisible()) {
+    return;
+  }
+  Panel::Draw(parent_absolute_pos);
+  Vec2Si32 absolute_pos = parent_absolute_pos + pos_;
+  for (size_t i = 0; i < tabs_.size(); ++i) {
+    Vec2Si32 header_pos;
+    Vec2Si32 header_size;
+    GetHeaderRect((Si32)i, &header_pos, &header_size);
+    Si32 look = 0;
+    if ((Si32)i == selected_) {
+      look = 1;
+    } else if ((Si32)i == hovered_ && is_enabled_) {
+      look = 2;
+    }
+    Vec2Si32 at = absolute_pos + header_pos;
+    tabs_[i].header[look].Draw(at, header_size);
+    if (font_.FontInstance() && !palete_.empty()) {
+      font_.Draw(tabs_[i].title.c_str(),
+                 at.x + header_size.x / 2, at.y + header_size.y / 2,
+                 kTextOriginCenter, kTextAlignmentCenter,
+                 kDrawBlendingModeColorize, kFilterNearest, palete_);
+    }
+  }
+}
+
+bool TabControl::IsMouseTransparentAt(Vec2Si32 parent_pos,
+                                      Vec2Si32 mouse_pos) {
+  if (!Panel::IsMouseTransparentAt(parent_pos, mouse_pos)) {
+    return false;
+  }
+  Vec2Si32 relative_pos = mouse_pos - (parent_pos + pos_);
+  return !(IsWithin(relative_pos) &&
+           relative_pos.y >= size_.y - header_height_);
+}
+
+void TabControl::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+                             bool is_top_level,
+                             bool *in_out_is_applied,
+                             std::deque<GuiMessage> *out_gui_messages,
+                             std::shared_ptr<Panel> *out_current_tab) {
+  Panel::HandleInput(parent_pos, message, is_top_level, in_out_is_applied,
+                     out_gui_messages, out_current_tab);
+  if (message.kind == InputMessage::kMouse) {
+    Vec2Si32 relative_pos = message.mouse.backbuffer_pos - (parent_pos + pos_);
+    bool is_on_headers = IsWithin(relative_pos) &&
+        relative_pos.y >= size_.y - header_height_;
+    if (is_on_headers && !*in_out_is_applied) {
+      *in_out_is_applied = true;
+      hovered_ = HeaderAt(relative_pos);
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1 && hovered_ >= 0) {
+        if (GetTabOrder() != 0) {
+          *out_current_tab = shared_from_this();
+          is_current_tab_ = true;
+        }
+        SelectAndNotify(hovered_, out_gui_messages);
+      }
+    } else {
+      hovered_ = -1;
+    }
+  } else if (message.kind == InputMessage::kKeyboard) {
+    if (!*in_out_is_applied && is_current_tab_ && !tabs_.empty() &&
+        (message.keyboard.key_state & 1u) == 1u) {
+      Si32 n = (Si32)tabs_.size();
+      if (message.keyboard.key == kKeyLeft) {
+        *in_out_is_applied = true;
+        SelectAndNotify(std::max(0, selected_ - 1), out_gui_messages);
+      } else if (message.keyboard.key == kKeyRight) {
+        *in_out_is_applied = true;
+        SelectAndNotify(std::min(n - 1, selected_ + 1), out_gui_messages);
+      }
+    }
+  }
 }
 
 struct LoaderContext {
@@ -3270,6 +5083,64 @@ void GuiTheme::Load(const char *xml_file_path) {
     ctx.doc.child("checkbox_down_sound").attribute("path").as_string("checkbox_down_sound")), true);
   checkbox_up_sound_.Load(GluePath(ctx.parent_path.c_str(),
     ctx.doc.child("checkbox_up_sound").attribute("path").as_string("checkbox_up_sound")), true);
+
+  // The entries below are optional: a theme written before these widgets
+  // existed borrows their looks from the widgets it does describe.
+  auto optional_sprite = [&ctx](const char *node_name, const Sprite &fallback) {
+    pugi::XmlNode node = ctx.doc.child(node_name);
+    if (node && node.attribute("path")) {
+      return ctx.LoadSprite(node.attribute("path").as_string());
+    }
+    return fallback;
+  };
+  auto optional_frame = [&ctx](const char *node_name,
+                               const DecoratedFrame &fallback,
+                               DecoratedFrame *out_frame) {
+    if (ctx.doc.child(node_name)) {
+      LoadDecoratedFrame(ctx, node_name, out_frame);
+    } else {
+      *out_frame = fallback;
+    }
+  };
+
+  radio_clear_normal_ = optional_sprite("radio_clear_normal", checkbox_clear_normal_);
+  radio_checked_normal_ = optional_sprite("radio_checked_normal", checkbox_checked_normal_);
+  radio_clear_down_ = optional_sprite("radio_clear_down", checkbox_clear_down_);
+  radio_checked_down_ = optional_sprite("radio_checked_down", checkbox_checked_down_);
+  radio_clear_hovered_ = optional_sprite("radio_clear_hovered", checkbox_clear_hovered_);
+  radio_checked_hovered_ = optional_sprite("radio_checked_hovered", checkbox_checked_hovered_);
+  radio_clear_disabled_ = optional_sprite("radio_clear_disabled", checkbox_clear_disabled_);
+  radio_checked_disabled_ = optional_sprite("radio_checked_disabled", checkbox_checked_disabled_);
+
+  h_slider_ = std::make_shared<GuiThemeSlider>();
+  optional_frame("slider_track", h_scrollbar_->normal_background_, &h_slider_->track_);
+  optional_frame("slider_thumb_normal", button_->normal_, &h_slider_->thumb_normal_);
+  optional_frame("slider_thumb_hovered", button_->hovered_, &h_slider_->thumb_hovered_);
+  optional_frame("slider_thumb_down", button_->down_, &h_slider_->thumb_down_);
+  optional_frame("slider_thumb_disabled", button_->disabled_, &h_slider_->thumb_disabled_);
+  h_slider_->thumb_length_ = ctx.doc.child("slider_thumb_normal").attribute("thumb_length").as_int(16);
+  h_slider_->is_horizontal_ = true;
+  v_slider_ = std::make_shared<GuiThemeSlider>(*h_slider_);
+  optional_frame("slider_track", v_scrollbar_->normal_background_, &v_slider_->track_);
+  v_slider_->is_horizontal_ = false;
+
+  optional_frame("listbox_background", editbox_normal_, &listbox_background_);
+  optional_frame("listbox_selection", button_->down_, &listbox_selection_);
+  optional_frame("listbox_hover", button_->hovered_, &listbox_hover_);
+
+  dropdown_arrow_ = optional_sprite("dropdown_arrow", Sprite());
+
+  optional_frame("tab_normal", button_->normal_, &tab_normal_);
+  optional_frame("tab_selected", button_->down_, &tab_selected_);
+  optional_frame("tab_hovered", button_->hovered_, &tab_hovered_);
+  optional_frame("tab_page", panel_background_, &tab_page_);
+
+  tooltip_ = std::make_shared<GuiThemeTooltip>();
+  optional_frame("tooltip_frame", panel_background_, &tooltip_->frame_);
+  tooltip_->font_ = text_->font_;
+  tooltip_->color_ = text_->palete_.empty() ? Rgba(255, 255, 255) : text_->palete_[0];
+  tooltip_->delay_seconds_ = ctx.doc.child("tooltip_frame").attribute("delay_seconds").as_double(0.5);
+  tooltip_->padding_ = ctx.doc.child("tooltip_frame").attribute("padding").as_int(4);
 }
 
 std::shared_ptr<Panel> GuiFactory::MakePanel() {
@@ -3317,6 +5188,44 @@ std::shared_ptr<Checkbox> GuiFactory::MakeCheckbox() {
 std::shared_ptr<Editbox> GuiFactory::MakeEditbox() {
   ++last_tag_;
   return std::make_shared<Editbox>(last_tag_, theme_);
+}
+
+std::shared_ptr<RadioButton> GuiFactory::MakeRadioButton(Si32 group) {
+  ++last_tag_;
+  return std::make_shared<RadioButton>(last_tag_, theme_, group);
+}
+
+std::shared_ptr<Image> GuiFactory::MakeImage(Sprite sprite,
+                                             Image::ScaleMode scale_mode) {
+  ++last_tag_;
+  Vec2Si32 size = sprite.Size();
+  return std::make_shared<Image>(last_tag_, Vec2Si32(0, 0), size, sprite,
+                                 scale_mode);
+}
+
+std::shared_ptr<Slider> GuiFactory::MakeHorizontalSlider() {
+  ++last_tag_;
+  return std::make_shared<Slider>(last_tag_, theme_->h_slider_);
+}
+
+std::shared_ptr<Slider> GuiFactory::MakeVerticalSlider() {
+  ++last_tag_;
+  return std::make_shared<Slider>(last_tag_, theme_->v_slider_);
+}
+
+std::shared_ptr<ListBox> GuiFactory::MakeListBox() {
+  ++last_tag_;
+  return std::make_shared<ListBox>(last_tag_, theme_);
+}
+
+std::shared_ptr<Dropdown> GuiFactory::MakeDropdown() {
+  ++last_tag_;
+  return std::make_shared<Dropdown>(last_tag_, theme_);
+}
+
+std::shared_ptr<TabControl> GuiFactory::MakeTabControl() {
+  ++last_tag_;
+  return std::make_shared<TabControl>(last_tag_, theme_);
 }
 
 

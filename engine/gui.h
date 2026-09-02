@@ -61,7 +61,32 @@ enum GuiMessageKind {
   kGuiButtonHover,  ///< The cursor came onto a button
   kGuiEditboxTextChange,  ///< The text of an edit box changed, by any means
   kGuiEditboxEditDone,  ///< Enter was pressed, or the focus went elsewhere
+  kGuiSliderChange,  ///< A slider was moved, ask it for the new value
+  kGuiRadioSelect,  ///< A radio button became the selected one of its group
+  kGuiListSelectionChange,  ///< The selected item of a list box changed
+  kGuiListItemClick,  ///< An item of a list box was clicked, selected or not
+  kGuiListItemActivate,  ///< A list item was double-clicked or Enter was pressed
+  kGuiDropdownChange,  ///< The chosen item of a dropdown changed
+  kGuiTabChange,  ///< Another tab of a tab control was selected
 };
+
+/// @brief One visual line of wrapped text, see WrapText().
+struct WrappedTextLine {
+  std::string text;  ///< The line as drawn: no '\n', trailing spaces kept
+  Si32 start = 0;  ///< Byte offset of the first byte of the line in the source
+  Si32 end = 0;  ///< Byte offset right after the line, includes a hard '\n'
+};
+
+/// @brief Splits text into visual lines.
+/// @param font Font that measures the text.
+/// @param text UTF-8 text, '\n' always starts a new line.
+/// @param max_width Width in pixels a line may take, 0 to break on '\n' only.
+/// @return The lines in order; an empty text gives a single empty line.
+///
+/// Breaks happen after a space run or after a hyphen, never inside a word. A
+/// word longer than max_width stays on a line of its own and overflows.
+std::vector<WrappedTextLine> WrapText(Font font, const std::string &text,
+    Si32 max_width);
 
 /// @brief Enumeration of text selection modes.
 enum TextSelectionMode {
@@ -161,7 +186,34 @@ class GuiThemeScrollbar {
   bool is_horizontal_;
 };
 
+/// @brief How a tooltip looks: the frame around it, the font and the delay.
+class GuiThemeTooltip {
+ public:
+  DecoratedFrame frame_;
+  Font font_;
+  Rgba color_ = Rgba(255, 255, 255);
+  Si32 padding_ = 4;  ///< Space between the frame border and the text
+  double delay_seconds_ = 0.5;  ///< How long the cursor rests before it shows
+};
+
+/// @brief Slider theme: the track and the thumb in its four states.
+class GuiThemeSlider {
+ public:
+  DecoratedFrame track_;
+  DecoratedFrame thumb_normal_;
+  DecoratedFrame thumb_hovered_;
+  DecoratedFrame thumb_down_;
+  DecoratedFrame thumb_disabled_;
+  Si32 thumb_length_ = 16;  ///< Thumb extent along the track, in pixels
+  bool is_horizontal_ = true;
+};
+
 /// @brief Class representing the overall GUI theme.
+///
+/// Every entry the loader does not find in the XML gets a fallback taken from
+/// another entry (radio buttons look like check boxes, list rows like buttons,
+/// tab headers like buttons and so on), so a theme written for the older
+/// widgets keeps working with the newer ones.
 class GuiTheme {
  public:
   DecoratedFrame panel_background_;
@@ -191,6 +243,49 @@ class GuiTheme {
   Sprite checkbox_checked_disabled_;
   Sound checkbox_down_sound_;
   Sound checkbox_up_sound_;
+
+  /// Radio buttons: XML nodes radio_clear_normal, radio_checked_normal,
+  /// radio_clear_down, ... the same eight names check boxes use; the check box
+  /// sprites are the fallback.
+  Sprite radio_clear_normal_;
+  Sprite radio_checked_normal_;
+  Sprite radio_clear_down_;
+  Sprite radio_checked_down_;
+  Sprite radio_clear_hovered_;
+  Sprite radio_checked_hovered_;
+  Sprite radio_clear_disabled_;
+  Sprite radio_checked_disabled_;
+
+  /// Sliders: XML nodes slider_track, slider_thumb_normal, slider_thumb_hovered,
+  /// slider_thumb_down, slider_thumb_disabled (decorated frames) and the
+  /// thumb_length attribute of slider_thumb_normal. Fallback: the scrollbar
+  /// background for the track, the button frames for the thumb.
+  std::shared_ptr<GuiThemeSlider> h_slider_;
+  std::shared_ptr<GuiThemeSlider> v_slider_;
+
+  /// List boxes: XML nodes listbox_background, listbox_selection,
+  /// listbox_hover (decorated frames). Fallback: the edit box frame for the
+  /// background, the down and hovered button frames for the rows.
+  DecoratedFrame listbox_background_;
+  DecoratedFrame listbox_selection_;
+  DecoratedFrame listbox_hover_;
+
+  /// Dropdowns: XML node dropdown_arrow (a sprite); when absent a triangle is
+  /// drawn in the text color. The box itself uses the button frames.
+  Sprite dropdown_arrow_;
+
+  /// Tab controls: XML nodes tab_normal, tab_selected, tab_hovered, tab_page
+  /// (decorated frames). Fallback: the normal, down and hovered button frames
+  /// for the headers and the panel background for the page.
+  DecoratedFrame tab_normal_;
+  DecoratedFrame tab_selected_;
+  DecoratedFrame tab_hovered_;
+  DecoratedFrame tab_page_;
+
+  /// Tooltips: XML node tooltip_frame (a decorated frame, fallback is the panel
+  /// background) with optional delay_seconds and padding attributes; the text
+  /// font and the first color of the text palette.
+  std::shared_ptr<GuiThemeTooltip> tooltip_;
 
   /// @brief Loads the GUI theme from an XML file.
   /// @param xml_file_path Path to the XML file containing theme data.
@@ -231,6 +326,14 @@ class Panel : public std::enable_shared_from_this<Panel> {
   AnchorKind anchor_ = kAnchorNone;
   DockKind dock_ = kDockNone;
   std::shared_ptr<GuiTheme> theme_;
+  bool is_clipping_children_ = false;
+  std::string tooltip_;
+  // Root-only tooltip state: the style, the panel the cursor rests on, since
+  // when, and where the cursor was.
+  std::shared_ptr<GuiThemeTooltip> tooltip_theme_;
+  std::weak_ptr<Panel> tooltip_owner_;
+  double tooltip_since_ = 0.0;
+  Vec2Si32 tooltip_pos_ = Vec2Si32(0, 0);
 
  public:
   /// @brief Constructor for Panel.
@@ -518,7 +621,88 @@ class Panel : public std::enable_shared_from_this<Panel> {
 
   std::function<void(void)> OnPanelLeftDown = DoNothing;
 
+  /// @brief Returns the children in drawing order (the last one is on top).
+  const std::deque<std::shared_ptr<Panel>> &GetChildren() const;
+
+  /// @brief Returns the parent, nullptr for a root.
+  Panel *GetParent() const;
+
+  /// @brief Makes the panel cut off whatever its children draw outside it.
+  /// @param is_clipping True to clip, false (the default) to let it spill.
+  ///
+  /// With clipping on, the children are drawn into the rectangle of the panel
+  /// only, which is what a scrolling area or a list of rows needs. Input is not
+  /// affected: a child that sticks out still takes clicks there, so move or
+  /// hide the children that should not.
+  void SetClipChildren(bool is_clipping);
+
+  /// @brief Tells whether the children are clipped to the panel.
+  bool IsClippingChildren() const;
+
+  /// @brief Sets the text shown when the cursor rests over the panel.
+  /// @param tooltip UTF-8 text, '\n' starts a new line; empty means no tooltip.
+  ///
+  /// The tooltip is drawn by the root of the tree after everything else, in the
+  /// style the root got from its theme or from SetTooltipTheme(). The deepest
+  /// visible panel under the cursor that has a tooltip wins, so a tooltip on a
+  /// panel is a fallback for the children without one.
+  void SetTooltip(std::string tooltip);
+
+  /// @brief Returns the tooltip text, empty when there is none.
+  const std::string &GetTooltip() const;
+
+  /// @brief Sets the tooltip style used when this panel is the root.
+  /// @param theme The frame, font, color and delay; nullptr turns tooltips off.
+  ///
+  /// A panel made with a theme takes the style from it; a plain panel that
+  /// serves as the root needs this call before any tooltip can appear.
+  void SetTooltipTheme(std::shared_ptr<GuiThemeTooltip> theme);
+
  protected:
+  /// @brief Draws what must appear above the whole tree: popups and the like.
+  /// @param absolute_pos Absolute position of this panel.
+  ///
+  /// The root calls this on itself after the ordinary Draw of every panel, so
+  /// whatever is drawn here lies above every sibling and every ancestor. The
+  /// base implementation asks the visible children; a dropdown draws its
+  /// open list here.
+  virtual void DrawOverlays(Vec2Si32 absolute_pos);
+
+  /// @brief Offers an input message to the overlays before the ordinary walk.
+  /// @param absolute_pos Absolute position of this panel.
+  /// @param message Input message to apply.
+  /// @param in_out_is_applied Set to true once something took the message.
+  /// @param out_gui_messages Queue for what happened, may be nullptr.
+  /// @param out_current_tab Set to the panel that is to take the focus.
+  ///
+  /// The root calls this first, so an open popup takes the click that would
+  /// otherwise land on what lies under it. The base implementation asks the
+  /// visible and enabled children.
+  virtual void HandleOverlayInput(Vec2Si32 absolute_pos,
+      const InputMessage &message,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab);
+
+  /// @brief Tells whether no overlay of this subtree takes a point.
+  /// @param absolute_pos Absolute position of this panel.
+  /// @param mouse_pos Mouse position in backbuffer pixels.
+  /// @return False when an open popup would take a click at that point.
+  virtual bool IsOverlayTransparentAt(Vec2Si32 absolute_pos,
+      Vec2Si32 mouse_pos);
+
+  /// @brief Finds the deepest visible panel under a point that has a tooltip.
+  /// @param absolute_pos Absolute position of this panel.
+  /// @param mouse_pos Mouse position in backbuffer pixels.
+  /// @return The panel, or nullptr when there is none under the point.
+  Panel *FindTooltipOwnerAt(Vec2Si32 absolute_pos, Vec2Si32 mouse_pos);
+
+  /// @brief Root only: remembers which panel the cursor rests on and since when.
+  void TrackTooltip(Vec2Si32 absolute_pos, const InputMessage &message);
+
+  /// @brief Root only: draws the tooltip once the cursor has rested long enough.
+  void DrawTooltip(Vec2Si32 absolute_pos);
+
   /// @brief Handles one input message for a visible and enabled panel
   /// @param parent_pos Absolute position of the parent panel.
   /// @param message Input message to apply.
@@ -573,6 +757,12 @@ class Text : public Panel {
   Rgba selection_color_2_;
   std::shared_ptr<GuiThemeText> theme_;
   bool is_enabled_ = true;
+  bool word_wrap_ = false;
+
+  // The text as drawn: text_ itself, or the wrapped lines joined with '\n'.
+  std::string ShownText() const;
+  // Byte offset in text_ -> byte offset in ShownText().
+  Si32 ToShownOffset(Si32 offset) const;
 
  public:
   /// @brief Constructor for Text panel.
@@ -647,12 +837,23 @@ class Text : public Panel {
       Rgba selection_color_2 = Rgba(255, 255, 255));
 
   /// @brief Evaluates the size of the text panel.
-  /// @return Size of the text panel.
+  /// @return Size of the text as drawn, wrapped lines included.
   Vec2Si32 EvaluateSize();
 
   /// @brief Sets the enabled status of the text panel.
   /// @param is_enabled True to enable the panel, false to disable it.
   void SetEnabled(bool is_enabled) override;
+
+  /// @brief Turns word wrap on or off.
+  /// @param word_wrap True to break lines at the width of the panel.
+  ///
+  /// With wrap on, the text is laid out into lines no wider than the panel
+  /// (see WrapText()), EvaluateSize() reports the wrapped size, and a selection
+  /// set with Select() still counts bytes of the original text.
+  void SetWordWrap(bool word_wrap);
+
+  /// @brief Tells whether word wrap is on.
+  bool IsWordWrap() const;
 };
 
 /// @brief Class representing a button panel.
@@ -890,14 +1091,21 @@ class Editbox: public Panel {
   // contains the '\n'. [start, end) is the source byte range the line owns, so
   // end is where the next visual line begins: the ranges are contiguous and
   // every caret offset maps to exactly one line.
-  struct VisualLine {
-    std::string text;
-    Si32 start = 0;
-    Si32 end = 0;
-  };
+  typedef WrappedTextLine VisualLine;
   // Splits text_ into visual lines, always breaking at '\n' and additionally at
   // word / hyphen boundaries when word_wrap_ is on.
   std::vector<VisualLine> WrapVisualLines();
+  // Whether the text can be changed by the user; see SetReadOnly.
+  bool is_read_only_ = false;
+  // Codepoint every character is shown as, 0 for none; see SetPasswordChar.
+  Ui32 password_char_ = 0;
+  // Text drawn in placeholder_color_ while text_ is empty.
+  std::string placeholder_;
+  Rgba placeholder_color_ = Rgba(128, 128, 128);
+  // Byte offset in text_ -> byte offset in ShownText() and back. Identity
+  // unless a password char is set.
+  Si32 ToShownOffset(Si32 offset) const;
+  Si32 FromShownOffset(Si32 shown_offset) const;
   // Vertical step between two multiline rows.
   Si32 LineStep() const;
   // Index of the visual line owning the caret offset pos. At a line boundary
@@ -1063,6 +1271,38 @@ class Editbox: public Panel {
   /// @brief Sets the maximum text length in bytes (0 = unlimited).
   /// @param max_length Maximum number of bytes allowed in the text.
   void SetMaxLength(Si32 max_length);
+
+  /// @brief Forbids or allows changes by the user.
+  /// @param is_read_only True to make typing, deleting, pasting, cutting and
+  ///   undo do nothing; the caret still moves, text can still be selected and
+  ///   copied, and SetText() still works.
+  void SetReadOnly(bool is_read_only);
+
+  /// @brief Tells whether the box is read-only.
+  bool IsReadOnly() const;
+
+  /// @brief Shows every character as one and the same character.
+  /// @param password_char The codepoint shown instead of each character, for
+  ///   example '*'; 0 shows the text itself. Single-line boxes only: the text
+  ///   is still edited as usual and GetText() returns the real text.
+  void SetPasswordChar(Ui32 password_char);
+
+  /// @brief Returns the password character, 0 when the text is shown as is.
+  Ui32 GetPasswordChar() const;
+
+  /// @brief Returns the text as it is drawn: the text itself, or the password
+  /// character repeated once per character.
+  std::string ShownText() const;
+
+  /// @brief Sets the hint drawn in the box while its text is empty.
+  /// @param placeholder The hint; an empty string removes it.
+  void SetPlaceholder(std::string placeholder);
+
+  /// @brief Returns the placeholder text.
+  const std::string &GetPlaceholder() const;
+
+  /// @brief Sets the color of the placeholder text (default grey).
+  void SetPlaceholderColor(Rgba color);
 
   /// @brief Keystrokes are text while the box has the focus.
   bool IsKeyboardCapturing() const override;
@@ -1401,7 +1641,7 @@ class Checkbox : public Panel {
 
   /// @brief Sets the checked status of the checkbox panel.
   /// @param is_checked True to check the checkbox, false to uncheck it.
-  void SetChecked(bool is_checked);
+  virtual void SetChecked(bool is_checked);
 
   /// @brief Checks if the checkbox panel is checked.
   /// @return True if the checkbox is checked, false otherwise.
@@ -1428,6 +1668,604 @@ class Checkbox : public Panel {
 
   /// @brief A checkbox takes every click inside it.
   bool TakesMouse() const override;
+
+  /// @brief What a click or the hotkey does to the value: flips it.
+  /// @param out_gui_messages The queue, may be nullptr.
+  ///
+  /// Called on the release that completes a click; the click message itself is
+  /// emitted by the caller afterwards. A radio button overrides this to select
+  /// itself instead of flipping.
+  virtual void Toggle(std::deque<GuiMessage> *out_gui_messages);
+};
+
+/// @brief A check box of which only one per group is checked at a time.
+///
+/// Radio buttons that share a parent and a group number form a group: checking
+/// one clears the others, and clicking the checked one leaves it checked.
+/// Two groups may live in one parent under different group numbers.
+class RadioButton : public Checkbox {
+ protected:
+  Si32 group_ = 0;
+
+  // Checks this one and clears the rest of its group, without messages.
+  void SelectQuietly();
+
+ public:
+  /// @brief Constructor with explicit sprites, the same set a Checkbox takes.
+  RadioButton(Ui64 tag, Vec2Si32 pos, Ui32 tab_order,
+    Sprite clear_normal,
+    Sprite checked_normal,
+    Sprite clear_down = Sprite(),
+    Sprite checked_down = Sprite(),
+    Sprite clear_hovered = Sprite(),
+    Sprite checked_hovered = Sprite(),
+    Sprite clear_disabled = Sprite(),
+    Sprite checked_disabled = Sprite(),
+    Sound down_sound = Sound(),
+    Sound up_sound = Sound(),
+    KeyCode hotkey = kKeyNone,
+    Si32 group = 0);
+
+  /// @brief Constructor using a theme (the radio_* sprites, or the check box
+  /// sprites when the theme has none).
+  RadioButton(Ui64 tag, std::shared_ptr<GuiTheme> theme, Si32 group = 0);
+
+  /// @brief Sets the group number; siblings with the same number are one group.
+  void SetGroup(Si32 group);
+
+  /// @brief Returns the group number.
+  Si32 GetGroup() const;
+
+  /// @brief Checks this button and clears the rest of its group; false is
+  /// allowed and simply clears this one.
+  void SetChecked(bool is_checked) override;
+
+  /// @brief Called when this button becomes the selected one by a click or the
+  /// hotkey; not called when it was selected already.
+  std::function<void(void)> OnSelect = DoNothing;
+
+ protected:
+  /// @brief Selects this button; emits kGuiRadioSelect when that is a change.
+  void Toggle(std::deque<GuiMessage> *out_gui_messages) override;
+};
+
+/// @brief A panel that shows a sprite.
+///
+/// A plain Panel stretches its background over its whole rectangle; an Image
+/// offers the other ways to fit a picture into a box and clips what does not
+/// fit.
+class Image : public Panel {
+ public:
+  /// @brief How the sprite is placed into the rectangle of the panel.
+  enum ScaleMode {
+    kScaleStretch = 0,  ///< Fill the rectangle, aspect ratio not kept
+    kScaleFit = 1,  ///< As large as fits, aspect ratio kept, centered
+    kScaleNone = 2,  ///< Own size, bottom-left corner at the panel's
+    kScaleCenter = 3  ///< Own size, centered in the panel
+  };
+
+ protected:
+  Sprite sprite_;
+  ScaleMode scale_mode_ = kScaleStretch;
+  DrawBlendingMode blending_mode_ = kDrawBlendingModeAlphaBlend;
+  DrawFilterMode filter_mode_ = kFilterNearest;
+  Rgba color_ = Rgba(255, 255, 255, 255);
+
+ public:
+  /// @brief Constructor for Image.
+  /// @param tag Unique tag for the panel.
+  /// @param pos Position of the panel.
+  /// @param size Size of the panel.
+  /// @param sprite The picture.
+  /// @param scale_mode How the picture is placed.
+  Image(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Sprite sprite,
+      ScaleMode scale_mode = kScaleStretch);
+
+  /// @brief Replaces the picture.
+  void SetSprite(Sprite sprite);
+
+  /// @brief Returns the picture.
+  Sprite GetSprite() const;
+
+  /// @brief Sets how the picture is placed into the panel.
+  void SetScaleMode(ScaleMode scale_mode);
+
+  /// @brief Returns how the picture is placed into the panel.
+  ScaleMode GetScaleMode() const;
+
+  /// @brief Sets the blending and the filter used to draw the picture.
+  void SetDrawMode(DrawBlendingMode blending_mode, DrawFilterMode filter_mode);
+
+  /// @brief Sets the color the picture is tinted with in colorize blending;
+  /// ignored by the other blending modes.
+  void SetColor(Rgba color);
+
+  /// @brief Returns the rectangle the picture is drawn into, relative to the
+  /// panel, for the current scale mode.
+  void GetPictureRect(Vec2Si32 *out_pos, Vec2Si32 *out_size) const;
+
+  /// @brief Draws the picture, clipped to the panel, then the children.
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+};
+
+/// @brief A slider: a thumb dragged along a track to pick a value in a range.
+///
+/// Horizontal sliders grow to the right, vertical ones grow upward. A click on
+/// the track moves the thumb there, the thumb can be dragged, the wheel and,
+/// when focused, the arrow keys, Home and End move it by steps. Each change
+/// emits kGuiSliderChange and calls OnSliderChange.
+class Slider : public Panel {
+ public:
+  /// @brief Enumeration of slider states.
+  enum SliderState {
+    kNormal = 0,
+    kHovered = 1,
+    kDown = 2,
+    kDisabled = 3
+  };
+
+ protected:
+  DecoratedFrame track_frame_;
+  DecoratedFrame thumb_frame_[4];
+  Sprite track_;
+  Sprite thumb_[4];
+  Si32 thumb_length_ = 16;
+  bool is_horizontal_ = true;
+  Si32 min_value_ = 0;
+  Si32 max_value_ = 100;
+  Si32 value_ = 0;
+  Si32 step_ = 1;
+  SliderState state_ = kNormal;
+  Si32 drag_offset_ = 0;  // grab point minus thumb start, along the track
+  std::shared_ptr<GuiThemeSlider> theme_;
+
+  Si32 Along(Vec2Si32 v) const;  // the coordinate along the track
+  Si32 TrackLength() const;  // room the thumb start can move in
+  Si32 ThumbStart() const;  // thumb start for value_, along the track
+  Si32 ValueAt(Si32 thumb_start) const;  // inverse of ThumbStart
+  void SetValueAndNotify(Si32 value,
+      std::deque<GuiMessage> *out_gui_messages);
+
+ public:
+  /// @brief Constructor with explicit frames.
+  /// @param tag Unique tag for the panel.
+  /// @param pos Position of the panel.
+  /// @param size Size of the panel; the long side is the track.
+  /// @param tab_order Tab order of the panel, 0 keeps it out of Tab.
+  /// @param track Frame stretched over the whole panel.
+  /// @param thumb_normal Thumb when nothing happens.
+  /// @param thumb_hovered Thumb under the cursor.
+  /// @param thumb_down Thumb being dragged.
+  /// @param thumb_disabled Thumb of a disabled slider.
+  /// @param thumb_length Thumb extent along the track, in pixels.
+  /// @param is_horizontal True for a slider that grows to the right.
+  Slider(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+      DecoratedFrame track, DecoratedFrame thumb_normal,
+      DecoratedFrame thumb_hovered, DecoratedFrame thumb_down,
+      DecoratedFrame thumb_disabled, Si32 thumb_length, bool is_horizontal);
+
+  /// @brief Constructor using a theme.
+  Slider(Ui64 tag, std::shared_ptr<GuiThemeSlider> theme);
+
+  /// @brief Sets the range; the value is clamped into it.
+  /// @param min_value Value at the left or bottom end.
+  /// @param max_value Value at the right or top end, at least min_value.
+  void SetRange(Si32 min_value, Si32 max_value);
+
+  /// @brief Returns the lowest value.
+  Si32 GetMinValue() const;
+
+  /// @brief Returns the highest value.
+  Si32 GetMaxValue() const;
+
+  /// @brief Sets the value, clamped into the range, without messages.
+  void SetValue(Si32 value);
+
+  /// @brief Returns the value.
+  Si32 GetValue() const;
+
+  /// @brief Sets how far one wheel notch or one key press moves the value.
+  void SetStep(Si32 step);
+
+  /// @brief Returns the step.
+  Si32 GetStep() const;
+
+  /// @brief Tells whether the slider grows to the right rather than upward.
+  bool IsHorizontal() const;
+
+  /// @brief Returns the rectangle of the thumb relative to the panel.
+  void GetThumbRect(Vec2Si32 *out_pos, Vec2Si32 *out_size) const;
+
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+  void SetEnabled(bool is_enabled) override;
+  bool IsEnabled() override;
+  void RegenerateSprites() override;
+
+  std::function<void(void)> OnSliderChange = DoNothing;
+
+ protected:
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+
+  /// @brief A slider takes every click inside it.
+  bool TakesMouse() const override;
+};
+
+/// @brief A list of text rows with one selected, scrolled by a scrollbar, the
+/// wheel or the keys.
+///
+/// Rows are laid out from the top of the list. A click selects the row and
+/// emits kGuiListItemClick; a change of the selection emits
+/// kGuiListSelectionChange; a double click or Enter emits kGuiListItemActivate.
+/// When focused, the arrow keys, Home, End, Page Up and Page Down move the
+/// selection and keep it in view.
+class ListBox : public Panel {
+ protected:
+  std::vector<std::string> items_;
+  Si32 selected_ = -1;
+  Si32 hovered_ = -1;
+  Si32 first_visible_ = 0;
+  Si32 row_height_ = 1;
+  Si32 padding_ = 2;  // between the frame border and the rows
+  Vec2Si32 border_ = Vec2Si32(0, 0);  // frame border, inner rect = size - 2 * border
+  Font font_;
+  std::vector<Rgba> palete_;
+  std::vector<Rgba> disabled_palete_;
+  DecoratedFrame background_frame_;
+  DecoratedFrame selection_frame_;
+  DecoratedFrame hover_frame_;
+  Sprite selection_row_;
+  Sprite hover_row_;
+  std::shared_ptr<Scrollbar> scrollbar_;
+  bool is_enabled_ = true;
+  double last_click_time_ = -1.0;
+  Si32 last_click_item_ = -1;
+  std::shared_ptr<GuiTheme> theme_;
+
+  Si32 InnerLeft() const;
+  Si32 InnerTop() const;
+  Si32 RowsWidth() const;  // inner width minus the scrollbar
+  Si32 VisibleRows() const;
+  Si32 MaxFirstVisible() const;
+  Si32 RowAt(Vec2Si32 relative_pos) const;  // -1 when not on a row
+  void ClampScroll();
+  void SyncScrollbar();
+  void EnsureVisible(Si32 item);
+  void SelectAndNotify(Si32 item, std::deque<GuiMessage> *out_gui_messages);
+  void LayoutScrollbar();
+
+ public:
+  /// @brief Constructor with explicit frames and no scrollbar (wheel and keys
+  /// still scroll).
+  /// @param tag Unique tag for the panel.
+  /// @param pos Position of the panel.
+  /// @param size Size of the panel.
+  /// @param tab_order Tab order of the panel, 0 keeps it out of Tab.
+  /// @param font Font of the rows.
+  /// @param color Color of the text.
+  /// @param background Frame around the whole list.
+  /// @param selection Frame drawn under the selected row.
+  /// @param hover Frame drawn under the row beneath the cursor.
+  ListBox(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+      Font font, Rgba color, DecoratedFrame background,
+      DecoratedFrame selection, DecoratedFrame hover);
+
+  /// @brief Constructor using a theme, with a vertical scrollbar of the theme.
+  ListBox(Ui64 tag, std::shared_ptr<GuiTheme> theme);
+
+  /// @brief Replaces all items; the selection is dropped.
+  void SetItems(const std::vector<std::string> &items);
+
+  /// @brief Appends an item.
+  void AddItem(const std::string &item);
+
+  /// @brief Removes an item; the selection follows the item it was on.
+  void RemoveItem(Si32 index);
+
+  /// @brief Removes every item.
+  void ClearItems();
+
+  /// @brief Returns the number of items.
+  Si32 GetItemCount() const;
+
+  /// @brief Returns an item, or an empty string for an index out of range.
+  const std::string &GetItem(Si32 index) const;
+
+  /// @brief Selects an item without messages; -1 clears the selection.
+  void SetSelectedIndex(Si32 index);
+
+  /// @brief Returns the selected index, -1 when nothing is selected.
+  Si32 GetSelectedIndex() const;
+
+  /// @brief Returns the selected item, or an empty string.
+  const std::string &GetSelectedItem() const;
+
+  /// @brief Sets the height of a row; the default is the line height of the
+  /// font plus twice the padding.
+  void SetRowHeight(Si32 row_height);
+
+  /// @brief Returns the height of a row.
+  Si32 GetRowHeight() const;
+
+  /// @brief Scrolls so that the given item is the top row, as far as the
+  /// list allows.
+  void SetFirstVisible(Si32 index);
+
+  /// @brief Returns the index of the top row.
+  Si32 GetFirstVisible() const;
+
+  /// @brief Returns how many rows fit into the list.
+  Si32 GetVisibleRows() const;
+
+  /// @brief Returns the height a list of this style needs to show the given
+  /// number of rows, frame and padding included.
+  Si32 HeightForRows(Si32 rows) const;
+
+  /// @brief Returns the row under a point, -1 for none.
+  /// @param relative_pos A point counted from the bottom-left corner of the list.
+  Si32 ItemAt(Vec2Si32 relative_pos) const;
+
+  /// @brief Returns the rectangle of a row relative to the list, false when
+  /// the row is not on screen.
+  bool GetRowRect(Si32 index, Vec2Si32 *out_pos, Vec2Si32 *out_size) const;
+
+  /// @brief Sets the font of the rows.
+  void SetFont(Font font);
+
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+  void SetEnabled(bool is_enabled) override;
+  bool IsEnabled() override;
+  void RegenerateSprites() override;
+
+  std::function<void(void)> OnSelectionChange = DoNothing;
+  std::function<void(void)> OnItemClick = DoNothing;
+  std::function<void(void)> OnItemActivate = DoNothing;
+
+ protected:
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+
+  /// @brief A list box takes every click inside it.
+  bool TakesMouse() const override;
+};
+
+/// @brief A box showing the chosen item that opens a list of items to choose
+/// from.
+///
+/// The list opens below the box (above it when there is no room below) and is
+/// drawn over everything else in the tree; a click outside closes it. A choice
+/// emits kGuiDropdownChange and calls OnChange when the item changed. When the
+/// list is closed and the box is focused, the arrow keys change the item
+/// directly, Enter or Space open the list; Escape closes it.
+class Dropdown : public Panel {
+ public:
+  /// @brief Enumeration of dropdown states.
+  enum DropdownState {
+    kNormal = 0,
+    kHovered = 1,
+    kDown = 2,
+    kDisabled = 3
+  };
+
+ protected:
+  std::vector<std::string> items_;
+  Si32 selected_ = -1;
+  bool is_open_ = false;
+  DropdownState state_ = kNormal;
+  DecoratedFrame frame_[4];
+  Sprite box_[4];
+  Sprite arrow_;
+  Font font_;
+  std::vector<Rgba> palete_;
+  std::vector<Rgba> disabled_palete_;
+  std::shared_ptr<ListBox> list_;
+  Si32 max_visible_items_ = 8;
+  std::shared_ptr<GuiTheme> theme_;
+
+  void ChooseAndNotify(Si32 index, std::deque<GuiMessage> *out_gui_messages);
+  void OpenList(Vec2Si32 absolute_pos);
+  void CloseList();
+  Vec2Si32 ListParentPos(Vec2Si32 absolute_pos) const;
+  void RefreshList();
+
+ public:
+  /// @brief Constructor with explicit frames and a list that has no scrollbar.
+  /// @param tag Unique tag for the panel.
+  /// @param pos Position of the panel.
+  /// @param size Size of the box (the list takes the same width).
+  /// @param tab_order Tab order of the panel, 0 keeps it out of Tab.
+  /// @param font Font of the text.
+  /// @param color Color of the text.
+  /// @param normal Frame of the box when nothing happens.
+  /// @param hovered Frame of the box under the cursor.
+  /// @param down Frame of the box while the list is open.
+  /// @param disabled Frame of a disabled box.
+  /// @param list_background Frame around the list.
+  /// @param list_selection Frame under the selected row.
+  /// @param list_hover Frame under the row beneath the cursor.
+  Dropdown(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+      Font font, Rgba color,
+      DecoratedFrame normal, DecoratedFrame hovered,
+      DecoratedFrame down, DecoratedFrame disabled,
+      DecoratedFrame list_background, DecoratedFrame list_selection,
+      DecoratedFrame list_hover);
+
+  /// @brief Constructor using a theme.
+  Dropdown(Ui64 tag, std::shared_ptr<GuiTheme> theme);
+
+  /// @brief Replaces all items; the choice is dropped.
+  void SetItems(const std::vector<std::string> &items);
+
+  /// @brief Appends an item.
+  void AddItem(const std::string &item);
+
+  /// @brief Removes every item.
+  void ClearItems();
+
+  /// @brief Returns the number of items.
+  Si32 GetItemCount() const;
+
+  /// @brief Returns an item, or an empty string for an index out of range.
+  const std::string &GetItem(Si32 index) const;
+
+  /// @brief Chooses an item without messages; -1 means nothing chosen.
+  void SetSelectedIndex(Si32 index);
+
+  /// @brief Returns the chosen index, -1 when nothing is chosen.
+  Si32 GetSelectedIndex() const;
+
+  /// @brief Returns the chosen item, or an empty string.
+  const std::string &GetSelectedItem() const;
+
+  /// @brief Sets how many rows the open list shows before it scrolls.
+  void SetMaxVisibleItems(Si32 max_visible_items);
+
+  /// @brief Tells whether the list is open.
+  bool IsOpen() const;
+
+  /// @brief Closes the list if it is open.
+  void Close();
+
+  /// @brief Returns the list panel the dropdown opens; it is not a child of
+  /// the tree and is positioned relative to the dropdown.
+  std::shared_ptr<ListBox> GetList() const;
+
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+  void SetEnabled(bool is_enabled) override;
+  bool IsEnabled() override;
+  void SetCurrentTab(bool is_current_tab) override;
+  void RegenerateSprites() override;
+
+  std::function<void(void)> OnChange = DoNothing;
+
+ protected:
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+  bool TakesMouse() const override;
+  void DrawOverlays(Vec2Si32 absolute_pos) override;
+  void HandleOverlayInput(Vec2Si32 absolute_pos,
+      const InputMessage &message,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+  bool IsOverlayTransparentAt(Vec2Si32 absolute_pos,
+      Vec2Si32 mouse_pos) override;
+};
+
+/// @brief A row of tab headers over a stack of pages, one page shown at a time.
+///
+/// AddTab() gives back the page, a panel that fills the control below the
+/// headers; put the widgets of the tab into it. A click on a header or, when
+/// focused, the Left and Right keys select a tab, which emits kGuiTabChange
+/// and calls OnTabChange.
+class TabControl : public Panel {
+ protected:
+  struct Tab {
+    std::string title;
+    std::shared_ptr<Panel> page;
+    Si32 width = 0;
+    Sprite header[3];  // normal, selected, hovered
+  };
+  std::vector<Tab> tabs_;
+  Si32 selected_ = -1;
+  Si32 hovered_ = -1;
+  Si32 header_height_ = 24;
+  Si32 header_padding_ = 8;  // text to header edge, horizontally
+  Font font_;
+  std::vector<Rgba> palete_;
+  DecoratedFrame header_frame_[3];
+  DecoratedFrame page_frame_;
+  bool is_enabled_ = true;
+  Ui64 next_page_tag_ = 0;
+  std::shared_ptr<GuiTheme> theme_;
+
+  Si32 HeaderAt(Vec2Si32 relative_pos) const;  // -1 when not on a header
+  void LayoutTabs();
+  void SelectAndNotify(Si32 index, std::deque<GuiMessage> *out_gui_messages);
+
+ public:
+  /// @brief Constructor with explicit frames.
+  /// @param tag Unique tag for the panel.
+  /// @param pos Position of the panel.
+  /// @param size Size of the panel, headers included.
+  /// @param tab_order Tab order of the panel, 0 keeps it out of Tab.
+  /// @param font Font of the titles.
+  /// @param color Color of the titles.
+  /// @param header_normal Frame of a header that is not selected.
+  /// @param header_selected Frame of the selected header.
+  /// @param header_hovered Frame of a header under the cursor.
+  /// @param page Frame of the page below the headers.
+  /// @param header_height Height of the header row.
+  TabControl(Ui64 tag, Vec2Si32 pos, Vec2Si32 size, Ui32 tab_order,
+      Font font, Rgba color,
+      DecoratedFrame header_normal, DecoratedFrame header_selected,
+      DecoratedFrame header_hovered, DecoratedFrame page,
+      Si32 header_height);
+
+  /// @brief Constructor using a theme.
+  TabControl(Ui64 tag, std::shared_ptr<GuiTheme> theme);
+
+  /// @brief Adds a tab and returns its page; the first tab added is selected.
+  /// @param title Text of the header.
+  /// @param tag Tag for the page panel, 0 to derive one from the control's tag.
+  std::shared_ptr<Panel> AddTab(const std::string &title, Ui64 tag = 0);
+
+  /// @brief Removes a tab and its page; the selection moves to a neighbor.
+  void RemoveTab(Si32 index);
+
+  /// @brief Returns the number of tabs.
+  Si32 GetTabCount() const;
+
+  /// @brief Returns the page of a tab, or Panel::Invalid() for a bad index.
+  std::shared_ptr<Panel> GetPage(Si32 index) const;
+
+  /// @brief Returns the title of a tab, or an empty string.
+  const std::string &GetTitle(Si32 index) const;
+
+  /// @brief Changes the title of a tab.
+  void SetTitle(Si32 index, const std::string &title);
+
+  /// @brief Selects a tab without messages.
+  void SetSelectedIndex(Si32 index);
+
+  /// @brief Returns the selected tab, -1 when there are no tabs.
+  Si32 GetSelectedIndex() const;
+
+  /// @brief Returns the rectangle of a header relative to the control, false
+  /// for a bad index.
+  bool GetHeaderRect(Si32 index, Vec2Si32 *out_pos, Vec2Si32 *out_size) const;
+
+  /// @brief Returns the rectangle the pages occupy, relative to the control.
+  void GetPageRect(Vec2Si32 *out_pos, Vec2Si32 *out_size) const;
+
+  /// @brief Sets the height of the header row.
+  void SetHeaderHeight(Si32 header_height);
+
+  void Draw(Vec2Si32 parent_absolute_pos) override;
+  void SetEnabled(bool is_enabled) override;
+  bool IsEnabled() override;
+  void RegenerateSprites() override;
+
+  std::function<void(void)> OnTabChange = DoNothing;
+
+ protected:
+  void HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
+      bool is_top_level,
+      bool *in_out_is_applied,
+      std::deque<GuiMessage> *out_gui_messages,
+      std::shared_ptr<Panel> *out_current_tab) override;
+
+  /// @brief The header row takes clicks; the page area is up to the pages.
+  bool IsMouseTransparentAt(Vec2Si32 parent_pos, Vec2Si32 mouse_pos) override;
 };
 
 /// @brief Class for creating GUI panels.
@@ -1472,6 +2310,28 @@ protected:
   /// @brief Creates a new edit box panel.
   /// @return Shared pointer to the created edit box panel.
   std::shared_ptr<Editbox> MakeEditbox();
+
+  /// @brief Creates a radio button in the given group.
+  std::shared_ptr<RadioButton> MakeRadioButton(Si32 group = 0);
+
+  /// @brief Creates an image panel the size of the sprite.
+  std::shared_ptr<Image> MakeImage(Sprite sprite,
+      Image::ScaleMode scale_mode = Image::kScaleStretch);
+
+  /// @brief Creates a slider that grows to the right.
+  std::shared_ptr<Slider> MakeHorizontalSlider();
+
+  /// @brief Creates a slider that grows upward.
+  std::shared_ptr<Slider> MakeVerticalSlider();
+
+  /// @brief Creates a list box with a vertical scrollbar.
+  std::shared_ptr<ListBox> MakeListBox();
+
+  /// @brief Creates a dropdown.
+  std::shared_ptr<Dropdown> MakeDropdown();
+
+  /// @brief Creates a tab control without tabs.
+  std::shared_ptr<TabControl> MakeTabControl();
 };
 
 /// @}
