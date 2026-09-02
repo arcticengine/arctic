@@ -422,13 +422,14 @@ endif ()
 # that a name can be picked out with `ctest -R`.
 #
 # The working directory matters: the tests find their data relative to it and
-# the logger writes log.txt into it. ARCTIC_HEADLESS keeps the window off the
-# screen while the GL context is still made, which the graphics tests need.
+# the logger writes log.txt into it. The window stays off the screen because
+# main.cpp registers a startup mode decider asking for a hidden one, so a run
+# by hand is as quiet as a run through ctest; the GL context is still made,
+# which the graphics tests need.
 if (NOT EMSCRIPTEN)
   enable_testing()
   add_test(NAME arctic_engine_tests COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
   set_tests_properties(arctic_engine_tests PROPERTIES
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    ENVIRONMENT "ARCTIC_HEADLESS=1"
     TIMEOUT 900)
 endif ()

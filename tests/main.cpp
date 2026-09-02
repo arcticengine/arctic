@@ -57,6 +57,16 @@
 
 using namespace arctic;
 
+// The suite has nothing to show. A hidden window keeps the GL context the
+// hardware tests need and keeps the screen quiet while they run, whether the
+// binary is started by ctest, by hand or by a test name. The environment still
+// wins over this, so ARCTIC_HEADLESS=1 ARCTIC_DISABLE_HW=1 runs the suite with
+// no window and no GL at all.
+StartupMode TestsStartupMode() {
+  return StartupMode::kHiddenWindow;
+}
+ARCTIC_STARTUP_MODE_DECIDER(TestsStartupMode)
+
 template <class KeyT>
 void radix_sort(std::vector<KeyT> &in_out_data) {
   constexpr Ui64 kBits = sizeof(KeyT) <= 4 ? 2 : 4;
@@ -6606,10 +6616,13 @@ void test_startup_mode_decider() {
   const bool env_asks_no_window =
       env_hides && std::getenv("ARCTIC_DISABLE_HW") != nullptr;
   if (!env_hides) {
+    // This binary registers TestsStartupMode above, and that is what has to
+    // be heard while the environment is silent.
     TEST_CHECK_(arctic::RequestedStartupMode()
-            == arctic::StartupMode::kWindowed,
-        "a binary with no decider and a clean environment must start "
-        "windowed, got %d", static_cast<int>(arctic::RequestedStartupMode()));
+            == arctic::StartupMode::kHiddenWindow,
+        "the suite's own decider asks for a hidden window and a clean "
+        "environment must hear it, got %d",
+        static_cast<int>(arctic::RequestedStartupMode()));
   }
 
   // The environment wins over the decider, so a run can always be hidden from
@@ -6636,10 +6649,13 @@ void test_startup_mode_decider() {
         "headless start");
   }
 
+  // With no decider at all a clean environment means an ordinary window.
   arctic::SetStartupModeDecider(nullptr);
   if (!env_hides) {
-    TEST_CHECK(arctic::RequestedStartupMode()
-        == arctic::StartupMode::kWindowed);
+    TEST_CHECK_(arctic::RequestedStartupMode()
+            == arctic::StartupMode::kWindowed,
+        "a binary with no decider and a clean environment must start "
+        "windowed, got %d", static_cast<int>(arctic::RequestedStartupMode()));
   } else if (env_asks_no_window) {
     TEST_CHECK(arctic::RequestedStartupMode()
         == arctic::StartupMode::kNoWindow);
@@ -6649,6 +6665,9 @@ void test_startup_mode_decider() {
         "ARCTIC_HEADLESS on its own means a hidden window, got %d",
         static_cast<int>(arctic::RequestedStartupMode()));
   }
+
+  // Leave the suite's own decider in place for whatever asks next.
+  arctic::SetStartupModeDecider(TestsStartupMode);
 }
 
 namespace {
@@ -6965,6 +6984,427 @@ void test_hw_sprite_subregion_draws_correctly() {
     "must produce only green.",
     green_count, magenta_count, other_count, total,
     REF_X, REF_Y, REF_W, REF_H, TEX_W, TEX_H);
+}
+
+// ---------------------------------------------------------------------------
+// GL wrapper regression tests. Each of these once printed "[BUG]" from the
+// benchmark project; here they check the real GL state instead of printing.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+// The smallest program with one float and one int uniform, both of which
+// contribute to the color so that no driver optimizes them away.
+const char *kRegressionVertexShader = R"SHADER(
+#ifdef GL_ES
+precision mediump float;
+#endif
+attribute vec2 vPosition;
+void main() {
+  gl_Position = vec4(vPosition, 0.0, 1.0);
+}
+)SHADER";
+
+const char *kRegressionFragmentShader = R"SHADER(
+#ifdef GL_ES
+precision lowp float;
+#endif
+uniform float u_test;
+uniform int u_count;
+void main() {
+  gl_FragColor = vec4(u_test, float(u_count) * 0.01, 0.0, 1.0);
+}
+)SHADER";
+
+GLint CurrentGlProgramId() {
+  GLint program_id = 0;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &program_id);
+  return program_id;
+}
+
+GLint BoundColorAttachmentName() {
+  GLint name = 0;
+  glGetFramebufferAttachmentParameteriv(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+      GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME, &name);
+  return name;
+}
+
+}  // namespace
+
+// Once linked, a program has no use for its shader objects. Leaving them
+// attached keeps them alive for as long as the program lives and leaks them
+// for good when the program is deleted with the shaders still attached.
+void test_gl_program_detaches_shaders_after_link() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  GlProgram program;
+  program.Create(kRegressionVertexShader, kRegressionFragmentShader);
+  program.Bind();
+  const GLint program_id = CurrentGlProgramId();
+  TEST_CHECK_(program_id != 0, "Bind() left no program current");
+
+  GLint attached = -1;
+  glGetProgramiv(program_id, GL_ATTACHED_SHADERS, &attached);
+  TEST_CHECK_(attached == 0,
+      "%d shader object(s) are still attached to the linked program",
+      static_cast<int>(attached));
+  glUseProgram(0);
+}
+
+// A second SetUniform with the same name has to replace the first value.
+// The table used to be filled with unordered_map::insert, which keeps the
+// old value and silently drops every update.
+void test_gl_uniforms_table_overwrites_a_value() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  GlProgram program;
+  program.Create(kRegressionVertexShader, kRegressionFragmentShader);
+  program.Bind();
+  const GLint program_id = CurrentGlProgramId();
+  const GLint float_location = glGetUniformLocation(program_id, "u_test");
+  const GLint int_location = glGetUniformLocation(program_id, "u_count");
+  TEST_CHECK_(float_location >= 0 && int_location >= 0,
+      "the shader lost a uniform (u_test at %d, u_count at %d)",
+      static_cast<int>(float_location), static_cast<int>(int_location));
+
+  UniformsTable table;
+  table.SetUniform(std::string("u_test"), 1.0f);
+  table.SetUniform(std::string("u_count"), 3);
+  table.Apply(program);
+  float first_float = -1.0f;
+  GLint first_int = -1;
+  glGetUniformfv(program_id, float_location, &first_float);
+  glGetUniformiv(program_id, int_location, &first_int);
+  TEST_CHECK_(first_float == 1.0f && first_int == 3,
+      "the first values did not reach the GPU (%.1f, %d), so the update "
+      "below proves nothing", first_float, static_cast<int>(first_int));
+
+  table.SetUniform(std::string("u_test"), 99.0f);
+  table.SetUniform(std::string("u_count"), 7);
+  TEST_CHECK_(table.Size() == 2,
+      "the table holds %d entries for two names",
+      static_cast<int>(table.Size()));
+  table.Apply(program);
+  float second_float = -1.0f;
+  GLint second_int = -1;
+  glGetUniformfv(program_id, float_location, &second_float);
+  glGetUniformiv(program_id, int_location, &second_int);
+  TEST_CHECK_(second_float == 99.0f,
+      "SetUniform(\"u_test\", 99.0f) was ignored, the GPU still has %.1f",
+      second_float);
+  TEST_CHECK_(second_int == 7,
+      "SetUniform(\"u_count\", 7) was ignored, the GPU still has %d",
+      static_cast<int>(second_int));
+  glUseProgram(0);
+}
+
+// Bind(slot) promises that the slot is the active texture unit afterwards,
+// because the caller goes on to call glTexParameteri or glTexSubImage2D on
+// it. A cache hit on the texture used to skip glActiveTexture along with
+// glBindTexture, and the following upload went to whatever unit was active.
+void test_gl_texture2d_bind_hit_still_activates_the_slot() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  GlTexture2D texture_a;
+  texture_a.Create(1, 1);
+  GlTexture2D texture_b;
+  texture_b.Create(1, 1);
+
+  texture_a.Bind(0);
+  texture_b.Bind(1);
+  GLint active = 0;
+  glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+  TEST_CHECK_(active == GL_TEXTURE1,
+      "Bind(1) left unit %d active instead of 1, so the hit below proves "
+      "nothing", static_cast<int>(active - GL_TEXTURE0));
+
+  // texture_a is already cached in slot 0: this is the cache hit.
+  texture_a.Bind(0);
+  glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+  TEST_CHECK_(active == GL_TEXTURE0,
+      "a cache hit in Bind(0) left unit %d active",
+      static_cast<int>(active - GL_TEXTURE0));
+  GLint bound = 0;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+  TEST_CHECK_(static_cast<GLuint>(bound) == texture_a.texture_id(),
+      "unit 0 holds texture %d instead of %u",
+      static_cast<int>(bound), texture_a.texture_id());
+}
+
+// Drivers hand out freed names again. A texture that was deleted while the
+// bind cache still remembered it made the cache report a hit for the next
+// texture with the same name, and that texture was never bound at all.
+void test_gl_texture2d_forgets_a_deleted_name() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  // Create() on a live texture: the old name is deleted inside.
+  GlTexture2D texture;
+  texture.Create(1, 1);
+  texture.Bind(0);
+  const GLuint old_id = texture.texture_id();
+  texture.Create(2, 2);
+  GLint active = 0;
+  glGetIntegerv(GL_ACTIVE_TEXTURE, &active);
+  TEST_CHECK_(active == GL_TEXTURE0,
+      "Create() bound to unit %d rather than 0",
+      static_cast<int>(active - GL_TEXTURE0));
+  GLint bound = 0;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+  TEST_CHECK_(static_cast<GLuint>(bound) == texture.texture_id(),
+      "after Create() unit 0 holds texture %d instead of %u (the old name "
+      "was %u, %s)", static_cast<int>(bound), texture.texture_id(), old_id,
+      old_id == texture.texture_id() ? "reused" : "not reused");
+
+  // The destructor: the name dies with the object and another object gets it.
+  GLuint dead_id = 0;
+  {
+    GlTexture2D short_lived;
+    short_lived.Create(1, 1);
+    short_lived.Bind(0);
+    dead_id = short_lived.texture_id();
+  }
+  GlTexture2D successor;
+  successor.Create(1, 1);
+  successor.Bind(0);
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+  TEST_CHECK_(static_cast<GLuint>(bound) == successor.texture_id(),
+      "after a texture died unit 0 holds %d instead of %u (the dead name "
+      "was %u, %s)", static_cast<int>(bound), successor.texture_id(),
+      dead_id, dead_id == successor.texture_id() ? "reused" : "not reused");
+}
+
+// The same story for framebuffers: a stale name in the cache and Create()
+// attaches the color texture to whatever framebuffer GL has bound, which
+// after glDeleteFramebuffers is the default one.
+void test_gl_framebuffer_forgets_a_deleted_name() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  GlTexture2D texture_a;
+  texture_a.Create(1, 1);
+  GlTexture2D texture_b;
+  texture_b.Create(1, 1);
+
+  // Create() on a live framebuffer.
+  GlFramebuffer framebuffer;
+  framebuffer.Create(texture_a);
+  framebuffer.Bind();
+  GLint bound_before = 0;
+  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound_before);
+  TEST_CHECK_(bound_before != 0, "the first Create() bound nothing");
+  framebuffer.Create(texture_b);
+  GLint bound_after = 0;
+  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound_after);
+  TEST_CHECK_(bound_after != 0,
+      "after the second Create() the default framebuffer is bound (the "
+      "first one was %d)", static_cast<int>(bound_before));
+  TEST_CHECK_(static_cast<GLuint>(BoundColorAttachmentName())
+          == texture_b.texture_id(),
+      "the bound framebuffer carries texture %d, not the new %u",
+      static_cast<int>(BoundColorAttachmentName()), texture_b.texture_id());
+  GlFramebuffer::BindDefault();
+
+  // The destructor.
+  {
+    GlFramebuffer short_lived;
+    short_lived.Create(texture_a);
+    short_lived.Bind();
+  }
+  GlFramebuffer successor;
+  successor.Create(texture_b);
+  glGetIntegerv(GL_FRAMEBUFFER_BINDING, &bound_after);
+  TEST_CHECK_(bound_after != 0,
+      "after a framebuffer died Create() left the default one bound");
+  TEST_CHECK_(static_cast<GLuint>(BoundColorAttachmentName())
+          == texture_b.texture_id(),
+      "the successor framebuffer carries texture %d, not %u",
+      static_cast<int>(BoundColorAttachmentName()), texture_b.texture_id());
+  GlFramebuffer::BindDefault();
+}
+
+// And for vertex buffers, where a false hit means SetData fills buffer 0.
+void test_gl_buffer_forgets_a_deleted_name() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  GlBuffer buffer;
+  buffer.Create();
+  buffer.Bind(GL_ARRAY_BUFFER);
+  const GLuint old_id = buffer.buffer_id();
+  buffer.Create();
+  buffer.Bind(GL_ARRAY_BUFFER);
+  GLint bound = 0;
+  glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &bound);
+  TEST_CHECK_(static_cast<GLuint>(bound) == buffer.buffer_id(),
+      "after Create() GL_ARRAY_BUFFER holds %d instead of %u (the old name "
+      "was %u, %s)", static_cast<int>(bound), buffer.buffer_id(), old_id,
+      old_id == buffer.buffer_id() ? "reused" : "not reused");
+
+  GLuint dead_id = 0;
+  {
+    GlBuffer short_lived;
+    short_lived.Create();
+    short_lived.Bind(GL_ARRAY_BUFFER);
+    dead_id = short_lived.buffer_id();
+  }
+  GlBuffer successor;
+  successor.Create();
+  successor.Bind(GL_ARRAY_BUFFER);
+  glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &bound);
+  TEST_CHECK_(static_cast<GLuint>(bound) == successor.buffer_id(),
+      "after a buffer died GL_ARRAY_BUFFER holds %d instead of %u (the dead "
+      "name was %u, %s)", static_cast<int>(bound), successor.buffer_id(),
+      dead_id, dead_id == successor.buffer_id() ? "reused" : "not reused");
+  GlBuffer::BindDefault(GL_ARRAY_BUFFER);
+}
+
+// The palette overloads of Font::Draw take the plain color from palete[0].
+// An empty palette used to be read anyway, which is a crash; now it means
+// white, and the text still has to appear.
+void test_font_draw_with_empty_palette() {
+  Sprite dot;
+  dot.Create(1, 1);
+  const_cast<Rgba*>(dot.RgbaData())[0] = Rgba(255, 255, 255, 255);
+  dot.UpdateOpaqueSpans();
+  Font font;
+  font.CreateEmpty(4, 5);
+  font.AddGlyph(static_cast<Ui32>('a'), 3, dot);
+
+  const std::vector<Rgba> empty_palette;
+  const std::vector<Rgba> red_palette(1, Rgba(255, 0, 0, 255));
+  const Rgba kWhite(255, 255, 255, 255);
+  const Rgba kRed(255, 0, 0, 255);
+  const Rgba kBlack(0, 0, 0, 255);
+
+  // Into a sprite.
+  Sprite target;
+  target.Create(16, 16);
+  target.Clear(kBlack);
+  font.Draw(target, "a", 8, 8, kTextOriginFirstBase, kTextAlignmentLeft,
+      kDrawBlendingModeColorize, kFilterNearest, empty_palette);
+  Si32 white_count = 0;
+  Si32 other_count = 0;
+  const Rgba *pixels = target.RgbaData();
+  const Si32 stride = target.StridePixels();
+  for (Si32 y = 0; y < target.Height(); ++y) {
+    for (Si32 x = 0; x < target.Width(); ++x) {
+      const Rgba p = pixels[x + y * stride];
+      if (p.rgba == kBlack.rgba) {
+        continue;
+      }
+      if (p.rgba == kWhite.rgba) {
+        ++white_count;
+      } else {
+        ++other_count;
+      }
+    }
+  }
+  TEST_CHECK_(white_count == 1 && other_count == 0,
+      "an empty palette drew %d white and %d other pixels instead of one "
+      "white glyph", white_count, other_count);
+
+  // Control: a palette with one entry paints with that entry, so the white
+  // above came from the empty palette and not from the blending mode.
+  target.Clear(kBlack);
+  font.Draw(target, "a", 8, 8, kTextOriginFirstBase, kTextAlignmentLeft,
+      kDrawBlendingModeColorize, kFilterNearest, red_palette);
+  Si32 red_count = 0;
+  for (Si32 y = 0; y < target.Height(); ++y) {
+    for (Si32 x = 0; x < target.Width(); ++x) {
+      if (pixels[x + y * stride].rgba == kRed.rgba) {
+        ++red_count;
+      }
+    }
+  }
+  TEST_CHECK_(red_count == 1, "a one-entry palette drew %d red pixels",
+      red_count);
+
+  // Onto the backbuffer, which is the other overload with the same history.
+  ResizeScreen(320, 200);
+  GetEngine()->GetBackbuffer().Clear(kBlack);
+  font.Draw("a", 8, 8, kTextOriginFirstBase, kTextAlignmentLeft,
+      kDrawBlendingModeColorize, kFilterNearest, empty_palette);
+  Sprite backbuffer = GetEngine()->GetBackbuffer();
+  white_count = 0;
+  other_count = 0;
+  for (Si32 y = 0; y < backbuffer.Height(); ++y) {
+    for (Si32 x = 0; x < backbuffer.Width(); ++x) {
+      const Rgba p = BackbufferPixel(Vec2Si32(x, y));
+      if (p.rgba == kBlack.rgba) {
+        continue;
+      }
+      if (p.rgba == kWhite.rgba) {
+        ++white_count;
+      } else {
+        ++other_count;
+      }
+    }
+  }
+  TEST_CHECK_(white_count == 1 && other_count == 0,
+      "on the backbuffer an empty palette drew %d white and %d other pixels "
+      "instead of one white glyph", white_count, other_count);
+}
+
+// Clone() has to carry the vertex and face counts over, not only the
+// buffers: Init() on the destination zeroes mNum, and a clone that reports
+// zero vertices is an empty mesh to everything that draws or measures it.
+void test_mesh_clone_keeps_counts_and_data() {
+  MeshVertexFormat format;
+  format.AddElement("vPosition", 3, kRMVEDT_Float);
+
+  Mesh source;
+  TEST_CHECK(source.Init(1, 8, &format, kRMVEDT_Polys, 1, 4));
+  source.AddVertex(0, 0.0f, 0.0f, 0.0f);
+  source.AddVertex(0, 1.0f, 0.0f, 0.0f);
+  source.AddVertex(0, 0.0f, 1.0f, 0.0f);
+  source.AddVertex(0, 0.0f, 0.0f, 1.0f);
+  source.AddFace(0, 0, 1, 2);
+  source.AddFace(0, 0, 2, 3);
+  TEST_CHECK(source.GetCurrentVertexCount(0) == 4);
+  TEST_CHECK(source.GetCurrentFaceCount(0) == 2);
+
+  Mesh clone;
+  TEST_CHECK(source.Clone(&clone));
+  TEST_CHECK_(clone.GetCurrentVertexCount(0) == 4,
+      "the clone reports %d vertices instead of 4",
+      clone.GetCurrentVertexCount(0));
+  TEST_CHECK_(clone.GetCurrentFaceCount(0) == 2,
+      "the clone reports %d faces instead of 2",
+      clone.GetCurrentFaceCount(0));
+
+  // The counts alone could be copied over an empty buffer, so read the
+  // geometry back as well.
+  const float *source_xyz = static_cast<const float*>(
+      source.GetVertexData(0, 3, 0));
+  const float *clone_xyz = static_cast<const float*>(
+      clone.GetVertexData(0, 3, 0));
+  TEST_CHECK_(source_xyz != nullptr && clone_xyz != nullptr,
+      "no vertex data to compare");
+  if (source_xyz != nullptr && clone_xyz != nullptr) {
+    TEST_CHECK_(clone_xyz[0] == 0.0f && clone_xyz[1] == 0.0f
+            && clone_xyz[2] == 1.0f,
+        "the fourth vertex of the clone is (%g, %g, %g), not (0, 0, 1)",
+        clone_xyz[0], clone_xyz[1], clone_xyz[2]);
+  }
+  const MeshFace *clone_faces = clone.mFaceData.mIndexArray[0].mBuffer;
+  TEST_CHECK_(clone_faces != nullptr, "no face data to compare");
+  if (clone_faces != nullptr) {
+    const MeshFace &face = clone_faces[1];
+    TEST_CHECK_(face.mIndex[0] == 0 && face.mIndex[1] == 2
+            && face.mIndex[2] == 3,
+        "the second face of the clone is (%d, %d, %d), not (0, 2, 3)",
+        face.mIndex[0], face.mIndex[1], face.mIndex[2]);
+  }
 }
 
 static void test_ortho_symmetric_corners(void) {
@@ -13114,6 +13554,14 @@ TEST_LIST = {
   {"Transform3F Inverse respects scale", test_transform3f_inverse_respects_scale},
   {"Sprite Reference zero-size source", test_sprite_reference_zero_size},
   {"HW sprite sub-region draws correctly", test_hw_sprite_subregion_draws_correctly},
+  {"GlProgram detaches shaders after link", test_gl_program_detaches_shaders_after_link},
+  {"UniformsTable overwrites a value", test_gl_uniforms_table_overwrites_a_value},
+  {"GlTexture2D bind hit still activates the slot", test_gl_texture2d_bind_hit_still_activates_the_slot},
+  {"GlTexture2D forgets a deleted name", test_gl_texture2d_forgets_a_deleted_name},
+  {"GlFramebuffer forgets a deleted name", test_gl_framebuffer_forgets_a_deleted_name},
+  {"GlBuffer forgets a deleted name", test_gl_buffer_forgets_a_deleted_name},
+  {"Font draws with an empty palette", test_font_draw_with_empty_palette},
+  {"Mesh Clone keeps counts and data", test_mesh_clone_keeps_counts_and_data},
   {"Quat matrix vs AxisAngle consistency", test_quat_matrix_vs_axis_angle},
   {"Rotation XYZ vs AxisAngle consistency", test_rotation_xyz_vs_axis_angle_consistency},
   {"Euler4 equals Rz*Ry*Rx", test_euler4_equals_composition},
