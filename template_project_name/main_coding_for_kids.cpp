@@ -1,8 +1,33 @@
+// A sandbox for teaching programming to kids, in the spirit of BASIC on a home
+// computer. The screen is 256x144 pixels, or 32x18 characters of an 8x8 font,
+// and the lesson is written in code.inc.h, which is included straight into
+// EasyMain below. This file is the "system": it provides the small commands a
+// lesson is written with, and nothing in it needs to be edited for a lesson.
+//
+// The commands are:
+//   Ink, Paper            the drawing and the background colors, by palette
+//                         index (see g_color_names) or by red, green, blue
+//   Plot, Draw, Circle,   pixel graphics with the current ink; Draw draws a
+//   Fill, Point           line from the last point, Point reads a pixel back
+//   Print, At, Cls, Show  the 8x8 character screen: Print writes at the cursor,
+//                         At moves the cursor, Cls clears with the paper color,
+//                         Show puts the frame on screen
+//   Input                 reads a line typed by the user at the cursor
+//   PixelPrint, PixelInput  the same with a tiny pixel font at any coordinates
+//   Screen, ScreenInk, ScreenPaper  read the character screen back
+//   Number                turns a typed line into a number
+//   SetCharacter          redefines an 8x8 character of the font
+//
+// Coordinates are backbuffer pixels with (0, 0) at the bottom-left corner and
+// y going up; character cells are counted the same way.
+
 #include "engine/arctic_pi.h"
 #include "engine/easy.h"
 #include "engine/unicode.h"
+#ifdef _MSC_VER
 #pragma warning( disable : 4244 )
-using namespace arctic;
+#endif
+using namespace arctic;  // NOLINT
 using std::string;
 
 Ui32 g_ink = 8;
@@ -246,50 +271,77 @@ void PixelPrint(double value) {
   PixelPrint(g_text_pos.x, g_text_pos.y, value);
 }
 
+/// @brief Draws the line being typed; Input and PixelInput differ in this only
+typedef void (*ShowInputLine)(const string &line);
+
+// Where the line being typed is shown, set by Input and PixelInput
+Si32 g_input_x = 0;
+Si32 g_input_y = 0;
+string g_input_prompt;
+Vec2Si32 g_input_prev_text_pos(0, 0);
+Vec2Si32 g_input_prev_cursor(0, 0);
+
+/// @brief Reads a line typed by the user, redrawing it with `show` every frame
+/// @param [in] show Draws the prompt and the line typed so far
+/// @return The line typed, without the Enter
+string ReadInputLine(ShowInputLine show) {
+  // The screen under the line is kept and put back before every redraw, so
+  // the line and the blinking cursor never pile up.
+  Sprite prev_backbuffer;
+  prev_backbuffer.Clone(GetEngine()->GetBackbuffer());
+  prev_backbuffer.ClearOpaqueSpans();
+  string input = "";
+  while (true) {
+    ShowFrame();
+    for (Si32 i = 0; i < InputMessageCount(); ++i) {
+      const InputMessage &msg = GetInputMessage(i);
+      if (msg.kind != arctic::InputMessage::kKeyboard
+          || msg.keyboard.key_state != 1) {
+        continue;
+      }
+      Ui32 key = msg.keyboard.key;
+      if (key == kKeyBackspace) {
+        if (!input.empty()) {
+          // A UTF-8 character is one lead byte and its continuation bytes
+          input.pop_back();
+          while (!input.empty() && (input.back() & 128) && (input.back() & 64)) {
+            input.pop_back();
+          }
+        }
+      } else if (key == kKeyEnter) {
+        Clear();
+        prev_backbuffer.Draw(0, 0, kDrawBlendingModeCopyRgba);
+        show(input);
+        ShowFrame();
+        return input;
+      } else if (msg.keyboard.characters[0]) {
+        input.append(msg.keyboard.characters);
+      }
+    }
+    Clear();
+    prev_backbuffer.Draw(0, 0, kDrawBlendingModeCopyRgba);
+    show(input + (std::fmod(Time(), 0.66) > 0.33 ? "_" : ""));
+  }
+}
+
+/// @brief Shows the line typed into PixelInput with the pixel font
+/// @param [in] line The line typed so far
+void ShowPixelInputLine(const string &line) {
+  g_text_pos = g_input_prev_text_pos;
+  PixelPrint(g_input_x, g_input_y, g_input_prompt + line);
+}
+
 /// @brief Gets text input from user at specified coordinates
 /// @param [in] x X-coordinate of the input position
 /// @param [in] y Y-coordinate of the input position
 /// @param [in] text Prompt text to display
 /// @return User input as string
 string PixelInput(Si32 x, Si32 y, string text) {
-  Sprite prev_backbuffer;
-  prev_backbuffer.Clone(GetEngine()->GetBackbuffer());
-  prev_backbuffer.ClearOpaqueSpans();
-  string input = "";
-  Vec2Si32 prev_text_pos = g_text_pos;
-  while(true) {
-    ShowFrame();
-    for (Si32 i = 0; i < InputMessageCount(); ++i) {
-      const InputMessage &msg = GetInputMessage(i);
-      if (msg.kind == arctic::InputMessage::kKeyboard) {
-        if (msg.keyboard.key_state == 1) {
-          Ui32 key = msg.keyboard.key;
-          if (key == kKeyBackspace) {
-            if (!input.empty()) {
-              input.pop_back();
-              while (!input.empty() && (input.back() & 128) && (input.back() & 64)) {
-                input.pop_back();
-              }
-            }
-          } else if (key == kKeyEnter) {
-            Clear();
-            g_text_pos = prev_text_pos;
-            prev_backbuffer.Draw(0, 0, kDrawBlendingModeCopyRgba);
-            PixelPrint(x, y, text + input);
-            return input;
-          } else {
-            if (msg.keyboard.characters[0]) {
-              input.append(msg.keyboard.characters);
-            }
-          }
-        }
-      }
-    }
-    Clear();
-    g_text_pos = prev_text_pos;
-    prev_backbuffer.Draw(0, 0, kDrawBlendingModeCopyRgba);
-    PixelPrint(x, y, text + input + (std::fmod(Time(), 0.66) > 0.33 ? "_" : "") );
-  }
+  g_input_x = x;
+  g_input_y = y;
+  g_input_prompt = text;
+  g_input_prev_text_pos = g_text_pos;
+  return ReadInputLine(ShowPixelInputLine);
 }
 
 /// @brief Gets text input from user at specified coordinates
@@ -379,7 +431,7 @@ string Screen(Si32 x, Si32 y) {
   data[0] = g_text_overlay[y*g_text_overlay_size.x+x].codepoint;
   data[1] = 0;
   return Utf32ToUtf8(data);
-};
+}
 
 /// @brief Gets the ink color index at specified screen coordinates
 /// @param [in] x X-coordinate on text screen
@@ -471,48 +523,18 @@ void Print(double value) {
   Print(buffer);
 }
 
-/// @brief Gets text input from user at specified coordinates
+/// @brief Shows the line typed into Input with the 8x8 font at the cursor
+/// @param [in] line The line typed so far
+void ShowCursorInputLine(const string &line) {
+  g_cursor = g_input_prev_cursor;
+  Print(line);
+}
+
+/// @brief Gets text input from user at the cursor position
 /// @return User input as string
 string Input() {
-  Sprite prev_backbuffer;
-  prev_backbuffer.Clone(GetEngine()->GetBackbuffer());
-  prev_backbuffer.ClearOpaqueSpans();
-  string input = "";
-  Vec2Si32 prev_cursor_pos = g_cursor;
-  while(true) {
-    ShowFrame();
-    for (Si32 i = 0; i < InputMessageCount(); ++i) {
-      const InputMessage &msg = GetInputMessage(i);
-      if (msg.kind == arctic::InputMessage::kKeyboard) {
-        if (msg.keyboard.key_state == 1) {
-          Ui32 key = msg.keyboard.key;
-          if (key == kKeyBackspace) {
-            if (!input.empty()) {
-              input.pop_back();
-              while (!input.empty() && (input.back() & 128) && (input.back() & 64)) {
-                input.pop_back();
-              }
-            }
-          } else if (key == kKeyEnter) {
-            Clear();
-            g_cursor = prev_cursor_pos;
-            prev_backbuffer.Draw(0, 0, kDrawBlendingModeCopyRgba);
-            Print(input);
-            ShowFrame();
-            return input;
-          } else {
-            if (msg.keyboard.characters[0]) {
-              input.append(msg.keyboard.characters);
-            }
-          }
-        }
-      }
-    }
-    Clear();
-    g_cursor = prev_cursor_pos;
-    prev_backbuffer.Draw(0, 0, kDrawBlendingModeCopyRgba);
-    Print(input + (std::fmod(Time(), 0.66) > 0.33 ? "_" : "") );
-  }
+  g_input_prev_cursor = g_cursor;
+  return ReadInputLine(ShowCursorInputLine);
 }
 
 /// @brief Clears the screen with current paper color

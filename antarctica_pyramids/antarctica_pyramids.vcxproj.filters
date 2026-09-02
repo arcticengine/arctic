@@ -2,6 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ui.cpp" />
+    <ClCompile Include="sfx.cpp" />
+    <ClCompile Include="game.cpp" />
     <ClCompile Include="..\engine\arctic_input.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -27,6 +30,36 @@
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\engine.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_world.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\collide_soup.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_debug.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\mesh_fbx.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\gl_texture_cache.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\sphere_vs_triangle.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\model.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_contact.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_sphere_body.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_solver.cpp">
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\arctic_platform_pi_video.cpp">
@@ -200,6 +233,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ui.h" />
+    <ClInclude Include="sfx.h" />
+    <ClInclude Include="game.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="..\engine\arctic_input.h">
       <Filter>engine</Filter>
@@ -238,6 +274,39 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_sphere_body.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_world.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_solver.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_contact.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\collide_soup.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\gl_texture_cache.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\mesh_fbx.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\sphere_vs_triangle.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\model.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_types.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_debug.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\stb_image.h">

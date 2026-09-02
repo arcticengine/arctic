@@ -2,6 +2,19 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="test_platform.cpp" />
+    <ClCompile Include="test_gl.cpp" />
+    <ClCompile Include="test_sound.cpp" />
+    <ClCompile Include="test_formats.cpp" />
+    <ClCompile Include="test_random.cpp" />
+    <ClCompile Include="test_sprite.cpp" />
+    <ClCompile Include="test_mesh.cpp" />
+    <ClCompile Include="test_input.cpp" />
+    <ClCompile Include="test_gui.cpp" />
+    <ClCompile Include="test_unicode.cpp" />
+    <ClCompile Include="test_math.cpp" />
+    <ClCompile Include="test_font.cpp" />
+    <ClCompile Include="test_physics.cpp" />
     <ClCompile Include="..\engine\arctic_input.cpp">
       <Filter>engine</Filter>
     </ClCompile>
@@ -27,6 +40,27 @@
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\engine.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_world.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\collide_soup.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_debug.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\sphere_vs_triangle.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_contact.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_sphere_body.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\physics_solver.cpp">
       <Filter>engine</Filter>
     </ClCompile>
     <ClCompile Include="..\engine\mesh_fbx.cpp">
@@ -209,6 +243,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="test_helpers.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="..\engine\arctic_input.h">
       <Filter>engine</Filter>
@@ -247,6 +282,30 @@
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\engine.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_sphere_body.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_world.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_solver.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_contact.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\collide_soup.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\sphere_vs_triangle.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_types.h">
+      <Filter>engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\physics_debug.h">
       <Filter>engine</Filter>
     </ClInclude>
     <ClInclude Include="..\engine\gl_texture_cache.h">

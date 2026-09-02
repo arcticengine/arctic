@@ -254,15 +254,32 @@ bool ReadLineWithin(ConnectionSocket *socket, std::string *in_out_inbox,
   return false;
 }
 
+// The server may still be starting when the client runs, which is exactly what
+// happens when the smoke test launches both at once, so a refused connection
+// is retried for a few seconds with a fresh socket every time.
+bool ConnectWithin(ConnectionSocket *socket, uint16_t port, double seconds) {
+  const double deadline = Time() + seconds;
+  while (true) {
+    if (!socket->IsValid()) {
+      std::printf("No socket: %s\n", socket->GetLastError().c_str());
+      return false;
+    }
+    if (socket->Connect("127.0.0.1", port) == SocketConnectResult::kSocketOk) {
+      return true;
+    }
+    if (Time() >= deadline) {
+      std::printf("Port %d refused the connection: %s\n",
+          static_cast<int>(port), socket->GetLastError().c_str());
+      return false;
+    }
+    Sleep(0.05);
+    *socket = ConnectionSocket(AddressFamily::kIpV4, SocketProtocol::kTcp);
+  }
+}
+
 Si32 RunClient(const Options &options) {
   ConnectionSocket socket(AddressFamily::kIpV4, SocketProtocol::kTcp);
-  if (!socket.IsValid()) {
-    std::printf("No socket: %s\n", socket.GetLastError().c_str());
-    return 1;
-  }
-  if (socket.Connect("127.0.0.1", options.port) != SocketConnectResult::kSocketOk) {
-    std::printf("Port %d refused the connection: %s\n",
-        static_cast<int>(options.port), socket.GetLastError().c_str());
+  if (!ConnectWithin(&socket, options.port, 5.0)) {
     return 1;
   }
   if (socket.SetSoNonblocking(true) != SocketResult::kSocketOk) {

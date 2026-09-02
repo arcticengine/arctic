@@ -9,12 +9,13 @@ stages:
 - test
 - deploy
 - fuzz
-build_wizard:
-  stage: test
-  before_script:
+.build_deps: &build_deps
   - apt-get update --yes
   - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
-    libglfw3-dev libgles2-mesa-dev
+    libglfw3-dev libgles2-mesa-dev xvfb
+build_wizard:
+  stage: test
+  before_script: *build_deps
   script:
   - cd wizard
   - cmake .
@@ -24,36 +25,41 @@ build_wizard:
   - cd ..
 build_ap:
   stage: test
-  before_script:
-  - apt-get update --yes
-  - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
-    libglfw3-dev libgles2-mesa-dev
+  before_script: *build_deps
   script:
   - cd antarctica_pyramids
   - cmake .
   - make all
+  - xvfb-run ctest --output-on-failure
   - cmake -DCMAKE_BUILD_TYPE=Debug .
   - make all
+  - xvfb-run ctest --output-on-failure
   - cd ..
-build_filetest:
+build_benchmark:
   stage: test
-  before_script:
-  - apt-get update --yes
-  - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
-    libglfw3-dev libgles2-mesa-dev
+  before_script: *build_deps
   script:
-  - cd filetest
+  - cd benchmark
   - cmake .
   - make all
   - cmake -DCMAKE_BUILD_TYPE=Debug .
   - make all
   - cd ..
+build_headless_server:
+  stage: test
+  before_script: *build_deps
+  script:
+  - cd headless_server
+  - cmake .
+  - make all
+  - ctest --output-on-failure
+  - cmake -DCMAKE_BUILD_TYPE=Debug .
+  - make all
+  - ctest --output-on-failure
+  - cd ..
 build_tests:
   stage: test
-  before_script:
-  - apt-get update --yes
-  - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
-    libglfw3-dev libgles2-mesa-dev
+  before_script: *build_deps
   script:
   - cd tests
   - cmake .
@@ -63,34 +69,31 @@ build_tests:
   - cd ..
 run_tests:
   stage: test
-  before_script:
-  - apt-get update --yes
-  - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
-    libglfw3-dev libgles2-mesa-dev xvfb
+  before_script: *build_deps
   script:
   - cd tests
   - cmake .
   - make all
-  - xvfb-run ./tests
+  - xvfb-run ctest --output-on-failure
   - cmake -DCMAKE_BUILD_TYPE=Debug .
   - make all
-  - xvfb-run ./tests
+  - xvfb-run ctest --output-on-failure
   - cd ..
-create_project:
+# One project per template kind of wizard/main.cpp (kTemplateKinds), created
+# with the console wizard and built. Keep the list in step with the wizard.
+create_templates:
   stage: test
-  before_script:
-  - apt-get update --yes
-  - apt-get install --yes libasound2-dev libglu1-mesa-dev freeglut3-dev
-    libglfw3-dev libgles2-mesa-dev xvfb
+  before_script: *build_deps
   script:
   - cd wizard
   - cmake .
   - make all
-  - xvfb-run ./wizard create test_project
-  - cd ../../test_project
-  - cmake .
-  - make all
   - cd ..
+  - |
+    for kind in tetramino hello snake kids conquest des cube gui; do
+      ./wizard/wizard create test_${kind} --template ${kind} || exit 1
+      (cd ../test_${kind} && cmake . && make all) || exit 1
+    done
 include:
 - template: Coverage-Fuzzing.gitlab-ci.yml
 - template: Security/SAST.gitlab-ci.yml

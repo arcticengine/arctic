@@ -176,7 +176,7 @@ struct Channel {
 struct BufferedOutput {
   Si64 used_memory = 0;                   ///< Current buffer memory usage
   Si64 sent_bytes = 0;                    ///< Total bytes sent
-  Si64 drpooed_bytes = 0;                 ///< Total bytes dropped
+  Si64 dropped_bytes = 0;                 ///< Total bytes dropped
   Channel* out_channel = nullptr;         ///< Output channel
   std::deque<Packet> out_buffer;          ///< Output packet buffer
 
@@ -184,7 +184,7 @@ struct BufferedOutput {
     while (used_memory > limit) {
       Packet &packet = out_buffer.back();
       used_memory -= packet.size_bytes;
-      drpooed_bytes += packet.size_bytes;
+      dropped_bytes += packet.size_bytes;
       out_buffer.pop_back();
     }
   }
@@ -562,14 +562,35 @@ Si32 AddSymmetricChannels(Node *a, Node *b, double delay, double loss_probabilit
   return idx;
 }
 
-/// @brief Positions clients evenly on screen
+/// @brief Positions active clients evenly on screen, server and router above their middle
 void PositionClients() {
-  Si32 client_count = (Si32)g_clients.size();
-  for (Si32 i = 0; i < client_count; ++i) {
-    Client &client = g_clients[i];
-    client.screen_pos = Vec2Si32(40+1900*(i)/(client_count), 200);
+  Si32 active_count = 0;
+  for (Si32 i = 0; i < (Si32)g_clients.size(); ++i) {
+    if (g_clients[i].is_active) {
+      active_count++;
+    }
   }
-  Si32 center_x = (g_clients[0].screen_pos.x + g_clients[client_count-1].screen_pos.x)/2;
+  if (active_count == 0) {
+    g_server.screen_pos.x = 1920/2;
+    g_router.screen_pos.x = 1920/2;
+    return;
+  }
+  Si32 first_x = 0;
+  Si32 last_x = 0;
+  Si32 active_idx = 0;
+  for (Si32 i = 0; i < (Si32)g_clients.size(); ++i) {
+    Client &client = g_clients[i];
+    if (!client.is_active) {
+      continue;
+    }
+    client.screen_pos = Vec2Si32(40+1900*active_idx/active_count, 200);
+    if (active_idx == 0) {
+      first_x = client.screen_pos.x;
+    }
+    last_x = client.screen_pos.x;
+    active_idx++;
+  }
+  Si32 center_x = (first_x + last_x)/2;
   g_server.screen_pos.x = center_x;
   g_router.screen_pos.x = center_x;
 }
@@ -662,7 +683,7 @@ void UpdateModel() {
 /// - Performance statistics
 void DrawModel() {
   char text[128];
-  // chennel lines
+  // channel lines
   Si32 channel_count = (Si32)g_channels.size();
   for (Si32 i = 0; i < channel_count; ++i) {
     Channel &channel = g_channels[i];
@@ -699,7 +720,7 @@ void DrawModel() {
   snprintf(text, sizeof(text), u8"Server\nBuffered: %f MiB\nSent: %f MiB\nDropped: %f MiB",
            g_server.output.used_memory * (1.0 / 1024.0 / 1024.0),
            g_server.output.sent_bytes * (1.0 / 1024.0 / 1024.0),
-           g_server.output.drpooed_bytes * (1.0 / 1024.0 / 1024.0));
+           g_server.output.dropped_bytes * (1.0 / 1024.0 / 1024.0));
   g_font.Draw(text, g_server.screen_pos.x - 20, g_server.screen_pos.y + 20, kTextOriginBottom);
 
   snprintf(text, sizeof(text), u8"Router\nBuffered: %f MiB\nDropped: %f MiB",
@@ -793,6 +814,16 @@ void SlowDown() {
   g_t_mult = std::max(1.0 / 128.0, g_t_mult / 2.0);
 }
 
+/// @brief Reboots the server, the clients reconnect
+void RebootServer() {
+  g_server.Reboot();
+}
+
+/// @brief Reboots the router, the traffic through it is lost meanwhile
+void RebootRouter() {
+  g_router.Reboot();
+}
+
 /// @brief Toggles server buffer limit
 void LimitServerBuffer() {
   if (g_checkbox_limit_server_buffer->IsChecked()) {
@@ -843,7 +874,7 @@ void EasyMain() {
   button->SetText("Reboot Server");
   button->SetPos(Vec2Si32(16, 935-80*1));
   button->SetWidth(200);
-  button->OnButtonClick = std::bind(&Server::Reboot, &g_server);
+  button->OnButtonClick = RebootServer;
   g_gui->AddChild(button);
 
   g_checkbox_limit_server_buffer = gf.MakeCheckbox();
@@ -856,7 +887,7 @@ void EasyMain() {
   button->SetText("Reboot Router");
   button->SetPos(Vec2Si32(16, 935-80*2));
   button->SetWidth(200);
-  button->OnButtonClick = std::bind(&Router::Reboot, &g_router);
+  button->OnButtonClick = RebootRouter;
   g_gui->AddChild(button);
 
   button = gf.MakeButton();
@@ -885,7 +916,9 @@ void EasyMain() {
   double rt1 = Time();
   double t_target = 0.0;
 
-  while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
+  // Closing the window ends the program by itself, Escape is this program's
+  // own convention.
+  while (!IsKeyDownward(kKeyEscape)) {
     // Update simulation time
     rt0 = rt1;
     rt1 = Time();

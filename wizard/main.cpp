@@ -92,7 +92,8 @@ enum ProjectKind {
   kProjectKindCodingForKids = 3,
   kProjectKindConquest = 4,
   kProjectKindDiscreteEventSimButton = 5,
-  kProjectKind3DCube = 6
+  kProjectKind3DCube = 6,
+  kProjectKindGui = 7
 };
 
 enum MainMode {
@@ -125,6 +126,7 @@ const TemplateKind kTemplateKinds[] = {
   {"des", kProjectKindDiscreteEventSimButton,
     "discrete-event simulator with a GUI"},
   {"cube", kProjectKind3DCube, "spinning 3d cube, uses the hardware renderer"},
+  {"gui", kProjectKindGui, "a panel of widgets over a clickable world"},
 };
 
 // Xcode injects "-NSDocumentRevisionsDebugMode YES" when the bundle is Run
@@ -1006,7 +1008,7 @@ bool GetProjectKind() {
   UpdateResolution();
 
   std::shared_ptr<Panel> box(new Panel(0, Vec2Si32(0, 0),
-    Vec2Si32(640, 480+64*3), 0, g_border.DrawExternalSize(Vec2Si32(640, 480+64*3))));
+    Vec2Si32(640, 480+64*4), 0, g_border.DrawExternalSize(Vec2Si32(640, 480+64*4))));
   const Ui64 kTetraminoButton = 1;
   const Ui64 kHelloButton = 2;
   const Ui64 kSnakeButton = 3;
@@ -1014,6 +1016,7 @@ bool GetProjectKind() {
   const Ui64 kConquestButton = 5;
   const Ui64 kDiscreteEventSimButton = 6;
   const Ui64 k3DCubeButton = 7;
+  const Ui64 kGuiButton = 8;
   const Ui64 kExitButton = 100;
 
   const char *welcome = (const char *)u8"The Snow Wizard\n\n"
@@ -1025,7 +1028,7 @@ bool GetProjectKind() {
     0, Vec2Si32(24, y), Vec2Si32(box->GetSize().x, 0),
     0, g_font, kTextOriginTop, g_palete, welcome, kTextAlignmentLeft));
   box->AddChild(textbox);
-  y = 8 + 16 + 64 + 64 + 64 + 64 + 64 + 64 + 64;
+  y = 8 + 16 + 64 + 64 + 64 + 64 + 64 + 64 + 64 + 64;
   std::shared_ptr<Button> tetramino_button = MakeButton(
     kTetraminoButton, Vec2Si32(32, y), kKeyR,
     1, "Tet\001r\002amino game project", Vec2Si32(box->GetSize().x - 64, 48));
@@ -1067,6 +1070,12 @@ bool GetProjectKind() {
       Vec2Si32(box->GetSize().x - 64, 48));
     box->AddChild(cube_3d_button);
   y -= 64;
+  std::shared_ptr<Button> gui_button = MakeButton(
+      kGuiButton, Vec2Si32(32, y), kKeyG,
+      6, "\001G\002UI widgets project",
+      Vec2Si32(box->GetSize().x - 64, 48));
+    box->AddChild(gui_button);
+  y -= 64;
   std::shared_ptr<Button> exit_button = MakeButton(
     kExitButton, Vec2Si32(32, y), kKeyE,
     100, "\001E\002xit",
@@ -1095,6 +1104,9 @@ bool GetProjectKind() {
     return true;
   } else if (action == k3DCubeButton) {
     g_project_kind = kProjectKind3DCube;
+    return true;
+  } else if (action == kGuiButton) {
+    g_project_kind = kProjectKindGui;
     return true;
   }
   return false;
@@ -1681,7 +1693,8 @@ bool ShowProgress() {
         } else if (g_project_kind == kProjectKindTetramino) {
           files.push_back("data/block_1.tga");
           files.push_back("data/block_2.tga");
-        } else if (g_project_kind == kProjectKindDiscreteEventSimButton) {
+        } else if (g_project_kind == kProjectKindDiscreteEventSimButton
+            || g_project_kind == kProjectKindGui) {
           files.push_back("data/button_down.wav");
           files.push_back("data/button_up.wav");
           files.push_back("data/gui_atlas.tga");
@@ -1743,6 +1756,9 @@ bool ShowProgress() {
             break;
           case kProjectKind3DCube:
             PatchAndCopyTemplateFile("main_3d_cube.cpp", "main.cpp");
+            break;
+          case kProjectKindGui:
+            PatchAndCopyTemplateFile("main_gui.cpp", "main.cpp");
             break;
           default:
           case kProjectKindHello:

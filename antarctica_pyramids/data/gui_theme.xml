@@ -1,0 +1,70 @@
+<gui_texture_atlas path="gui_atlas.xml" />
+
+<panel_background path="panel_border.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
+<button_normal path="button_normal.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
+<button_down path="button_down.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
+<button_hovered path="button_hover.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
+<button_disabled path="button_disabled.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
+
+<button_down_sound path="button_down.wav" />
+<button_up_sound path="button_up.wav" />
+
+<text_font path="arctic_one_bmf.fnt" />
+<text_palete>
+  <color r="255" g="255" b="255" />
+  <color r="128" g="255" b="128" />
+</text_palete>
+
+
+<progressbar_incomplete path="progressbar_incomplete.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
+<progressbar_complete path="progressbar_complete.tga" border="11" is_x_scaleable="true" is_y_scaleable="true" />
+
+<editbox_font path="arctic_one_bmf.fnt" />
+<editbox_normal path="editbox_normal.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+<editbox_focused path="editbox_hover.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+
+<h_scrollbar_normal_background path="h_scroll_bg_normal.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+<h_scrollbar_focused_background path="h_scroll_bg_hover.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+<h_scrollbar_disabled_background path="h_scroll_bg_disabled.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+
+
+<h_scrollbar_normal_button_dec path="h_scroll_dec_normal.tga" />
+<h_scrollbar_focused_button_dec path="h_scroll_dec_hover.tga" />
+<h_scrollbar_down_button_dec path="h_scroll_dec_down.tga" />
+<h_scrollbar_disabled_button_dec path="h_scroll_dec_disabled.tga" />
+<h_scrollbar_normal_button_inc path="h_scroll_inc_normal.tga" />
+<h_scrollbar_focused_button_inc path="h_scroll_inc_hover.tga" />
+<h_scrollbar_down_button_inc path="h_scroll_inc_down.tga" />
+<h_scrollbar_disabled_button_inc path="h_scroll_inc_disabled.tga" />
+<h_scrollbar_normal_button_cur path="h_scroll_cur_normal.tga" />
+<h_scrollbar_focused_button_cur path="h_scroll_cur_hover.tga" />
+<h_scrollbar_down_button_cur path="h_scroll_cur_down.tga" />
+<h_scrollbar_disabled_button_cur path="h_scroll_cur_disabled.tga" />
+
+<v_scrollbar_normal_background path="v_scroll_bg_normal.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+<v_scrollbar_focused_background path="v_scroll_bg_hover.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+<v_scrollbar_disabled_background path="v_scroll_bg_disabled.tga" border="9" is_x_scaleable="true" is_y_scaleable="true" />
+
+<v_scrollbar_normal_button_dec path="v_scroll_dec_normal.tga" />
+<v_scrollbar_focused_button_dec path="v_scroll_dec_hover.tga" />
+<v_scrollbar_down_button_dec path="v_scroll_dec_down.tga" />
+<v_scrollbar_disabled_button_dec path="v_scroll_dec_disabled.tga" />
+<v_scrollbar_normal_button_inc path="v_scroll_inc_normal.tga" />
+<v_scrollbar_focused_button_inc path="v_scroll_inc_hover.tga" />
+<v_scrollbar_down_button_inc path="v_scroll_inc_down.tga" />
+<v_scrollbar_disabled_button_inc path="v_scroll_inc_disabled.tga" />
+<v_scrollbar_normal_button_cur path="v_scroll_cur_normal.tga" />
+<v_scrollbar_focused_button_cur path="v_scroll_cur_hover.tga" />
+<v_scrollbar_down_button_cur path="v_scroll_cur_down.tga" />
+<v_scrollbar_disabled_button_cur path="v_scroll_cur_disabled.tga" />
+
+<checkbox_clear_normal path="checkbox_clear_normal.tga" />
+<checkbox_checked_normal path="checkbox_checked_normal.tga" />
+<checkbox_clear_down path="checkbox_clear_down.tga" />
+<checkbox_checked_down path="checkbox_checked_down.tga" />
+<checkbox_clear_hovered path="checkbox_clear_hover.tga" />
+<checkbox_checked_hovered path="checkbox_checked_hover.tga" />
+<checkbox_clear_disabled path="checkbox_clear_disabled.tga" />
+<checkbox_checked_disabled path="checkbox_checked_disabled.tga" />
+<checkbox_down_sound path="button_down.wav" />
+<checkbox_up_sound path="button_up.wav" />

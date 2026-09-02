@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Format:
+n  => name of the sprite
+x  => sprite x pos in texture
+y  => sprite y pos in texture
+w  => sprite width (may be trimmed)
+h  => sprite height (may be trimmed)
+-->
+<TextureAtlas imagePath="gui_atlas.tga" width="252" height="252">
+    <sprite n="button_disabled.tga" x="0" y="128" w="36" h="36"/>
+    <sprite n="button_down.tga" x="0" y="164" w="36" h="36"/>
+    <sprite n="button_hover.tga" x="0" y="200" w="36" h="36"/>
+    <sprite n="button_normal.tga" x="36" y="128" w="36" h="36"/>
+    <sprite n="checkbox_checked_disabled.tga" x="36" y="164" w="36" h="36"/>
+    <sprite n="checkbox_checked_down.tga" x="36" y="200" w="36" h="36"/>
+    <sprite n="checkbox_checked_hover.tga" x="72" y="128" w="36" h="36"/>
+    <sprite n="checkbox_checked_normal.tga" x="72" y="164" w="36" h="36"/>
+    <sprite n="checkbox_clear_disabled.tga" x="72" y="200" w="36" h="36"/>
+    <sprite n="checkbox_clear_down.tga" x="108" y="128" w="36" h="36"/>
+    <sprite n="checkbox_clear_hover.tga" x="108" y="164" w="36" h="36"/>
+    <sprite n="checkbox_clear_normal.tga" x="108" y="200" w="36" h="36"/>
+    <sprite n="editbox_hover.tga" x="144" y="0" w="36" h="36"/>
+    <sprite n="editbox_normal.tga" x="180" y="0" w="36" h="36"/>
+    <sprite n="h_scroll_bg_disabled.tga" x="128" y="72" w="27" h="27"/>
+    <sprite n="h_scroll_bg_hover.tga" x="128" y="99" w="27" h="27"/>
+    <sprite n="h_scroll_bg_normal.tga" x="164" y="36" w="27" h="27"/>
+    <sprite n="h_scroll_cur_disabled.tga" x="191" y="36" w="27" h="27"/>
+    <sprite n="h_scroll_cur_down.tga" x="218" y="36" w="27" h="27"/>
+    <sprite n="h_scroll_cur_hover.tga" x="164" y="63" w="27" h="27"/>
+    <sprite n="h_scroll_cur_normal.tga" x="191" y="63" w="27" h="27"/>
+    <sprite n="h_scroll_dec_disabled.tga" x="218" y="63" w="27" h="27"/>
+    <sprite n="h_scroll_dec_down.tga" x="155" y="90" w="27" h="27"/>
+    <sprite n="h_scroll_dec_hover.tga" x="182" y="90" w="27" h="27"/>
+    <sprite n="h_scroll_dec_normal.tga" x="209" y="90" w="27" h="27"/>
+    <sprite n="h_scroll_inc_disabled.tga" x="155" y="117" w="27" h="27"/>
+    <sprite n="h_scroll_inc_down.tga" x="182" y="117" w="27" h="27"/>
+    <sprite n="h_scroll_inc_hover.tga" x="209" y="117" w="27" h="27"/>
+    <sprite n="h_scroll_inc_normal.tga" x="144" y="144" w="27" h="27"/>
+    <sprite n="panel_border.tga" x="0" y="0" w="128" h="128"/>
+    <sprite n="progressbar_complete.tga" x="216" y="0" w="36" h="36"/>
+    <sprite n="progressbar_incomplete.tga" x="128" y="36" w="36" h="36"/>
+    <sprite n="v_scroll_bg_disabled.tga" x="144" y="171" w="27" h="27"/>
+    <sprite n="v_scroll_bg_hover.tga" x="144" y="198" w="27" h="27"/>
+    <sprite n="v_scroll_bg_normal.tga" x="144" y="225" w="27" h="27"/>
+    <sprite n="v_scroll_cur_disabled.tga" x="171" y="144" w="27" h="27"/>
+    <sprite n="v_scroll_cur_down.tga" x="198" y="144" w="27" h="27"/>
+    <sprite n="v_scroll_cur_hover.tga" x="225" y="144" w="27" h="27"/>
+    <sprite n="v_scroll_cur_normal.tga" x="171" y="171" w="27" h="27"/>
+    <sprite n="v_scroll_dec_disabled.tga" x="171" y="198" w="27" h="27"/>
+    <sprite n="v_scroll_dec_down.tga" x="171" y="225" w="27" h="27"/>
+    <sprite n="v_scroll_dec_hover.tga" x="198" y="171" w="27" h="27"/>
+    <sprite n="v_scroll_dec_normal.tga" x="225" y="171" w="27" h="27"/>
+    <sprite n="v_scroll_inc_disabled.tga" x="198" y="198" w="27" h="27"/>
+    <sprite n="v_scroll_inc_down.tga" x="198" y="225" w="27" h="27"/>
+    <sprite n="v_scroll_inc_hover.tga" x="225" y="198" w="27" h="27"/>
+    <sprite n="v_scroll_inc_normal.tga" x="225" y="225" w="27" h="27"/>
+</TextureAtlas>

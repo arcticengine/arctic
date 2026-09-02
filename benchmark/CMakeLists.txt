@@ -1,3 +1,15 @@
+# =============================================================================
+# How to build (read first)
+# =============================================================================
+# This file uses paths relative to the project folder (e.g. ../engine,
+# ./data). Configure and build from the directory that contains THIS file so
+# those paths resolve as intended. A separate build/ subdirectory will result
+# in a failed build.
+#
+# Always build from this directory:
+#   cmake . && make -j 8
+# =============================================================================
+
 
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 ################### Variables. ####################
@@ -49,9 +61,14 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 ############## Define Project. ###############
 # ---- This the main options of project ---- #
 ##############################################
+IF (EMSCRIPTEN)
+  unset(APPLE)
+ELSE (EMSCRIPTEN)
+ENDIF (EMSCRIPTEN)
 
 project(${PROJECT_NAME} CXX)
 ENABLE_LANGUAGE(C)
+
 
 IF (APPLE)
   FIND_LIBRARY(AUDIOTOOLBOX AudioToolbox)
@@ -63,25 +80,34 @@ IF (APPLE)
   FIND_LIBRARY(AVFOUNDATION AVFoundation)
   FIND_LIBRARY(COREVIDEO CoreVideo)
   FIND_LIBRARY(COREMEDIA CoreMedia)
+  # Keychain access: engine/httplib.h reads the trusted roots from there once
+  # HTTPS is enabled below.
+  FIND_LIBRARY(SECURITY Security)
 ELSE (APPLE)
-  # Sound is optional: a machine without the ALSA headers, a container, a build
-  # bot, all of them build and run, only without a sound of any kind. That has to
-  # be said out loud here and at run time, or silence looks like a bug in the
-  # program.
-  find_package(ALSA)
-  if (NOT ALSA_FOUND)
-    add_definitions(-DARCTIC_NO_ALSA)
-    message(WARNING "ALSA was not found: the sound player is built as a stub and"
-      " nothing will be audible. Install the ALSA headers to get sound"
-      " (apt install libasound2-dev).")
-  endif ()
+
+  IF (EMSCRIPTEN)
+  ELSE (EMSCRIPTEN)
+    # Sound is optional: a machine without the ALSA headers, a container, a build
+    # bot, all of them build and run, only without a sound of any kind.
+    find_package(ALSA)
+    if (NOT ALSA_FOUND)
+      add_definitions(-DARCTIC_NO_ALSA)
+      message(WARNING "ALSA was not found: the sound player is built as a stub and"
+        " nothing will be audible. Install the ALSA headers to get sound"
+        " (apt install libasound2-dev).")
+    endif ()
+    find_package(X11 REQUIRED)
+    find_package(PkgConfig QUIET)
+    if (PkgConfig_FOUND)
+      pkg_check_modules(GSTREAMER QUIET
+        gstreamer-1.0
+        gstreamer-app-1.0
+        gstreamer-video-1.0)
+    endif()
+  ENDIF (EMSCRIPTEN)
 
   # Two ways to draw on Linux: desktop OpenGL through GLX, and OpenGL ES through
-  # EGL. Both draw into an X11 window, so X11 is needed either way. The choice used
-  # to fall to ES/EGL as soon as the GLES headers happened to be installed, which
-  # sent a desktop with libgles2-mesa-dev on it down the Raspberry Pi path; now GLX
-  # wins unless the machine is a Pi or has no desktop OpenGL at all.
-  # -DARCTIC_GRAPHICS=glx or =gles settles it by hand.
+  # EGL. Both draw into an X11 window, so X11 is needed either way. 
   set(ARCTIC_GRAPHICS "auto" CACHE STRING "Graphics backend: auto, glx or gles")
   set_property(CACHE ARCTIC_GRAPHICS PROPERTY STRINGS auto glx gles)
 
@@ -142,16 +168,36 @@ ELSE (APPLE)
     find_package(OpenGL REQUIRED)
   ENDIF (NOT EGL_MODE)
 
-  find_package(X11 REQUIRED)
   find_package(Threads REQUIRED)
-  find_package(PkgConfig QUIET)
-  if (PkgConfig_FOUND)
-    pkg_check_modules(GSTREAMER QUIET
-      gstreamer-1.0
-      gstreamer-app-1.0
-      gstreamer-video-1.0)
-  endif()
 ENDIF (APPLE)
+
+# HTTPS for engine/httplib.h is optional, so OpenSSL is looked up but never
+# required: with it the HTTP client and server speak TLS, without it they are
+# limited to plain HTTP and nothing else in the engine is affected. Emscripten is
+# skipped because the browser terminates TLS itself.
+IF (NOT EMSCRIPTEN)
+  IF (APPLE AND NOT OPENSSL_ROOT_DIR)
+    # Homebrew installs OpenSSL outside the default search path, so hint the
+    # common locations before find_package.
+    foreach(cand /opt/homebrew/opt/openssl@3 /usr/local/opt/openssl@3
+                 /opt/homebrew/opt/openssl /usr/local/opt/openssl)
+      if(EXISTS "${cand}")
+        set(OPENSSL_ROOT_DIR "${cand}")
+        break()
+      endif()
+    endforeach()
+  ENDIF ()
+  find_package(OpenSSL QUIET)
+  if (OPENSSL_FOUND)
+    message(STATUS "OpenSSL found: httplib HTTPS enabled.")
+    add_definitions(-DCPPHTTPLIB_OPENSSL_SUPPORT)
+  else ()
+    message(STATUS "OpenSSL not found: httplib is limited to plain HTTP. "
+                   "Install OpenSSL (libssl-dev / brew install openssl) to "
+                   "enable HTTPS.")
+  endif ()
+ENDIF (NOT EMSCRIPTEN)
+
 
 
 # Definition of Macros
@@ -162,17 +208,24 @@ IF (APPLE)
     -DGL_SILENCE_DEPRECATION
   )
 ELSE (APPLE)
-	IF (EGL_MODE)
-    #only for es egl
+  IF (EMSCRIPTEN)
     add_definitions(
-       -DPLATFORM_RPI 
+      -DPLATFORM_WEB 
     )
-  ELSE (EGL_MODE)
-    #only for opengl glx
-    add_definitions(
-       -DPLATFORM_LINUX
-    )
-  ENDIF (EGL_MODE)
+  ELSE (EMSCRIPTEN)
+    IF (EGL_MODE)
+      #only for es egl
+      add_definitions(
+         -DPLATFORM_RPI 
+      )
+    ELSE (EGL_MODE)
+      #only for opengl glx
+      add_definitions(
+         -DPLATFORM_LINUX
+      )
+    ENDIF (EGL_MODE)
+  ENDIF (EMSCRIPTEN)
+  
   add_definitions(
    -DGLX
    -DGL_GLEXT_PROTOTYPES
@@ -184,6 +237,7 @@ ELSE (APPLE)
 ENDIF (APPLE)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../arctic)
 
 ################# Flags ################
 # Defines Flags for Windows and Linux. #
@@ -194,7 +248,8 @@ ELSE (APPLE)
 ENDIF (APPLE)
 
 message(STATUS "CompilerId: ${CMAKE_CXX_COMPILER_ID}.")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
@@ -205,6 +260,25 @@ IF (EGL_MODE)
   #only for  es egl
   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lGLESv2 -lEGL")
 ENDIF (EGL_MODE)
+
+IF (EMSCRIPTEN)
+    # Set memory flags in linker flags, not compiler flags
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s INITIAL_MEMORY=1GB -sASSERTIONS -sASYNCIFY")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sEXIT_RUNTIME=1")
+
+    
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread -sPTHREAD_POOL_SIZE=4")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s AUDIO_WORKLET=1 -sWASM_WORKERS=1")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sSTACK_SIZE=262144")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -sASYNCIFY_STACK_SIZE=262144")
+
+    # Debug flags for source maps and C++ filenames/line numbers
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g3 -gsource-map")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -O0 -g3 -gsource-map --source-map-base http://127.0.0.1:8000/")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -s WASM=1")
+ELSE (EMSCRIPTEN)
+ENDIF (EMSCRIPTEN)
 
 ################ Files ################
 #   --   Add files to project.   --   #
@@ -242,6 +316,7 @@ file(GLOB SRC_FILES_TO_REMOVE
 )
 list(REMOVE_ITEM SRC_FILES ${SRC_FILES_TO_REMOVE})
 
+
 # Add executable to build.
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE
    ${SRC_FILES}
@@ -269,20 +344,46 @@ target_link_libraries(
   ${COREMEDIA}
 )
 ELSE (APPLE)
-target_link_libraries(
-  ${PROJECT_NAME}
-  ${OPENGL_gl_LIBRARY}
-  ${X11_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${ALSA_LIBRARY}
-  #  ${EGL_LIBRARY}
-  #  ${GLES_LIBRARY}
-)
-if (GSTREAMER_FOUND)
-  target_link_libraries(${PROJECT_NAME} ${GSTREAMER_LIBRARIES})
-  target_link_directories(${PROJECT_NAME} PUBLIC ${GSTREAMER_LIBRARY_DIRS})
-endif()
+  IF (EMSCRIPTEN)
+    target_link_libraries(
+      ${PROJECT_NAME}
+      ${OPENGL_gl_LIBRARY}
+      ${CMAKE_THREAD_LIBS_INIT}
+    )
+  ELSE (EMSCRIPTEN)
+    target_link_libraries(
+      ${PROJECT_NAME}
+      ${OPENGL_gl_LIBRARY}
+      ${X11_LIBRARIES}
+      ${CMAKE_THREAD_LIBS_INIT}
+      ${ALSA_LIBRARY}
+      #  ${EGL_LIBRARY}
+      #  ${GLES_LIBRARY}
+    )
+    if (GSTREAMER_FOUND)
+      target_link_libraries(${PROJECT_NAME} ${GSTREAMER_LIBRARIES})
+      target_link_directories(${PROJECT_NAME} PUBLIC ${GSTREAMER_LIBRARY_DIRS})
+    endif()
+  ENDIF (EMSCRIPTEN)
 ENDIF (APPLE)
+
+if (OPENSSL_FOUND)
+  target_link_libraries(${PROJECT_NAME} OpenSSL::SSL OpenSSL::Crypto)
+  IF (APPLE)
+    target_link_libraries(${PROJECT_NAME} ${SECURITY})
+  ENDIF (APPLE)
+endif ()
+
+# The browser has no file system to read the assets from, so they are packed into
+# a .data file next to the .js and unpacked into a virtual file system at start.
+# The packager resolves a relative path against the directory the linker runs in,
+# which in a build directory of its own holds no data at all, so the path is
+# written in full and mapped to /data, where the program looks for it. The quotes
+# reach the link command and keep a space in the path from splitting the argument.
+IF (EMSCRIPTEN)
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    LINK_FLAGS "--preload-file \"${DATA_DIR}/data\"@/data")
+ENDIF (EMSCRIPTEN)
 
 # An out-of-source build (cmake -B build) leaves the binary in the build
 # directory, and the program looks for its data next to itself, so the data is
@@ -295,3 +396,23 @@ if (EXISTS "${DATA_DIR}/data"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${DATA_DIR}/data" "$<TARGET_FILE_DIR:${PROJECT_NAME}>/data")
 endif ()
+
+# The page that loads the .js and the server that hands it to the browser are in
+# the project directory, while a build of its own leaves the .js somewhere else,
+# so both are copied next to it and the result is served from a single directory.
+if (EMSCRIPTEN
+    AND NOT "${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+  foreach (WEB_FILE index.html webserver.py)
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${WEB_FILE}")
+      add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+          "${CMAKE_CURRENT_SOURCE_DIR}/${WEB_FILE}"
+          "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${WEB_FILE}")
+    endif ()
+  endforeach ()
+endif ()
+
+# This file is rewritten by `wizard update`, so anything a project adds of its
+# own (a ctest registration, an extra target, a compile definition) belongs in
+# project.cmake next to it, which the wizard never touches.
+include("${CMAKE_CURRENT_SOURCE_DIR}/project.cmake" OPTIONAL)

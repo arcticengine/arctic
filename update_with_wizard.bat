@@ -1,7 +1,9 @@
-echo off
-cd wizard
-build\wizard_Debug_x64.exe update ..\antarctica_pyramids
-build\wizard_Debug_x64.exe update ..\filetest
-build\wizard_Debug_x64.exe update ..\tests
-build\wizard_Debug_x64.exe update ..\wizard
-pause
+@echo off
+rem Regenerates the build files of every project in this repository with the
+rem console wizard. Build the wizard first (wizard\wizard.sln, Debug x64).
+setlocal
+cd /d "%~dp0"
+set WIZARD=wizard\build\wizard_Debug_x64.exe
+for %%p in (antarctica_pyramids benchmark tests wizard) do (
+  "%WIZARD%" update %%p || exit /b 1
+)

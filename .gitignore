@@ -69,5 +69,9 @@ log_prev.txt
 *.wasm.map
 *.ww.js
 .cursor/hooks/state/continual-learning-index.json
-tests/CTestTestfile.cmake
-tests/Testing/Temporary
+# ctest artefacts of tests, headless_server and antarctica_pyramids
+CTestTestfile.cmake
+Testing/
+
+# Visual studio per-user settings
+*.vcxproj.user

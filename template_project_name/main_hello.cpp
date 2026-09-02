@@ -11,9 +11,10 @@ void EasyMain() {
   // Load font
   g_font.Load("data/arctic_one_bmf.fnt"); // Load the font from the file
 
-  // Loop until the window is closed or escape is pressed. Escape is this
-  // program's own convention; the engine ends nothing on a key of its own.
-  while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
+  // Loop until escape is pressed. Escape is this program's own convention; the
+  // engine ends nothing on a key of its own. Closing the window ends the
+  // program by itself, see SetMainWindowCloseHandler to have a say in that.
+  while (!IsKeyDownward(kKeyEscape)) {
     // Clear screen
     Clear();
 

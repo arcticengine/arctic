@@ -411,3 +411,8 @@ if (EMSCRIPTEN
     endif ()
   endforeach ()
 endif ()
+
+# This file is rewritten by `wizard update`, so anything a project adds of its
+# own (a ctest registration, an extra target, a compile definition) belongs in
+# project.cmake next to it, which the wizard never touches.
+include("${CMAKE_CURRENT_SOURCE_DIR}/project.cmake" OPTIONAL)

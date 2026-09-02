@@ -557,6 +557,21 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// @return True if the panel is visible, false otherwise.
   virtual bool IsVisible();
 
+  /// @brief Makes a bare panel take the clicks inside it, or let them through
+  /// @param is_clickable True for a panel that is a window or a dialog, false
+  ///   for a panel that only groups its children.
+  ///
+  /// A bare Panel lets a click that none of its children took fall through to
+  /// whatever is behind it, which is right for a group of widgets floating over
+  /// the world and wrong for a window: a click on the label or the empty part
+  /// of a window must not reach the game under it. A clickable panel takes
+  /// every such click, emits kGuiPanelLeftDown, and answers true from
+  /// IsInside(). The themed constructor makes a panel that is not clickable.
+  void SetClickable(bool is_clickable);
+
+  /// @brief Tells whether a bare panel takes the clicks inside it.
+  bool IsClickable() const;
+
   /// @brief Checks whether input can reach this panel at all
   /// @return True while this panel and every panel above it are visible.
   ///
@@ -580,9 +595,12 @@ class Panel : public std::enable_shared_from_this<Panel> {
   ///
   /// A hidden panel takes nothing, and neither does anything inside it. A panel
   /// that is not clickable takes nothing either, so a click passes through a
-  /// Text or a bare background panel and reaches the world -- which is what the
-  /// input walk does as well, and this is meant to agree with it. Buttons,
-  /// checkboxes, edit boxes and scrollbars always count.
+  /// Text, a Progressbar, an Image or a bare background panel and reaches the
+  /// world -- which is what the input walk does as well, and this is meant to
+  /// agree with it. Buttons, checkboxes, edit boxes and scrollbars always
+  /// count, and so does everything inside a panel made clickable with
+  /// SetClickable(true), which is how a window keeps the clicks on its labels
+  /// and its empty parts from reaching the game under it.
   ///
   /// Positions are counted from the bottom-left corner of the backbuffer, and
   /// the panel is assumed to be a root drawn at (0, 0), exactly as
@@ -700,8 +718,9 @@ class Panel : public std::enable_shared_from_this<Panel> {
   /// @brief Root only: remembers which panel the cursor rests on and since when.
   void TrackTooltip(Vec2Si32 absolute_pos, const InputMessage &message);
 
-  /// @brief Root only: draws the tooltip once the cursor has rested long enough.
-  void DrawTooltip(Vec2Si32 absolute_pos);
+  /// @brief Root only: draws the tooltip once the cursor has rested long
+  /// enough, beside the cursor and pushed back inside the backbuffer.
+  void DrawTooltip();
 
   /// @brief Handles one input message for a visible and enabled panel
   /// @param parent_pos Absolute position of the parent panel.

@@ -86,6 +86,16 @@
 		C3B9AEB76E2D175AAE9A91B1 /* ini.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E50BBFE4E9BA9803ADED94D9 /* ini.cpp */; };
 		35DBBFF49635A380D85AF9A3 /* arctic_platform_web_sound.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5C971F1C52A22B6E0D690EA7 /* arctic_platform_web_sound.cpp */; };
 		DD823BC1ABF16A5A4EC5EB08 /* easy_video.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D8D19F484200A0739FC2A954 /* easy_video.cpp */; };
+		4CD50B8ADC135D0B8C9F504A /* physics_world.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 270F615BE9809360A2B6033F /* physics_world.cpp */; };
+		223030F79E6F8C9FA1378926 /* collide_soup.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 380E599EF31D2FFE7EFEC773 /* collide_soup.cpp */; };
+		5B37E5C0D50CB890C980AF79 /* physics_debug.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FB3911C6696B8E9B823BEB54 /* physics_debug.cpp */; };
+		997A5E67CBD62ED34BD71E61 /* mesh_fbx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2273A71D80184FE2466B7C35 /* mesh_fbx.cpp */; };
+		0798D01EC694E4754D5A5FEB /* gl_texture_cache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 99D92677392A0E8CD309B256 /* gl_texture_cache.cpp */; };
+		BE4F340B979393E79C68CBE3 /* sphere_vs_triangle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9C55D2E6FD6833F352E0F00D /* sphere_vs_triangle.cpp */; };
+		92744F6C9091DA26B1D80A8D /* model.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9AA5D9C39B48CFB8BBF5D1D1 /* model.cpp */; };
+		F045A34C8953F0E9AE894513 /* physics_contact.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A775DFC118BE5AB3E26695F5 /* physics_contact.cpp */; };
+		830DB29372499925F3BD30F7 /* physics_sphere_body.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6E667948678CE7692440A240 /* physics_sphere_body.cpp */; };
+		66D0E04267EF182C6C964313 /* physics_solver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 356E0FAD830A3602063B34CB /* physics_solver.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -281,6 +291,27 @@
 		1F694C5D0A0F9223ADA80615 /* targetver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = targetver.h; path = targetver.h; sourceTree = SOURCE_ROOT; };
 		DCBF79D1FAF0647B65804B65 /* resource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = resource.h; path = resource.h; sourceTree = SOURCE_ROOT; };
 		ACF4923B28B876B7FFDFC47E /* stb_image.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stb_image.h; path = ../engine/stb_image.h; sourceTree = SOURCE_ROOT; };
+		270F615BE9809360A2B6033F /* physics_world.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = physics_world.cpp; path = ../engine/physics_world.cpp; sourceTree = SOURCE_ROOT; };
+		380E599EF31D2FFE7EFEC773 /* collide_soup.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = collide_soup.cpp; path = ../engine/collide_soup.cpp; sourceTree = SOURCE_ROOT; };
+		6F9259223BC84D660DCA8A7E /* physics_sphere_body.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = physics_sphere_body.h; path = ../engine/physics_sphere_body.h; sourceTree = SOURCE_ROOT; };
+		9985399B9F2F08BE43044205 /* physics_world.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = physics_world.h; path = ../engine/physics_world.h; sourceTree = SOURCE_ROOT; };
+		038DC87D10F5AB84364E2847 /* physics_solver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = physics_solver.h; path = ../engine/physics_solver.h; sourceTree = SOURCE_ROOT; };
+		DA04EA91EFEEA2FBB4B7BADB /* physics_contact.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = physics_contact.h; path = ../engine/physics_contact.h; sourceTree = SOURCE_ROOT; };
+		5E24B0F84DECF44005C4B1B6 /* collide_soup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = collide_soup.h; path = ../engine/collide_soup.h; sourceTree = SOURCE_ROOT; };
+		9BB10771878367E3F9FA0A77 /* gl_texture_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gl_texture_cache.h; path = ../engine/gl_texture_cache.h; sourceTree = SOURCE_ROOT; };
+		FB3911C6696B8E9B823BEB54 /* physics_debug.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = physics_debug.cpp; path = ../engine/physics_debug.cpp; sourceTree = SOURCE_ROOT; };
+		2273A71D80184FE2466B7C35 /* mesh_fbx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = mesh_fbx.cpp; path = ../engine/mesh_fbx.cpp; sourceTree = SOURCE_ROOT; };
+		2C990E3F987388E15C4750E6 /* mesh_fbx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = mesh_fbx.h; path = ../engine/mesh_fbx.h; sourceTree = SOURCE_ROOT; };
+		EB213D297A9ED039E2AA0010 /* sphere_vs_triangle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sphere_vs_triangle.h; path = ../engine/sphere_vs_triangle.h; sourceTree = SOURCE_ROOT; };
+		99D92677392A0E8CD309B256 /* gl_texture_cache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gl_texture_cache.cpp; path = ../engine/gl_texture_cache.cpp; sourceTree = SOURCE_ROOT; };
+		9C55D2E6FD6833F352E0F00D /* sphere_vs_triangle.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = sphere_vs_triangle.cpp; path = ../engine/sphere_vs_triangle.cpp; sourceTree = SOURCE_ROOT; };
+		1800E96469B5955670526CC3 /* model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = model.h; path = ../engine/model.h; sourceTree = SOURCE_ROOT; };
+		9AA5D9C39B48CFB8BBF5D1D1 /* model.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = model.cpp; path = ../engine/model.cpp; sourceTree = SOURCE_ROOT; };
+		A775DFC118BE5AB3E26695F5 /* physics_contact.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = physics_contact.cpp; path = ../engine/physics_contact.cpp; sourceTree = SOURCE_ROOT; };
+		CCE9A538B31E276839A370FD /* physics_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = physics_types.h; path = ../engine/physics_types.h; sourceTree = SOURCE_ROOT; };
+		6E667948678CE7692440A240 /* physics_sphere_body.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = physics_sphere_body.cpp; path = ../engine/physics_sphere_body.cpp; sourceTree = SOURCE_ROOT; };
+		356E0FAD830A3602063B34CB /* physics_solver.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = physics_solver.cpp; path = ../engine/physics_solver.cpp; sourceTree = SOURCE_ROOT; };
+		135DFAB0442D29A94D8DF83C /* physics_debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = physics_debug.h; path = ../engine/physics_debug.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -423,6 +454,27 @@
 				34A37FB61F68AD73005ACF7B /* easy.cpp */,
 				34A37FC91F68AD73005ACF7B /* easy.h */,
 				34A37FBE1F68AD73005ACF7B /* engine.cpp */,
+				270F615BE9809360A2B6033F /* physics_world.cpp */,
+				380E599EF31D2FFE7EFEC773 /* collide_soup.cpp */,
+				6F9259223BC84D660DCA8A7E /* physics_sphere_body.h */,
+				9985399B9F2F08BE43044205 /* physics_world.h */,
+				038DC87D10F5AB84364E2847 /* physics_solver.h */,
+				DA04EA91EFEEA2FBB4B7BADB /* physics_contact.h */,
+				5E24B0F84DECF44005C4B1B6 /* collide_soup.h */,
+				9BB10771878367E3F9FA0A77 /* gl_texture_cache.h */,
+				FB3911C6696B8E9B823BEB54 /* physics_debug.cpp */,
+				2273A71D80184FE2466B7C35 /* mesh_fbx.cpp */,
+				2C990E3F987388E15C4750E6 /* mesh_fbx.h */,
+				EB213D297A9ED039E2AA0010 /* sphere_vs_triangle.h */,
+				99D92677392A0E8CD309B256 /* gl_texture_cache.cpp */,
+				9C55D2E6FD6833F352E0F00D /* sphere_vs_triangle.cpp */,
+				1800E96469B5955670526CC3 /* model.h */,
+				9AA5D9C39B48CFB8BBF5D1D1 /* model.cpp */,
+				A775DFC118BE5AB3E26695F5 /* physics_contact.cpp */,
+				CCE9A538B31E276839A370FD /* physics_types.h */,
+				6E667948678CE7692440A240 /* physics_sphere_body.cpp */,
+				356E0FAD830A3602063B34CB /* physics_solver.cpp */,
+				135DFAB0442D29A94D8DF83C /* physics_debug.h */,
 				ACF4923B28B876B7FFDFC47E /* stb_image.h */,
 				789D52B72715977B6A5C16EF /* localization.h */,
 				95190C5F7BE09D7D3015454D /* arctic_platform_pi_video.cpp */,
@@ -617,6 +669,16 @@
 				34A37FDC1F68AD73005ACF7B /* arctic_platform_windows.cpp in Sources */,
 				34A37FDE1F68AD73005ACF7B /* arctic_platform_macosx.mm in Sources */,
 				34A37FE11F68AD73005ACF7B /* engine.cpp in Sources */,
+				4CD50B8ADC135D0B8C9F504A /* physics_world.cpp in Sources */,
+				223030F79E6F8C9FA1378926 /* collide_soup.cpp in Sources */,
+				5B37E5C0D50CB890C980AF79 /* physics_debug.cpp in Sources */,
+				997A5E67CBD62ED34BD71E61 /* mesh_fbx.cpp in Sources */,
+				0798D01EC694E4754D5A5FEB /* gl_texture_cache.cpp in Sources */,
+				BE4F340B979393E79C68CBE3 /* sphere_vs_triangle.cpp in Sources */,
+				92744F6C9091DA26B1D80A8D /* model.cpp in Sources */,
+				F045A34C8953F0E9AE894513 /* physics_contact.cpp in Sources */,
+				830DB29372499925F3BD30F7 /* physics_sphere_body.cpp in Sources */,
+				66D0E04267EF182C6C964313 /* physics_solver.cpp in Sources */,
 				CFD7C841B2E46BD2004CB1C0 /* arctic_platform_pi_video.cpp in Sources */,
 				F1DEA82384C0BEB4541ED3B1 /* arctic_platform_windows_video.cpp in Sources */,
 				56926129B42B017169133AB2 /* wave_function_collapse.cpp in Sources */,

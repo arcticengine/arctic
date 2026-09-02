@@ -1,0 +1,5 @@
+name,cost_endurance,cost_ammo,produce_warmth,damage_hitpoints,damage_distance
+Offhand shot,0,1,0,45,5
+Aimed shot,0,1,0,75,5
+Quick kick,20,0,30,10,1
+Hard kick,20,0,40,25,1

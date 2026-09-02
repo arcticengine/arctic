@@ -961,8 +961,13 @@ extern "C" {
 }  // extern "C"
 #endif  // __cplusplus
 
+// The engine calls EasyMain, so it is the entry point here, and it belongs to
+// the one translation unit that has the test runner above: a file compiled with
+// TEST_NO_MAIN gets neither.
+#ifndef TEST_NO_MAIN
 void EasyMain() {
   EasyMainC();
 }
+#endif  // TEST_NO_MAIN
 
 #endif  // ENGINE_TEST_MAIN_H_

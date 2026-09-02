@@ -249,11 +249,10 @@ void Render() {
 }
 void EasyMain() {
   Init();
-  // Two ways out, and both belong to the program: the window was closed (see
-  // SetMainWindowCloseHandler if you need to ask something before leaving) or
-  // Escape was pressed, which is this program's own convention and not a rule of
-  // the engine.
-  while (!IsMainWindowCloseRequested() && !IsKeyDownward(kKeyEscape)) {
+  // Closing the window ends the program by itself; only a program that wants
+  // to ask something before leaving needs SetMainWindowCloseHandler. Escape is
+  // this program's own convention and not a rule of the engine.
+  while (!IsKeyDownward(kKeyEscape)) {
     Update();
     Render();
   }

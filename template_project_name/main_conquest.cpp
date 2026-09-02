@@ -1,259 +1,413 @@
 #include "engine/easy.h"
+#include <algorithm>
+#include <cstdlib>
 
 using namespace arctic;  // NOLINT
 
-//////////////////////////////////////////////////////////////////////////////////////
-// ТИПЫ И СТРУКТУРЫ ДАННЫХ
+// A tiny turn-based strategy for two players at one keyboard. Cities build
+// swordsmen and archers, swordsmen capture cities, and the player who owns
+// every city wins. Pick a unit with the mouse, then click the cell to move to,
+// or the enemy to attack. Enter (or a click on the panel at the top) ends the
+// turn, Escape quits.
 
-//  Тип юнита
+//////////////////////////////////////////////////////////////////////////////
+// TYPES AND DATA STRUCTURES
+
+// The kind of a unit
 enum UnitType {
-  NONE = 0, // Юнит не используется - пустой элемент массива `units`
-  CITY = 1, // Город - создает воинов
-  SWORDSMAN = 2, // Воин
+  NONE = 0,       // The unit is not in use: an empty slot of the `units` array
+  CITY = 1,       // A city builds units
+  SWORDSMAN = 2,  // A swordsman moves and fights hand to hand
+  ARCHER = 3,     // An archer shoots over one cell but can't capture cities
 };
 
-// Тип для описания игровок
+// Who owns a unit
 enum Owner {
-  NEUTRAL = 0, // Игрок не задан или нейтральный юнит
+  NEUTRAL = 0,  // No player, a neutral unit
   PLAYER1 = 1,
   PLAYER2 = 2,
 };
 
-// Структура описывающая юнита
-struct Unit {
-  UnitType type; // Тип юнита
-  Owner owner; // Владелец юнита
+// The kind of ground in a cell
+enum Terrain {
+  GRASS = 0,  // Plain ground, costs 1 MP to enter
+  HILLS = 1,  // Costs 2 MP to enter
+  WATER = 2,  // Can't be entered or built on
+};
 
-  // Положение юнита на игровом поле
+// A unit
+struct Unit {
+  UnitType type;  // The kind of the unit
+  Owner owner;    // The owner of the unit
+
+  // The position of the unit on the map, in cells
   int x;
   int y;
 
-  // Количество оставшихся очков перемещений (MP) в этом ходу.
-  // В начале хода игрока все его юниты возобновляют MP и могут походить расходуя их.
-  // Город не может ходить, но может построить юнита в соседней клетке.
+  // Movement points (MP) left in this turn.
+  // At the start of a turn every unit of the player gets its MP back and
+  // spends them moving. A city doesn't move, but it builds a unit in a
+  // neighbouring cell.
   int moves;
 
-  // Уничтожить юнита (удалить из игры)
+  // Removes the unit from the game
   void destroy() {
     type = NONE;
     owner = NEUTRAL;
   }
 };
 
-//////////////////////////////////////////////////////////////////////////////////////
-// ГЛОБАЛЬНЫЕ КОНСТАНТЫ
+//////////////////////////////////////////////////////////////////////////////
+// GLOBAL CONSTANTS
 
-constexpr int map_x = 23, map_y = 11; // Размеры игрового поля в тайлах
-constexpr int max_units = map_x * map_y; // Максимальное число юнитов в игре равно числу тайлов
+constexpr int map_x = 23, map_y = 11;  // Map size in cells
+constexpr int max_units = map_x * map_y;  // At most one unit per cell
 
-// Число очков перемещений (MP) юнитов в зависимости от типа
+// Movement points (MP) of every unit type
 const int unit_moves[] = {
-  0, // NONE
-  1, // CITY
-  3, // SWORDSMAN
+  0,  // NONE
+  1,  // CITY
+  3,  // SWORDSMAN
+  2,  // ARCHER
 };
 
-// Клавиши управления
-const KeyCode keyQuitGame = kKeyEscape; // Выход из игры
-const KeyCode keyNextTurn = kKeyEnter; // Передача хода
+// Keys
+const KeyCode keyQuitGame = kKeyEscape;  // Quit the game
+const KeyCode keyNextTurn = kKeyEnter;   // End the turn
 
-//////////////////////////////////////////////////////////////////////////////////////
-// ГРАФИКА
+//////////////////////////////////////////////////////////////////////////////
+// GRAPHICS
 
-constexpr int tile_x = 10, tile_y = 10; // Размер одного игрового тайла (клеточки)
-constexpr int menu_y = 5; // Толщина полоски меню
+// The sprites are 10x10 pixels and are drawn twice as big, so that a line of
+// text fits into the panel at the top.
+constexpr int tile_x = 20, tile_y = 20;  // Size of one cell on screen
+constexpr int menu_y = 34;  // Height of the panel at the top
 
-// Цвета
+// Colors
 const Rgba color_move(255, 255, 255);
+const Rgba color_text(0, 0, 0);
 const Rgba color_owner[3] = {
-  Rgba(),          // NONE
-  Rgba(255, 0, 0), // PLAYER1
-  Rgba(0, 0, 255), // PLAYER2
+  Rgba(),           // NEUTRAL
+  Rgba(255, 0, 0),  // PLAYER1
+  Rgba(0, 0, 255),  // PLAYER2
 };
 
-Sprite sprites[3][3]; // Спрайты юнитов в зависимости от владельца (первый индекс) и типа (второй индекс)
-Sprite sprite_grass; // Тайл с травой
-Sprite sprite_frame; // Рамка вокруг выбранного юнита
+// Unit sprites by owner (first index) and type (second index)
+Sprite sprites[3][4];
+Sprite sprite_terrain[3];  // Ground sprites by Terrain
+Sprite sprite_frame;  // The frame around the selected unit
 
 Font g_font;
 
-//////////////////////////////////////////////////////////////////////////////////////
-// ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+//////////////////////////////////////////////////////////////////////////////
+// GLOBAL VARIABLES
 
-Unit units[max_units]; // Общий массив всех юнитов в игре
-Owner turn; // Игрок, который в данный момент ходит
-Unit* selected; // Текущий выбранный юнит
-int orderx, ordery; // Координаты приказа текущему юниту
-bool turn_is_over; // Ход окончен
-bool game_is_over; // Игровая сессия завершена
-Owner winner; // Кто победил
+Unit units[max_units];  // Every unit in the game
+Terrain terrain[map_y][map_x];  // The ground of every cell
+Owner turn;  // The player whose turn it is
+Unit* selected;  // The selected unit
+int orderx, ordery;  // The cell the selected unit is ordered to
+bool order_is_alt;  // The order was given with the right mouse button
+bool turn_is_over;  // The turn has ended
+bool game_is_over;  // The game session has ended
+Owner winner;  // Who has won
 
-//////////////////////////////////////////////////////////////////////////////////////
-// ФУНКЦИИ ДЛЯ РАБОТЫ С ЮНИТАМИ
+//////////////////////////////////////////////////////////////////////////////
+// UNIT FUNCTIONS
 
-// Удалить всех юнитов
+// Removes every unit
 void ClearUnits() {
-  for (int i = 0; i < max_units; i++)
+  for (int i = 0; i < max_units; i++) {
     units[i].destroy();
+  }
 }
 
-// Сбросить очки перемещений юнитам с владельцем `owner`
+// Gives the units of `owner` their movement points back
 void AddUnitMoves(Owner owner) {
   for (int i = 0; i < max_units; i++) {
     if (units[i].owner == owner) {
-      UnitType type = units[i].type; // Получаем тип юнита
-      int moves = unit_moves[type]; // Узнаем сколько MP положено юнитам этого типа
-      units[i].moves = moves; // Обновляем число MP этому юниту
+      UnitType type = units[i].type;
+      units[i].moves = unit_moves[type];
     }
   }
 }
 
-// Создать новый юнит
+// Creates a unit
 Unit* CreateUnit(UnitType type, Owner owner, int x, int y, int moves = 0) {
   for (Unit* unit = units; unit != units + max_units; unit++) {
     if (unit->type == NONE) {
-      // Мы нашли неиспользуемый юнит и заполняем его нужными нам данными
+      // A free slot, fill it in
       unit->type = type;
       unit->owner = owner;
       unit->x = x;
       unit->y = y;
       unit->moves = moves;
-      return unit; // Возвращаем указатель на только что созданный новый юнит
+      return unit;
     }
   }
-  Fatal("Out of units"); // ОШИБКА: Все юниты уже заняты
+  Fatal("Out of units");  // ERROR: every slot is taken
   return nullptr;
 }
 
-// Найти юнит, который находится в заданных координатах или вернуть `nullptr` если там пусто
+// Finds the unit in a cell, returns `nullptr` if the cell is empty
 Unit* FindUnit(int x, int y) {
-  for (Unit* unit = units; unit != units + max_units; unit++)
-    if (unit->type != NONE && unit->x == x && unit->y == y)
+  for (Unit* unit = units; unit != units + max_units; unit++) {
+    if (unit->type != NONE && unit->x == x && unit->y == y) {
       return unit;
-  return nullptr; // Юнит не найден
+    }
+  }
+  return nullptr;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-// ФУНКЦИИ УПРАВЛЕНИЯ И РИСОВАНИЯ
+//////////////////////////////////////////////////////////////////////////////
+// MAP FUNCTIONS
 
-// Нарисовать карту и юнитов
+bool IsOnMap(int x, int y) {
+  return x >= 0 && x < map_x && y >= 0 && y < map_y;
+}
+
+// Movement points it takes to enter a cell
+int MoveCost(int x, int y) {
+  if (terrain[y][x] == HILLS) {
+    return 2;
+  }
+  return 1;
+}
+
+// True if `unit` may move into the cell: it is on the map, it is not water and
+// the unit has enough movement points left for the ground there
+bool CanEnter(const Unit* unit, int x, int y) {
+  if (!IsOnMap(x, y)) {
+    return false;
+  }
+  if (terrain[y][x] == WATER) {
+    return false;
+  }
+  return unit->moves >= MoveCost(x, y);
+}
+
+// Puts a round patch of `kind` ground around a cell
+void PaintTerrain(Terrain kind, int center_x, int center_y, int radius) {
+  for (int y = center_y - radius; y <= center_y + radius; y++) {
+    for (int x = center_x - radius; x <= center_x + radius; x++) {
+      if (IsOnMap(x, y)) {
+        terrain[y][x] = kind;
+      }
+    }
+  }
+}
+
+// Fills the map with grass, a few lakes and a few hills
+void GenerateTerrain() {
+  for (int y = 0; y < map_y; y++) {
+    for (int x = 0; x < map_x; x++) {
+      terrain[y][x] = GRASS;
+    }
+  }
+  for (int i = 0; i < 4; i++) {
+    PaintTerrain(HILLS, Random32(0, map_x - 1), Random32(0, map_y - 1),
+        Random32(1, 2));
+  }
+  for (int i = 0; i < 3; i++) {
+    PaintTerrain(WATER, Random32(0, map_x - 1), Random32(0, map_y - 1),
+        Random32(0, 1));
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// INPUT AND DRAWING
+
+// Draws the map and the units
 void DrawGame() {
   int moves_left = 0;
 
-  // Рисуем карту
-  for (int y = 0; y < map_y; y++)
-    for (int x = 0; x < map_x; x++)
-      sprite_grass.Draw(x * tile_x, y * tile_y);
-
-  // Рисуем юнитов
-  for (Unit* unit = units; unit != units + max_units; unit++) {
-    if (unit->type == NONE) continue; // Пропускаем неиспользуемых юнитов
-
-    if (unit->owner == turn)
-      moves_left += unit->moves; // Подсчитываем оставшиеся очки передвижения
-
-    // Рисуем спрайт юнита
-    sprites[unit->owner][unit->type].Draw(unit->x * tile_x, unit->y * tile_y);
-
-    // Рисуем число оставшихся ходов юнита
-    for (int i = 0; i < unit->moves; i++)
-       SetPixel(unit->x * tile_x + 2 + 2 * i, unit->y * tile_y + 2, color_move);
-
-    // Рисуем рамку вокруг выбранного юнита
-    if (selected == unit)
-      sprite_frame.Draw(unit->x * tile_x, unit->y * tile_y);
+  // The ground
+  for (int y = 0; y < map_y; y++) {
+    for (int x = 0; x < map_x; x++) {
+      sprite_terrain[terrain[y][x]].Draw(x * tile_x, y * tile_y,
+          tile_x, tile_y);
+    }
   }
 
-  // Рисуем панельку сверху
+  // The units
+  for (Unit* unit = units; unit != units + max_units; unit++) {
+    if (unit->type == NONE) {
+      continue;
+    }
+
+    if (unit->owner == turn) {
+      moves_left += unit->moves;  // Movement points left in this turn
+    }
+
+    sprites[unit->owner][unit->type].Draw(unit->x * tile_x, unit->y * tile_y,
+        tile_x, tile_y);
+
+    // One dot per movement point left
+    for (int i = 0; i < unit->moves; i++) {
+      Vec2Si32 dot(unit->x * tile_x + 4 + 4 * i, unit->y * tile_y + 4);
+      DrawRectangle(dot, dot + Vec2Si32(1, 1), color_move);
+    }
+
+    if (selected == unit) {
+      sprite_frame.Draw(unit->x * tile_x, unit->y * tile_y, tile_x, tile_y);
+    }
+  }
+
+  // The panel at the top
   Rgba color = color_owner[turn];
-  if (moves_left == 0 || winner != NEUTRAL)
-    color = Scale(color, 200 + (Ui32)(55.0 * sin(5.0 * Time()))); // Мигаем кнопкой завершения хода
-  DrawRectangle(Vec2Si32(0, tile_y * map_y), Vec2Si32(tile_x * map_x - 1, tile_y * map_y + menu_y - 1), color);
+  if (moves_left == 0 || winner != NEUTRAL) {
+    // The end turn button blinks when there is nothing left to do
+    color = Scale(color, 200 + (Ui32)(55.0 * sin(5.0 * Time())));
+  }
+  DrawRectangle(Vec2Si32(0, tile_y * map_y),
+      Vec2Si32(tile_x * map_x - 1, tile_y * map_y + menu_y - 1), color);
+  const char *hint = "LMB: sword  RMB: bow  Enter: end turn";
+  if (winner != NEUTRAL) {
+    hint = winner == PLAYER1 ? "Red wins! Esc to quit"
+        : "Blue wins! Esc to quit";
+  }
+  g_font.Draw(hint, 2, tile_y * map_y, kTextOriginBottom, kTextAlignmentLeft,
+      kDrawBlendingModeColorize, kFilterNearest, color_text);
 
   ShowFrame();
-  Sleep(0.03); // Ограничитель FPS
 }
 
-// Возвращает `true` если ход нужно завершить
+// Returns `true` if the turn has to end
 bool StopTurn() {
   if (IsKeyUpward(keyQuitGame)) {
-    turn_is_over = true; // Ход нужно завершить, прежде чем завершить игру
-    game_is_over = true; // Выйти из игры после завершения хода
+    turn_is_over = true;  // The turn ends first, then the game
+    game_is_over = true;
   }
-  if (IsKeyUpward(keyNextTurn) || (IsKeyUpward(kKeyMouseLeft) && MousePos().y > tile_y * map_y))
+  if (IsKeyUpward(keyNextTurn)
+      || (IsKeyUpward(kKeyMouseLeft) && MousePos().y > tile_y * map_y)) {
     turn_is_over = true;
+  }
   return turn_is_over;
 }
 
-// Выбрать юнита если он не выбран - заполняет `selected` или завершает ход/игру
+// Waits for the player to pick a unit: fills `selected`, or ends the turn
 void SelectUnit() {
   while (selected == nullptr) {
     DrawGame();
-    if (StopTurn()) return;
+    if (StopTurn()) {
+      return;
+    }
     if (IsKeyUpward(kKeyMouseLeft)) {
       int x = MousePos().x / tile_x;
       int y = MousePos().y / tile_y;
       Unit* unit = FindUnit(x, y);
-      if (unit != nullptr) // Если клетка не пуста
-        if (unit->owner == turn) // Если юнит принадлежит текущему игроку (нельзя выбрать врага)
-          if (unit->moves > 0) // Если у данного юнита остались MP в этом ходу
-            selected = unit; // Выбор удался
+      // Only a unit of the current player with movement points left
+      if (unit != nullptr && unit->owner == turn && unit->moves > 0) {
+        selected = unit;
+      }
     }
   }
 }
 
-// Выбрать юнита - заполняет `orderx` и `ordery` или завершает ход/игру
+// True if an archer standing at (`from_x`, `from_y`) can shoot the cell
+// (`x`, `y`): the target is up to two cells away and, when it is two cells
+// away, the cell between them is free
+bool CanShoot(int from_x, int from_y, int x, int y) {
+  int dx = x - from_x;
+  int dy = y - from_y;
+  int distance = std::max(std::abs(dx), std::abs(dy));
+  if (distance == 1) {
+    return true;
+  }
+  if (distance != 2) {
+    return false;
+  }
+  int mid_x = from_x + (dx > 0 ? 1 : (dx < 0 ? -1 : 0));
+  int mid_y = from_y + (dy > 0 ? 1 : (dy < 0 ? -1 : 0));
+  return FindUnit(mid_x, mid_y) == nullptr;
+}
+
+// True if the selected unit can be ordered to the cell
+bool IsValidOrder(int x, int y) {
+  if (!IsOnMap(x, y)) {
+    return false;
+  }
+  int dx = x - selected->x;
+  int dy = y - selected->y;
+  int distance = std::max(std::abs(dx), std::abs(dy));
+  if (distance == 0) {
+    return false;
+  }
+  Unit* target = FindUnit(x, y);
+  if (selected->type == CITY) {
+    // A city builds in an empty neighbouring cell that is not water
+    return distance == 1 && target == nullptr && terrain[y][x] != WATER;
+  }
+  if (distance == 1) {
+    // A step into a free cell or an attack on a neighbour
+    return target != nullptr || CanEnter(selected, x, y);
+  }
+  // Only an archer reaches further than one cell, and only with an arrow
+  return selected->type == ARCHER && target != nullptr
+      && target->owner != turn && target->type != CITY
+      && CanShoot(selected->x, selected->y, x, y);
+}
+
+// Waits for the player to pick a cell: fills `orderx`, `ordery` and
+// `order_is_alt`, or ends the turn
 void SelectOrder() {
   orderx = -1;
   ordery = -1;
   while (orderx == -1) {
     DrawGame();
-    if (StopTurn()) return;
-    if (IsKeyUpward(kKeyMouseLeft)) {
+    if (StopTurn()) {
+      return;
+    }
+    bool is_left = IsKeyUpward(kKeyMouseLeft);
+    bool is_right = IsKeyUpward(kKeyMouseRight);
+    if (is_left || is_right) {
       int x = MousePos().x / tile_x;
       int y = MousePos().y / tile_y;
-      int dx = x - selected->x; // Вычисляем смещение по x
-      int dy = y - selected->y; // Вычисляум смещение по y
-      if (x >= 0 && x < map_x && y >= 0 && y < map_y) // Убеждаемся что клик попадает на игровое поле
-        if (dx <= 1 && dx >= -1) // За одно действие можно сдвинуться только на одну клетку по x и y
-          if (dy <= 1 && dy >= -1) {
-            // Приказ отдан
-            orderx = x;
-            ordery = y;
-          }
+      if (IsValidOrder(x, y)) {
+        orderx = x;
+        ordery = y;
+        order_is_alt = is_right;
+      }
     }
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-// ИГРОВАЯ ЛОГИКА
+//////////////////////////////////////////////////////////////////////////////
+// GAME LOGIC
 
-// Исполняет приказ города
+// Carries out the order of a city: builds a swordsman, or an archer on a
+// right click
 void MoveCity() {
-  Unit* target = FindUnit(orderx, ordery); // Находим юнита в клетке куда отдан приказ
-  if (target == nullptr) { // Если клетка пуста - создаем воина в ней
-    CreateUnit(SWORDSMAN, turn, orderx, ordery);
+  Unit* target = FindUnit(orderx, ordery);
+  if (target == nullptr) {
+    CreateUnit(order_is_alt ? ARCHER : SWORDSMAN, turn, orderx, ordery);
     selected->moves--;
   }
 }
 
-// Исполняет приказ воина
-void MoveSwordsman() {
-  Unit* target = FindUnit(orderx, ordery); // Находим юнита в клетке куда отдан приказ
+// Moves the selected unit into the ordered cell and pays for the ground there
+void StepInto() {
+  selected->moves -= MoveCost(orderx, ordery);
+  selected->x = orderx;
+  selected->y = ordery;
+}
 
-  // Если клетка пуста - передвигаемся в неё
+// Carries out the order of a swordsman
+void MoveSwordsman() {
+  Unit* target = FindUnit(orderx, ordery);
+
+  // An empty cell: step into it
   if (target == nullptr) {
-    selected->x = orderx;
-    selected->y = ordery;
-    selected->moves--;
+    StepInto();
     return;
   }
 
-  // Если клетка занята дружественным юнитом - приказ отменяется
-  if (target->owner == turn)
+  // A friendly unit: the order is cancelled
+  if (target->owner == turn) {
     return;
+  }
 
-  // Если клетка занята вражеским городом - город захвачен
+  // An enemy city: it is captured
   if (target->type == CITY) {
     target->owner = turn;
     target->moves = 0;
@@ -261,8 +415,8 @@ void MoveSwordsman() {
     return;
   }
 
-  // Если клетка занята вражеским воином - воин погибает и мы занимаем его место
-  if (target->type == SWORDSMAN) {
+  // An enemy swordsman or archer: it dies and the swordsman takes its place
+  if (target->type == SWORDSMAN || target->type == ARCHER) {
     target->destroy();
     selected->x = orderx;
     selected->y = ordery;
@@ -271,97 +425,148 @@ void MoveSwordsman() {
   }
 }
 
-// Ход текущего игрока. Действия повторяются в цикле:
-//  (1) Игрок выбирает юнита `selected`;
-//  (2) Затем выбирает клетку куда походить `orderx` и `ordery` (eсли был выбран город, то выбирается где построить юнита);
-//  (3) Приказ исполняется.
-// Пока не будет нажата кнопка "Следующий ход" - `turn_is_over`.
+// Carries out the order of an archer
+void MoveArcher() {
+  Unit* target = FindUnit(orderx, ordery);
+
+  // An empty cell: step into it
+  if (target == nullptr) {
+    StepInto();
+    return;
+  }
+
+  // A friendly unit, or an enemy city an archer can't take: cancelled
+  if (target->owner == turn || target->type == CITY) {
+    return;
+  }
+
+  // An enemy swordsman or archer: shot dead, the archer stays where it is
+  target->destroy();
+  selected->moves = 0;
+}
+
+// The turn of the current player. In a loop:
+//  (1) the player picks a unit, `selected`;
+//  (2) then picks the cell to move to, `orderx` and `ordery` (for a city, the
+//      cell to build in);
+//  (3) the order is carried out.
+// Until the turn ends, `turn_is_over`.
 void OneTurn() {
-  AddUnitMoves(turn); // Добавляем очки перемещений всем юнитам текущего игрока
+  AddUnitMoves(turn);
   turn_is_over = false;
   selected = nullptr;
   while (true) {
-    SelectUnit(); // (1) Выбираем юнита
-    SelectOrder(); // (2) Выбираем приказ
-    if (turn_is_over) break;
+    SelectUnit();   // (1)
+    SelectOrder();  // (2)
+    if (turn_is_over) {
+      break;
+    }
 
-    // (3) Исполняем приказ
+    // (3)
     int moves = selected->moves;
     switch (selected->type) {
-      case CITY:      MoveCity();      break;
-      case SWORDSMAN: MoveSwordsman(); break;
-      default: Fatal("unexpected unit type");
+      case CITY:
+        MoveCity();
+        break;
+      case SWORDSMAN:
+        MoveSwordsman();
+        break;
+      case ARCHER:
+        MoveArcher();
+        break;
+      default:
+        Fatal("unexpected unit type");
     }
-    // Выбранный юнит не может больше передвигаться или не смог исполнить приказ
-    if (selected->moves == 0 || selected->moves == moves)
+    // The unit has no movement points left, or the order was cancelled
+    if (selected->moves == 0 || selected->moves == moves) {
       selected = nullptr;
+    }
   }
 
-  // В конце хода проверяем условие победы
+  // Has the current player won?
   int enemy_cities = 0;
-  for (Unit* unit = units; unit != units + max_units; unit++)
-    if (unit->type == CITY && unit->owner != turn)
+  for (Unit* unit = units; unit != units + max_units; unit++) {
+    if (unit->type == CITY && unit->owner != turn) {
       enemy_cities++;
-  if (enemy_cities == 0) { // Если все города захвачены
+    }
+  }
+  if (enemy_cities == 0) {
     winner = turn;
     game_is_over = true;
-    // Показываем экран победы пока не нажата кнопка выхода из игры
-    while (!IsKeyUpward(keyQuitGame))
+    // The victory screen stays until the quit key
+    while (!IsKeyUpward(keyQuitGame)) {
       DrawGame();
+    }
   }
 }
 
-// Игровая сессия
+// One game
 void GameSession() {
-  // Перед началом игры нужно очистить все глобальные переменные от мусора или от предыдущей игры
+  // Start from a clean state, there may be a previous game in the globals
   ClearUnits();
   game_is_over = false;
   winner = NEUTRAL;
-  turn = PLAYER1; // Первым ходит первый игрок
+  turn = PLAYER1;  // The first player moves first
 
-  // Создаем начальные города игрокам
+  GenerateTerrain();
+
+  // The cities of the players
   CreateUnit(CITY, PLAYER1, 1, 1);
   CreateUnit(CITY, PLAYER2, map_x - 2, map_y - 2);
 
-  // Создаем нейтральные города
-  for (int y = 1; y < map_y; y += 4)
-    for (int x = 1; x < map_x; x += 4)
-      if (FindUnit(x, y) == nullptr) // Если в клетке пока нет города
+  // The neutral cities
+  for (int y = 1; y < map_y; y += 4) {
+    for (int x = 1; x < map_x; x += 4) {
+      if (FindUnit(x, y) == nullptr) {
         CreateUnit(CITY, NEUTRAL, x, y);
+      }
+    }
+  }
 
-  // Основной цикл игры: ходы игроков по очереди до победы
+  // A city stands on grass and has grass around it to build on
+  for (Unit* unit = units; unit != units + max_units; unit++) {
+    if (unit->type == CITY) {
+      PaintTerrain(GRASS, unit->x, unit->y, 1);
+    }
+  }
+
+  // Players take turns until somebody wins
   while (true) {
-    // Ходит игрок, номер которого сохранен в переменной `turn`
     OneTurn();
 
-    // Игра завершается если нажали на выход или один из игроков победил
-    if (game_is_over) break;
+    // Quit was pressed or a player has won
+    if (game_is_over) {
+      break;
+    }
 
-    // Передача хода
-    if (turn == PLAYER1)
+    if (turn == PLAYER1) {
       turn = PLAYER2;
-    else
+    } else {
       turn = PLAYER1;
+    }
   }
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // MAIN
 
 void EasyMain() {
   ResizeScreen(map_x * tile_x, map_y * tile_y + menu_y);
 
-  // Загружаем файлы с диска в память
   g_font.Load("data/arctic_one_bmf.fnt");
   sprites[NEUTRAL][CITY     ].Load("data/grey_city.tga");
   sprites[PLAYER1][CITY     ].Load("data/red_city.tga");
   sprites[PLAYER1][SWORDSMAN].Load("data/red_sword.tga");
+  sprites[PLAYER1][ARCHER   ].Load("data/red_bow.tga");
   sprites[PLAYER2][CITY     ].Load("data/blue_city.tga");
   sprites[PLAYER2][SWORDSMAN].Load("data/blue_sword.tga");
-  sprite_grass.Load("data/grass.tga");
+  sprites[PLAYER2][ARCHER   ].Load("data/blue_bow.tga");
+  sprite_terrain[GRASS].Load("data/grass.tga");
+  sprite_terrain[HILLS].Load("data/hills.tga");
+  sprite_terrain[WATER].Load("data/water.tga");
   sprite_frame.Load("data/frame.tga");
 
   do {
-    GameSession(); // Запускаем сессию
-  } while (winner != NEUTRAL); // Если сессия был доиграна до конца - запускаем новую
+    GameSession();
+  } while (winner != NEUTRAL);  // A finished game is followed by a new one
 }

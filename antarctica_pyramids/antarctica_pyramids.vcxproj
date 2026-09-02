@@ -206,6 +206,17 @@
     <ClInclude Include="..\engine\easy_sprite_instance.h" />
     <ClInclude Include="..\engine\easy_util.h" />
     <ClInclude Include="..\engine\engine.h" />
+    <ClInclude Include="..\engine\physics_sphere_body.h" />
+    <ClInclude Include="..\engine\physics_world.h" />
+    <ClInclude Include="..\engine\physics_solver.h" />
+    <ClInclude Include="..\engine\physics_contact.h" />
+    <ClInclude Include="..\engine\collide_soup.h" />
+    <ClInclude Include="..\engine\gl_texture_cache.h" />
+    <ClInclude Include="..\engine\mesh_fbx.h" />
+    <ClInclude Include="..\engine\sphere_vs_triangle.h" />
+    <ClInclude Include="..\engine\model.h" />
+    <ClInclude Include="..\engine\physics_types.h" />
+    <ClInclude Include="..\engine\physics_debug.h" />
     <ClInclude Include="..\engine\stb_image.h" />
     <ClInclude Include="..\engine\localization.h" />
     <ClInclude Include="..\engine\httplib.h" />
@@ -293,7 +304,10 @@
     <ClInclude Include="..\engine\vec3si32.h" />
     <ClInclude Include="..\engine\vec4f.h" />
     <ClInclude Include="..\engine\vec4si32.h" />
-    <ClInclude Include="resource.h" />
+        <ClInclude Include="ui.h" />
+    <ClInclude Include="sfx.h" />
+    <ClInclude Include="game.h" />
+<ClInclude Include="resource.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -309,6 +323,16 @@
     <ClCompile Include="..\engine\easy_sprite.cpp" />
     <ClCompile Include="..\engine\easy_sprite_instance.cpp" />
     <ClCompile Include="..\engine\engine.cpp" />
+    <ClCompile Include="..\engine\physics_world.cpp" />
+    <ClCompile Include="..\engine\collide_soup.cpp" />
+    <ClCompile Include="..\engine\physics_debug.cpp" />
+    <ClCompile Include="..\engine\mesh_fbx.cpp" />
+    <ClCompile Include="..\engine\gl_texture_cache.cpp" />
+    <ClCompile Include="..\engine\sphere_vs_triangle.cpp" />
+    <ClCompile Include="..\engine\model.cpp" />
+    <ClCompile Include="..\engine\physics_contact.cpp" />
+    <ClCompile Include="..\engine\physics_sphere_body.cpp" />
+    <ClCompile Include="..\engine\physics_solver.cpp" />
     <ClCompile Include="..\engine\arctic_platform_pi_video.cpp" />
     <ClCompile Include="..\engine\arctic_platform_windows_video.cpp" />
     <ClCompile Include="..\engine\wave_function_collapse.cpp" />
@@ -362,7 +386,10 @@
     <ClCompile Include="..\engine\ofbx.cpp" />
     <ClCompile Include="..\engine\font.cpp" />
     <ClCompile Include="..\engine\log.cpp" />
-    <ClCompile Include="main.cpp">
+        <ClCompile Include="ui.cpp" />
+    <ClCompile Include="sfx.cpp" />
+    <ClCompile Include="game.cpp" />
+<ClCompile Include="main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <SDLCheck Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

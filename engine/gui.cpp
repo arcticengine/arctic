@@ -262,7 +262,7 @@ void Panel::Draw(Vec2Si32 parent_absolute_pos) {
     // The root draws last what must lie above everything: open popups and the
     // tooltip. A panel drawn on its own is a root in this sense.
     DrawOverlays(absolute_pos);
-    DrawTooltip(absolute_pos);
+    DrawTooltip();
   }
 }
 
@@ -379,7 +379,7 @@ void Panel::TrackTooltip(Vec2Si32 absolute_pos, const InputMessage &message) {
   tooltip_pos_ = message.mouse.backbuffer_pos;
 }
 
-void Panel::DrawTooltip(Vec2Si32 absolute_pos) {
+void Panel::DrawTooltip() {
   if (!tooltip_theme_ || !tooltip_theme_->font_.FontInstance()) {
     return;
   }
@@ -398,15 +398,17 @@ void Panel::DrawTooltip(Vec2Si32 absolute_pos) {
   if (size.x <= 0 || size.y <= 0) {
     size = client;
   }
-  // Above and to the right of the cursor, pushed back inside the root.
+  // Above and to the right of the cursor, pushed back inside the backbuffer.
+  // The bound is the screen and not the root: a root is often a window in a
+  // corner of the screen, and a tooltip wider than that window is still whole
+  // when it hangs out of the window over the world.
   Vec2Si32 pos = tooltip_pos_ + Vec2Si32(12, 16);
-  Vec2Si32 root_low = absolute_pos;
-  Vec2Si32 root_high = absolute_pos + size_;
-  if (pos.x + size.x > root_high.x) {
-    pos.x = std::max(root_low.x, root_high.x - size.x);
+  Vec2Si32 screen = GetEngine()->GetBackbuffer().Size();
+  if (pos.x + size.x > screen.x) {
+    pos.x = std::max(0, screen.x - size.x);
   }
-  if (pos.y + size.y > root_high.y) {
-    pos.y = std::max(root_low.y, tooltip_pos_.y - 8 - size.y);
+  if (pos.y + size.y > screen.y) {
+    pos.y = std::max(0, tooltip_pos_.y - 8 - size.y);
   }
   frame.Draw(pos, size);
   Vec2Si32 border = (size - client) / 2;
@@ -655,6 +657,14 @@ void Panel::SetVisible(bool is_visible) {
 
 bool Panel::IsVisible() {
   return is_visible_;
+}
+
+void Panel::SetClickable(bool is_clickable) {
+  is_clickable_ = is_clickable;
+}
+
+bool Panel::IsClickable() const {
+  return is_clickable_;
 }
 
 bool Panel::IsInside(Vec2Si32 backbuffer_pos) {

@@ -411,3 +411,14 @@ if (EMSCRIPTEN
     endif ()
   endforeach ()
 endif ()
+
+# The smoke test: the server and the client run at once, see smoke_test.cmake.
+# `ctest` from this directory runs it after `make`.
+if (NOT EMSCRIPTEN)
+  enable_testing()
+  add_test(NAME headless_server_smoke
+    COMMAND ${CMAKE_COMMAND}
+      -DSERVER=$<TARGET_FILE:${PROJECT_NAME}> -DPORT=21113
+      -P "${CMAKE_CURRENT_SOURCE_DIR}/smoke_test.cmake")
+  set_tests_properties(headless_server_smoke PROPERTIES TIMEOUT 90)
+endif ()
