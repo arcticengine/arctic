@@ -2450,3 +2450,83 @@ void test_focused_editbox_keeps_button_hotkeys_quiet() {
   TEST_CHECK_(save_clicks == clicks_before_hotkey + 1,
       "S did not click Save when no field held the keyboard");
 }
+
+// A press that started outside a button must not click it just because the
+// mouse is released over it. Hover-while-held used to arm kDown, so a dialog
+// that appeared under a still-held mouse (End Turn Yes/No) confirmed itself.
+void test_button_and_checkbox_need_a_press_on_themselves_to_click() {
+  Sprite face = SolidSprite(40, 20, Rgba(255, 0, 0, 255));
+  auto root = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(200, 100));
+  auto button = std::make_shared<Button>(1, Vec2Si32(80, 40),
+      face, face, face, Sound(), Sound(), kKeyNone, 1);
+  auto checkbox = std::make_shared<Checkbox>(2, Vec2Si32(80, 10), 2,
+      face, face);
+  root->AddChild(button);
+  root->AddChild(checkbox);
+
+  Si32 button_clicks = 0;
+  Si32 checkbox_clicks = 0;
+  button->OnButtonClick = [&button_clicks]() { ++button_clicks; };
+  checkbox->OnButtonClick = [&checkbox_clicks]() { ++checkbox_clicks; };
+
+  const Vec2Si32 on_button(80 + 20, 40 + 10);
+  const Vec2Si32 on_checkbox(80 + 20, 10 + 10);
+  const Vec2Si32 outside(10, 50);
+  std::deque<GuiMessage> messages;
+
+  root->ApplyInput(LeftClickAt(outside), &messages);
+  root->ApplyInput(MouseMoveTo(on_button, true), &messages);
+  root->ApplyInput(LeftReleaseAt(on_button), &messages);
+  TEST_CHECK_(button_clicks == 0,
+      "releasing over a button that was never pressed clicked it %d times",
+      (int)button_clicks);
+  TEST_CHECK_(CountMessages(messages, kGuiButtonClick, button.get()) == 0,
+      "hover-while-held queued kGuiButtonClick without a press on the button");
+
+  messages.clear();
+  Click(root.get(), on_button, &messages);
+  TEST_CHECK_(button_clicks == 1,
+      "a press and release on the button clicked it %d times, expected 1",
+      (int)button_clicks);
+  TEST_CHECK_(CountMessages(messages, kGuiButtonClick, button.get()) == 1,
+      "a real click did not queue kGuiButtonClick");
+
+  messages.clear();
+  const Si32 clicks_before_drag = button_clicks;
+  root->ApplyInput(LeftClickAt(on_button), &messages);
+  root->ApplyInput(MouseMoveTo(Vec2Si32(on_button.x + 5, on_button.y), true),
+      &messages);
+  root->ApplyInput(LeftReleaseAt(Vec2Si32(on_button.x + 5, on_button.y)),
+      &messages);
+  TEST_CHECK_(button_clicks == clicks_before_drag + 1,
+      "a press, move and release still on the button clicked it %d times, "
+      "expected %d",
+      (int)button_clicks, (int)(clicks_before_drag + 1));
+
+  messages.clear();
+  const Si32 clicks_before_leave = button_clicks;
+  root->ApplyInput(LeftClickAt(on_button), &messages);
+  root->ApplyInput(MouseMoveTo(outside, true), &messages);
+  root->ApplyInput(LeftReleaseAt(outside), &messages);
+  TEST_CHECK_(button_clicks == clicks_before_leave,
+      "releasing outside after a press on the button clicked it");
+
+  TEST_CHECK(!checkbox->IsChecked());
+  messages.clear();
+  root->ApplyInput(LeftClickAt(outside), &messages);
+  root->ApplyInput(MouseMoveTo(on_checkbox, true), &messages);
+  root->ApplyInput(LeftReleaseAt(on_checkbox), &messages);
+  TEST_CHECK_(!checkbox->IsChecked(),
+      "releasing over a checkbox that was never pressed toggled it");
+  TEST_CHECK_(checkbox_clicks == 0,
+      "hover-while-held clicked the checkbox %d times",
+      (int)checkbox_clicks);
+
+  messages.clear();
+  Click(root.get(), on_checkbox, &messages);
+  TEST_CHECK_(checkbox->IsChecked(),
+      "a press and release on the checkbox did not toggle it");
+  TEST_CHECK_(checkbox_clicks == 1,
+      "a real click clicked the checkbox %d times, expected 1",
+      (int)checkbox_clicks);
+}

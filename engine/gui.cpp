@@ -833,12 +833,17 @@ void Button::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (is_inside && !*in_out_is_applied) {
       // A hover must not steal the keyboard from a field the user is typing
       // into. A press does: the click belongs to this button.
+      // kDown is armed only by a press on this button. A mouse that was
+      // already held (a dialog appearing under it, a drag from elsewhere)
+      // must not click on release.
       if (message.keyboard.key == kKeyMouseLeft &&
           message.keyboard.key_state == 1) {
         *out_current_tab = Panel::Invalid();
         is_current_tab_ = false;
-      }
-      if (message.keyboard.state[kKeyMouseLeft] == 1) {
+        state_ = kDown;
+        *in_out_is_applied = true;
+      } else if (prev_state == kDown &&
+                 message.keyboard.state[kKeyMouseLeft] == 1) {
         state_ = kDown;
         *in_out_is_applied = true;
       } else {
@@ -3264,7 +3269,14 @@ void Checkbox::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
     if (is_inside && !*in_out_is_applied) {
       *out_current_tab = Panel::Invalid();
       is_current_tab_ = false;
-      if (message.keyboard.state[kKeyMouseLeft] == 1) {
+      // Same arming rule as Button: only a press on this checkbox, not a
+      // hover while the mouse is already held, may go kDown.
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1) {
+        *in_out_is_applied = true;
+        state_ = kDown;
+      } else if (prev_state == kDown &&
+                 message.keyboard.state[kKeyMouseLeft] == 1) {
         *in_out_is_applied = true;
         state_ = kDown;
       } else {
