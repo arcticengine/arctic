@@ -2337,3 +2337,116 @@ void test_tooltip_stays_on_screen() {
   TEST_CHECK_(BackbufferPixel(Vec2Si32(280, 165)).rgba == kRed.rgba,
       "the tooltip covers the button under the cursor");
 }
+
+void PressAndRelease(Panel *root, KeyCode key,
+    std::deque<GuiMessage> *messages, bool ctrl) {
+  InputMessage down = KeyPress(key);
+  down.keyboard.state[kKeyControl] = ctrl ? 1 : 0;
+  InputMessage up = KeyRelease(key);
+  up.keyboard.state[kKeyControl] = ctrl ? 1 : 0;
+  root->ApplyInput(down, messages);
+  root->ApplyInput(up, messages);
+}
+
+// A Save-dialog-like tree: a focused editbox next to Save (S) and Cancel (C).
+// Typing those letters, or holding Control for a shortcut, must not fire the
+// buttons, and moving the mouse over a button must not steal the keyboard.
+void test_focused_editbox_keeps_button_hotkeys_quiet() {
+  Font font = BlockFont();
+  Sprite face = SolidSprite(120, 16, Rgba(32, 32, 32, 255));
+  Sprite btn_face = SolidSprite(40, 20, Rgba(255, 0, 0, 255));
+  auto root = std::make_shared<Panel>(0, Vec2Si32(0, 0), Vec2Si32(400, 200));
+  auto box = std::make_shared<Editbox>(5, Vec2Si32(10, 80), 1, face, face,
+      font, kTextOriginBottom, Rgba(255, 255, 255), std::string());
+  auto save = std::make_shared<Button>(1, Vec2Si32(10, 10),
+      btn_face, btn_face, btn_face, Sound(), Sound(), kKeyS, 10);
+  auto cancel = std::make_shared<Button>(2, Vec2Si32(60, 10),
+      btn_face, btn_face, btn_face, Sound(), Sound(), kKeyC, 11);
+  root->AddChild(save);
+  root->AddChild(cancel);
+  root->AddChild(box);
+
+  Si32 save_clicks = 0;
+  Si32 cancel_clicks = 0;
+  save->OnButtonClick = [&save_clicks]() { ++save_clicks; };
+  cancel->OnButtonClick = [&cancel_clicks]() { ++cancel_clicks; };
+
+  box->SetCurrentTab(true);
+  TEST_CHECK(box->IsFocused());
+  TEST_CHECK(root->IsKeyboardCaptured());
+
+  std::deque<GuiMessage> messages;
+
+  // Without touching the mouse, S and C are text, not the buttons.
+  root->ApplyInput(TypedLetter('s', kKeyS), &messages);
+  root->ApplyInput(KeyRelease(kKeyS), &messages);
+  root->ApplyInput(TypedLetter('c', kKeyC), &messages);
+  root->ApplyInput(KeyRelease(kKeyC), &messages);
+  TEST_CHECK_(box->GetText() == "sc",
+      "S and C did not reach the focused field: '%s'", box->GetText().c_str());
+  TEST_CHECK_(save_clicks == 0 && cancel_clicks == 0,
+      "a letter hotkey clicked Save %d times and Cancel %d times while typing",
+      (int)save_clicks, (int)cancel_clicks);
+
+  // Ctrl+S is not a letter and the box does not consume it as text; the Save
+  // hotkey still must not fire while the field holds the keyboard.
+  Si32 save_before = save_clicks;
+  PressAndRelease(root.get(), kKeyS, &messages, true);
+  TEST_CHECK_(save_clicks == save_before,
+      "Ctrl+S clicked Save while the field held the keyboard");
+  TEST_CHECK_(box->GetText() == "sc",
+      "Ctrl+S changed the text: '%s'", box->GetText().c_str());
+
+  // Ctrl+A selects all; Ctrl+C copies and does not press Cancel.
+  PressAndRelease(root.get(), kKeyA, &messages, true);
+  TEST_CHECK_(box->GetSelectionBegin() == 0 && box->GetSelectionEnd() == 2,
+      "Ctrl+A selected [%d, %d), expected [0, 2)",
+      (int)box->GetSelectionBegin(), (int)box->GetSelectionEnd());
+  Si32 cancel_before = cancel_clicks;
+  PressAndRelease(root.get(), kKeyC, &messages, true);
+  TEST_CHECK_(cancel_clicks == cancel_before,
+      "Ctrl+C clicked Cancel %d times instead of copying",
+      (int)cancel_clicks);
+
+  // Hovering Save must not take the keyboard away from the field.
+  const Vec2Si32 on_save(10 + 20, 10 + 10);
+  root->ApplyInput(MouseMoveTo(on_save), &messages);
+  TEST_CHECK_(box->IsFocused(),
+      "a mouse move over Save stole focus from the field");
+  TEST_CHECK_(root->IsKeyboardCaptured(),
+      "a mouse move over Save released the keyboard");
+  save_before = save_clicks;
+  root->ApplyInput(TypedLetter('t', kKeyT), &messages);
+  root->ApplyInput(KeyRelease(kKeyT), &messages);
+  TEST_CHECK_(box->GetText() == "t",
+      "after hovering Save, T did not replace the selected text: '%s'",
+      box->GetText().c_str());
+  TEST_CHECK_(save_clicks == save_before,
+      "after hovering Save, a letter clicked the button");
+
+  PressAndRelease(root.get(), kKeyA, &messages, true);
+  TEST_CHECK_(box->GetSelectionBegin() == 0 &&
+      box->GetSelectionEnd() == (Si32)box->GetText().size(),
+      "after hovering Save, Ctrl+A selected [%d, %d)",
+      (int)box->GetSelectionBegin(), (int)box->GetSelectionEnd());
+  cancel_before = cancel_clicks;
+  PressAndRelease(root.get(), kKeyC, &messages, true);
+  TEST_CHECK_(cancel_clicks == cancel_before,
+      "after hovering Save, Ctrl+C clicked Cancel");
+
+  // A real click on Save does take the focus, and with the field unfocused
+  // the S hotkey still activates the button.
+  save_before = save_clicks;
+  Click(root.get(), on_save, &messages);
+  TEST_CHECK_(save_clicks == save_before + 1, "a click on Save did not click it");
+  TEST_CHECK_(!box->IsFocused(),
+      "a click on Save left the field focused");
+
+  box->SetCurrentTab(false);
+  save->SetCurrentTab(false);
+  messages.clear();
+  const Si32 clicks_before_hotkey = save_clicks;
+  PressAndRelease(root.get(), kKeyS, &messages, false);
+  TEST_CHECK_(save_clicks == clicks_before_hotkey + 1,
+      "S did not click Save when no field held the keyboard");
+}

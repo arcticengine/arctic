@@ -259,6 +259,7 @@ void test_dropdown();
 void test_tab_control();
 void test_tooltip();
 void test_tooltip_stays_on_screen();
+void test_focused_editbox_keeps_button_hotkeys_quiet();
 
 // test_input.cpp
 void test_typed_characters_of_a_message();
@@ -451,6 +452,8 @@ TEST_LIST = {
   {"TabControl", test_tab_control},
   {"Tooltip", test_tooltip},
   {"Tooltip stays on screen", test_tooltip_stays_on_screen},
+  {"Focused editbox keeps button hotkeys quiet",
+    test_focused_editbox_keeps_button_hotkeys_quiet},
   {"Hidden and disabled panels never handle input",
     test_hidden_and_disabled_panels_never_handle_input},
   {"Startup mode decider is asked at startup", test_startup_mode_decider},

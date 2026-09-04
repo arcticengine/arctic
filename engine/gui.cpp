@@ -831,8 +831,13 @@ void Button::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
     Vec2Si32 pos = parent_pos + pos_;
     bool is_inside = IsWithin(message.mouse.backbuffer_pos - pos);
     if (is_inside && !*in_out_is_applied) {
-      *out_current_tab = Panel::Invalid();
-      is_current_tab_ = false;
+      // A hover must not steal the keyboard from a field the user is typing
+      // into. A press does: the click belongs to this button.
+      if (message.keyboard.key == kKeyMouseLeft &&
+          message.keyboard.key_state == 1) {
+        *out_current_tab = Panel::Invalid();
+        is_current_tab_ = false;
+      }
       if (message.keyboard.state[kKeyMouseLeft] == 1) {
         state_ = kDown;
         *in_out_is_applied = true;
@@ -869,7 +874,13 @@ void Button::HandleInput(Vec2Si32 parent_pos, const InputMessage &message,
     }
   } else if (message.kind == InputMessage::kKeyboard) {
     if (!*in_out_is_applied) {
-      bool is_hotkey = (message.keyboard.key == hotkey_);
+      bool ctrl = message.keyboard.state[kKeyControl] != 0;
+      Panel *root = this;
+      while (root->GetParent() != nullptr) {
+        root = root->GetParent();
+      }
+      bool captured = root->IsKeyboardCaptured();
+      bool is_hotkey = (message.keyboard.key == hotkey_) && !ctrl && !captured;
       bool is_tab_order_enter = (is_current_tab_ &&
                                  (message.keyboard.key == kKeyEnter ||
                                   message.keyboard.key == kKeySpace));
