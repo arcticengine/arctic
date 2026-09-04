@@ -2530,3 +2530,74 @@ void test_button_and_checkbox_need_a_press_on_themselves_to_click() {
       "a real click clicked the checkbox %d times, expected 1",
       (int)checkbox_clicks);
 }
+
+namespace {
+
+Si32 CountSubstrings(const std::string &text, const std::string &part) {
+  Si32 n = 0;
+  size_t pos = 0;
+  while (true) {
+    pos = text.find(part, pos);
+    if (pos == std::string::npos) {
+      return n;
+    }
+    ++n;
+    pos += part.size();
+  }
+}
+
+bool WaitForLogToContain(const std::string &part, std::string *out_text) {
+  const std::string path = arctic::LogFilePath();
+  for (Si32 attempt = 0; attempt < 200; ++attempt) {
+    std::ifstream file(path, std::ios_base::binary);
+    std::ostringstream contents;
+    if (file.is_open()) {
+      contents << file.rdbuf();
+    }
+    *out_text = contents.str();
+    if (out_text->find(part) != std::string::npos) {
+      return true;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  return false;
+}
+
+}  // namespace
+
+// A theme XML that names the same missing tga twice used to call Sprite::Load
+// for every node, and nodes that were simply omitted still tried to load a
+// default name with no extension. Both showed up as Sprite::Load spam. The
+// loader keeps one Sprite per path and skips a node that has no path.
+void test_gui_theme_load_skips_missing_and_caches_paths() {
+  const char *xml_path = "/tmp/arctic_gui_theme_cache_test.xml";
+  const char *absent_tga = "gui_theme_cache_absent.tga";
+  const char *done_marker = "gui_theme_load_cache_test_done";
+  {
+    std::ofstream out(xml_path);
+    out << "<checkbox_clear_normal path=\"" << absent_tga << "\" />\n";
+    out << "<checkbox_checked_normal path=\"" << absent_tga << "\" />\n";
+  }
+
+  arctic::ClearLog();
+  auto theme = std::make_shared<GuiTheme>();
+  theme->Load(xml_path);
+  *arctic::Log() << done_marker;
+
+  std::string text;
+  TEST_CHECK_(WaitForLogToContain(done_marker, &text),
+      "the theme-load test marker never reached the log");
+
+  const Si32 absent_loads = CountSubstrings(text, absent_tga);
+  TEST_CHECK_(absent_loads == 1,
+      "the same missing tga was loaded %d times, expected once",
+      (int)absent_loads);
+  TEST_CHECK_(text.find("checkbox_clear_down") == std::string::npos,
+      "an omitted checkbox node still went to Sprite::Load");
+  TEST_CHECK_(theme->checkbox_clear_normal_.Width() == 0,
+      "a missing theme sprite should stay empty, got width %d",
+      theme->checkbox_clear_normal_.Width());
+  TEST_CHECK_(theme->checkbox_clear_down_.Width() == 0,
+      "an omitted checkbox sprite should stay empty, got width %d",
+      theme->checkbox_clear_down_.Width());
+}

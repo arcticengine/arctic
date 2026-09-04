@@ -261,6 +261,7 @@ void test_tooltip();
 void test_tooltip_stays_on_screen();
 void test_focused_editbox_keeps_button_hotkeys_quiet();
 void test_button_and_checkbox_need_a_press_on_themselves_to_click();
+void test_gui_theme_load_skips_missing_and_caches_paths();
 
 // test_input.cpp
 void test_typed_characters_of_a_message();
@@ -457,6 +458,8 @@ TEST_LIST = {
     test_focused_editbox_keeps_button_hotkeys_quiet},
   {"Button and checkbox need a press on themselves to click",
     test_button_and_checkbox_need_a_press_on_themselves_to_click},
+  {"GuiTheme load skips missing files and caches paths",
+    test_gui_theme_load_skips_missing_and_caches_paths},
   {"Hidden and disabled panels never handle input",
     test_hidden_and_disabled_panels_never_handle_input},
   {"Startup mode decider is asked at startup", test_startup_mode_decider},
