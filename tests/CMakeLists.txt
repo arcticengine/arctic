@@ -250,6 +250,13 @@ ENDIF (APPLE)
 message(STATUS "CompilerId: ${CMAKE_CXX_COMPILER_ID}.")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+# Sized deallocation is the default of clang 19 and later on Linux but not of
+# Apple clang, and a delete whose size disagrees with the allocation is only
+# visible when it is on. The suite turns it on everywhere so that test_mtq.cpp
+# catches the mismatch on every machine, not only where the default does.
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsized-deallocation")
+endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang++" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
     set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")

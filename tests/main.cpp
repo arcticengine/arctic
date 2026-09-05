@@ -278,6 +278,10 @@ void test_mouse_arrives_in_backbuffer_pixels();
 void test_key_down_seconds_measures_the_hold();
 void test_key_edges_follow_real_transitions();
 
+// test_mtq.cpp
+void test_mpsc_vinfarr_frees_chunks_with_matching_size();
+void test_mpsc_vinfarr_two_producers_deliver_every_item();
+
 // test_sprite.cpp
 void test_radix_sort();
 void test_radix_sort_correctness();
@@ -585,5 +589,9 @@ TEST_LIST = {
       test_physics_sphere_body_reacquires_steep_floor_gap},
   {"Physics sphere body hovering over floor is not sitting",
       test_physics_sphere_body_hovering_over_floor_is_not_sitting},
+  {"MPSC queue frees chunks with matching size",
+      test_mpsc_vinfarr_frees_chunks_with_matching_size},
+  {"MPSC queue two producers deliver every item",
+      test_mpsc_vinfarr_two_producers_deliver_every_item},
   {0}
 };

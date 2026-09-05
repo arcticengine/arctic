@@ -104,6 +104,15 @@ struct InfArrayChunk<true> final {
      return new(memblock) SelfType(prev, start_slot, size);
   }
 
+  // The pair of allocateNew: the block came from ::operator new(size) with a
+  // size bigger than sizeof(SelfType), so it must go back through the unsized
+  // ::operator delete. A plain delete would hand sizeof(SelfType) to the sized
+  // ::operator delete once sized deallocation is on, which is a mismatch.
+  static void destroy(SelfType *self) {
+    self->~SelfType();
+    ::operator delete(self);
+  }
+
   static SelfType *reset(
     SelfType *self,
     SelfType *prev,
@@ -201,6 +210,12 @@ struct InfArrayChunk<false> final {
       sizeof(SelfType) + getTotalPackSize(number_of_slots, payload_size));
     return new(memblock)
       SelfType(prev, start_slot, number_of_slots, payload_size);
+  }
+
+  // See InfArrayChunk<true>::destroy.
+  static void destroy(SelfType *self) {
+    self->~SelfType();
+    ::operator delete(self);
   }
 
   static SelfType *reset(
@@ -362,7 +377,7 @@ class AuxiliaryChunkSize<false, true> {
   }
 
   inline void freeChunk(ChunkType *chunk) {
-    delete chunk;
+    ChunkType::destroy(chunk);
   }
 
   void setSlot(ChunkType *chunk, Ui64 slot, void *item) {
@@ -459,7 +474,7 @@ class AuxiliaryChunkSize<false, false> {
   }
 
   inline void freeChunk(InfArrayChunk<false> *chunk) {
-    delete chunk;
+    ChunkType::destroy(chunk);
   }
 
   void setSlot(ChunkType *chunk, size_t slot, void *item) {
@@ -764,7 +779,14 @@ void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
       } while (!set && release_counter > current_tail_counter);
     } while (current_chunk->StartSlot + numberOfSlotsInChunk <= slot);
 
-    delete cache;
+    // The chunk that lost the race for Next and was not needed afterwards. It
+    // came from allocateChunk, so it goes back the same way a released chunk
+    // does: through freeChunk, which is the unsized delete for the heap
+    // variant and pool->free for the memory pool one. A plain delete was a
+    // size mismatch for the former and a delete of a pool block for the latter.
+    if (cache != nullptr) {
+      freeChunk(cache);
+    }
   }
 
   /* Chunk found */
