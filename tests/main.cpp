@@ -17,6 +17,14 @@ ARCTIC_STARTUP_MODE_DECIDER(TestsStartupMode)
 // and missing from its file is a link error, which is the check that the two
 // lists agree.
 
+// test_array2.cpp
+void test_array2_empty_has_no_cells();
+void test_array2_one_by_one_only_origin();
+void test_array2_battle_grid_corners_are_inside();
+void test_array2_battle_grid_rejects_run_off_the_left();
+void test_array2_battle_grid_rejects_just_outside();
+void test_array2_at_roundtrip_on_battle_grid();
+
 // test_unicode.cpp
 void test_utf16_to_utf8_spurious_null();
 void test_utf32_to_utf8_ascii();
@@ -290,6 +298,15 @@ void test_hw_sprite_subregion_draws_correctly();
 
 TEST_LIST = {
 //  {"Tga oom", test_tga_oom},
+  {"Array2 empty has no cells", test_array2_empty_has_no_cells},
+  {"Array2 1x1 only origin", test_array2_one_by_one_only_origin},
+  {"Array2 battle grid corners are inside",
+      test_array2_battle_grid_corners_are_inside},
+  {"Array2 battle grid rejects run off the left",
+      test_array2_battle_grid_rejects_run_off_the_left},
+  {"Array2 battle grid rejects just outside",
+      test_array2_battle_grid_rejects_just_outside},
+  {"Array2 At roundtrip on battle grid", test_array2_at_roundtrip_on_battle_grid},
   {"Rgba", test_rgba},
   {"Radix sort", test_radix_sort},
   {"Radix sort correctness", test_radix_sort_correctness},

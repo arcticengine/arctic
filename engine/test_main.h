@@ -856,6 +856,9 @@ extern "C" {
           || strcmp(argv[i], "-l") == 0) {
         test_list_names__();
         arctic::ExitProgram(0);
+      } else if (strcmp(argv[i], "--selftest") == 0) {
+        // Game binaries pass this to enter the suite. The runner itself
+        // does not need it: with no test names, every test already runs.
       } else if (strcmp(argv[i], "-NSDocumentRevisionsDebugMode") == 0) {
         i++;
         if (i < argc) {

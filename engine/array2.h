@@ -25,6 +25,10 @@
 
 #include "engine/vec2si32.h"
 #include "engine/arctic_types.h"
+#ifndef NDEBUG
+#include "engine/arctic_platform_fatal.h"
+#include <cstdio>
+#endif
 #include <vector>
 
 namespace arctic {
@@ -92,6 +96,9 @@ template<class T> class Array2 {
   /// @param pos The position as a Vec2Si32.
   /// @return A reference to the element at the specified position.
   T& At(const Vec2Si32 pos) {
+#ifndef NDEBUG
+    CheckInBounds(pos.x, pos.y);
+#endif
     return data_[pos.x + pos.y * size_.x];
   }
 
@@ -99,6 +106,9 @@ template<class T> class Array2 {
   /// @param pos The position as a Vec2Si32.
   /// @return A const reference to the element at the specified position.
   const T& At(const Vec2Si32 pos) const {
+#ifndef NDEBUG
+    CheckInBounds(pos.x, pos.y);
+#endif
     return data_[pos.x + pos.y * size_.x];
   }
 
@@ -107,6 +117,9 @@ template<class T> class Array2 {
   /// @param y The y-coordinate.
   /// @return A reference to the element at the specified coordinates.
   T& At(const Si32 x, const Si32 y) {
+#ifndef NDEBUG
+    CheckInBounds(x, y);
+#endif
     return data_[x + y * size_.x];
   }
 
@@ -115,6 +128,9 @@ template<class T> class Array2 {
   /// @param y The y-coordinate.
   /// @return A const reference to the element at the specified coordinates.
   const T& At(const Si32 x, const Si32 y) const {
+#ifndef NDEBUG
+    CheckInBounds(x, y);
+#endif
     return data_[x + y * size_.x];
   }
 
@@ -138,6 +154,20 @@ template<class T> class Array2 {
   bool IsInBounds(const Si32 x, const Si32 y) const {
     return x >= 0 && y >= 0 && x < size_.x && y < size_.y;
   }
+
+#ifndef NDEBUG
+ private:
+  void CheckInBounds(Si32 x, Si32 y) const {
+    if (IsInBounds(x, y)) {
+      return;
+    }
+    char message[192];
+    snprintf(message, sizeof(message),
+             "Array2::At out of bounds: x=%d y=%d, bounds=[0, %d) x [0, %d)",
+             (int)x, (int)y, (int)size_.x, (int)size_.y);
+    Check(false, message);
+  }
+#endif
 };
 
 }  // namespace arctic
