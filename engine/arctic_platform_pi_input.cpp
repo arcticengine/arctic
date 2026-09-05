@@ -237,24 +237,34 @@ KeyCode TranslateKeyCode(KeySym ks) {
       return kKeyF12;
 
     case XK_KP_0:
+    case XK_KP_Insert:
       return kKeyNumpad0;
     case XK_KP_1:
+    case XK_KP_End:
       return kKeyNumpad1;
     case XK_KP_2:
+    case XK_KP_Down:
       return kKeyNumpad2;
     case XK_KP_3:
+    case XK_KP_Page_Down:
       return kKeyNumpad3;
     case XK_KP_4:
+    case XK_KP_Left:
       return kKeyNumpad4;
     case XK_KP_5:
+    case XK_KP_Begin:
       return kKeyNumpad5;
     case XK_KP_6:
+    case XK_KP_Right:
       return kKeyNumpad6;
     case XK_KP_7:
+    case XK_KP_Home:
       return kKeyNumpad7;
     case XK_KP_8:
+    case XK_KP_Up:
       return kKeyNumpad8;
     case XK_KP_9:
+    case XK_KP_Page_Up:
       return kKeyNumpad9;
     case XK_KP_Divide:
       return kKeyNumpadSlash;

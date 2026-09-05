@@ -279,3 +279,71 @@ void test_key_down_seconds_measures_the_hold() {
   SetKey('d', false);
   ShowFrame();
 }
+
+static void PushKeyEdge(KeyCode key, bool is_down) {
+  InputMessage message;
+  message.kind = InputMessage::kKeyboard;
+  message.keyboard.key = key;
+  message.keyboard.key_state = is_down ? 1 : 2;
+  message.keyboard.characters[0] = '\0';
+  PushInputMessage(message);
+}
+
+// IsKeyDownward / IsKeyUpward name the real edges of a key, not every OS
+// repeat or a second release of a key that is already up. A latch that steps
+// on IsKeyUpward (the global map numpad) otherwise sees a phantom release and
+// swallows the next real tap of KP_1 / KP_3.
+void test_key_edges_follow_real_transitions() {
+  SetKey(kKeyNumpad1, false);
+  SetKey(kKeyNumpad3, false);
+  ShowFrame();
+
+  PushKeyEdge(kKeyNumpad1, true);
+  ShowFrame();
+  TEST_CHECK_(IsKeyDown(kKeyNumpad1), "KP_1 did not go down");
+  TEST_CHECK_(IsKeyDownward(kKeyNumpad1), "the first press of KP_1 was not a downward edge");
+
+  PushKeyEdge(kKeyNumpad1, true);
+  ShowFrame();
+  TEST_CHECK_(IsKeyDown(kKeyNumpad1), "KP_1 came up on a repeated down");
+  TEST_CHECK_(!IsKeyDownward(kKeyNumpad1),
+      "a repeated down of a held key was taken for a fresh press");
+  TEST_CHECK_(!IsKeyUpward(kKeyNumpad1),
+      "a repeated down of a held key was taken for a release");
+
+  PushKeyEdge(kKeyNumpad1, false);
+  ShowFrame();
+  TEST_CHECK_(!IsKeyDown(kKeyNumpad1), "KP_1 stayed down after the release");
+  TEST_CHECK_(IsKeyUpward(kKeyNumpad1), "the release of KP_1 was not an upward edge");
+
+  PushKeyEdge(kKeyNumpad1, false);
+  ShowFrame();
+  TEST_CHECK_(!IsKeyDown(kKeyNumpad1), "a duplicate release brought KP_1 down");
+  TEST_CHECK_(!IsKeyUpward(kKeyNumpad1),
+      "a release of a key that is already up was reported as an upward edge");
+  TEST_CHECK_(!IsKeyDownward(kKeyNumpad1),
+      "a duplicate release was reported as a press");
+
+  PushKeyEdge(kKeyNumpad1, true);
+  PushKeyEdge(kKeyNumpad1, false);
+  ShowFrame();
+  TEST_CHECK_(IsKeyDownward(kKeyNumpad1),
+      "a tap that went down and up in one frame lost the downward edge");
+  TEST_CHECK_(IsKeyUpward(kKeyNumpad1),
+      "a tap that went down and up in one frame lost the upward edge");
+  TEST_CHECK_(!IsKeyDown(kKeyNumpad1),
+      "a tap that ended in the same frame left KP_1 down");
+
+  PushKeyEdge(kKeyNumpad3, true);
+  ShowFrame();
+  PushKeyEdge(kKeyNumpad3, false);
+  ShowFrame();
+  TEST_CHECK_(IsKeyUpward(kKeyNumpad3), "the first tap of KP_3 was not an upward edge");
+  PushKeyEdge(kKeyNumpad3, true);
+  ShowFrame();
+  PushKeyEdge(kKeyNumpad3, false);
+  ShowFrame();
+  TEST_CHECK_(IsKeyUpward(kKeyNumpad3),
+      "the second tap of KP_3 was swallowed");
+  TEST_CHECK_(!IsKeyDown(kKeyNumpad3), "KP_3 stayed down after the second tap");
+}

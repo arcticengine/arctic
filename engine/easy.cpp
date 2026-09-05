@@ -87,13 +87,18 @@ struct KeyState {
   }
 
   void OnStateChange(bool is_down) {
+    // OS key-repeat is another down while the key is already held, and some
+    // platforms also deliver a second up after the key is already up (numpad
+    // KP_1 / KP_3 sharing End / PageDown). Those are not edges: a latch that
+    // steps on IsKeyUpward would otherwise move on the phantom release and
+    // swallow the next real tap.
     if (is_down) {
-      was_pressed_this_frame = true;
-    } else {
+      if (!current_state_is_down) {
+        was_pressed_this_frame = true;
+        down_since = Time();
+      }
+    } else if (current_state_is_down) {
       was_released_this_frame = true;
-    }
-    if (is_down && !current_state_is_down) {
-      down_since = Time();
     }
     current_state_is_down = is_down;
   }

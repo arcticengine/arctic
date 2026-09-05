@@ -268,6 +268,7 @@ void test_typed_characters_of_a_message();
 void test_typed_text_and_generic_modifiers();
 void test_mouse_arrives_in_backbuffer_pixels();
 void test_key_down_seconds_measures_the_hold();
+void test_key_edges_follow_real_transitions();
 
 // test_sprite.cpp
 void test_radix_sort();
@@ -430,6 +431,7 @@ TEST_LIST = {
   {"Hardware rectangle fill and composition order", test_hw_rectangle_fill_and_composition_order},
   {"Window title names the program", test_window_title_names_the_program},
   {"KeyDownSeconds measures the hold", test_key_down_seconds_measures_the_hold},
+  {"Key edges follow real transitions", test_key_edges_follow_real_transitions},
   {"Loopback sockets connect, talk and close",
     test_loopback_sockets_connect_talk_and_close},
   {"Panel IsInside answers whose click it is",
