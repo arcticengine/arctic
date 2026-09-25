@@ -138,7 +138,7 @@ extern template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
 
 /// @brief True when the Linux mixer fell back to a dedicated thread because
 /// snd_async_add_pcm_handler returned -ENOSYS. False when the async/SIGIO
-/// handler is registered (path 2) or on platforms without ALSA async.
+/// handler (SIGIO) is registered or on platforms without ALSA async.
 bool SoundMixerShouldUseDedicatedThread();
 
 /// @brief True while the dedicated Linux mixer thread is running (ENOSYS fallback).
@@ -167,7 +167,7 @@ void SoundMixerSigioReproSetMainThreadInHeap(bool in_heap);
 bool SoundMixerSigioReproPrepareBuffers();
 /// Test-only: old unsafe path (MixSound + malloc) from a signal handler.
 void SoundMixerSigioReproInvokeLegacyUnsafeFromSignal();
-/// Test-only: path-2 safe MixSound(async_signal_safe) from a signal handler.
+/// Test-only: signal-safe MixSound(async_signal_safe) from a signal handler.
 void SoundMixerSigioReproInvokeSafeMixFromSignal();
 /// Test-only: MixSound from a normal thread.
 void SoundMixerSigioReproInvokeMixFromThread();

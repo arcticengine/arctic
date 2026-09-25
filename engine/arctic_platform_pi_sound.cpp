@@ -220,6 +220,7 @@ bool SoundCheck(bool condition, const char *error_message,
   snprintf(full_message, size, "%s%s", error_message,
       (error_message_postfix ? error_message_postfix : ""));
   std::cerr << "Arctic Engine Sound ERROR: " << full_message << std::endl;
+  // Signal error and stop the mixer
   g_sound_mixer_state.SetError(full_message);
   g_sound_mixer_state.do_quit.store(true);
   free(full_message);
@@ -456,6 +457,7 @@ void MixSound(bool async_signal_safe) {
   g_sound_mixer_state.MixSound(mix_l, mix_r, mix_stride,
       buffer_samples_per_channel, data->tmp.data(), async_signal_safe);
 
+  // Convert to 16-bit integer format.
   unsigned char *out_buffer = (unsigned char *)data->samples.data();
   Si32 buffer_samples_total = static_cast<Si32>(data->period_size) * 2;
   for (Si32 i = 0; i < buffer_samples_total; ++i) {
@@ -507,8 +509,8 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
 }
 
 // Dedicated-thread fallback (-ENOSYS async). Keep underrun/suspend recovery;
-// on hard failure use the same Soft path as SIGIO (prefilled buffer + do_quit,
-// then UpdateSoundEngine SetError + Log once). No Check/Fatal here.
+// on hard failure report the same way the SIGIO handler does (prefilled
+// buffer + do_quit, then UpdateSoundEngine SetError + Log once). No Check/Fatal here.
 void SoundMixerThreadFunction() {
   while (!g_sound_mixer_state.do_quit.load()) {
     MixSound(false);
@@ -577,6 +579,7 @@ void StartSoundMixer(const char* output_device_name) {
   }
 
   if (!output_device_name) {
+    // default device
     err = snd_pcm_open(&g_data.handle, "default", SND_PCM_STREAM_PLAYBACK, 0);
     if (err == -ENOENT) {
       err = snd_pcm_open(&g_data.handle, "plughw:0,0",
@@ -603,24 +606,35 @@ void StartSoundMixer(const char* output_device_name) {
   err = snd_pcm_hw_params_any(g_data.handle, hwparams);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't get sound configuration space: ",
       snd_strerror(err));
-  if (!is_ok) goto cleanup;
+  if (!is_ok) {
+    goto cleanup;
+  }
   err = snd_pcm_hw_params_set_rate_resample(g_data.handle, hwparams, 1);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set sound resampling: ",
       snd_strerror(err));
-  if (!is_ok) goto cleanup;
+  if (!is_ok) {
+    goto cleanup;
+  }
   err = snd_pcm_hw_params_set_access(g_data.handle, hwparams,
       SND_PCM_ACCESS_RW_INTERLEAVED);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set access type for sound: ",
       snd_strerror(err));
-  if (!is_ok) goto cleanup;
-  err = snd_pcm_hw_params_set_format(g_data.handle, hwparams, SND_PCM_FORMAT_S16);
+  if (!is_ok) {
+    goto cleanup;
+  }
+  err = snd_pcm_hw_params_set_format(g_data.handle, hwparams,
+      SND_PCM_FORMAT_S16);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set sample format for sound: ",
       snd_strerror(err));
-  if (!is_ok) goto cleanup;
+  if (!is_ok) {
+    goto cleanup;
+  }
   err = snd_pcm_hw_params_set_channels(g_data.handle, hwparams, 2);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set 2 channels for sound: ",
       snd_strerror(err));
-  if (!is_ok) goto cleanup;
+  if (!is_ok) {
+    goto cleanup;
+  }
   {
     unsigned int rate = 44100;
     err = snd_pcm_hw_params_set_rate_near(g_data.handle, hwparams, &rate, 0);
@@ -628,7 +642,9 @@ void StartSoundMixer(const char* output_device_name) {
         snd_strerror(err));
     is_ok = is_ok && SoundCheck(rate == 44100,
         "Sound output rate doesn't match requested 44100 Hz.");
-    if (!is_ok) goto cleanup;
+    if (!is_ok) {
+      goto cleanup;
+    }
   }
   {
     int dir;
@@ -636,49 +652,71 @@ void StartSoundMixer(const char* output_device_name) {
         &g_buffer_time_us, &dir);
     is_ok = is_ok && SoundCheck(err >= 0, "Can't set buffer time for sound: ",
         snd_strerror(err));
-    if (!is_ok) goto cleanup;
+    if (!is_ok) {
+      goto cleanup;
+    }
     snd_pcm_uframes_t size;
     err = snd_pcm_hw_params_get_buffer_size(hwparams, &size);
     is_ok = is_ok && SoundCheck(err >= 0, "Can't get buffer size for sound: ",
         snd_strerror(err));
-    if (!is_ok) goto cleanup;
+    if (!is_ok) {
+      goto cleanup;
+    }
     g_data.buffer_size = static_cast<snd_pcm_sframes_t>(size);
     err = snd_pcm_hw_params_set_period_time_near(g_data.handle, hwparams,
         &g_period_time_us, &dir);
     is_ok = is_ok && SoundCheck(err >= 0, "Can't set period time for sound: ",
         snd_strerror(err));
-    if (!is_ok) goto cleanup;
+    if (!is_ok) {
+      goto cleanup;
+    }
     err = snd_pcm_hw_params_get_period_size(hwparams, &size, &dir);
     is_ok = is_ok && SoundCheck(err >= 0, "Can't get period size for sound: ",
         snd_strerror(err));
-    if (!is_ok) goto cleanup;
+    if (!is_ok) {
+      goto cleanup;
+    }
     g_data.period_size = static_cast<snd_pcm_sframes_t>(size);
   }
   err = snd_pcm_hw_params(g_data.handle, hwparams);
   is_ok = is_ok && SoundCheck(err >= 0, "Can't set hw params for sound: ",
       snd_strerror(err));
-  if (!is_ok) goto cleanup;
+  if (!is_ok) {
+    goto cleanup;
+  }
 
   err = snd_pcm_sw_params_current(g_data.handle, swparams);
   is_ok = is_ok && SoundCheck(err >= 0,
       "Can't determine current sw params for sound: ", snd_strerror(err));
-  if (!is_ok) goto cleanup;
+  if (!is_ok) {
+    goto cleanup;
+  }
   g_data.start_threshold = g_data.period_size;
   err = snd_pcm_sw_params_set_start_threshold(g_data.handle, swparams,
       static_cast<snd_pcm_uframes_t>(g_data.start_threshold));
   is_ok = is_ok && SoundCheck(err >= 0,
-      "Can't set start threshold mode for sound: ", snd_strerror(err));
-  if (!is_ok) goto cleanup;
+      "Can't set start threshold mode for sound: ",
+      snd_strerror(err));
+  if (!is_ok) {
+    goto cleanup;
+  }
   err = snd_pcm_sw_params_set_avail_min(g_data.handle, swparams,
       static_cast<snd_pcm_uframes_t>(g_data.period_size));
   is_ok = is_ok && SoundCheck(err >= 0,
-      "Can't set avail min for sound: ", snd_strerror(err));
-  if (!is_ok) goto cleanup;
+      "Can't set avail min for sound: ",
+      snd_strerror(err));
+  if (!is_ok) {
+    goto cleanup;
+  }
   err = snd_pcm_sw_params(g_data.handle, swparams);
   is_ok = is_ok && SoundCheck(err >= 0,
-      "Can't set sw params for sound: ", snd_strerror(err));
-  if (!is_ok) goto cleanup;
+      "Can't set sw params for sound: ",
+      snd_strerror(err));
+  if (!is_ok) {
+    goto cleanup;
+  }
 
+  // start sound
   // Preallocate before any SIGIO delivery. MixSound from the handler must
   // not grow these vectors.
   g_data.samples.resize(static_cast<size_t>(g_data.period_size) * 2, 0);
@@ -690,8 +728,8 @@ void StartSoundMixer(const char* output_device_name) {
   g_async_pcm_recovering.store(false, std::memory_order_relaxed);
   g_sound_mixer_state.do_quit.store(false);
 
-  // Path 2: keep snd_async_add_pcm_handler (SIGIO). The callback mixes with
-  // preallocated buffers only. Dedicated thread is the -ENOSYS fallback only.
+  // Mix from the ALSA async handler (SIGIO) when available; it must touch
+  // only preallocated buffers. The dedicated thread is the -ENOSYS fallback.
   err = snd_async_add_pcm_handler(&g_data.ahandler, g_data.handle,
       SoundMixerCallback, &g_data);
   if (err == -ENOSYS) {
@@ -702,7 +740,9 @@ void StartSoundMixer(const char* output_device_name) {
     is_ok = is_ok && SoundCheck(err >= 0,
         "Can't register async pcm handler for sound: ",
         snd_strerror(err));
-    if (!is_ok) goto cleanup;
+    if (!is_ok) {
+      goto cleanup;
+    }
     // Silence prime: enough periods to meet start_threshold (no MixSound yet).
     const int prime_writes = SoundMixerPrimingPeriodWrites();
     for (int count = 0; count < prime_writes; count++) {
@@ -712,13 +752,17 @@ void StartSoundMixer(const char* output_device_name) {
           snd_strerror(err));
       is_ok = is_ok && SoundCheck(err == g_data.period_size,
           "Sound pcm write error: written != expected");
-      if (!is_ok) goto cleanup;
+      if (!is_ok) {
+        goto cleanup;
+      }
     }
     if (snd_pcm_state(g_data.handle) == SND_PCM_STATE_PREPARED) {
       err = snd_pcm_start(g_data.handle);
       is_ok = is_ok && SoundCheck(err >= 0, "Sound pcm start error: ",
           snd_strerror(err));
-      if (!is_ok) goto cleanup;
+      if (!is_ok) {
+        goto cleanup;
+      }
     }
   }
   return;
@@ -815,9 +859,9 @@ std::deque<AudioDeviceInfo> SoundPlayerImpl::GetDeviceList() {
 
 #ifdef ARCTIC_TEST_SIGIO_REPRO
 // Test-only hooks for tests_sigio_repro.
-// --legacy-unsafe: MixSound + malloc from a signal (old hazard → abort).
+// --legacy-unsafe: MixSound + malloc from a signal (old hazard, aborts).
 // --safe: MixSound(async_signal_safe=true) from a signal under heap stress
-//         (path-2 fixed callback → must survive).
+//         (the fixed SIGIO callback, must survive).
 
 static std::atomic<bool> g_sigio_repro_main_in_heap{false};
 
@@ -857,7 +901,7 @@ void SoundMixerSigioReproInvokeLegacyUnsafeFromSignal() {
 }
 
 void SoundMixerSigioReproInvokeSafeMixFromSignal() {
-  // Path-2 fixed callback: MixSound with async_signal_safe=true (no heap).
+  // Same call the SIGIO callback makes: MixSound with async_signal_safe=true (no heap).
   MixSound(true);
 }
 

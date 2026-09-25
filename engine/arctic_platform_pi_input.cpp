@@ -731,7 +731,7 @@ void PumpMessages() {
     // Ownership lost; g_clipboard_text is no longer authoritative.
   }
 
-  // Lift SIGIO-deferred mixer errors outside the signal (Linux ALSA path-2).
+  // Lift SIGIO-deferred mixer errors outside the signal (Linux ALSA async handler).
   UpdateSoundEngine();
   return;
 }

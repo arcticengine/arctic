@@ -170,7 +170,7 @@ struct SoundMixerState {
   std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);  ///< Flag to indicate if the mixer should quit
   std::atomic<bool> is_ok = ATOMIC_VAR_INIT(true);  ///< Flag to indicate if the mixer state is okay
   std::mutex error_mutex;  ///< Mutex for protecting error-related data
-  // 32 no-fallback blocks: SIGIO must never malloc. Exhausted pool → try_enqueue fails.
+  // 32 no-fallback blocks: SIGIO must never malloc. An exhausted pool makes try_enqueue fail.
   MpmcNoFallbackFixedSizeBufferFixedSizePool<32, 4080> page_pool;  ///< Pool for memory allocation
   MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>> tasks;  ///< Queue for sound tasks
   SpmcArray<SoundTask, true> pool;  ///< Pool for SoundTask objects

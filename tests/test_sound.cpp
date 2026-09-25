@@ -184,8 +184,8 @@ void test_sound_8bit_signed_vs_unsigned() {
       (int)max_sample);
 }
 
-// Path 2: Linux keeps snd_async_add_pcm_handler (SIGIO) when ALSA supports it.
-// The handler must mix using only preallocated buffers / atomics — never
+// Linux keeps snd_async_add_pcm_handler (SIGIO) when ALSA supports it.
+// The handler must mix using only preallocated buffers / atomics, never
 // SoundCheck-style malloc. Dedicated thread is only the -ENOSYS fallback.
 // The old heap race is reproduced by tests_sigio_repro --legacy-unsafe; the
 // fixed signal path is exercised by tests_sigio_repro --safe.
@@ -202,7 +202,7 @@ void test_sound_mixer_alsa_async_sigio_is_signal_safe() {
     TEST_CHECK_(SoundMixerShouldUseDedicatedThread() == thread_on,
         "ShouldUseDedicatedThread must reflect the ENOSYS thread fallback");
     if (async_on) {
-      TEST_MSG("async PCM handler registered (path 2 SIGIO mix)");
+      TEST_MSG("async PCM handler registered (SIGIO mix)");
     } else {
       TEST_MSG("dedicated thread fallback (snd_async_add_pcm_handler ENOSYS)");
     }
@@ -217,7 +217,7 @@ void test_sound_mixer_alsa_async_sigio_is_signal_safe() {
 #endif
 }
 
-// Path 2: SpmcArray capacity (kPoolCapacity) is larger than the number of
+// SpmcArray capacity (kPoolCapacity) is larger than the number of
 // allocated SoundTasks (kPoolSize), so returning every task via pool.enqueue
 // succeeds without a deferred return queue.
 void test_sound_mixer_pool_capacity_accepts_full_return() {
@@ -286,7 +286,7 @@ void test_sound_mixer_pool_capacity_accepts_full_return() {
 }
 
 #if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
-// Path 2: SIGIO errors must fill a preallocated ~1000-byte buffer with detail
+// SIGIO errors must fill a preallocated ~1000-byte buffer with detail
 // before publishing the atomic; UpdateSoundEngine (via IsOk) promotes + logs once.
 void test_sound_mixer_async_error_message_is_detailed() {
   SoundPlayer player;

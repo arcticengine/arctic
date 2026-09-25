@@ -43,7 +43,7 @@ constexpr const char *kMixerQueueExhausted =
     "Sound mixer task queue exhausted after retries";
 
 // Retry try_enqueue many times; never ReturnSoundTask on failure (that raced the
-// mixer SpmcArray). After all retries fail, Fatal — process exits.
+// mixer SpmcArray). After all retries fail, Fatal: the process exits.
 void EnqueueSoundTaskOrFatal(SoundTask *buffer) {
   for (Si32 i = 0; i < 1024; ++i) {
     if (g_sound_mixer_state.AddSoundTask(buffer)) {
