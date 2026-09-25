@@ -155,6 +155,11 @@ void SoundMixerTestReportAsyncError(int err_code, const char *context);
 const char *SoundMixerTestPeekAsyncErrorMessage();
 /// Test helper: drop a pending async errno without UpdateSoundEngine/Fatal.
 void SoundMixerTestClearAsyncError();
+/// Test helper: run the SIGIO handler's decision on a snd_pcm_avail_update
+/// result (may publish a recover code or an async error like the handler).
+bool SoundMixerTestAsyncAvailAllowsWrite(Si64 avail, Si64 period_size);
+/// Test helper: read the pending underrun/suspend recover code (0 if none).
+int SoundMixerTestPeekAsyncRecoverCode();
 /// Process-wide mixer control (also used by the platform window startup).
 void StartSoundMixer(const char *output_device_name);
 void StopSoundMixer();

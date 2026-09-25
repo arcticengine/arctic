@@ -472,6 +472,34 @@ void MixSound() {
   MixSound(false);
 }
 
+// SIGIO-safe. True when a full period can be mixed and written. In the XRUN
+// state avail_update itself returns -EPIPE (-ESTRPIPE when suspended) and no
+// write is attempted, so the recovery request must be raised here.
+static bool SoundMixerAsyncAvailAllowsWrite(snd_pcm_sframes_t avail,
+    snd_pcm_sframes_t period_size) {
+  if (avail == -EPIPE || avail == -ESTRPIPE) {
+    g_async_pcm_recover_code.store(static_cast<int>(avail),
+        std::memory_order_release);
+    return false;
+  }
+  if (avail < 0) {
+    SoundReportErrorFromSignal(static_cast<int>(avail),
+        "async pcm avail update failed");
+    return false;
+  }
+  return avail >= period_size;
+}
+
+bool SoundMixerTestAsyncAvailAllowsWrite(Si64 avail, Si64 period_size) {
+  return SoundMixerAsyncAvailAllowsWrite(
+      static_cast<snd_pcm_sframes_t>(avail),
+      static_cast<snd_pcm_sframes_t>(period_size));
+}
+
+int SoundMixerTestPeekAsyncRecoverCode() {
+  return g_async_pcm_recover_code.load(std::memory_order_acquire);
+}
+
 // Delivered from SIGIO. Only preallocated buffers and atomics.
 // Underrun/suspend: set g_async_pcm_recover_code; UpdateSoundEngine prepares.
 static void SoundMixerCallback(snd_async_handler_t *ahandler) {
@@ -487,7 +515,7 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
 
   while (!g_sound_mixer_state.do_quit.load(std::memory_order_relaxed)) {
     snd_pcm_sframes_t avail = snd_pcm_avail_update(handle);
-    if (avail < data->period_size) {
+    if (!SoundMixerAsyncAvailAllowsWrite(avail, data->period_size)) {
       return;
     }
 

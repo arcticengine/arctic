@@ -329,6 +329,77 @@ void test_sound_mixer_async_error_message_is_detailed() {
 #endif
 
 #if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+// In the XRUN state snd_pcm_avail_update returns -EPIPE (-ESTRPIPE when
+// suspended). The SIGIO handler never reaches snd_pcm_writei then, so unless
+// it requests recovery on that result the sound stays silent forever while
+// IsOk still reports success.
+void test_sound_mixer_async_underrun_from_avail_requests_recovery() {
+  const bool mixer_was_running =
+      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
+  if (mixer_was_running) {
+    StopSoundMixer();
+  }
+  const bool was_ok = g_sound_mixer_state.IsOk();
+  const bool was_quit = g_sound_mixer_state.do_quit.load();
+  g_sound_mixer_state.is_ok.store(true);
+  SoundMixerTestClearAsyncError();
+
+  SoundPlayer player;
+  const Si64 kPeriod = 441;
+
+  const int recoverable[] = {-EPIPE, -ESTRPIPE};
+  for (int code : recoverable) {
+    TEST_CHECK_(!SoundMixerTestAsyncAvailAllowsWrite(code, kPeriod),
+        "avail=%d must not let the handler mix and write", code);
+    TEST_CHECK_(SoundMixerTestPeekAsyncRecoverCode() == code,
+        "avail=%d must request recovery with the same code, got %d",
+        code, SoundMixerTestPeekAsyncRecoverCode());
+    TEST_CHECK_(player.IsOk(),
+        "avail=%d is recoverable and must not become a mixer error", code);
+    SoundMixerTestClearAsyncError();
+  }
+
+  const Si64 not_enough[] = {0, 1, kPeriod - 1};
+  for (Si64 avail : not_enough) {
+    TEST_CHECK_(!SoundMixerTestAsyncAvailAllowsWrite(avail, kPeriod),
+        "avail=%lld is less than a period and must wait", (long long)avail);
+    TEST_CHECK_(SoundMixerTestPeekAsyncRecoverCode() == 0,
+        "avail=%lld must not request recovery", (long long)avail);
+  }
+
+  const Si64 enough[] = {kPeriod, kPeriod + 1, kPeriod * 4};
+  for (Si64 avail : enough) {
+    TEST_CHECK_(SoundMixerTestAsyncAvailAllowsWrite(avail, kPeriod),
+        "avail=%lld holds a full period and must be written", (long long)avail);
+    TEST_CHECK_(SoundMixerTestPeekAsyncRecoverCode() == 0,
+        "avail=%lld must not request recovery", (long long)avail);
+  }
+  TEST_CHECK_(player.IsOk(), "waiting and writing must not raise an error");
+
+  // Any other negative result is a hard failure, not something prepare fixes.
+  TEST_CHECK(!SoundMixerTestAsyncAvailAllowsWrite(-EIO, kPeriod));
+  TEST_CHECK_(SoundMixerTestPeekAsyncRecoverCode() == 0,
+      "-EIO must not be treated as an underrun, got recover code %d",
+      SoundMixerTestPeekAsyncRecoverCode());
+  TEST_CHECK_(!player.IsOk(), "-EIO from avail_update must become an error");
+  const std::string desc = player.GetErrorDescription();
+  TEST_CHECK_(desc.find("avail update failed") != std::string::npos,
+      "error description must name avail update, got: %s", desc.c_str());
+
+  SoundMixerTestClearAsyncError();
+  g_sound_mixer_state.is_ok.store(was_ok);
+  g_sound_mixer_state.do_quit.store(was_quit);
+  if (mixer_was_running) {
+    StartSoundMixer(nullptr);
+  }
+}
+#else
+void test_sound_mixer_async_underrun_from_avail_requests_recovery() {
+  TEST_MSG("skipped: ALSA async handler is Linux-only");
+}
+#endif
+
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
 // A SoundHandle must capture the task uid before the task is published to the
 // mixer. Once enqueued, the mixer may finish a zero-length sound and reset the
 // uid (or the task may be reused) before a handle built afterwards reads it.
