@@ -26,6 +26,7 @@
 #include <deque>
 #include <string>
 
+#include "engine/arctic_platform_def.h"
 #include "engine/easy_sound.h"
 #include "engine/mtq_mpmc_befsbfsp_allocator.h"
 #include "engine/sound_handle.h"
@@ -68,6 +69,13 @@ class SoundPlayer {
  protected:
   SoundPlayerImpl *impl = nullptr;
 };
+
+
+/// @brief Per-frame sound engine maintenance (call from the game loop).
+/// On Linux ALSA async: recovers SIGIO-deferred underrun/suspend (prepare/
+/// resume), then lifts a hard deferred mixer error into IsOk and logs it once.
+/// Safe no-op elsewhere / when idle.
+void UpdateSoundEngine();
 
 
 /// @brief Starts playback of a sound
@@ -123,9 +131,49 @@ Sound BeepAsync(float duration_seconds, Si32 note);
 /// @param note Index of the note to play, index of C4 is 0, index of C#4 is 1, etc.
 void Beep(float duration_seconds, Si32 note);
 
+extern template class MpmcNoFallbackFixedSizeBufferFixedSizePool<32, 4080>;
 extern template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
 
 /// @}
+
+/// @brief True when the Linux mixer fell back to a dedicated thread because
+/// snd_async_add_pcm_handler returned -ENOSYS. False when the async/SIGIO
+/// handler is registered (path 2) or on platforms without ALSA async.
+bool SoundMixerShouldUseDedicatedThread();
+
+/// @brief True while the dedicated Linux mixer thread is running (ENOSYS fallback).
+bool SoundMixerIsDedicatedThreadRunning();
+
+/// @brief True if an ALSA async PCM handler is currently registered (SIGIO path).
+bool SoundMixerHasAsyncPcmHandler();
+
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+/// Test helper: fill the preallocated SIGIO error buffer and publish it the
+/// same way the async handler would (no signal raised).
+void SoundMixerTestReportAsyncError(int err_code, const char *context);
+/// Test helper: read the preallocated SIGIO error buffer (no promote / Fatal).
+const char *SoundMixerTestPeekAsyncErrorMessage();
+/// Test helper: drop a pending async errno without UpdateSoundEngine/Fatal.
+void SoundMixerTestClearAsyncError();
+/// Process-wide mixer control (also used by the platform window startup).
+void StartSoundMixer(const char *output_device_name);
+void StopSoundMixer();
+#endif
+
+#ifdef ARCTIC_TEST_SIGIO_REPRO
+/// Test-only: mark whether the main thread is inside malloc/free (repro harness).
+void SoundMixerSigioReproSetMainThreadInHeap(bool in_heap);
+/// Test-only: size MixSound buffers without opening PCM.
+bool SoundMixerSigioReproPrepareBuffers();
+/// Test-only: old unsafe path (MixSound + malloc) from a signal handler.
+void SoundMixerSigioReproInvokeLegacyUnsafeFromSignal();
+/// Test-only: path-2 safe MixSound(async_signal_safe) from a signal handler.
+void SoundMixerSigioReproInvokeSafeMixFromSignal();
+/// Test-only: MixSound from a normal thread.
+void SoundMixerSigioReproInvokeMixFromThread();
+/// Deprecated alias for InvokeLegacyUnsafeFromSignal.
+void SoundMixerSigioReproInvokeMixFromSignal();
+#endif  // ARCTIC_TEST_SIGIO_REPRO
 
 }  // namespace arctic
 

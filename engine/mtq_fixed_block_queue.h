@@ -31,6 +31,7 @@
 #define ENGINE_MTQ_FIXED_BLOCK_QUEUE_H_
 
 #include <cstddef>
+#include <cstdlib>
 #include <new>
 #include <utility>
 #include "engine/mtq_mempool_allocator.h"
@@ -89,6 +90,11 @@ class FixedBlockQueue_Gears {
   /// @return A pointer to the newly allocated block.
   BlockItems *getNewBlock(I_FixedSizeAllocator *pool) {
     void *block = pool->alloc();
+    if (block == nullptr) {
+      // No-fallback pools must not exhaust on the skip/retry path; abort
+      // rather than malloc (SIGIO-safe invariant for the mixer pool).
+      abort();
+    }
     return new(block) BlockItems;
   }
 

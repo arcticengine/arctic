@@ -30,6 +30,10 @@
 // Fixed size buffer allocator implemented as a
 // Fixed size pool
 //
+// Also provides MpmcNoFallbackFixedSizeBufferFixedSizePool: same shape, but
+// alloc returns nullptr when empty and free aborts if it cannot reclaim
+// (used by the sound mixer page_pool so SIGIO never hits the heap).
+//
 // alloc and free are both wait-free if you are lucky
 // alloc/free requires at most kArraySize operations if you are lucky
 
@@ -39,19 +43,23 @@
 #include "engine/mtq_mempool_allocator.h"
 #include <array>
 #include <atomic>
+#include <cstdlib>
 
 namespace arctic {
 
 /// @brief Fixed size allocator for fixed size buffers
 /// @tparam kArraySize Size of the array
 /// @tparam kBufferSize Size of the buffer
+///
+/// Best-effort: falls back to ::malloc / ::free when the pool is empty or
+/// when free cannot reclaim a slot (e.g. after a malloc fallback).
 template<size_t kArraySize, size_t kBufferSize>
 class alignas(64) MpmcBestEffortFixedSizeBufferFixedSizePool : public I_FixedSizeAllocator {
   std::array<std::atomic<void*>, kArraySize> items;
  public:
   MpmcBestEffortFixedSizeBufferFixedSizePool() {
     for (size_t i = 0; i < items.size(); ++i) {
-      items[i] = malloc(kBufferSize);
+      items[i] = ::malloc(kBufferSize);
     }
   }
 
@@ -59,7 +67,7 @@ class alignas(64) MpmcBestEffortFixedSizeBufferFixedSizePool : public I_FixedSiz
     for (size_t i = 0; i < items.size(); ++i) {
       void *p = std::atomic_exchange(&items[i], (void*)nullptr);
       if (p) {
-        free(p);
+        ::free(p);
       }
     }
   }
@@ -73,7 +81,7 @@ class alignas(64) MpmcBestEffortFixedSizeBufferFixedSizePool : public I_FixedSiz
         return p;
       }
     }
-    return malloc(kBufferSize);
+    return ::malloc(kBufferSize);
   }
 
   void free(void *ptr) override {
@@ -83,12 +91,66 @@ class alignas(64) MpmcBestEffortFixedSizeBufferFixedSizePool : public I_FixedSiz
         return;
       }
     }
-    free(ptr);
-    return;
+    ::free(ptr);
   }
 
   /// @brief Gets the size of the buffer
   /// @return Size of the buffer
+  size_t getBlockSize() override {
+    return kBufferSize;
+  }
+};
+
+
+/// @brief Fixed-size pool with no heap fallback.
+///
+/// alloc() returns nullptr when every slot is checked out. free() must always
+/// be able to return a block into a slot (we never hand out non-pool memory);
+/// inability to do so is an invariant violation and aborts.
+template<size_t kArraySize, size_t kBufferSize>
+class alignas(64) MpmcNoFallbackFixedSizeBufferFixedSizePool : public I_FixedSizeAllocator {
+  std::array<std::atomic<void*>, kArraySize> items;
+ public:
+  MpmcNoFallbackFixedSizeBufferFixedSizePool() {
+    for (size_t i = 0; i < items.size(); ++i) {
+      items[i] = ::malloc(kBufferSize);
+    }
+  }
+
+  ~MpmcNoFallbackFixedSizeBufferFixedSizePool() {
+    for (size_t i = 0; i < items.size(); ++i) {
+      void *p = std::atomic_exchange(&items[i], (void*)nullptr);
+      if (p) {
+        ::free(p);
+      }
+    }
+  }
+
+  /// @brief Allocates a buffer from the pool, or nullptr if exhausted.
+  void *alloc() override {
+    for (size_t i = 0; i < items.size(); ++i) {
+      void *p = std::atomic_exchange(&items[i], (void*)nullptr);
+      if (p) {
+        return p;
+      }
+    }
+    return nullptr;
+  }
+
+  void free(void *ptr) override {
+    if (!ptr) {
+      return;
+    }
+    for (size_t i = 0; i < items.size(); ++i) {
+      ptr = std::atomic_exchange(&items[i], ptr);
+      if (!ptr) {
+        return;
+      }
+    }
+    // Never malloc'd outside the pool, so a free that cannot reclaim is fatal.
+    abort();
+  }
+
   size_t getBlockSize() override {
     return kBufferSize;
   }

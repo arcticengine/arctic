@@ -1603,6 +1603,13 @@ bool ShowProgress() {
         g_current_directory = root;
         g_path = CanonicalizePath(
           (g_current_directory + "/..").c_str()) + "/" + g_project_name;
+        // PatchEnginePath needs g_engine during create file copy (case 7).
+        // Update sets this in its own case 2; create must set it here so the
+        // relative path is rewritten when the checkout is not named "arctic".
+        g_engine = CanonicalizePath((g_current_directory + "/engine").c_str());
+        if (!CheckDirectoryIsThere(g_engine, "engine", &error_message)) {
+          has_error = true;
+        }
       } else {
         error_message = "Can't detect Arctic Engine: no arctic.engine file"
           " next to the wizard or above it, and none in the current directory"

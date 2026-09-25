@@ -2,6 +2,15 @@
 #define TEST_NO_MAIN
 #include "test_helpers.h"
 
+#include "engine/arctic_platform_sound.h"
+#include "engine/arctic_mixer.h"
+#include <cerrno>
+#include <string>
+
+namespace arctic {
+extern SoundMixerState g_sound_mixer_state;
+}  // namespace arctic
+
 // ============================================================================
 // easy_sound_instance bug reproduction tests
 // ============================================================================
@@ -174,3 +183,144 @@ void test_sound_8bit_signed_vs_unsigned() {
       "8-bit maximum (255) should convert to 32512, got %d",
       (int)max_sample);
 }
+
+// Path 2: Linux keeps snd_async_add_pcm_handler (SIGIO) when ALSA supports it.
+// The handler must mix using only preallocated buffers / atomics — never
+// SoundCheck-style malloc. Dedicated thread is only the -ENOSYS fallback.
+// The old heap race is reproduced by tests_sigio_repro --legacy-unsafe; the
+// fixed signal path is exercised by tests_sigio_repro --safe.
+void test_sound_mixer_alsa_async_sigio_is_signal_safe() {
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+  // The suite uses kHiddenWindow, which already starts the process-wide mixer.
+  // Do not Initialize/Deinitialize a second SoundPlayer: that would reopen PCM
+  // under a live thread and/or stop the global mixer for later tests.
+  const bool async_on = SoundMixerHasAsyncPcmHandler();
+  const bool thread_on = SoundMixerIsDedicatedThreadRunning();
+  if (g_sound_mixer_state.IsOk() && (async_on || thread_on)) {
+    TEST_CHECK_(!(async_on && thread_on),
+        "async handler and dedicated thread must not both be active");
+    TEST_CHECK_(SoundMixerShouldUseDedicatedThread() == thread_on,
+        "ShouldUseDedicatedThread must reflect the ENOSYS thread fallback");
+    if (async_on) {
+      TEST_MSG("async PCM handler registered (path 2 SIGIO mix)");
+    } else {
+      TEST_MSG("dedicated thread fallback (snd_async_add_pcm_handler ENOSYS)");
+    }
+  } else if (!g_sound_mixer_state.IsOk()) {
+    TEST_MSG("skipped runtime mixer check: mixer not ok");
+  } else {
+    TEST_MSG("skipped runtime mixer check: mixer not started");
+  }
+#else
+  TEST_CHECK_(!SoundMixerHasAsyncPcmHandler(),
+      "non-ALSA platforms do not register an async PCM handler");
+#endif
+}
+
+// Path 2: SpmcArray capacity (kPoolCapacity) is larger than the number of
+// allocated SoundTasks (kPoolSize), so returning every task via pool.enqueue
+// succeeds without a deferred return queue.
+void test_sound_mixer_pool_capacity_accepts_full_return() {
+  // Pause the process-wide mixer so MixSound cannot steal tasks while this
+  // test drains and refills the pool. (Linux ALSA only.)
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+  const bool mixer_was_running =
+      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
+  if (mixer_was_running) {
+    StopSoundMixer();
+  }
+#else
+  const bool mixer_was_running = false;
+  (void)mixer_was_running;
+#endif
+
+  SoundTask *taken[SoundMixerState::kPoolSize];
+  Si32 taken_n = 0;
+  for (; taken_n < SoundMixerState::kPoolSize; ++taken_n) {
+    SoundTask *t = g_sound_mixer_state.AllocateSoundTask();
+    if (!t) {
+      break;
+    }
+    taken[taken_n] = t;
+  }
+  TEST_CHECK_(taken_n == SoundMixerState::kPoolSize,
+      "must take the entire SoundTask pool (%d), got %d",
+      (int)SoundMixerState::kPoolSize, (int)taken_n);
+  TEST_CHECK_(g_sound_mixer_state.AllocateSoundTask() == nullptr,
+      "pool must be empty after taking all tasks");
+
+  // Enqueue all tasks back into the oversized SpmcArray.
+  for (Si32 i = 0; i < taken_n; ++i) {
+    TEST_CHECK_(g_sound_mixer_state.pool.enqueue(taken[i]),
+        "pool.enqueue must succeed for every returned SoundTask "
+        "(kPoolCapacity=%d > kPoolSize=%d)",
+        (int)SoundMixerState::kPoolCapacity, (int)SoundMixerState::kPoolSize);
+  }
+
+  SoundTask *reclaimed[SoundMixerState::kPoolSize];
+  Si32 reclaimed_n = 0;
+  for (; reclaimed_n < SoundMixerState::kPoolSize; ++reclaimed_n) {
+    SoundTask *t = g_sound_mixer_state.AllocateSoundTask();
+    if (!t) {
+      break;
+    }
+    reclaimed[reclaimed_n] = t;
+  }
+  TEST_CHECK_(reclaimed_n == SoundMixerState::kPoolSize,
+      "after full return the full pool must be allocatable again (%d), got %d",
+      (int)SoundMixerState::kPoolSize, (int)reclaimed_n);
+
+  // Restore pool for later tests.
+  for (Si32 i = 0; i < reclaimed_n; ++i) {
+    TEST_CHECK_(g_sound_mixer_state.pool.enqueue(reclaimed[i]),
+        "cleanup pool.enqueue must succeed");
+  }
+
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+  if (mixer_was_running) {
+    StartSoundMixer(nullptr);
+    g_sound_mixer_state.do_quit.store(false);
+    g_sound_mixer_state.is_ok.store(true);
+  }
+#endif
+}
+
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+// Path 2: SIGIO errors must fill a preallocated ~1000-byte buffer with detail
+// before publishing the atomic; UpdateSoundEngine (via IsOk) promotes + logs once.
+void test_sound_mixer_async_error_message_is_detailed() {
+  SoundPlayer player;
+  // Simulate a SIGIO failure (no signal raised): fill the preallocated buffer,
+  // then publish via the atomic. IsOk promotes that buffer into SetError.
+  SoundMixerTestReportAsyncError(-EPIPE, "async pcm write failed");
+  TEST_CHECK_(!player.IsOk(),
+      "IsOk must be false after a reported async mixer error");
+  const std::string desc = player.GetErrorDescription();
+  TEST_CHECK_(desc.find("Arctic Engine Sound ERROR:") != std::string::npos,
+      "error description must include the fixed prefix, got: %s", desc.c_str());
+  TEST_CHECK_(desc.find("async pcm write failed") != std::string::npos,
+      "error description must include the context phrase, got: %s", desc.c_str());
+  TEST_CHECK_(desc.find("code ") != std::string::npos,
+      "error description must include the numeric code, got: %s", desc.c_str());
+  // -EPIPE should bring in snd_strerror text (e.g. "Broken pipe").
+  TEST_CHECK_(desc.find("Broken pipe") != std::string::npos
+          || desc.find("Pipe") != std::string::npos
+          || desc.find("-32") != std::string::npos,
+      "error description should include ALSA strerror or the code, got: %s",
+      desc.c_str());
+  // Second promote must stay quiet (errno already consumed) and keep IsOk false.
+  TEST_CHECK_(!player.IsOk(),
+      "IsOk must stay false after the error was promoted");
+
+  // Report sets do_quit; the dedicated-thread loop may have exited. Fully
+  // restart the process-wide mixer so later tests still have sound.
+  StopSoundMixer();
+  StartSoundMixer(nullptr);
+  g_sound_mixer_state.do_quit.store(false);
+  g_sound_mixer_state.is_ok.store(true);
+}
+#else
+void test_sound_mixer_async_error_message_is_detailed() {
+  TEST_MSG("skipped: ALSA async error buffer is Linux-only");
+}
+#endif
