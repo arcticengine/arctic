@@ -59,13 +59,14 @@ SoundHandle StartSound(Sound sound, float volume) {
   if (sound.GetInstance()) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
+      SoundHandle handle(buffer);
       buffer->sound = sound;
       buffer->volume = volume;
       buffer->sound.GetInstance()->IncPlaying();
       buffer->action = SoundTaskAction::kStart;  //-V1048
       buffer->is_playing = true;
       EnqueueSoundTaskOrFatal(buffer);
-      return SoundHandle(buffer);
+      return handle;
     }
   }
   return SoundHandle::Invalid();
@@ -75,6 +76,7 @@ SoundHandle StartSoundLooping(Sound sound, float volume) {
   if (sound.GetInstance()) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
+      SoundHandle handle(buffer);
       buffer->sound = sound;
       buffer->volume = volume;
       buffer->is_looping = true;
@@ -82,7 +84,7 @@ SoundHandle StartSoundLooping(Sound sound, float volume) {
       buffer->action = SoundTaskAction::kStart;
       buffer->is_playing = true;
       EnqueueSoundTaskOrFatal(buffer);
-      return SoundHandle(buffer);
+      return handle;
     }
   }
   return SoundHandle::Invalid();
@@ -150,6 +152,7 @@ SoundHandle StartSoundAtPosition(Sound sound, float volume, Vec3F position) {
   if (sound.GetInstance()) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
+      SoundHandle handle(buffer);
       buffer->sound = sound;
       buffer->volume = volume;
       buffer->next_position = 0;
@@ -159,7 +162,7 @@ SoundHandle StartSoundAtPosition(Sound sound, float volume, Vec3F position) {
       buffer->action = SoundTaskAction::kStart3d;
       buffer->is_playing = true;
       EnqueueSoundTaskOrFatal(buffer);
-      return SoundHandle(buffer);
+      return handle;
     }
   }
   return SoundHandle::Invalid();

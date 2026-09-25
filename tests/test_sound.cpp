@@ -4,8 +4,11 @@
 
 #include "engine/arctic_platform_sound.h"
 #include "engine/arctic_mixer.h"
+#include <atomic>
 #include <cerrno>
+#include <functional>
 #include <string>
+#include <thread>
 
 namespace arctic {
 extern SoundMixerState g_sound_mixer_state;
@@ -322,5 +325,104 @@ void test_sound_mixer_async_error_message_is_detailed() {
 #else
 void test_sound_mixer_async_error_message_is_detailed() {
   TEST_MSG("skipped: ALSA async error buffer is Linux-only");
+}
+#endif
+
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+// A SoundHandle must capture the task uid before the task is published to the
+// mixer. Once enqueued, the mixer may finish a zero-length sound and reset the
+// uid (or the task may be reused) before a handle built afterwards reads it.
+// A test thread takes the mixer role so the race window is hit many times;
+// the platform mixer is stopped because the task queue has a single consumer.
+void test_sound_handle_takes_uid_before_publish() {
+  const bool mixer_was_running =
+      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
+  if (mixer_was_running) {
+    StopSoundMixer();
+  }
+
+  Sound empty;
+  empty.Create(0.0);
+  TEST_CHECK(empty.GetInstance() != nullptr);
+  TEST_CHECK(empty.DurationSamples() == 0);
+
+  std::atomic<bool> stop{false};
+  std::thread mixer([&stop]() {
+    float mix_l = 0.f;
+    float mix_r = 0.f;
+    Si16 tmp[2] = {0, 0};
+    while (!stop.load(std::memory_order_relaxed)) {
+      g_sound_mixer_state.MixSound(&mix_l, &mix_r, 1, 1, tmp);
+    }
+  });
+
+  struct Case {
+    const char *name;
+    Si32 iterations;
+    std::function<SoundHandle()> start;
+  };
+  // The 3d branch of the mixer is longer, so it needs more tries to land in
+  // the window between publish and a late uid read.
+  const Case cases[] = {
+    {"StartSound", 4000000, [&empty]() { return StartSound(empty, 1.f); }},
+    {"StartSoundLooping", 4000000, [&empty]() { return StartSoundLooping(empty, 1.f); }},
+    {"StartSoundAtPosition", 12000000, [&empty]() {
+      return StartSoundAtPosition(empty, 1.f, Vec3F(0.f, 0.f, 0.f));
+    }},
+  };
+  for (const Case &c : cases) {
+    Si32 started = 0;
+    Si32 wrong_uid = 0;
+    Ui64 first_wrong = 0;
+    Ui64 first_expected = 0;
+    for (Si32 i = 0; i < c.iterations; ++i) {
+      const Ui64 expected = g_sound_mixer_state.next_uid.load();
+      SoundHandle handle = c.start();
+      if (g_sound_mixer_state.next_uid.load() == expected) {
+        // The task pool was empty for a moment; no task, nothing to check.
+        continue;
+      }
+      ++started;
+      if (handle.GetUid() != expected) {
+        if (wrong_uid == 0) {
+          first_wrong = handle.GetUid();
+          first_expected = expected;
+        }
+        ++wrong_uid;
+      }
+    }
+    TEST_CHECK_(started > c.iterations / 2,
+        "%s: too few starts reached the mixer (%d of %d)",
+        c.name, (int)started, (int)c.iterations);
+    TEST_CHECK_(wrong_uid == 0,
+        "%s: %d of %d handles got a uid other than their task's; first got "
+        "%llu, expected %llu",
+        c.name, (int)wrong_uid, (int)started,
+        (unsigned long long)first_wrong, (unsigned long long)first_expected);
+  }
+
+  stop.store(true);
+  mixer.join();
+  float mix_l = 0.f;
+  float mix_r = 0.f;
+  Si16 tmp[2] = {0, 0};
+  for (Si32 i = 0; i < 4; ++i) {
+    g_sound_mixer_state.MixSound(&mix_l, &mix_r, 1, 1, tmp);
+  }
+  TEST_CHECK_(g_sound_mixer_state.buffers.empty(),
+      "every zero-length sound must be released, %d left",
+      (int)g_sound_mixer_state.buffers.size());
+  TEST_CHECK_(!empty.IsPlaying(),
+      "the playing count must return to zero after all releases");
+
+  if (mixer_was_running) {
+    StartSoundMixer(nullptr);
+    g_sound_mixer_state.do_quit.store(false);
+    g_sound_mixer_state.is_ok.store(true);
+  }
+}
+#else
+void test_sound_handle_takes_uid_before_publish() {
+  TEST_MSG("skipped: needs a stoppable platform mixer (Linux ALSA only)");
 }
 #endif

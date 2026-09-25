@@ -50,6 +50,7 @@ void test_sound_8bit_signed_vs_unsigned();
 void test_sound_mixer_alsa_async_sigio_is_signal_safe();
 void test_sound_mixer_pool_capacity_accepts_full_return();
 void test_sound_mixer_async_error_message_is_detailed();
+void test_sound_handle_takes_uid_before_publish();
 
 // test_formats.cpp
 void test_localization_basic_load();
@@ -367,6 +368,8 @@ TEST_LIST = {
       test_sound_mixer_pool_capacity_accepts_full_return},
   {"Sound mixer async error message is detailed",
       test_sound_mixer_async_error_message_is_detailed},
+  {"Sound handle takes uid before publish",
+      test_sound_handle_takes_uid_before_publish},
   {"Quaternion ToMat33F sign error", test_quat_to_mat33f_sign},
   {"Quaternion ToPartialMatrix33F sign error", test_quat_to_partial_mat33f_sign},
   {"Quaternion slerp uses unnormalized inputs", test_quat_slerp_unnormalized},
