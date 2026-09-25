@@ -401,6 +401,8 @@
     <ClCompile Include="test_math.cpp" />
     <ClCompile Include="test_font.cpp" />
     <ClCompile Include="test_physics.cpp" />
+    <ClCompile Include="test_array2.cpp" />
+    <ClCompile Include="test_mtq.cpp" />
 <ClCompile Include="main.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>

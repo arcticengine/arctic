@@ -138,6 +138,9 @@
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(__WINDOWS__)
 #define ACUTEST_WIN__       1
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #include <io.h>
 #endif  // _WIN32 ||__WIN32__ || __WINDOWS__

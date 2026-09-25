@@ -15,6 +15,8 @@
     <ClCompile Include="test_math.cpp" />
     <ClCompile Include="test_font.cpp" />
     <ClCompile Include="test_physics.cpp" />
+    <ClCompile Include="test_array2.cpp" />
+    <ClCompile Include="test_mtq.cpp" />
     <ClCompile Include="..\engine\arctic_input.cpp">
       <Filter>engine</Filter>
     </ClCompile>
