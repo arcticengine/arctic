@@ -47,6 +47,9 @@ void test_random_state_text_round_trip();
 void test_sound_resample_returns_nullptr();
 void test_sound_8bit_stereo_wrong_offset();
 void test_sound_8bit_signed_vs_unsigned();
+void test_sound_mixer_alsa_async_sigio_is_signal_safe();
+void test_sound_mixer_pool_capacity_accepts_full_return();
+void test_sound_mixer_async_error_message_is_detailed();
 
 // test_formats.cpp
 void test_localization_basic_load();
@@ -281,6 +284,7 @@ void test_key_edges_follow_real_transitions();
 // test_mtq.cpp
 void test_mpsc_vinfarr_frees_chunks_with_matching_size();
 void test_mpsc_vinfarr_two_producers_deliver_every_item();
+void test_mpsc_vinfarr_destructor_deletes_pointer_payloads();
 
 // test_sprite.cpp
 void test_radix_sort();
@@ -357,6 +361,12 @@ TEST_LIST = {
   {"Sound resample returns nullptr", test_sound_resample_returns_nullptr},
   {"Sound 8-bit stereo wrong offset", test_sound_8bit_stereo_wrong_offset},
   {"Sound 8-bit signed vs unsigned", test_sound_8bit_signed_vs_unsigned},
+  {"Sound mixer ALSA async SIGIO path is signal-safe",
+      test_sound_mixer_alsa_async_sigio_is_signal_safe},
+  {"Sound mixer pool capacity accepts full return",
+      test_sound_mixer_pool_capacity_accepts_full_return},
+  {"Sound mixer async error message is detailed",
+      test_sound_mixer_async_error_message_is_detailed},
   {"Quaternion ToMat33F sign error", test_quat_to_mat33f_sign},
   {"Quaternion ToPartialMatrix33F sign error", test_quat_to_partial_mat33f_sign},
   {"Quaternion slerp uses unnormalized inputs", test_quat_slerp_unnormalized},
@@ -593,5 +603,7 @@ TEST_LIST = {
       test_mpsc_vinfarr_frees_chunks_with_matching_size},
   {"MPSC queue two producers deliver every item",
       test_mpsc_vinfarr_two_producers_deliver_every_item},
+  {"MPSC queue destructor deletes pointer payloads",
+      test_mpsc_vinfarr_destructor_deletes_pointer_payloads},
   {0}
 };

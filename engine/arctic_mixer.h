@@ -28,6 +28,8 @@
 #include <deque>  // NOLINT
 #include <mutex>  // NOLINT
 #include <string>
+#include <atomic>
+#include <cstdlib>
 #include <vector>
 #include <array>
 
@@ -168,10 +170,14 @@ struct SoundMixerState {
   std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);  ///< Flag to indicate if the mixer should quit
   std::atomic<bool> is_ok = ATOMIC_VAR_INIT(true);  ///< Flag to indicate if the mixer state is okay
   std::mutex error_mutex;  ///< Mutex for protecting error-related data
-  MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080> page_pool;  ///< Pool for memory allocation
+  // 32 no-fallback blocks: SIGIO must never malloc. Exhausted pool → try_enqueue fails.
+  MpmcNoFallbackFixedSizeBufferFixedSizePool<32, 4080> page_pool;  ///< Pool for memory allocation
   MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>> tasks;  ///< Queue for sound tasks
   SpmcArray<SoundTask, true> pool;  ///< Pool for SoundTask objects
-  static constexpr Si32 kPoolSize = 1024;  ///< Size of the SoundTask pool
+  static constexpr Si32 kPoolSize = 1024;  ///< Number of SoundTask objects allocated
+  // SpmcArray slot capacity > kPoolSize so returning all live tasks via
+  // pool.enqueue always has spare room (no deferred return queue).
+  static constexpr Si32 kPoolCapacity = 2048;  ///< SpmcArray construction size
 
   // Mutex-protected state begin
   std::string error_description = "Error description is not set.";  ///< Error description string
@@ -185,7 +191,8 @@ struct SoundMixerState {
   /// @brief Constructor for SoundMixerState
   SoundMixerState()
       : tasks(&page_pool)
-      , pool(kPoolSize) {
+      , pool(kPoolCapacity) {
+    buffers.reserve(static_cast<size_t>(kPoolSize));
     for (Si32 i = 0; i < kPoolSize; ++i) {
       pool.enqueue(new SoundTask);
     }
@@ -198,7 +205,9 @@ struct SoundMixerState {
     buffers[idx] = buffers[buffers.size() - 1];
     buffers.pop_back();
     buffer->uid = SoundTask::kInvalidSoundTaskUid;
-    pool.enqueue(buffer);
+    if (!pool.enqueue(buffer)) {
+      abort();
+    }
   }
 
   /// @brief Sets the mixer to error state and saves the error description
@@ -232,12 +241,26 @@ struct SoundMixerState {
     return p;
   }
 
-  /// @brief Adds a SoundTask to the mixer queue
-  /// @param buffer Pointer to the SoundTask to add, nullptr is ignored
-  void AddSoundTask(SoundTask *buffer) {
-    if (buffer) {
-      tasks.enqueue(buffer);
+  /// @brief Returns a SoundTask to the pool without enqueueing it.
+  void ReturnSoundTask(SoundTask *task) {
+    if (!task) {
+      return;
     }
+    task->uid = SoundTask::kInvalidSoundTaskUid;
+    if (!pool.enqueue(task)) {
+      abort();
+    }
+  }
+
+  /// @brief Adds a SoundTask to the mixer queue.
+  /// @param buffer Pointer to the SoundTask to add
+  /// @return false if buffer is null or the page_pool cannot grow the MPSC;
+  ///         on false the caller still owns buffer and should ReturnSoundTask.
+  bool AddSoundTask(SoundTask *buffer) {
+    if (!buffer) {
+      return false;
+    }
+    return tasks.try_enqueue(buffer);
   }
 
   /// @brief Processes input tasks for the mixer thread, dequeues tasks and processes them. Tasks are processed in a loop until the queue is empty or a nullptr is encountered.
@@ -298,7 +321,83 @@ struct SoundMixerState {
         break;
       }
       if (task && !pool.enqueue(task)) {
-        delete task;
+        // SoundTasks are pool-backed; spare SpmcArray capacity must accept them.
+        abort();
+      }
+    }
+  }
+
+  /// @brief Like InputTasksToMixerThread, but safe to call from SIGIO:
+  /// never grows buffers beyond the reserved capacity and never calls delete.
+  void InputTasksToMixerThreadAsyncSignalSafe() {
+    for (Si32 i = 0; i < 512; ++i) {
+      SoundTask *task = tasks.dequeue();
+      if (task == nullptr) {
+        return;
+      }
+      switch (task->action) {
+      case SoundTaskAction::kStart:
+        if (buffers.size() < buffers.capacity()) {
+          buffers.push_back(task);
+          task = nullptr;
+        } else {
+          // StartSound already IncPlaying'd; balance before returning to pool.
+          task->sound.GetInstance()->DecPlaying();
+        }
+        break;
+      case SoundTaskAction::kStop:
+        {
+          Ui64 task_uid = task->target_uid;
+          for (Si32 idx = 0; idx < (Si32)buffers.size(); ++idx) {
+            SoundTask *buffer = buffers[idx];
+            if (task_uid == SoundTask::kInvalidSoundTaskUid
+                ? buffer->sound.GetInstance() == task->sound.GetInstance()
+                : task_uid == buffer->uid) {
+              buffer->sound.GetInstance()->DecPlaying();
+              ReleaseBufferAt(idx);
+              idx--;
+            }
+          }
+        }
+        break;
+      case SoundTaskAction::kSetHeadLocation:
+        head.loc = task->location;
+        head.UpdateEars();
+        break;
+      case SoundTaskAction::kSetLocation:
+        {
+          Ui64 task_uid = task->target_uid;
+          for (size_t idx = 0; idx < buffers.size(); ++idx) {
+            SoundTask *buffer = buffers[idx];
+            if (task_uid == SoundTask::kInvalidSoundTaskUid
+                ? buffer->sound.GetInstance() == task->sound.GetInstance()
+                : task_uid == buffer->uid) {
+              buffer->location = task->location;
+            }
+          }
+        }
+        break;
+      case SoundTaskAction::kStart3d:
+        if (buffers.size() < buffers.capacity()) {
+          task->is_3d = true;
+          task->next_position = 0;
+          for (Si32 ch = 0; ch < 2; ++ch) {
+            task->channel_playback_state[ch].delay = 0.f;
+            task->channel_playback_state[ch].play_position = 0.f;
+            task->channel_playback_state[ch].acc = 0.f;
+          }
+          buffers.push_back(task);
+          task = nullptr;
+        } else {
+          // StartSoundAtPosition already IncPlaying'd; balance before pool return.
+          task->sound.GetInstance()->DecPlaying();
+        }
+        break;
+      }
+      if (task) {
+        if (!pool.enqueue(task)) {
+          abort();
+        }
       }
     }
   }
@@ -328,8 +427,13 @@ struct SoundMixerState {
   /// @param buffer_samples_per_channel Number of samples per channel
   /// @param tmp Temporary buffer for processing
   template <class T>
-  void MixSound(T *mix_l, T *mix_r, Si32 mix_stride, Si32 buffer_samples_per_channel, Si16 *tmp) {
-    InputTasksToMixerThread();
+  void MixSound(T *mix_l, T *mix_r, Si32 mix_stride, Si32 buffer_samples_per_channel,
+      Si16 *tmp, bool async_signal_safe = false) {
+    if (async_signal_safe) {
+      InputTasksToMixerThreadAsyncSignalSafe();
+    } else {
+      InputTasksToMixerThread();
+    }
     float master_volume_16 = static_cast<float>(
       this->master_volume.load() / 32767.0);
 
@@ -432,6 +536,7 @@ struct SoundMixerState {
   }
 };
 
+extern template class MpmcNoFallbackFixedSizeBufferFixedSizePool<32, 4080>;
 extern template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
 extern template class MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>>;
 extern template class SpmcArray<SoundTask, true>;

@@ -41,6 +41,7 @@
 #include <X11/Xatom.h>
 
 #include "engine/easy.h"
+#include "engine/arctic_platform_sound.h"
 
 extern void EasyMain();
 
@@ -730,6 +731,8 @@ void PumpMessages() {
     // Ownership lost; g_clipboard_text is no longer authoritative.
   }
 
+  // Lift SIGIO-deferred mixer errors outside the signal (Linux ALSA path-2).
+  UpdateSoundEngine();
   return;
 }
 

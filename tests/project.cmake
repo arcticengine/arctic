@@ -21,3 +21,47 @@ if (NOT EMSCRIPTEN)
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     TIMEOUT 900)
 endif ()
+
+# =============================================================================
+# SIGIO heap-race reproduction binary (Linux / ALSA only)
+# =============================================================================
+# Production StartSoundMixer always uses a dedicated thread. This separate
+# target reintroduces MixSound/SoundCheck-from-signal only under
+# ARCTIC_TEST_SIGIO_REPRO so the historical "free(): double free detected in
+# tcache" hazard can be demonstrated. It is NOT part of the default ./tests
+# suite. See tools/alsa/run_sigio_heap_repro.sh.
+if (UNIX AND NOT APPLE AND NOT EMSCRIPTEN AND ALSA_FOUND)
+  set(SIGIO_REPRO_SOURCES ${SRC_FILES})
+  list(REMOVE_ITEM SIGIO_REPRO_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+  # Drop the acutest suite sources; this binary has its own main.
+  file(GLOB SIGIO_REPRO_TEST_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cpp")
+  if (SIGIO_REPRO_TEST_SOURCES)
+    list(REMOVE_ITEM SIGIO_REPRO_SOURCES ${SIGIO_REPRO_TEST_SOURCES})
+  endif ()
+  list(APPEND SIGIO_REPRO_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/sigio_repro/main.cpp")
+
+  add_executable(tests_sigio_repro ${SIGIO_REPRO_SOURCES})
+  # ARCTIC_NO_MAIN: use sigio_repro/main.cpp instead of the GLX platform main.
+  target_compile_definitions(tests_sigio_repro PRIVATE ARCTIC_TEST_SIGIO_REPRO ARCTIC_NO_MAIN)
+
+  # Mirror the Linux link set of the main suite.
+  target_link_libraries(tests_sigio_repro
+    ${OPENGL_gl_LIBRARY}
+    ${X11_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${ALSA_LIBRARY}
+  )
+  if (GSTREAMER_FOUND)
+    target_link_libraries(tests_sigio_repro ${GSTREAMER_LIBRARIES})
+    target_link_directories(tests_sigio_repro PUBLIC ${GSTREAMER_LIBRARY_DIRS})
+  endif ()
+  if (OPENSSL_FOUND)
+    target_link_libraries(tests_sigio_repro OpenSSL::SSL OpenSSL::Crypto)
+  endif ()
+
+  # Convenience: `make sigio_heap_repro` builds the binary.
+  add_custom_target(sigio_heap_repro DEPENDS tests_sigio_repro)
+endif ()

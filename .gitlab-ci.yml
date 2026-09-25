@@ -81,8 +81,12 @@ run_tests:
   - cd ..
 # One project per template kind of wizard/main.cpp (kTemplateKinds), created
 # with the console wizard and built. Keep the list in step with the wizard.
+# Templates hardcode sibling paths like ../arctic/engine; clone into a directory
+# named arctic so fork checkouts (e.g. arctic-silverthaw) still match.
 create_templates:
   stage: test
+  variables:
+    GIT_CLONE_PATH: $CI_BUILDS_DIR/$CI_CONCURRENT_ID/arctic
   before_script: *build_deps
   script:
   - cd wizard

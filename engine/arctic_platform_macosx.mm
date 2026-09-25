@@ -57,6 +57,7 @@
 #include "engine/arctic_input.h"
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_platform.h"
+#include "engine/arctic_platform_sound.h"
 #include "engine/log.h"
 #include "engine/rgb.h"
 #include "engine/vec3f.h"
@@ -887,6 +888,8 @@ void PumpMessages() {
     }
     [NSApp updateWindows];
   }
+
+  UpdateSoundEngine();
 }
 
 void ExitProgram(Si32 exit_code) {

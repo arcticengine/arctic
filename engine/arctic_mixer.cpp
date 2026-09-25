@@ -27,6 +27,7 @@
 
 namespace arctic {
 
+template class MpmcNoFallbackFixedSizeBufferFixedSizePool<32, 4080>;
 template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
 template class MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>>;
 template class SpmcArray<SoundTask, true>;

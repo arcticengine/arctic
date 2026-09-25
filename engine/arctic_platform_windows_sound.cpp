@@ -94,6 +94,9 @@ void SoundPlayer::Deinitialize() {
   }
 }
 
+void UpdateSoundEngine() {
+}
+
 SoundPlayer::~SoundPlayer() {
   if (impl) {
     delete impl;
@@ -233,6 +236,19 @@ void SoundPlayerImpl::Deinitialize() {
   }
 }
 
+
+
+bool SoundMixerShouldUseDedicatedThread() {
+  return true;
+}
+
+bool SoundMixerIsDedicatedThreadRunning() {
+  return false;
+}
+
+bool SoundMixerHasAsyncPcmHandler() {
+  return false;
+}
 
 }  // namespace arctic
 

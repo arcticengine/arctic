@@ -1,0 +1,19 @@
+# Software PCM for headless / no-soundcard boxes (CI, containers).
+# Routes "default" to ALSA's userspace null plugin so StartSoundMixer can open
+# a PCM. Install: ./setup_null_pcm.sh  OR  cp this file to ~/.asoundrc
+# No kernel modules required.
+#
+# Note: userspace null/file PCMs return -ENOSYS for snd_async_add_pcm_handler,
+# so StartSoundMixer falls back to the dedicated thread here. On real hardware
+# the async/SIGIO path is used; its MixSound callback is async-signal-safe
+# (path 2). Validate that callback with: tests_sigio_repro --safe
+
+pcm.!default {
+    type plug
+    slave.pcm "null"
+}
+
+pcm.arctic_null {
+    type plug
+    slave.pcm "null"
+}

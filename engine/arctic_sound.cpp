@@ -27,6 +27,7 @@
 #include <cmath>
 #include "engine/arctic_mixer.h"
 #include "engine/arctic_pi.h"
+#include "engine/arctic_platform_fatal.h"
 #include "engine/arctic_platform_sound.h"
 #include "engine/easy_drawing.h"
 #include "engine/easy_util.h"
@@ -36,18 +37,35 @@ namespace arctic {
 SoundMixerState g_sound_mixer_state;
 float g_gui_sound_volume = 1.0f;
 
+namespace {
+
+constexpr const char *kMixerQueueExhausted =
+    "Sound mixer task queue exhausted after retries";
+
+// Retry try_enqueue many times; never ReturnSoundTask on failure (that raced the
+// mixer SpmcArray). After all retries fail, Fatal — process exits.
+void EnqueueSoundTaskOrFatal(SoundTask *buffer) {
+  for (Si32 i = 0; i < 1024; ++i) {
+    if (g_sound_mixer_state.AddSoundTask(buffer)) {
+      return;
+    }
+  }
+  Fatal(kMixerQueueExhausted);
+}
+
+}  // namespace
+
 SoundHandle StartSound(Sound sound, float volume) {
   if (sound.GetInstance()) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
-      SoundHandle handle(buffer);
       buffer->sound = sound;
       buffer->volume = volume;
       buffer->sound.GetInstance()->IncPlaying();
       buffer->action = SoundTaskAction::kStart;  //-V1048
       buffer->is_playing = true;
-      g_sound_mixer_state.AddSoundTask(buffer);
-      return handle;
+      EnqueueSoundTaskOrFatal(buffer);
+      return SoundHandle(buffer);
     }
   }
   return SoundHandle::Invalid();
@@ -57,15 +75,14 @@ SoundHandle StartSoundLooping(Sound sound, float volume) {
   if (sound.GetInstance()) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
-      SoundHandle handle(buffer);
       buffer->sound = sound;
       buffer->volume = volume;
       buffer->is_looping = true;
       buffer->sound.GetInstance()->IncPlaying();
       buffer->action = SoundTaskAction::kStart;
       buffer->is_playing = true;
-      g_sound_mixer_state.AddSoundTask(buffer);
-      return handle;
+      EnqueueSoundTaskOrFatal(buffer);
+      return SoundHandle(buffer);
     }
   }
   return SoundHandle::Invalid();
@@ -78,7 +95,7 @@ void StopSound(Sound sound) {
       buffer->sound = sound;
       buffer->volume = 0.f;
       buffer->action = SoundTaskAction::kStop;
-      g_sound_mixer_state.AddSoundTask(buffer);
+      EnqueueSoundTaskOrFatal(buffer);
     }
   }
 }
@@ -90,7 +107,7 @@ void StopSound(const SoundHandle &handle) {
       buffer->volume = 0.f;
       buffer->action = SoundTaskAction::kStop;
       buffer->target_uid = handle.GetUid();
-      g_sound_mixer_state.AddSoundTask(buffer);
+      EnqueueSoundTaskOrFatal(buffer);
     }
   }
 }
@@ -100,7 +117,7 @@ void SetSoundListenerLocation(Transform3F location) {
   if (buffer) {
     buffer->location = location;
     buffer->action = SoundTaskAction::kSetHeadLocation;
-    g_sound_mixer_state.AddSoundTask(buffer);
+    EnqueueSoundTaskOrFatal(buffer);
   }
 }
 
@@ -111,7 +128,7 @@ void SetSoundSourcePosition(Sound sound, Vec3F position) {
       buffer->sound = sound;
       buffer->location.displacement = position;
       buffer->action = SoundTaskAction::kSetLocation;
-      g_sound_mixer_state.AddSoundTask(buffer);
+      EnqueueSoundTaskOrFatal(buffer);
     }
   }
 }
@@ -123,7 +140,7 @@ void SetSoundSourcePosition(const SoundHandle &handle, Vec3F position) {
       buffer->location.displacement = position;
       buffer->action = SoundTaskAction::kSetLocation;
       buffer->target_uid = handle.GetUid();
-      g_sound_mixer_state.AddSoundTask(buffer);
+      EnqueueSoundTaskOrFatal(buffer);
     }
   }
 }
@@ -133,7 +150,6 @@ SoundHandle StartSoundAtPosition(Sound sound, float volume, Vec3F position) {
   if (sound.GetInstance()) {
     SoundTask *buffer = g_sound_mixer_state.AllocateSoundTask();
     if (buffer) {
-      SoundHandle handle(buffer);
       buffer->sound = sound;
       buffer->volume = volume;
       buffer->next_position = 0;
@@ -142,8 +158,8 @@ SoundHandle StartSoundAtPosition(Sound sound, float volume, Vec3F position) {
       buffer->location.displacement = position;
       buffer->action = SoundTaskAction::kStart3d;
       buffer->is_playing = true;
-      g_sound_mixer_state.AddSoundTask(buffer);
-      return handle;
+      EnqueueSoundTaskOrFatal(buffer);
+      return SoundHandle(buffer);
     }
   }
   return SoundHandle::Invalid();

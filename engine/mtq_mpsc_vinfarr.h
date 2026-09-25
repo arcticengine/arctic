@@ -55,10 +55,12 @@
 #define ENGINE_MTQ_MPSC_VINFARR_H_
 
 #include <memory.h>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <deque>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "engine/mtq_base_common.h"
@@ -408,8 +410,11 @@ class AuxiliaryChunkSize<true, true> {
 
   inline ChunkType *
   allocateChunk(ChunkType *current, Ui64 start_slot) {
-    ChunkType *new_chunk =
-      reinterpret_cast<ChunkType *>(pool->alloc());
+    void *mem = pool->alloc();
+    if (mem == nullptr) {
+      return nullptr;
+    }
+    ChunkType *new_chunk = reinterpret_cast<ChunkType *>(mem);
     return ChunkType::reset(
       new_chunk, current, start_slot, numberOfSlotsInChunk);
   }
@@ -502,7 +507,11 @@ class AuxiliaryChunkSize<true, false> {
 
   inline ChunkType *
   allocateChunk(ChunkType *prev, Ui64 start_slot) {
-    ChunkType *new_chunk = reinterpret_cast<ChunkType *>(pool->alloc());
+    void *mem = pool->alloc();
+    if (mem == nullptr) {
+      return nullptr;
+    }
+    ChunkType *new_chunk = reinterpret_cast<ChunkType *>(mem);
     return ChunkType::reset(
       new_chunk, prev, start_slot, numberOfSlotsInChunk, payloadSize);
   }
@@ -655,6 +664,10 @@ class MPSC_VirtInfArray_Impl
   }
 
   void enqueue(void *item);
+  // Pool-backed: grow chunks before claiming a slot so a failed alloc cannot
+  // leave a permanent hole in the MPSC. Returns false if the pool is exhausted.
+  // Heap-backed: always enqueues and returns true (operator new throws on OOM).
+  bool try_enqueue(void *item);
   bool dequeue(void *result);
 
  protected:
@@ -743,6 +756,11 @@ void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
           new_chunk = allocateChunk(
             current_chunk,
             current_chunk->StartSlot + numberOfSlotsInChunk);
+          // Heap path throws on OOM; pool+best-effort mallocs. A no-fallback
+          // pool must use try_enqueue so this abort is only a last-resort guard.
+          if (new_chunk == nullptr) {
+            abort();
+          }
         } else {
           new_chunk = resetChunk(
             cache,
@@ -791,6 +809,91 @@ void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
 
   /* Chunk found */
   setSlot(current_chunk, slot, item);
+}
+
+
+template<bool ForMemoryPool, bool PtrPayload>
+bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::try_enqueue(void *item) {
+  if (!ForMemoryPool) {
+    enqueue(item);
+    return true;
+  }
+
+  // Restructured pool path: never claim a slot beyond the highest linked chunk.
+  // Grow (allocate+link) first; only CAS-claim a slot that already has coverage.
+  // A failed grow returns false with no hole in the MPSC.
+  for (;;) {
+    ChunkType *current_chunk = tail.load(MO_ACQUIRE);
+    Ui64 slot = tailCounter.load(MO_ACQUIRE);
+
+    if (current_chunk->StartSlot > slot) {
+      // Tail got ahead of the next claimable slot; reload and retry.
+      continue;
+    }
+
+    if (current_chunk->StartSlot + numberOfSlotsInChunk <= slot) {
+      auto next = current_chunk->Next.load(MO_ACQUIRE);
+      if (next != nullptr) {
+        ChunkType *prev_chunk = current_chunk;
+        tail.compare_exchange_strong(prev_chunk, next, MO_SEQUENCE);
+        continue;
+      }
+
+      ChunkType *new_chunk = allocateChunk(
+          current_chunk,
+          current_chunk->StartSlot + numberOfSlotsInChunk);
+      if (new_chunk == nullptr) {
+        return false;
+      }
+
+      ChunkType *expected_next = nullptr;
+      bool set = current_chunk->Next.compare_exchange_strong(
+          expected_next, new_chunk, MO_SEQUENCE);
+      if (set) {
+        auto current_tail_counter = tailCounter.load(MO_ACQUIRE);
+        Ui64 release_counter = 0;
+        bool rc_set;
+        do {
+          rc_set = new_chunk->ReleaseCounter.compare_exchange_strong(
+              release_counter, current_tail_counter, MO_SEQUENCE);
+        } while (!rc_set && release_counter > current_tail_counter);
+
+        ChunkType *prev_chunk = current_chunk;
+        tail.compare_exchange_strong(prev_chunk, new_chunk, MO_SEQUENCE);
+      } else {
+        freeChunk(new_chunk);
+        ChunkType *prev_chunk = current_chunk;
+        tail.compare_exchange_strong(prev_chunk, expected_next, MO_SEQUENCE);
+      }
+      continue;
+    }
+
+    // `slot` lies inside current_chunk. Claim exactly that slot.
+    if (!tailCounter.compare_exchange_weak(
+            slot, slot + 1, MO_ACQUIRE, MO_RELAXED)) {
+      continue;
+    }
+
+    // Owned `slot`. Locate its chunk (must already be linked).
+    current_chunk = tail.load(MO_ACQUIRE);
+    if (current_chunk->StartSlot > slot) {
+      do {
+        current_chunk = current_chunk->Prev;
+      } while (current_chunk->StartSlot > slot);
+    } else {
+      while (current_chunk->StartSlot + numberOfSlotsInChunk <= slot) {
+        auto next = current_chunk->Next.load(MO_ACQUIRE);
+        if (next == nullptr) {
+          // Invariant: we only claim slots under linked coverage.
+          abort();
+        }
+        current_chunk = next;
+      }
+    }
+
+    setSlot(current_chunk, slot, item);
+    return true;
+  }
 }
 
 
@@ -947,14 +1050,22 @@ class MPSC_VirtInfArray_DeleteSelector<Params, ForwardType, true, false> {
 
 template<typename Params, typename ForwardType>
 class MPSC_VirtInfArray_DeleteSelector<Params, ForwardType, true, true> {
+ private:
+  using PayloadType = typename Params::PayloadType;
+
  public:
-  ~MPSC_VirtInfArray_DeleteSelector() {
+  // Pointer payloads are produced with new (see engine/log.cpp). free() would
+  // skip the destructor and mismatch the allocator; delete matches the
+  // non-pointer specialization above.
+  ~MPSC_VirtInfArray_DeleteSelector()
+  noexcept(std::is_nothrow_destructible<
+      typename std::remove_pointer<PayloadType>::type>::value) {
     for (;;) {
-      void *item = static_cast<ForwardType *>(this)->dequeue();
+      PayloadType item = static_cast<ForwardType *>(this)->dequeue();
       if (!item) {
         break;
       }
-      free(item);
+      delete item;
     }
   }
 };
@@ -1013,6 +1124,10 @@ class MpscVirtInfArray_Aux<Params, EnqueueDequeueAPIEnum::POINTER>
 
   void enqueue(PayloadType item) {
     BaseType::impl.enqueue(item);
+  }
+
+  bool try_enqueue(PayloadType item) {
+    return BaseType::impl.try_enqueue(item);
   }
 
   inline PayloadType dequeue() {

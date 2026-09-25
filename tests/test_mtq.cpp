@@ -180,3 +180,44 @@ void test_mpsc_vinfarr_two_producers_deliver_every_item() {
     "chunks were freed with a wrong size (%llu mismatches)",
     (unsigned long long)(SizedDeleteMismatches() - mismatches_before));
 }
+
+// Logger enqueues `new std::string` with TuneDeletePayloadFlag<true>. The
+// pointer DeleteSelector used to free() those payloads, which skips the
+// destructor. A type whose destructor flips a counter proves delete runs.
+namespace {
+
+std::atomic<Si32> g_probe_live_count{0};
+
+struct DestructorProbe {
+  DestructorProbe() {
+    g_probe_live_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  ~DestructorProbe() {
+    g_probe_live_count.fetch_sub(1, std::memory_order_relaxed);
+  }
+};
+
+typedef MpscVirtInfArray<DestructorProbe *, TuneDeletePayloadFlag<true>,
+    TuneChunkSize<4>> ProbeQueue;
+
+}  // namespace
+
+void test_mpsc_vinfarr_destructor_deletes_pointer_payloads() {
+  TEST_CHECK(g_probe_live_count.load() == 0);
+  {
+    ProbeQueue queue;
+    TEST_CHECK(queue.isOK());
+    const Si32 kCount = 17;
+    for (Si32 i = 0; i < kCount; ++i) {
+      queue.enqueue(new DestructorProbe);
+    }
+    TEST_CHECK_(g_probe_live_count.load() == kCount,
+        "expected %d live probes before drain, got %d",
+        kCount, g_probe_live_count.load());
+    // Leave items in the queue so the DeleteSelector destructor drains them.
+  }
+  TEST_CHECK_(g_probe_live_count.load() == 0,
+      "queue destructor must delete pointer payloads (live=%d); free() would "
+      "leave destructors unrun",
+      g_probe_live_count.load());
+}
