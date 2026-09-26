@@ -3,8 +3,11 @@
 #include "test_helpers.h"
 
 #include <atomic>
+#include <chrono>
 #include <cstdlib>
 #include <new>
+#include <thread>
+#include <vector>
 
 #include "engine/mtq_mpsc_vinfarr.h"
 
@@ -179,6 +182,88 @@ void test_mpsc_vinfarr_two_producers_deliver_every_item() {
   TEST_CHECK_(SizedDeleteMismatches() == mismatches_before,
     "chunks were freed with a wrong size (%llu mismatches)",
     (unsigned long long)(SizedDeleteMismatches() - mismatches_before));
+}
+
+namespace {
+
+const Si32 kPerProducer = 20000;
+
+struct ReleaseRaceRound {
+  OneSlotChunkQueue queue;
+  std::vector<Si32> values_a;
+  std::vector<Si32> values_b;
+  std::vector<Si32> seen;
+  std::atomic<Si32> received{0};
+  std::atomic<bool> done{false};
+
+  ReleaseRaceRound()
+    : values_a(kPerProducer)
+    , values_b(kPerProducer)
+    , seen(2 * kPerProducer, 0) {
+    for (Si32 i = 0; i < kPerProducer; ++i) {
+      values_a[i] = i;
+      values_b[i] = kPerProducer + i;
+    }
+  }
+
+  void Consume() {
+    while (received.load(std::memory_order_relaxed) < 2 * kPerProducer) {
+      Si32 *item = queue.dequeue();
+      if (item == nullptr) {
+        std::this_thread::yield();
+        continue;
+      }
+      ++seen[*item];
+      received.fetch_add(1, std::memory_order_relaxed);
+    }
+    done.store(true, std::memory_order_release);
+  }
+};
+
+}  // namespace
+
+// A producer links a chunk and publishes its ReleaseCounter a moment later;
+// another producer may fill the chunk in between. The consumer read that item
+// and took the unpublished counter (0) for "every producer is past the
+// previous chunk", freed it while a third producer still walked it from a
+// stale tail, and that producer wrote its item into freed memory. The item
+// was lost and dequeue then spun forever on its slot, so the consumer runs on
+// a thread of its own here and a stuck one is a failure, not a hang.
+void test_mpsc_vinfarr_keeps_chunks_until_release_counter_published() {
+  const Si32 kRounds = 300;
+  for (Si32 round = 0; round < kRounds; ++round) {
+    ReleaseRaceRound *state = new ReleaseRaceRound;
+    std::thread consumer(&ReleaseRaceRound::Consume, state);
+    std::thread producer_a(EnqueueAll, &state->queue,
+      state->values_a.data(), kPerProducer);
+    std::thread producer_b(EnqueueAll, &state->queue,
+      state->values_b.data(), kPerProducer);
+    producer_a.join();
+    producer_b.join();
+
+    const double deadline = Time() + 5.0;
+    while (!state->done.load(std::memory_order_acquire)
+        && Time() < deadline) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if (!state->done.load(std::memory_order_acquire)) {
+      TEST_CHECK_(false, "round %d: the consumer is stuck with %d of %d "
+        "items, an item was lost", (int)round,
+        (int)state->received.load(), 2 * kPerProducer);
+      // The stuck consumer still uses the queue, so both are left behind.
+      consumer.detach();
+      return;
+    }
+    consumer.join();
+    for (Si32 i = 0; i < 2 * kPerProducer; ++i) {
+      if (state->seen[i] != 1) {
+        TEST_CHECK_(false, "round %d: item %d was dequeued %d times",
+          (int)round, (int)i, (int)state->seen[i]);
+        break;
+      }
+    }
+    delete state;
+  }
 }
 
 // Logger enqueues `new std::string` with TuneDeletePayloadFlag<true>. The

@@ -135,8 +135,11 @@ struct InfArrayChunk<true> final {
     if (!Prev) {
       return true;
     }
-    // let's check if it was safe to reclaim all previous chunks
-    if (least_busy_counter < ReleaseCounter) {
+    // let's check if it was safe to reclaim all previous chunks;
+    // 0 means the producer that linked this chunk has not published the
+    // counter yet, and another producer may still walk the previous chunks
+    const Ui64 release_counter = ReleaseCounter.load(MO_ACQUIRE);
+    if (release_counter == 0 || least_busy_counter < release_counter) {
       return false;
     }
     // Here no active producer has a link to any of the previous chunks.
@@ -244,8 +247,11 @@ struct InfArrayChunk<false> final {
     if (!Prev) {
       return true;
     }
-    // let's check if it was safe to reclaim all previous chunks
-    if (least_busy_counter < ReleaseCounter) {
+    // let's check if it was safe to reclaim all previous chunks;
+    // 0 means the producer that linked this chunk has not published the
+    // counter yet, and another producer may still walk the previous chunks
+    const Ui64 release_counter = ReleaseCounter.load(MO_ACQUIRE);
+    if (release_counter == 0 || least_busy_counter < release_counter) {
       return false;
     }
     // Here no active producer has a link to any of the previous chunks.

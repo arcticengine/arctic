@@ -888,8 +888,6 @@ void PumpMessages() {
     }
     [NSApp updateWindows];
   }
-
-  UpdateSoundEngine();
 }
 
 void ExitProgram(Si32 exit_code) {
@@ -906,6 +904,7 @@ void ExitProgram(Si32 exit_code) {
 void Swap() {
   [[g_main_view openGLContext] flushBuffer];
   PumpMessages();
+  UpdateSoundEngine();
 
   static arctic::Si32 cached_width = 0;
   static arctic::Si32 cached_height = 0;

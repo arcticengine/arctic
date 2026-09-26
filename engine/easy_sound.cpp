@@ -122,13 +122,66 @@ void Sound::Create(double duration) {
   }
 }
 
+Sound::Sound(const Sound &other)
+    : sound_instance_(other.sound_instance_)
+    , file_name_(other.file_name_) {
+}
+
+Sound &Sound::operator=(const Sound &other) {
+  if (this != &other) {
+    CloseDetachedStream(DetachStream());
+    sound_instance_ = other.sound_instance_;
+    file_name_ = other.file_name_;
+  }
+  return *this;
+}
+
+Sound::~Sound() {
+  CloseDetachedStream(DetachStream());
+}
+
 void Sound::Clear() {
   file_name_ = std::make_shared<std::string>("CLEAR");
-  if (vorbis_codec_) {
-    stb_vorbis_close(vorbis_codec_);
-    vorbis_codec_ = nullptr;
-  }
+  CloseDetachedStream(DetachStream());
   sound_instance_.reset();
+}
+
+void Sound::OpenStream() {
+  if (vorbis_codec_ || !sound_instance_
+      || sound_instance_->GetFormat() != kSoundDataVorbis) {
+    return;
+  }
+  int error = 0;
+  vorbis_codec_ = stb_vorbis_open_memory(
+    sound_instance_->GetVorbisData(),
+    sound_instance_->GetVorbisSize(), &error, nullptr);
+  if (!vorbis_codec_) {
+    Fatal(static_cast<const std::stringstream&>(std::stringstream()
+          << "OpenStream encountered error: " << error
+          << " while opening sound file: \"" << *file_name_
+          << "\", vorbis data: "
+          << (sound_instance_->GetVorbisData() == nullptr ? "0" : "not 0")
+          << " size: " << sound_instance_->GetVorbisSize()).str().c_str());
+    return;
+  }
+  stream_position_ = 0;
+}
+
+bool Sound::IsStreamOpen() const {
+  return vorbis_codec_ != nullptr;
+}
+
+stb_vorbis *Sound::DetachStream() {
+  stb_vorbis *codec = vorbis_codec_;
+  vorbis_codec_ = nullptr;
+  stream_position_ = 0;
+  return codec;
+}
+
+void Sound::CloseDetachedStream(stb_vorbis *codec) {
+  if (codec) {
+    stb_vorbis_close(codec);
+  }
 }
 
 SoundHandle Sound::Play() {
@@ -219,28 +272,20 @@ Si32 Sound::StreamOut(Si32 offset, Si32 size,
     return to_copy;
   }
   case kSoundDataVorbis: {
-    int error = 0;
     if (!vorbis_codec_) {
-      vorbis_codec_ = stb_vorbis_open_memory(
-        sound_instance_->GetVorbisData(),
-        sound_instance_->GetVorbisSize(), &error, nullptr);
-      if (!vorbis_codec_) {
-        Fatal(static_cast<const std::stringstream&>(std::stringstream()
-              << "StreamOut encountered error: " << error
-              << " while opening sound file: \"" << file_name_
-              << "\", vorbis data: "
-              << (sound_instance_->GetVorbisData() == nullptr ? "0" : "not 0")
-              << " size: " << sound_instance_->GetVorbisSize()).str().c_str());
+      return 0;
+    }
+    if (offset != stream_position_) {
+      if (!stb_vorbis_seek(vorbis_codec_, static_cast<Ui32>(offset))) {
+        stream_position_ = -1;
         return 0;
       }
+      stream_position_ = offset;
     }
-    stb_vorbis_seek(vorbis_codec_, static_cast<Ui32>(offset));
+    Si32 to_decode = std::min(size, out_buffer_samples / 2);
     int res = stb_vorbis_get_samples_short_interleaved(
-      vorbis_codec_, 2, out_buffer, out_buffer_samples);
-    if (res < out_buffer_samples / 2) {
-      stb_vorbis_close(vorbis_codec_);
-      vorbis_codec_ = nullptr;
-    }
+      vorbis_codec_, 2, out_buffer, to_decode * 2);
+    stream_position_ += res;
     return res;
   }
   }

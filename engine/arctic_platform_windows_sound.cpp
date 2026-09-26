@@ -95,6 +95,7 @@ void SoundPlayer::Deinitialize() {
 }
 
 void UpdateSoundEngine() {
+  g_sound_mixer_state.CloseRetiredStreams();
 }
 
 SoundPlayer::~SoundPlayer() {

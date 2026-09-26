@@ -1116,6 +1116,7 @@ void Swap() {
   HDC hdc = wglGetCurrentDC();
   BOOL res = SwapBuffers(hdc);
   CheckWithLastError(res != FALSE, "SwapBuffers error in Swap.");
+  UpdateSoundEngine();
 
   RECT client_rect;
   GetClientRect(g_system_info.window_handle, &client_rect);

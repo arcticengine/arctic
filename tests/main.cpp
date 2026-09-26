@@ -52,6 +52,12 @@ void test_sound_mixer_pool_capacity_accepts_full_return();
 void test_sound_mixer_async_error_message_is_detailed();
 void test_sound_handle_takes_uid_before_publish();
 void test_sound_mixer_async_underrun_from_avail_requests_recovery();
+void test_sound_vorbis_stream_out_does_not_open_decoder();
+void test_sound_vorbis_stream_matches_unpacked_decode();
+void test_sound_copy_does_not_share_decoder();
+void test_sound_mixer_retires_vorbis_decoder_to_game_thread();
+void test_sound_update_sound_engine_closes_retired_streams();
+void test_sound_start_sound_opens_vorbis_stream();
 
 // test_formats.cpp
 void test_localization_basic_load();
@@ -286,6 +292,7 @@ void test_key_edges_follow_real_transitions();
 // test_mtq.cpp
 void test_mpsc_vinfarr_frees_chunks_with_matching_size();
 void test_mpsc_vinfarr_two_producers_deliver_every_item();
+void test_mpsc_vinfarr_keeps_chunks_until_release_counter_published();
 void test_mpsc_vinfarr_destructor_deletes_pointer_payloads();
 
 // test_sprite.cpp
@@ -373,6 +380,17 @@ TEST_LIST = {
       test_sound_handle_takes_uid_before_publish},
   {"Sound mixer async underrun from avail requests recovery",
       test_sound_mixer_async_underrun_from_avail_requests_recovery},
+  {"Sound Vorbis StreamOut does not open decoder",
+      test_sound_vorbis_stream_out_does_not_open_decoder},
+  {"Sound Vorbis stream matches unpacked decode",
+      test_sound_vorbis_stream_matches_unpacked_decode},
+  {"Sound copy does not share decoder", test_sound_copy_does_not_share_decoder},
+  {"Sound mixer retires Vorbis decoder to game thread",
+      test_sound_mixer_retires_vorbis_decoder_to_game_thread},
+  {"Sound UpdateSoundEngine closes retired streams",
+      test_sound_update_sound_engine_closes_retired_streams},
+  {"Sound StartSound opens Vorbis stream",
+      test_sound_start_sound_opens_vorbis_stream},
   {"Quaternion ToMat33F sign error", test_quat_to_mat33f_sign},
   {"Quaternion ToPartialMatrix33F sign error", test_quat_to_partial_mat33f_sign},
   {"Quaternion slerp uses unnormalized inputs", test_quat_slerp_unnormalized},
@@ -609,6 +627,8 @@ TEST_LIST = {
       test_mpsc_vinfarr_frees_chunks_with_matching_size},
   {"MPSC queue two producers deliver every item",
       test_mpsc_vinfarr_two_producers_deliver_every_item},
+  {"MPSC queue keeps chunks until the release counter is published",
+      test_mpsc_vinfarr_keeps_chunks_until_release_counter_published},
   {"MPSC queue destructor deletes pointer payloads",
       test_mpsc_vinfarr_destructor_deletes_pointer_payloads},
   {0}

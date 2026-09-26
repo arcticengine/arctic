@@ -38,9 +38,30 @@ namespace arctic {
 class Sound {
  private:
   std::shared_ptr<SoundInstance> sound_instance_;
+  // Owned by this object only: a copy starts without a decoder.
   stb_vorbis *vorbis_codec_ = nullptr;
+  Si32 stream_position_ = 0;
   std::shared_ptr<std::string> file_name_ = std::make_shared<std::string>("CLEAR");
  public:
+  Sound() = default;
+  Sound(const Sound &other);
+  Sound &operator=(const Sound &other);
+  ~Sound();
+
+  /// @brief Opens the Vorbis decoder StreamOut reads from (no-op for wav).
+  /// Allocates memory, so it must run on a game thread, never in the mixer.
+  void OpenStream();
+
+  /// @brief True if a Vorbis decoder is open for StreamOut.
+  bool IsStreamOpen() const;
+
+  /// @brief Hands the decoder over to the caller without freeing anything.
+  /// @return The decoder or nullptr; close it with CloseDetachedStream.
+  stb_vorbis *DetachStream();
+
+  /// @brief Frees a decoder returned by DetachStream (game thread only).
+  static void CloseDetachedStream(stb_vorbis *codec);
+
   /// @brief Loads a sound file with the option to unpack it
   /// @param file_name The name of the file to load
   /// @param do_unpack Whether to unpack the sound data
@@ -105,7 +126,8 @@ class Sound {
   /// @return Pointer to the raw sound data
   Si16 *RawData();
 
-  /// @brief Streams out a portion of the sound data
+  /// @brief Streams out a portion of the sound data. Never allocates: a
+  /// Vorbis sound yields nothing unless OpenStream was called first.
   /// @param offset The starting offset in samples
   /// @param size The number of samples to stream
   /// @param out_buffer The output buffer to write the samples to

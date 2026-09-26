@@ -61,6 +61,7 @@ SoundHandle StartSound(Sound sound, float volume) {
     if (buffer) {
       SoundHandle handle(buffer);
       buffer->sound = sound;
+      buffer->sound.OpenStream();
       buffer->volume = volume;
       buffer->sound.GetInstance()->IncPlaying();
       buffer->action = SoundTaskAction::kStart;  //-V1048
@@ -78,6 +79,7 @@ SoundHandle StartSoundLooping(Sound sound, float volume) {
     if (buffer) {
       SoundHandle handle(buffer);
       buffer->sound = sound;
+      buffer->sound.OpenStream();
       buffer->volume = volume;
       buffer->is_looping = true;
       buffer->sound.GetInstance()->IncPlaying();

@@ -178,6 +178,11 @@ struct SoundMixerState {
   // SpmcArray slot capacity > kPoolSize so returning all live tasks via
   // pool.enqueue always has spare room (no deferred return queue).
   static constexpr Si32 kPoolCapacity = 2048;  ///< SpmcArray construction size
+  // Vorbis decoders of released tasks. The mixer may run in SIGIO, where
+  // freeing heap memory is unsafe, so it only parks them here; a game thread
+  // closes them. One slot per SoundTask, so a free slot always exists.
+  std::array<std::atomic<stb_vorbis*>, kPoolSize> retired_streams{};
+  std::atomic<Si32> retired_stream_count = ATOMIC_VAR_INIT(0);
 
   // Mutex-protected state begin
   std::string error_description = "Error description is not set.";  ///< Error description string
@@ -198,6 +203,39 @@ struct SoundMixerState {
     }
   }
 
+  ~SoundMixerState() {
+    CloseRetiredStreams();
+  }
+
+  /// @brief Mixer side: parks the task's decoder for a game thread to close.
+  /// Only the mixer calls this, so a slot seen empty stays empty until filled.
+  void RetireStream(SoundTask *task) {
+    if (!task->sound.IsStreamOpen()) {
+      return;
+    }
+    for (std::atomic<stb_vorbis*> &slot : retired_streams) {
+      if (slot.load(std::memory_order_relaxed) == nullptr) {
+        slot.store(task->sound.DetachStream(), std::memory_order_release);
+        retired_stream_count.fetch_add(1, std::memory_order_release);
+        return;
+      }
+    }
+  }
+
+  /// @brief Game thread side: closes the decoders the mixer has parked.
+  void CloseRetiredStreams() {
+    if (retired_stream_count.load(std::memory_order_acquire) == 0) {
+      return;
+    }
+    for (std::atomic<stb_vorbis*> &slot : retired_streams) {
+      stb_vorbis *codec = slot.exchange(nullptr, std::memory_order_acq_rel);
+      if (codec) {
+        retired_stream_count.fetch_sub(1, std::memory_order_acq_rel);
+        Sound::CloseDetachedStream(codec);
+      }
+    }
+  }
+
   /// @brief Releases a buffer at the specified index
   /// @param idx Index of the buffer to release
   void ReleaseBufferAt(Si32 idx) {
@@ -205,6 +243,7 @@ struct SoundMixerState {
     buffers[idx] = buffers[buffers.size() - 1];
     buffers.pop_back();
     buffer->uid = SoundTask::kInvalidSoundTaskUid;
+    RetireStream(buffer);
     if (!pool.enqueue(buffer)) {
       abort();
     }
@@ -234,6 +273,7 @@ struct SoundMixerState {
   /// @brief Allocates a new SoundTask
   /// @return Pointer to the allocated SoundTask, nullptr if allocation fails
   SoundTask *AllocateSoundTask() {
+    CloseRetiredStreams();
     SoundTask *p = pool.dequeue();
     if (p) {
       p->Clear(next_uid.fetch_add(1));
@@ -320,9 +360,12 @@ struct SoundMixerState {
         task = nullptr;
         break;
       }
-      if (task && !pool.enqueue(task)) {
-        // SoundTasks are pool-backed; spare SpmcArray capacity must accept them.
-        abort();
+      if (task) {
+        RetireStream(task);
+        if (!pool.enqueue(task)) {
+          // SoundTasks are pool-backed; spare SpmcArray capacity must accept them.
+          abort();
+        }
       }
     }
   }
@@ -395,6 +438,7 @@ struct SoundMixerState {
         break;
       }
       if (task) {
+        RetireStream(task);
         if (!pool.enqueue(task)) {
           abort();
         }

@@ -381,6 +381,7 @@ void Swap() {
   glFlush();
   eglSwapBuffers(g_egl_display, g_egl_surface);
   emscripten_sleep(1);
+  UpdateSoundEngine();
   int width, height;
   emscripten_get_canvas_element_size("#canvas", &width, &height);
   g_window_width = width;

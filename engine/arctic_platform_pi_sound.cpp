@@ -118,6 +118,7 @@ bool SoundMixerHasAsyncPcmHandler() {
 }
 
 void UpdateSoundEngine() {
+  g_sound_mixer_state.CloseRetiredStreams();
 }
 
 }  // namespace arctic
@@ -331,6 +332,7 @@ static int SoundMixerPrimingPeriodWrites() {
 }
 
 void UpdateSoundEngine() {
+  g_sound_mixer_state.CloseRetiredStreams();
   // 1) Deferred underrun/suspend recover requested from SIGIO (no prepare there).
   const int recover = g_async_pcm_recover_code.exchange(
       0, std::memory_order_acq_rel);

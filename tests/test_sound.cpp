@@ -497,3 +497,266 @@ void test_sound_handle_takes_uid_before_publish() {
   TEST_MSG("skipped: needs a stoppable platform mixer (Linux ALSA only)");
 }
 #endif
+
+// The mixer (SIGIO on Linux) calls StreamOut and must not touch the heap.
+// Opening a Vorbis decoder allocates, so StreamOut must never open one: a
+// stream that was not opened on a game thread stays silent.
+void test_sound_vorbis_stream_out_does_not_open_decoder() {
+  const std::string path = find_test_data_dir() + "/tone.ogg";
+  Sound sound;
+  sound.Load(path.c_str(), false);
+  TEST_CHECK_(sound.GetInstance() != nullptr, "tone.ogg must load: %s",
+      path.c_str());
+  TEST_CHECK_(std::fabs(sound.Duration() - 1.0) < 1e-3,
+      "tone.ogg is one second long, got %f", sound.Duration());
+  std::vector<Si16> out(512 * 2, 0);
+  const Si32 written = sound.StreamOut(0, 512, out.data(), 512 * 2);
+  TEST_CHECK_(written == 0,
+      "StreamOut on an unopened Vorbis stream must return 0, got %d", written);
+}
+
+namespace {
+
+std::string ToneOggPath() {
+  return find_test_data_dir() + "/tone.ogg";
+}
+
+// Streams `frames` frames starting at `offset` and compares them with the
+// same range of the sound decoded whole at load time.
+bool StreamMatchesUnpacked(Sound *streamed, Sound *unpacked, Si32 offset,
+    Si32 frames, Si32 *out_written) {
+  std::vector<Si16> out(static_cast<size_t>(frames) * 2, 0);
+  const Si32 written = streamed->StreamOut(offset, frames, out.data(),
+      frames * 2);
+  *out_written = written;
+  if (written != frames) {
+    return false;
+  }
+  const Si16 *expected = unpacked->RawData() + static_cast<size_t>(offset) * 2;
+  return std::memcmp(out.data(), expected,
+      static_cast<size_t>(frames) * 2 * sizeof(Si16)) == 0;
+}
+
+}  // namespace
+
+void test_sound_vorbis_stream_matches_unpacked_decode() {
+  Sound unpacked;
+  unpacked.Load(ToneOggPath().c_str(), true);
+  TEST_CHECK_(unpacked.DurationSamples() == 44100,
+      "unpacked tone.ogg must have 44100 frames, got %d",
+      unpacked.DurationSamples());
+  Sound streamed;
+  streamed.Load(ToneOggPath().c_str(), false);
+  TEST_CHECK(!streamed.IsStreamOpen());
+  streamed.OpenStream();
+  TEST_CHECK_(streamed.IsStreamOpen(), "OpenStream must open the decoder");
+
+  // Sequential periods, the way the mixer asks for them.
+  const Si32 kPeriod = 441;
+  Si32 offset = 0;
+  bool all_match = true;
+  while (offset + kPeriod <= 44100) {
+    Si32 written = 0;
+    if (!StreamMatchesUnpacked(&streamed, &unpacked, offset, kPeriod,
+        &written)) {
+      TEST_CHECK_(false, "period at %d differs from the unpacked decode "
+          "(written %d)", (int)offset, (int)written);
+      all_match = false;
+      break;
+    }
+    offset += written;
+  }
+  TEST_CHECK(all_match);
+  TEST_CHECK_(offset == 44100, "sequential stream must cover the whole "
+      "file, got %d frames", (int)offset);
+
+  std::vector<Si16> out(kPeriod * 2, 0);
+  TEST_CHECK_(streamed.StreamOut(offset, kPeriod, out.data(), kPeriod * 2) == 0,
+      "past the end StreamOut must return 0");
+  TEST_CHECK_(streamed.IsStreamOpen(),
+      "reaching the end must not close the decoder (closing frees memory)");
+
+  // A jump back (loop restart) and a jump into the middle must seek.
+  Si32 written = 0;
+  TEST_CHECK_(StreamMatchesUnpacked(&streamed, &unpacked, 0, kPeriod,
+      &written), "restart from 0 differs (written %d)", (int)written);
+  TEST_CHECK_(StreamMatchesUnpacked(&streamed, &unpacked, 20000, kPeriod,
+      &written), "jump to 20000 differs (written %d)", (int)written);
+  TEST_CHECK_(StreamMatchesUnpacked(&streamed, &unpacked, 20000 + kPeriod,
+      kPeriod, &written), "continuation after the jump differs (written %d)",
+      (int)written);
+
+  // Asking for fewer frames than the buffer holds must decode only those.
+  Sound partial;
+  partial.Load(ToneOggPath().c_str(), false);
+  partial.OpenStream();
+  std::vector<Si16> big(kPeriod * 2 * 4, 0);
+  TEST_CHECK_(partial.StreamOut(0, kPeriod, big.data(), kPeriod * 2 * 4)
+      == kPeriod, "StreamOut must honor the requested frame count");
+  TEST_CHECK_(StreamMatchesUnpacked(&partial, &unpacked, kPeriod, kPeriod,
+      &written), "the next period must follow the requested count "
+      "(written %d)", (int)written);
+}
+
+void test_sound_copy_does_not_share_decoder() {
+  Sound unpacked;
+  unpacked.Load(ToneOggPath().c_str(), true);
+  Sound original;
+  original.Load(ToneOggPath().c_str(), false);
+  original.OpenStream();
+  TEST_CHECK(original.IsStreamOpen());
+
+  Sound copy(original);
+  TEST_CHECK_(!copy.IsStreamOpen(),
+      "a copied Sound must start without a decoder");
+  TEST_CHECK(copy.GetInstance() == original.GetInstance());
+  {
+    Sound temporary(original);
+    temporary.OpenStream();
+    TEST_CHECK(temporary.IsStreamOpen());
+  }
+  Sound assigned;
+  assigned.Load(ToneOggPath().c_str(), false);
+  assigned.OpenStream();
+  assigned = original;
+  TEST_CHECK_(!assigned.IsStreamOpen(),
+      "an assigned Sound must drop its own decoder and not take the source's");
+  copy.Clear();
+  assigned.Clear();
+
+  // The original's decoder survived the copies being destroyed and cleared.
+  TEST_CHECK(original.IsStreamOpen());
+  Si32 written = 0;
+  TEST_CHECK_(StreamMatchesUnpacked(&original, &unpacked, 0, 441, &written),
+      "the original must still decode correctly (written %d)", (int)written);
+}
+
+// The mixer plays an opened stream, and when it releases the task it hands
+// the decoder over instead of closing it; a game thread closes it later.
+void test_sound_mixer_retires_vorbis_decoder_to_game_thread() {
+  Sound sound;
+  sound.Load(ToneOggPath().c_str(), false);
+  SoundMixerState state;
+  SoundTask *task = state.AllocateSoundTask();
+  TEST_CHECK(task != nullptr);
+  task->sound = sound;
+  task->sound.OpenStream();
+  task->volume = 1.f;
+  task->action = SoundTaskAction::kStart;
+  task->is_playing = true;
+  task->sound.GetInstance()->IncPlaying();
+  TEST_CHECK(state.AddSoundTask(task));
+
+  const Si32 kPeriod = 441;
+  std::vector<float> mix_l(kPeriod, 0.f);
+  std::vector<float> mix_r(kPeriod, 0.f);
+  std::vector<Si16> tmp(kPeriod * 2, 0);
+  float peak = 0.f;
+  Si32 periods = 0;
+  do {
+    state.MixSound(mix_l.data(), mix_r.data(), 1, kPeriod, tmp.data());
+    for (Si32 i = 0; i < kPeriod; ++i) {
+      peak = std::max(peak, std::max(std::fabs(mix_l[i]), std::fabs(mix_r[i])));
+    }
+    ++periods;
+  } while (!state.buffers.empty() && periods < 1000);
+  TEST_CHECK_(peak > 0.05f, "the opened stream must be audible, peak %f",
+      peak);
+  TEST_CHECK_(periods >= 99 && periods <= 102,
+      "one second at 441 frames per period is about 100 periods, got %d",
+      (int)periods);
+  TEST_CHECK_(state.buffers.empty(), "the task must be released at the end");
+  TEST_CHECK_(!task->sound.IsStreamOpen(),
+      "the mixer must detach the decoder from the released task");
+  TEST_CHECK_(state.retired_stream_count.load() == 1,
+      "the detached decoder must wait for a game thread, count %d",
+      (int)state.retired_stream_count.load());
+  TEST_CHECK(!sound.IsPlaying());
+
+  SoundTask *next = state.AllocateSoundTask();
+  TEST_CHECK_(state.retired_stream_count.load() == 0,
+      "AllocateSoundTask on a game thread must close parked decoders, "
+      "count %d", (int)state.retired_stream_count.load());
+  if (next) {
+    TEST_CHECK(state.pool.enqueue(next));
+  }
+}
+
+// Parked decoders of the global mixer must be closed by the per-frame
+// UpdateSoundEngine on every platform (ShowFrame calls it), so a game that
+// stops starting sounds does not keep dead decoders forever.
+// RetireStream is mixer-only; calling it here is safe because no Vorbis sound
+// is playing, so the platform mixer never retires anything concurrently.
+void test_sound_update_sound_engine_closes_retired_streams() {
+  Sound sound;
+  sound.Load(ToneOggPath().c_str(), false);
+  SoundTask *task = g_sound_mixer_state.AllocateSoundTask();
+  TEST_CHECK(task != nullptr);
+  if (!task) {
+    return;
+  }
+  TEST_CHECK_(g_sound_mixer_state.retired_stream_count.load() == 0,
+      "no parked decoders at the start, count %d",
+      (int)g_sound_mixer_state.retired_stream_count.load());
+  task->sound = sound;
+  task->sound.OpenStream();
+  TEST_CHECK(task->sound.IsStreamOpen());
+  g_sound_mixer_state.RetireStream(task);
+  TEST_CHECK(!task->sound.IsStreamOpen());
+  g_sound_mixer_state.ReturnSoundTask(task);
+  TEST_CHECK_(g_sound_mixer_state.retired_stream_count.load() == 1,
+      "the decoder must be parked, count %d",
+      (int)g_sound_mixer_state.retired_stream_count.load());
+  UpdateSoundEngine();
+  TEST_CHECK_(g_sound_mixer_state.retired_stream_count.load() == 0,
+      "UpdateSoundEngine must close parked decoders, count %d",
+      (int)g_sound_mixer_state.retired_stream_count.load());
+}
+
+#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+// StartSound must open the decoder before publishing the task: the mixer
+// no longer opens it, so without that a streamed Vorbis sound is silent.
+void test_sound_start_sound_opens_vorbis_stream() {
+  const bool mixer_was_running =
+      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
+  if (mixer_was_running) {
+    StopSoundMixer();
+  }
+  Sound sound;
+  sound.Load(ToneOggPath().c_str(), false);
+  const Si32 kPeriod = 441;
+  std::vector<float> mix_l(kPeriod, 0.f);
+  std::vector<float> mix_r(kPeriod, 0.f);
+  std::vector<Si16> tmp(kPeriod * 2, 0);
+  const char *names[] = {"StartSound", "StartSoundLooping"};
+  for (Si32 kind = 0; kind < 2; ++kind) {
+    SoundHandle handle = (kind == 0 ? StartSound(sound, 1.f)
+                                    : StartSoundLooping(sound, 1.f));
+    TEST_CHECK(handle.IsValid());
+    float peak = 0.f;
+    for (Si32 period = 0; period < 10; ++period) {
+      g_sound_mixer_state.MixSound(mix_l.data(), mix_r.data(), 1, kPeriod,
+          tmp.data());
+      for (Si32 i = 0; i < kPeriod; ++i) {
+        peak = std::max(peak,
+            std::max(std::fabs(mix_l[i]), std::fabs(mix_r[i])));
+      }
+    }
+    TEST_CHECK_(peak > 0.05f, "%s: a streamed Vorbis sound must be audible, "
+        "peak %f", names[kind], peak);
+    StopSound(handle);
+    g_sound_mixer_state.MixSound(mix_l.data(), mix_r.data(), 1, kPeriod,
+        tmp.data());
+  }
+  TEST_CHECK(g_sound_mixer_state.buffers.empty());
+  if (mixer_was_running) {
+    StartSoundMixer(nullptr);
+    g_sound_mixer_state.do_quit.store(false);
+    g_sound_mixer_state.is_ok.store(true);
+  }
+}
+#else
+void test_sound_start_sound_opens_vorbis_stream() {
+  TEST_MSG("skipped: needs a stoppable platform mixer (Linux ALSA only)");
+}
+#endif

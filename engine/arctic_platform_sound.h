@@ -71,10 +71,11 @@ class SoundPlayer {
 };
 
 
-/// @brief Per-frame sound engine maintenance (call from the game loop).
-/// On Linux ALSA async: recovers SIGIO-deferred underrun/suspend (prepare/
+/// @brief Per-frame sound engine maintenance, called by Swap on every
+/// platform; game thread only.
+/// Closes the Vorbis decoders the mixer has parked (the mixer must not free).
+/// On Linux ALSA async also recovers SIGIO-deferred underrun/suspend (prepare/
 /// resume), then lifts a hard deferred mixer error into IsOk and logs it once.
-/// Safe no-op elsewhere / when idle.
 void UpdateSoundEngine();
 
 

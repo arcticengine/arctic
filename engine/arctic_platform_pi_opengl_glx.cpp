@@ -234,6 +234,7 @@ void Swap() {
   glFlush();
   glXSwapBuffers(g_x_display, g_x_window);
   PumpMessages();
+  UpdateSoundEngine();
   arctic::GetEngine()->OnWindowResize(g_window_width, g_window_height);
 }
 
