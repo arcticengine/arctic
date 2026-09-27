@@ -105,6 +105,63 @@ class AsyncRecoverGate {
   std::atomic<bool> busy_{false};
 };
 
+/// @brief Keeps SIGIO handlers from running the mixer concurrently. SIGIO is
+/// blocked only on the thread handling it, so the next one may land on
+/// another thread meanwhile. Such a call returns at once and the running one
+/// does the work again after, so no signal is lost. Lock-free, signal-safe.
+class SigioHandlerSerializer {
+ public:
+  template <class Work>
+  void Run(Work work) {
+    if (calls_.fetch_add(1, std::memory_order_acq_rel) != 0) {
+      return;
+    }
+    Si32 taken = 1;
+    while (true) {
+      work();
+      const Si32 left =
+          calls_.fetch_sub(taken, std::memory_order_acq_rel) - taken;
+      if (left == 0) {
+        return;
+      }
+      taken = left;
+    }
+  }
+
+ private:
+  std::atomic<Si32> calls_{0};
+};
+
+/// @brief How many period-sized writes prime an ALSA PCM before it runs,
+/// at start and after an underrun recovery: as many whole periods as the
+/// buffer holds. SIGIO comes only after a period is played and the stop
+/// threshold is the buffer size, so every period left unwritten is a period
+/// less before an XRUN.
+/// @param period_size Period in frames.
+/// @param start_threshold sw start_threshold in frames, <= 0 means one period;
+/// used only when the buffer size is unknown.
+/// @param buffer_size Buffer in frames, <= 0 if unknown.
+inline int SoundPrimingPeriodWrites(Si64 period_size, Si64 start_threshold,
+    Si64 buffer_size) {
+  if (period_size <= 0) {
+    return 1;
+  }
+  Si64 n = 0;
+  if (buffer_size > 0) {
+    n = buffer_size / period_size;
+  } else {
+    Si64 threshold = start_threshold;
+    if (threshold <= 0) {
+      threshold = period_size;
+    }
+    n = (threshold + period_size - 1) / period_size;
+  }
+  if (n < 1) {
+    n = 1;
+  }
+  return static_cast<int>(n);
+}
+
 /// @brief Represents the listener's head in 3D space for sound positioning
 struct SoundListenerHead {
   /// @brief Represents an ear of the listener

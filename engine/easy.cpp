@@ -36,6 +36,7 @@
 
 #include "engine/arctic_platform.h"
 #include "engine/arctic_platform_def.h"
+#include "engine/arctic_platform_sound.h"
 #include "engine/easy_advanced.h"
 #include "engine/easy_drawing.h"
 #include "engine/easy_files.h"
@@ -1170,6 +1171,9 @@ void DrawArrow(Sprite &to_sprite, Vec2F source_pos, Vec2F destination_pos,
 void ShowFrame() {
   if (!GetEngine()->IsSoftwareOnly()) {
     GetEngine()->Draw2d();
+  } else {
+    // Swap calls it on the windowed paths.
+    UpdateSoundEngine();
   }
 
   for (Si32 i = 0; i < kKeyCount; ++i) {

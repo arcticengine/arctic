@@ -648,7 +648,9 @@ void test_sound_mixer_retires_vorbis_decoder_to_game_thread() {
 // stops starting sounds does not keep dead decoders forever.
 // RetireStream is mixer-only; calling it here is safe because no Vorbis sound
 // is playing, so the platform mixer never retires anything concurrently.
-void test_sound_update_sound_engine_closes_retired_streams() {
+namespace {
+
+void CheckStepClosesRetiredStreams(const char *step_name, void (*step)()) {
   Sound sound;
   sound.Load(ToneOggPath().c_str(), false);
   SoundTask *task = g_sound_mixer_state.AllocateSoundTask();
@@ -672,10 +674,23 @@ void test_sound_update_sound_engine_closes_retired_streams() {
   TEST_CHECK_(g_sound_mixer_state.retired_stream_count.load() == 1,
       "the decoder must be parked, count %d",
       (int)g_sound_mixer_state.retired_stream_count.load());
-  UpdateSoundEngine();
+  step();
   TEST_CHECK_(g_sound_mixer_state.retired_stream_count.load() == 0,
-      "UpdateSoundEngine must close parked decoders, count %d",
+      "%s must close parked decoders, count %d", step_name,
       (int)g_sound_mixer_state.retired_stream_count.load());
+}
+
+}  // namespace
+
+void test_sound_update_sound_engine_closes_retired_streams() {
+  CheckStepClosesRetiredStreams("UpdateSoundEngine", UpdateSoundEngine);
+}
+
+// In kNoWindow ShowFrame does not draw, so Swap, which calls UpdateSoundEngine
+// on the windowed paths, never runs; ShowFrame must call it itself there.
+// Run the suite with ARCTIC_HEADLESS=1 ARCTIC_DISABLE_HW=1 to cover that path.
+void test_sound_show_frame_closes_retired_streams() {
+  CheckStepClosesRetiredStreams("ShowFrame", ShowFrame);
 }
 
 #if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
@@ -806,4 +821,157 @@ void test_sound_async_recover_gate_holds_handler_out() {
   TEST_CHECK_(let_in.load() == 0,
       "the handler was let in %d times of %d during a recovery",
       (int)let_in.load(), (int)checks.load());
+}
+
+// SIGIO is blocked only on the thread that handles it, so while one thread
+// mixes in the handler the kernel may deliver the next SIGIO to another
+// thread. Two handlers then consume the single-consumer task queue and write
+// the PCM together. A call that arrives meanwhile must not run the work, and
+// must not be lost either: the running handler does the work once more after
+// it, since the new signal may mean a period became free after its last look.
+// A nested call models such an arrival deterministically.
+void test_sound_sigio_handler_calls_do_not_overlap() {
+  {
+    SigioHandlerSerializer serializer;
+    Si32 depth = 0;
+    Si32 max_depth = 0;
+    Si32 runs = 0;
+    std::function<void()> work = [&]() {
+      ++depth;
+      max_depth = std::max(max_depth, depth);
+      ++runs;
+      if (runs == 1) {
+        serializer.Run(work);
+      }
+      --depth;
+    };
+    serializer.Run(work);
+    TEST_CHECK_(max_depth == 1,
+        "a call during the work must not run it alongside, depth %d",
+        (int)max_depth);
+    TEST_CHECK_(runs == 2,
+        "a call during the work must make it run once more after, runs %d",
+        (int)runs);
+
+    // Several arrivals during one run are served by a single extra run.
+    runs = 0;
+    max_depth = 0;
+    std::function<void()> work_twice = [&]() {
+      ++depth;
+      max_depth = std::max(max_depth, depth);
+      ++runs;
+      if (runs == 1) {
+        serializer.Run(work_twice);
+        serializer.Run(work_twice);
+      }
+      --depth;
+    };
+    serializer.Run(work_twice);
+    TEST_CHECK_(max_depth == 1, "depth %d", (int)max_depth);
+    TEST_CHECK_(runs == 2, "two arrivals during a run, runs %d", (int)runs);
+
+    // Idle again: the next call runs the work once.
+    runs = 0;
+    serializer.Run([&]() { ++runs; });
+    TEST_CHECK_(runs == 1, "an idle serializer runs the work once, runs %d",
+        (int)runs);
+  }
+
+  // Real threads. Every call is counted before it enters; the work notes the
+  // count it saw at its start. If a call is dropped without a later run, the
+  // last run started before the last call.
+  SigioHandlerSerializer serializer;
+  std::atomic<Si32> in_work{0};
+  std::atomic<Si32> overlaps{0};
+  std::atomic<Si64> calls{0};
+  std::atomic<Si64> seen_at_start{0};
+  std::atomic<Si64> runs{0};
+  const Si32 kThreads = 8;
+  const Si32 kCallsPerThread = 100000;
+  std::vector<std::thread> threads;
+  for (Si32 t = 0; t < kThreads; ++t) {
+    threads.emplace_back([&]() {
+      for (Si32 i = 0; i < kCallsPerThread; ++i) {
+        calls.fetch_add(1, std::memory_order_seq_cst);
+        serializer.Run([&]() {
+          if (in_work.fetch_add(1, std::memory_order_seq_cst) != 0) {
+            overlaps.fetch_add(1, std::memory_order_relaxed);
+          }
+          seen_at_start.store(calls.load(std::memory_order_seq_cst),
+              std::memory_order_relaxed);
+          runs.fetch_add(1, std::memory_order_relaxed);
+          for (volatile Si32 spin = 0; spin < 20; ++spin) {
+          }
+          in_work.fetch_sub(1, std::memory_order_seq_cst);
+        });
+      }
+    });
+  }
+  for (std::thread &thread : threads) {
+    thread.join();
+  }
+  const Si64 total = static_cast<Si64>(kThreads) * kCallsPerThread;
+  TEST_CHECK_(overlaps.load() == 0,
+      "the work ran alongside itself %d times in %lld runs",
+      (int)overlaps.load(), (long long)runs.load());
+  TEST_CHECK_(seen_at_start.load() == total,
+      "the last run started when %lld of %lld calls were made, a call was "
+      "lost", (long long)seen_at_start.load(), (long long)total);
+  TEST_CHECK(runs.load() >= 1 && runs.load() <= total);
+}
+
+// The PCM starts as soon as start_threshold frames are queued, and SIGIO comes
+// only when a period has been played. The stop threshold is the buffer size,
+// so if the prime left the buffer with a whole free period, the first period
+// interrupt finds it that much emptier: with a single primed period it is
+// empty and the PCM is already in XRUN before the handler can write. The
+// prime must fill the buffer with whole periods.
+void test_sound_alsa_prime_fills_the_buffer() {
+  struct Case {
+    Si64 period;
+    Si64 threshold;
+    Si64 buffer;
+  };
+  // 50 ms buffer and 10 ms period at 44100 Hz are what StartSoundMixer asks
+  // for; the rest are sizes a device may negotiate instead.
+  const Case cases[] = {
+    {441, 441, 2205},
+    {441, 441, 2300},
+    {441, 0, 2205},
+    {441, 1, 2205},
+    {441, 441, 882},
+    {512, 512, 4096},
+    {1024, 1024, 3000},
+    {441, 441 * 3, 2205},
+    {441, 441 * 9, 2205},
+  };
+  for (const Case &c : cases) {
+    const int n = SoundPrimingPeriodWrites(c.period, c.threshold, c.buffer);
+    const Si64 queued = static_cast<Si64>(n) * c.period;
+    TEST_CHECK_(queued <= c.buffer,
+        "period %lld, buffer %lld: %d writes queue %lld frames, more than "
+        "the buffer holds", (long long)c.period, (long long)c.buffer, n,
+        (long long)queued);
+    TEST_CHECK_(c.buffer - queued < c.period,
+        "period %lld, threshold %lld, buffer %lld: %d writes leave %lld free "
+        "frames, room for another period, so the first period interrupt "
+        "finds only %lld frames queued", (long long)c.period,
+        (long long)c.threshold, (long long)c.buffer, n,
+        (long long)(c.buffer - queued), (long long)(queued - c.period));
+    TEST_CHECK_(queued >= c.threshold || queued + c.period > c.buffer,
+        "period %lld, threshold %lld, buffer %lld: %d writes do not reach "
+        "the start threshold", (long long)c.period, (long long)c.threshold,
+        (long long)c.buffer, n);
+  }
+
+  // A buffer of a single period, or smaller than one, still gets one write.
+  TEST_CHECK(SoundPrimingPeriodWrites(441, 441, 441) == 1);
+  TEST_CHECK(SoundPrimingPeriodWrites(441, 441, 300) == 1);
+  // Unknown buffer size: only the start threshold is known.
+  TEST_CHECK(SoundPrimingPeriodWrites(441, 441, 0) == 1);
+  TEST_CHECK(SoundPrimingPeriodWrites(441, 1000, 0) == 3);
+  TEST_CHECK(SoundPrimingPeriodWrites(441, 0, -1) == 1);
+  // A broken period size must not divide by zero.
+  TEST_CHECK(SoundPrimingPeriodWrites(0, 441, 2205) == 1);
+  TEST_CHECK(SoundPrimingPeriodWrites(-5, 441, 2205) == 1);
 }

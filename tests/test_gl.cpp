@@ -285,6 +285,125 @@ void test_gl_buffer_forgets_a_deleted_name() {
   GlBuffer::BindDefault(GL_ARRAY_BUFFER);
 }
 
+namespace {
+
+const char *kRedFragmentShader = R"SHADER(
+#ifdef GL_ES
+precision lowp float;
+#endif
+void main() {
+  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+)SHADER";
+
+const char *kGreenFragmentShader = R"SHADER(
+#ifdef GL_ES
+precision lowp float;
+#endif
+void main() {
+  gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+}
+)SHADER";
+
+// Binds the program the way the engine does, draws a quad over a small target
+// and reads the color back: what the GPU drew with, not what GL reports as
+// current.
+Rgba DrawWithProgram(GlProgram *program) {
+  const Si32 kSize = 4;
+  HwSprite target;
+  target.Create(kSize, kSize);
+  target.sprite_instance()->framebuffer().Bind();
+  GlState::SetViewport(0, 0, kSize, kSize);
+  GlState::SetBlending(kDrawBlendingModeCopyRgba);
+  glDisable(GL_SCISSOR_TEST);
+  glClearColor(0.f, 0.f, 0.f, 1.f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  program->Bind();
+  const float quad[12] = {
+    -1.f, -1.f, 1.f, -1.f, 1.f, 1.f,
+    -1.f, -1.f, 1.f, 1.f, -1.f, 1.f,
+  };
+  GlBuffer vbo;
+  vbo.Create();
+  vbo.Bind(GL_ARRAY_BUFFER);
+  vbo.SetData(quad, sizeof(quad));
+  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float),
+      reinterpret_cast<void *>(0));
+  glEnableVertexAttribArray(0);
+  glDisableVertexAttribArray(1);
+  glDrawArrays(GL_TRIANGLES, 0, 6);
+  Rgba pixel(0, 0, 0, 0);
+  glReadPixels(kSize / 2, kSize / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
+  GlFramebuffer::BindDefault();
+  return pixel;
+}
+
+bool IsRed(Rgba c) {
+  return c.r > 200 && c.g < 50 && c.b < 50;
+}
+
+bool IsGreen(Rgba c) {
+  return c.g > 200 && c.r < 50 && c.b < 50;
+}
+
+}  // namespace
+
+// Programs too, with a twist: a program that is current keeps its name while
+// it is flagged for deletion, so the stale cache shows once the program is no
+// longer current in GL, as after a glUseProgram(0) made past Bind (the tests
+// in this file end that way). Its name is then freed at once, the next program
+// may get it, and the bind cache took that one for the program already
+// current and skipped glUseProgram: the GPU drew with no program at all.
+void test_gl_program_forgets_a_deleted_name() {
+  if (arctic::GetEngine()->IsSoftwareOnly()) {
+    TEST_MSG("skipped: this run has no OpenGL context");
+    return;
+  }
+  // Create() on a live program: the old one is deleted inside.
+  {
+    GlProgram::InvalidateCache();
+    GlProgram program;
+    program.Create(kRegressionVertexShader, kRedFragmentShader);
+    const Rgba first = DrawWithProgram(&program);
+    const GLint old_id = CurrentGlProgramId();
+    TEST_CHECK_(IsRed(first) && old_id != 0,
+        "the red program drew %d %d %d as program %d, so the check below "
+        "proves nothing", first.r, first.g, first.b,
+        static_cast<int>(old_id));
+    glUseProgram(0);
+    program.Create(kRegressionVertexShader, kGreenFragmentShader);
+    const Rgba second = DrawWithProgram(&program);
+    TEST_CHECK_(IsGreen(second) && CurrentGlProgramId() != 0,
+        "after Create() the program drew %d %d %d instead of green, and GL "
+        "has program %d current (the old one was %d)", second.r, second.g,
+        second.b, static_cast<int>(CurrentGlProgramId()),
+        static_cast<int>(old_id));
+  }
+
+  // The destructor: the name dies with the object and another object gets it.
+  GlProgram::InvalidateCache();
+  GLint dead_id = 0;
+  {
+    GlProgram short_lived;
+    short_lived.Create(kRegressionVertexShader, kRedFragmentShader);
+    const Rgba first = DrawWithProgram(&short_lived);
+    dead_id = CurrentGlProgramId();
+    TEST_CHECK_(IsRed(first) && dead_id != 0,
+        "the short-lived red program drew %d %d %d as program %d", first.r,
+        first.g, first.b, static_cast<int>(dead_id));
+    glUseProgram(0);
+  }
+  GlProgram successor;
+  successor.Create(kRegressionVertexShader, kGreenFragmentShader);
+  const Rgba drawn = DrawWithProgram(&successor);
+  TEST_CHECK_(IsGreen(drawn) && CurrentGlProgramId() != 0,
+      "after a program died its successor drew %d %d %d instead of green, "
+      "and GL has program %d current (the dead one was %d)", drawn.r,
+      drawn.g, drawn.b, static_cast<int>(CurrentGlProgramId()),
+      static_cast<int>(dead_id));
+}
+
 void test_gl_texture_cache_identity_and_white() {
   Sprite spr;
   spr.Create(4, 4);

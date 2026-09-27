@@ -152,8 +152,6 @@ class SoundPlayerImpl {
   }
 };
 
-void UpdateSoundEngine();
-
 void SoundPlayer::Initialize() {
   Initialize(nullptr, nullptr);
 }
@@ -184,7 +182,6 @@ bool SoundPlayer::IsOk() {
 }
 
 std::string SoundPlayer::GetErrorDescription() {
-  UpdateSoundEngine();
   return g_sound_mixer_state.GetErrorDescription();
 }
 
@@ -291,29 +288,10 @@ static void SoundErrorAppendInt(char *dst, size_t cap, size_t *pos, int value) {
 void MixSound();
 static void SoundReportErrorFromSignal(int err_code, const char *context);
 
-// Period-sized writes needed so queued frames meet start_threshold.
-// start_threshold is set to period_size at open, so this is typically 1.
 // Shared by StartSoundMixer (silence) and UpdateSoundEngine recover (MixSound).
 static int SoundMixerPrimingPeriodWrites() {
-  const snd_pcm_sframes_t period = g_data.period_size;
-  if (period <= 0) {
-    return 1;
-  }
-  snd_pcm_sframes_t threshold = g_data.start_threshold;
-  if (threshold <= 0) {
-    threshold = period;
-  }
-  int n = static_cast<int>((threshold + period - 1) / period);
-  if (n < 1) {
-    n = 1;
-  }
-  if (g_data.buffer_size > 0) {
-    const int max_in_buffer = static_cast<int>(g_data.buffer_size / period);
-    if (max_in_buffer >= 1 && n > max_in_buffer) {
-      n = max_in_buffer;
-    }
-  }
-  return n;
+  return SoundPrimingPeriodWrites(g_data.period_size, g_data.start_threshold,
+      g_data.buffer_size);
 }
 
 void UpdateSoundEngine() {
@@ -349,7 +327,7 @@ void UpdateSoundEngine() {
               ? "Can't recover sound from suspend"
               : "Can't recover sound from underrun");
     } else {
-      // Restart async: mix + write enough periods to meet start_threshold.
+      // Restart async: mix + write whole periods until the buffer is full.
       const int prime_writes = SoundMixerPrimingPeriodWrites();
       bool primed_ok = true;
       for (int count = 0; count < prime_writes; ++count) {
@@ -483,9 +461,11 @@ int SoundMixerTestPeekAsyncRecoverCode() {
   return g_async_pcm_recover.PeekCode();
 }
 
+static SigioHandlerSerializer g_sigio_serializer;
+
 // Delivered from SIGIO. Only preallocated buffers and atomics.
 // Underrun/suspend: request g_async_pcm_recover; UpdateSoundEngine prepares.
-static void SoundMixerCallback(snd_async_handler_t *ahandler) {
+static void SoundMixerHandleSigio(snd_async_handler_t *ahandler) {
   snd_pcm_t *handle = snd_async_handler_get_pcm(ahandler);
   async_private_data *data = static_cast<async_private_data*>(
       snd_async_handler_get_callback_private(ahandler));
@@ -516,6 +496,12 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
       return;
     }
   }
+}
+
+static void SoundMixerCallback(snd_async_handler_t *ahandler) {
+  g_sigio_serializer.Run([ahandler]() {
+    SoundMixerHandleSigio(ahandler);
+  });
 }
 
 // Dedicated-thread fallback (-ENOSYS async). Keep underrun/suspend recovery;
@@ -752,7 +738,7 @@ void StartSoundMixer(const char* output_device_name) {
     if (!is_ok) {
       goto cleanup;
     }
-    // Silence prime: enough periods to meet start_threshold (no MixSound yet).
+    // Silence prime: whole periods until the buffer is full (no MixSound yet).
     const int prime_writes = SoundMixerPrimingPeriodWrites();
     for (int count = 0; count < prime_writes; count++) {
       err = snd_pcm_writei(g_data.handle, g_data.samples.data(),

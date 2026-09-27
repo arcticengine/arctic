@@ -56,8 +56,11 @@ void test_sound_vorbis_stream_matches_unpacked_decode();
 void test_sound_copy_does_not_share_decoder();
 void test_sound_mixer_retires_vorbis_decoder_to_game_thread();
 void test_sound_update_sound_engine_closes_retired_streams();
+void test_sound_show_frame_closes_retired_streams();
 void test_sound_start_sound_opens_vorbis_stream();
 void test_sound_async_recover_gate_holds_handler_out();
+void test_sound_alsa_prime_fills_the_buffer();
+void test_sound_sigio_handler_calls_do_not_overlap();
 
 // test_formats.cpp
 void test_localization_basic_load();
@@ -104,6 +107,7 @@ void test_gl_texture2d_bind_hit_still_activates_the_slot();
 void test_gl_texture2d_forgets_a_deleted_name();
 void test_gl_framebuffer_forgets_a_deleted_name();
 void test_gl_buffer_forgets_a_deleted_name();
+void test_gl_program_forgets_a_deleted_name();
 void test_gl_texture_cache_identity_and_white();
 
 // test_font.cpp
@@ -392,10 +396,16 @@ TEST_LIST = {
       test_sound_mixer_retires_vorbis_decoder_to_game_thread},
   {"Sound UpdateSoundEngine closes retired streams",
       test_sound_update_sound_engine_closes_retired_streams},
+  {"Sound ShowFrame closes retired streams",
+      test_sound_show_frame_closes_retired_streams},
   {"Sound StartSound opens Vorbis stream",
       test_sound_start_sound_opens_vorbis_stream},
   {"Sound async recover gate holds the handler out",
       test_sound_async_recover_gate_holds_handler_out},
+  {"Sound ALSA prime fills the buffer",
+      test_sound_alsa_prime_fills_the_buffer},
+  {"Sound SIGIO handler calls do not overlap",
+      test_sound_sigio_handler_calls_do_not_overlap},
   {"Quaternion ToMat33F sign error", test_quat_to_mat33f_sign},
   {"Quaternion ToPartialMatrix33F sign error", test_quat_to_partial_mat33f_sign},
   {"Quaternion slerp uses unnormalized inputs", test_quat_slerp_unnormalized},
@@ -446,6 +456,7 @@ TEST_LIST = {
   {"GlTexture2D forgets a deleted name", test_gl_texture2d_forgets_a_deleted_name},
   {"GlFramebuffer forgets a deleted name", test_gl_framebuffer_forgets_a_deleted_name},
   {"GlBuffer forgets a deleted name", test_gl_buffer_forgets_a_deleted_name},
+  {"GlProgram forgets a deleted name", test_gl_program_forgets_a_deleted_name},
   {"Font draws with an empty palette", test_font_draw_with_empty_palette},
   {"Mesh Clone keeps counts and data", test_mesh_clone_keeps_counts_and_data},
   {"Quat matrix vs AxisAngle consistency", test_quat_matrix_vs_axis_angle},

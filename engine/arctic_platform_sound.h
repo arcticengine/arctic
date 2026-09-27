@@ -72,7 +72,7 @@ class SoundPlayer {
 
 
 /// @brief Per-frame sound engine maintenance, called by Swap on every
-/// platform; game thread only.
+/// platform, or by ShowFrame when there is no window; game thread only.
 /// Frees what the mixer has parked because it must not free it itself: Vorbis
 /// decoders and heap chunks of the task queue.
 /// On Linux ALSA async also recovers SIGIO-deferred underrun/suspend (prepare/

@@ -75,6 +75,9 @@ GlProgram::GlProgram()
 }
 
 GlProgram::~GlProgram() {
+    if (current_program_id_ == program_id_) {
+        current_program_id_ = 0;
+    }
     ARCTIC_GL_CHECK_ERROR(glDeleteProgram(program_id_));
 }
 
@@ -93,6 +96,9 @@ void GlProgram::Create(const char *vs_src, const char *fs_src,
 void GlProgram::Create(const char *vs_src, const char *fs_src,
         const char *const *attribute_names, Si32 attribute_count) {
     if (program_id_ != 0) {
+        if (current_program_id_ == program_id_) {
+            current_program_id_ = 0;
+        }
         ARCTIC_GL_CHECK_ERROR(glDeleteProgram(program_id_));
     }
     attribute_locations_.clear();
@@ -143,6 +149,9 @@ void GlProgram::Create(const char *vs_src, const char *fs_src,
         ARCTIC_GL_CHECK_ERROR(glDetachShader(program_id_, fragmentShader));
         ARCTIC_GL_CHECK_ERROR(glDeleteShader(vertexShader));
         ARCTIC_GL_CHECK_ERROR(glDeleteShader(fragmentShader));
+        if (current_program_id_ == program_id_) {
+            current_program_id_ = 0;
+        }
         ARCTIC_GL_CHECK_ERROR(glDeleteProgram(program_id_));
         program_id_ = 0;
         Fatal("Unknown error linking program");

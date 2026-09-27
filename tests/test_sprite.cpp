@@ -1060,7 +1060,9 @@ void test_hw_sprite_subregion_draws_correctly() {
 
   // -- 7. Render --
   hw_target.sprite_instance()->framebuffer().Bind();
-  glViewport(0, 0, REF_W, REF_H);
+  // Through GlState: the engine caches the viewport, and a raw glViewport
+  // would leave the next frame drawn into this 5x4 corner.
+  GlState::SetViewport(0, 0, REF_W, REF_H);
   glDisable(GL_SCISSOR_TEST);
   glClearColor(0.f, 0.f, 0.f, 1.f);
   glClear(GL_COLOR_BUFFER_BIT);
