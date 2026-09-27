@@ -75,6 +75,11 @@ namespace arctic {
 using std::atomic;
 using std::deque;
 
+// The most slots the consumer of a pool-backed queue may hold as skipped at
+// once. A slot is skipped while its producer has not finished writing it, so
+// this bounds the items enqueued but not yet dequeued.
+constexpr size_t kMpscMaxSkippedSlots = 1024;
+
 namespace dtl {
 
 template<bool PAYLOAD_IS_PTR>
@@ -97,6 +102,9 @@ struct InfArrayChunk<true> final {
   // then it is safe to reclaim all the previous chunks in
   // the double-linked list
   atomic<Ui64> ReleaseCounter{0};
+
+  // A pool-backed queue took this chunk from the heap: its pool was empty
+  bool FromHeap = false;
 
   // let's allocate the chunk, calculating enough memory for payload items
   static SelfType *
@@ -149,7 +157,7 @@ struct InfArrayChunk<true> final {
     // released per dequeue call.
     auto i = Prev;
     Prev = i->Prev;
-    releaser->freeChunk(i);
+    releaser->releaseChunk(i);
     return !Prev;
   }
 
@@ -204,6 +212,9 @@ struct InfArrayChunk<false> final {
   // then it is safe to reclaim all the previous chunks in
   // the double-linked list
   atomic<Ui64> ReleaseCounter{0};
+
+  // A pool-backed queue took this chunk from the heap: its pool was empty
+  bool FromHeap = false;
 
   // let's allocate the chunk, calculating enough memory for payload items
   static SelfType *allocateNew(
@@ -261,7 +272,7 @@ struct InfArrayChunk<false> final {
     // released per dequeue call.
     auto i = Prev;
     Prev = i->Prev;
-    releaser->freeChunk(i);
+    releaser->releaseChunk(i);
     return !Prev;
   }
 
@@ -362,6 +373,41 @@ template<bool ForMemoryPool, bool PtrPayload>
 class AuxiliaryChunkSize;
 
 
+/*
+ * Heap chunks a pool-backed queue has released. The consumer may run where
+ * freeing heap memory is unsafe (a signal handler), so it only parks them;
+ * a thread that may use the heap frees them. Only the consumer parks, so its
+ * compare-exchange can lose only to a take that emptied the list, and only
+ * once: park is wait-free.
+ */
+template<typename ChunkType>
+class ParkedHeapChunks {
+ public:
+  void park(ChunkType *chunk) {
+    ChunkType *head = parked.load(MO_RELAXED);
+    do {
+      chunk->Prev = head;
+    } while (!parked.compare_exchange_strong(
+      head, chunk, MO_RELEASE, MO_RELAXED));
+  }
+
+  size_t freeAll() {
+    ChunkType *chunk = parked.exchange(nullptr, MO_ACQUIRE);
+    size_t count = 0;
+    while (chunk != nullptr) {
+      ChunkType *prev = chunk->Prev;
+      ::free(chunk);
+      chunk = prev;
+      ++count;
+    }
+    return count;
+  }
+
+ private:
+  atomic<ChunkType *> parked{nullptr};
+};
+
+
 template<>
 class AuxiliaryChunkSize<false, true> {
  protected:
@@ -386,6 +432,14 @@ class AuxiliaryChunkSize<false, true> {
 
   inline void freeChunk(ChunkType *chunk) {
     ChunkType::destroy(chunk);
+  }
+
+  inline void releaseChunk(ChunkType *chunk) {
+    freeChunk(chunk);
+  }
+
+  size_t freeReleasedHeapChunks() {
+    return 0;
   }
 
   void setSlot(ChunkType *chunk, Ui64 slot, void *item) {
@@ -414,27 +468,55 @@ class AuxiliaryChunkSize<true, true> {
     : numberOfSlotsInChunk(calculateNumberOfSlots(pool_))
     , pool(pool_) {}
 
+  // Only producers allocate, and they may use the heap when the pool is empty.
   inline ChunkType *
   allocateChunk(ChunkType *current, Ui64 start_slot) {
     void *mem = pool->alloc();
-    if (mem == nullptr) {
-      return nullptr;
+    const bool from_heap = (mem == nullptr);
+    if (from_heap) {
+      mem = ::malloc(pool->getBlockSize());
+      if (mem == nullptr) {
+        return nullptr;
+      }
     }
-    ChunkType *new_chunk = reinterpret_cast<ChunkType *>(mem);
-    return ChunkType::reset(
-      new_chunk, current, start_slot, numberOfSlotsInChunk);
+    ChunkType *new_chunk = ChunkType::reset(
+      reinterpret_cast<ChunkType *>(mem), current, start_slot,
+      numberOfSlotsInChunk);
+    new_chunk->FromHeap = from_heap;
+    return new_chunk;
   }
 
   inline ChunkType *
   resetChunk(ChunkType *chunk,
     ChunkType *prev,
     Ui64 start_slot) {
-    return ChunkType::reset(
+    const bool from_heap = chunk->FromHeap;
+    ChunkType *new_chunk = ChunkType::reset(
       chunk, prev, start_slot, numberOfSlotsInChunk);
+    new_chunk->FromHeap = from_heap;
+    return new_chunk;
   }
 
+  // Producers and the destructor.
   inline void freeChunk(ChunkType *chunk) {
-    pool->free(chunk);
+    if (chunk->FromHeap) {
+      ::free(chunk);
+    } else {
+      pool->free(chunk);
+    }
+  }
+
+  // The consumer, which must not touch the heap.
+  inline void releaseChunk(ChunkType *chunk) {
+    if (chunk->FromHeap) {
+      parkedHeapChunks.park(chunk);
+    } else {
+      pool->free(chunk);
+    }
+  }
+
+  size_t freeReleasedHeapChunks() {
+    return parkedHeapChunks.freeAll();
   }
 
   void setSlot(ChunkType *chunk, Ui64 slot, void *item) {
@@ -452,6 +534,7 @@ class AuxiliaryChunkSize<true, true> {
 
   size_t const numberOfSlotsInChunk;
   I_FixedSizeAllocator *const pool;
+  ParkedHeapChunks<ChunkType> parkedHeapChunks;
 
   static size_t calculateNumberOfSlots(I_FixedSizeAllocator *pool) {
     size_t block_size = pool->getBlockSize();
@@ -488,6 +571,14 @@ class AuxiliaryChunkSize<false, false> {
     ChunkType::destroy(chunk);
   }
 
+  inline void releaseChunk(ChunkType *chunk) {
+    freeChunk(chunk);
+  }
+
+  size_t freeReleasedHeapChunks() {
+    return 0;
+  }
+
   void setSlot(ChunkType *chunk, size_t slot, void *item) {
     chunk->set_slot(slot, item, payloadSize);
   }
@@ -511,25 +602,53 @@ class AuxiliaryChunkSize<true, false> {
     , payloadSize(payload_size)
     , numberOfSlotsInChunk(calculateNumberOfSlots()) {}
 
+  // Only producers allocate, and they may use the heap when the pool is empty.
   inline ChunkType *
   allocateChunk(ChunkType *prev, Ui64 start_slot) {
     void *mem = pool->alloc();
-    if (mem == nullptr) {
-      return nullptr;
+    const bool from_heap = (mem == nullptr);
+    if (from_heap) {
+      mem = ::malloc(pool->getBlockSize());
+      if (mem == nullptr) {
+        return nullptr;
+      }
     }
-    ChunkType *new_chunk = reinterpret_cast<ChunkType *>(mem);
-    return ChunkType::reset(
-      new_chunk, prev, start_slot, numberOfSlotsInChunk, payloadSize);
+    ChunkType *new_chunk = ChunkType::reset(
+      reinterpret_cast<ChunkType *>(mem), prev, start_slot,
+      numberOfSlotsInChunk, payloadSize);
+    new_chunk->FromHeap = from_heap;
+    return new_chunk;
   }
 
   inline ChunkType *
   resetChunk(ChunkType *chunk, ChunkType *prev, Ui64 start_slot) {
-    return ChunkType::reset(
+    const bool from_heap = chunk->FromHeap;
+    ChunkType *new_chunk = ChunkType::reset(
       chunk, prev, start_slot, numberOfSlotsInChunk, payloadSize);
+    new_chunk->FromHeap = from_heap;
+    return new_chunk;
   }
 
+  // Producers and the destructor.
   inline void freeChunk(ChunkType *chunk) {
-    pool->free(chunk);
+    if (chunk->FromHeap) {
+      ::free(chunk);
+    } else {
+      pool->free(chunk);
+    }
+  }
+
+  // The consumer, which must not touch the heap.
+  inline void releaseChunk(ChunkType *chunk) {
+    if (chunk->FromHeap) {
+      parkedHeapChunks.park(chunk);
+    } else {
+      pool->free(chunk);
+    }
+  }
+
+  size_t freeReleasedHeapChunks() {
+    return parkedHeapChunks.freeAll();
   }
 
   void setSlot(ChunkType *chunk, size_t slot, void *item) {
@@ -543,6 +662,7 @@ class AuxiliaryChunkSize<true, false> {
   I_FixedSizeAllocator *const pool;
   size_t const payloadSize;
   size_t const numberOfSlotsInChunk;
+  ParkedHeapChunks<ChunkType> parkedHeapChunks;
 
   size_t calculateNumberOfSlots() {
     size_t block_size = pool->getBlockSize();
@@ -559,12 +679,85 @@ class AuxiliaryChunkSize<true, false> {
 template<bool ForMemoryPool, typename ElemType>
 struct SimpleQueueSelector {
   typedef std::deque<ElemType> type;
+  struct allocator {
+    bool isOK() const {
+      return true;
+    }
+  };
+};
+
+
+// Blocks for the two skipped-slot lists of a pool-backed queue, taken from
+// the heap once when the queue is created. The consumer may run in a signal
+// handler, while producers are allowed to empty the shared pool. Only the
+// consumer uses it, so there is no synchronization.
+template<typename ElemType>
+class SkipSlotBlockReserve final : public I_FixedSizeAllocator {
+ public:
+  SkipSlotBlockReserve()
+    : memory(static_cast<char *>(std::malloc(kBlockSize * kBlockCount))) {
+    if (memory == nullptr) {
+      return;
+    }
+    for (size_t i = 0; i < kBlockCount; ++i) {
+      free(memory + i * kBlockSize);
+    }
+  }
+
+  ~SkipSlotBlockReserve() {
+    std::free(memory);
+  }
+
+  SkipSlotBlockReserve(const SkipSlotBlockReserve &) = delete;
+  SkipSlotBlockReserve &operator=(const SkipSlotBlockReserve &) = delete;
+
+  bool isOK() const {
+    return memory != nullptr;
+  }
+
+  void *alloc() override {
+    FreeBlock *block = freeList;
+    if (block == nullptr) {
+      return nullptr;
+    }
+    freeList = block->next;
+    return block;
+  }
+
+  void free(void *ptr) override {
+    FreeBlock *block = static_cast<FreeBlock *>(ptr);
+    block->next = freeList;
+    freeList = block;
+  }
+
+  size_t getBlockSize() override {
+    return kBlockSize;
+  }
+
+ private:
+  struct FreeBlock {
+    FreeBlock *next;
+  };
+
+  static constexpr size_t kItemsPerBlock = 256;
+  static constexpr size_t kAlign = alignof(std::max_align_t);
+  static constexpr size_t kBlockSize =
+    (FixedBlockQueue<ElemType>::blockSizeFor(kItemsPerBlock) + kAlign - 1)
+    / kAlign * kAlign;
+  // Each list holds at most kMpscMaxSkippedSlots + 1 items (one moves from
+  // a list to the other) and may have a partly used block at either end.
+  static constexpr size_t kBlockCount =
+    2 * ((kMpscMaxSkippedSlots + 1 + kItemsPerBlock - 1) / kItemsPerBlock + 1);
+
+  char *memory;
+  FreeBlock *freeList = nullptr;
 };
 
 
 template<typename ElemType>
 struct SimpleQueueSelector<true, ElemType> {
   typedef FixedBlockQueue<ElemType> type;
+  typedef SkipSlotBlockReserve<ElemType> allocator;
 };
 
 
@@ -622,21 +815,21 @@ struct ContainerOpsSelector<true> {
     MPSC_VirtInfArray_Impl<FOR_MEMORY_POOL, PTR_PAYLOAD> *queue,
     ContainerType &container,
     ParamType &&item) {
-    container.push_back(std::forward<ParamType>(item), queue->pool);
+    container.push_back(std::forward<ParamType>(item), &queue->skipBlocks);
   }
 
   template<bool FOR_MEMORY_POOL, bool PTR_PAYLOAD, typename ContainerType>
   static void pop_front(
     MPSC_VirtInfArray_Impl<FOR_MEMORY_POOL, PTR_PAYLOAD> *queue,
     ContainerType &container) {
-    container.pop_front(queue->pool);
+    container.pop_front(&queue->skipBlocks);
   }
 
   template<bool FOR_MEMORY_POOL, bool PTR_PAYLOAD, typename ContainerType>
   static auto &front(
     MPSC_VirtInfArray_Impl<FOR_MEMORY_POOL, PTR_PAYLOAD> *queue,
     ContainerType &container) {
-    return container.front(queue->pool);
+    return container.front(&queue->skipBlocks);
   }
 };
 
@@ -656,7 +849,7 @@ class MPSC_VirtInfArray_Impl
     std::forward<Params>(params)...) {}
 
   bool isOK() noexcept {
-    return numberOfSlotsInChunk;
+    return numberOfSlotsInChunk && skipBlocks.isOK();
   }
 
   ~MPSC_VirtInfArray_Impl() {
@@ -667,14 +860,16 @@ class MPSC_VirtInfArray_Impl
       freeChunk(i);
       i = prev;
     }
+    freeReleasedHeapChunks();
   }
 
   void enqueue(void *item);
-  // Pool-backed: grow chunks before claiming a slot so a failed alloc cannot
-  // leave a permanent hole in the MPSC. Returns false if the pool is exhausted.
-  // Heap-backed: always enqueues and returns true (operator new throws on OOM).
-  bool try_enqueue(void *item);
   bool dequeue(void *result);
+
+  // Pool-backed: when the pool is empty a producer takes a chunk from the
+  // heap, and the consumer parks it once released instead of freeing it.
+  // Call this from a thread that may use the heap; returns how many it freed.
+  using AuxiliaryChunkSize<ForMemoryPool, PtrPayload>::freeReleasedHeapChunks;
 
  protected:
   template<bool>
@@ -696,6 +891,7 @@ class MPSC_VirtInfArray_Impl
 
   using AuxiliaryChunkSize<ForMemoryPool, PtrPayload>::numberOfSlotsInChunk;
   using AuxiliaryChunkSize<ForMemoryPool, PtrPayload>::freeChunk;
+  using AuxiliaryChunkSize<ForMemoryPool, PtrPayload>::releaseChunk;
   using AuxiliaryChunkSize<ForMemoryPool, PtrPayload>::allocateChunk;
   using AuxiliaryChunkSize<ForMemoryPool, PtrPayload>::resetChunk;
   using AuxiliaryChunkSize<ForMemoryPool, PtrPayload>::setSlot;
@@ -729,6 +925,8 @@ class MPSC_VirtInfArray_Impl
   Ui64 lastKnownTailCounter{0};
   ChunkType *head = tail.load(std::memory_order_relaxed);
 
+  typename SimpleQueueSelector<ForMemoryPool, SlotChunkPair>::allocator
+    skipBlocks;
   SkipContainer skippedSlots;
   SkipContainer retrySlots;
 
@@ -762,8 +960,8 @@ void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
           new_chunk = allocateChunk(
             current_chunk,
             current_chunk->StartSlot + numberOfSlotsInChunk);
-          // Heap path throws on OOM; pool+best-effort mallocs. A no-fallback
-          // pool must use try_enqueue so this abort is only a last-resort guard.
+          // The slot is taken and cannot be given back: out of heap memory
+          // there is no way to go on.
           if (new_chunk == nullptr) {
             abort();
           }
@@ -815,91 +1013,6 @@ void MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::enqueue(void *item) {
 
   /* Chunk found */
   setSlot(current_chunk, slot, item);
-}
-
-
-template<bool ForMemoryPool, bool PtrPayload>
-bool MPSC_VirtInfArray_Impl<ForMemoryPool, PtrPayload>::try_enqueue(void *item) {
-  if (!ForMemoryPool) {
-    enqueue(item);
-    return true;
-  }
-
-  // Restructured pool path: never claim a slot beyond the highest linked chunk.
-  // Grow (allocate+link) first; only CAS-claim a slot that already has coverage.
-  // A failed grow returns false with no hole in the MPSC.
-  for (;;) {
-    ChunkType *current_chunk = tail.load(MO_ACQUIRE);
-    Ui64 slot = tailCounter.load(MO_ACQUIRE);
-
-    if (current_chunk->StartSlot > slot) {
-      // Tail got ahead of the next claimable slot; reload and retry.
-      continue;
-    }
-
-    if (current_chunk->StartSlot + numberOfSlotsInChunk <= slot) {
-      auto next = current_chunk->Next.load(MO_ACQUIRE);
-      if (next != nullptr) {
-        ChunkType *prev_chunk = current_chunk;
-        tail.compare_exchange_strong(prev_chunk, next, MO_SEQUENCE);
-        continue;
-      }
-
-      ChunkType *new_chunk = allocateChunk(
-          current_chunk,
-          current_chunk->StartSlot + numberOfSlotsInChunk);
-      if (new_chunk == nullptr) {
-        return false;
-      }
-
-      ChunkType *expected_next = nullptr;
-      bool set = current_chunk->Next.compare_exchange_strong(
-          expected_next, new_chunk, MO_SEQUENCE);
-      if (set) {
-        auto current_tail_counter = tailCounter.load(MO_ACQUIRE);
-        Ui64 release_counter = 0;
-        bool rc_set;
-        do {
-          rc_set = new_chunk->ReleaseCounter.compare_exchange_strong(
-              release_counter, current_tail_counter, MO_SEQUENCE);
-        } while (!rc_set && release_counter > current_tail_counter);
-
-        ChunkType *prev_chunk = current_chunk;
-        tail.compare_exchange_strong(prev_chunk, new_chunk, MO_SEQUENCE);
-      } else {
-        freeChunk(new_chunk);
-        ChunkType *prev_chunk = current_chunk;
-        tail.compare_exchange_strong(prev_chunk, expected_next, MO_SEQUENCE);
-      }
-      continue;
-    }
-
-    // `slot` lies inside current_chunk. Claim exactly that slot.
-    if (!tailCounter.compare_exchange_weak(
-            slot, slot + 1, MO_ACQUIRE, MO_RELAXED)) {
-      continue;
-    }
-
-    // Owned `slot`. Locate its chunk (must already be linked).
-    current_chunk = tail.load(MO_ACQUIRE);
-    if (current_chunk->StartSlot > slot) {
-      do {
-        current_chunk = current_chunk->Prev;
-      } while (current_chunk->StartSlot > slot);
-    } else {
-      while (current_chunk->StartSlot + numberOfSlotsInChunk <= slot) {
-        auto next = current_chunk->Next.load(MO_ACQUIRE);
-        if (next == nullptr) {
-          // Invariant: we only claim slots under linked coverage.
-          abort();
-        }
-        current_chunk = next;
-      }
-    }
-
-    setSlot(current_chunk, slot, item);
-    return true;
-  }
 }
 
 
@@ -1132,8 +1245,8 @@ class MpscVirtInfArray_Aux<Params, EnqueueDequeueAPIEnum::POINTER>
     BaseType::impl.enqueue(item);
   }
 
-  bool try_enqueue(PayloadType item) {
-    return BaseType::impl.try_enqueue(item);
+  size_t freeReleasedHeapChunks() {
+    return BaseType::impl.freeReleasedHeapChunks();
   }
 
   inline PayloadType dequeue() {

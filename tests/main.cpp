@@ -47,7 +47,6 @@ void test_random_state_text_round_trip();
 void test_sound_resample_returns_nullptr();
 void test_sound_8bit_stereo_wrong_offset();
 void test_sound_8bit_signed_vs_unsigned();
-void test_sound_mixer_alsa_async_sigio_is_signal_safe();
 void test_sound_mixer_pool_capacity_accepts_full_return();
 void test_sound_mixer_async_error_message_is_detailed();
 void test_sound_handle_takes_uid_before_publish();
@@ -58,6 +57,7 @@ void test_sound_copy_does_not_share_decoder();
 void test_sound_mixer_retires_vorbis_decoder_to_game_thread();
 void test_sound_update_sound_engine_closes_retired_streams();
 void test_sound_start_sound_opens_vorbis_stream();
+void test_sound_async_recover_gate_holds_handler_out();
 
 // test_formats.cpp
 void test_localization_basic_load();
@@ -294,6 +294,11 @@ void test_mpsc_vinfarr_frees_chunks_with_matching_size();
 void test_mpsc_vinfarr_two_producers_deliver_every_item();
 void test_mpsc_vinfarr_keeps_chunks_until_release_counter_published();
 void test_mpsc_vinfarr_destructor_deletes_pointer_payloads();
+void test_mpsc_vinfarr_pool_producers_deliver_every_item();
+void test_mpsc_vinfarr_heap_chunks_wait_for_game_thread();
+void test_mpsc_vinfarr_concurrent_heap_chunks_are_freed();
+void test_mpsc_vinfarr_consumer_skips_slots_with_empty_pool();
+void test_fixed_block_queue_spans_many_blocks();
 
 // test_sprite.cpp
 void test_radix_sort();
@@ -370,8 +375,6 @@ TEST_LIST = {
   {"Sound resample returns nullptr", test_sound_resample_returns_nullptr},
   {"Sound 8-bit stereo wrong offset", test_sound_8bit_stereo_wrong_offset},
   {"Sound 8-bit signed vs unsigned", test_sound_8bit_signed_vs_unsigned},
-  {"Sound mixer ALSA async SIGIO path is signal-safe",
-      test_sound_mixer_alsa_async_sigio_is_signal_safe},
   {"Sound mixer pool capacity accepts full return",
       test_sound_mixer_pool_capacity_accepts_full_return},
   {"Sound mixer async error message is detailed",
@@ -391,6 +394,8 @@ TEST_LIST = {
       test_sound_update_sound_engine_closes_retired_streams},
   {"Sound StartSound opens Vorbis stream",
       test_sound_start_sound_opens_vorbis_stream},
+  {"Sound async recover gate holds the handler out",
+      test_sound_async_recover_gate_holds_handler_out},
   {"Quaternion ToMat33F sign error", test_quat_to_mat33f_sign},
   {"Quaternion ToPartialMatrix33F sign error", test_quat_to_partial_mat33f_sign},
   {"Quaternion slerp uses unnormalized inputs", test_quat_slerp_unnormalized},
@@ -631,5 +636,15 @@ TEST_LIST = {
       test_mpsc_vinfarr_keeps_chunks_until_release_counter_published},
   {"MPSC queue destructor deletes pointer payloads",
       test_mpsc_vinfarr_destructor_deletes_pointer_payloads},
+  {"MPSC queue pool producers deliver every item",
+      test_mpsc_vinfarr_pool_producers_deliver_every_item},
+  {"MPSC queue heap chunks wait for the game thread",
+      test_mpsc_vinfarr_heap_chunks_wait_for_game_thread},
+  {"MPSC queue concurrent heap chunks are freed",
+      test_mpsc_vinfarr_concurrent_heap_chunks_are_freed},
+  {"MPSC queue consumer skips slots with an empty pool",
+      test_mpsc_vinfarr_consumer_skips_slots_with_empty_pool},
+  {"Fixed block queue spans many blocks",
+      test_fixed_block_queue_spans_many_blocks},
   {0}
 };

@@ -105,20 +105,8 @@ SoundPlayer::~SoundPlayer() {
   }
 }
 
-bool SoundMixerShouldUseDedicatedThread() {
-  return true;
-}
-
-bool SoundMixerIsDedicatedThreadRunning() {
-  return false;
-}
-
-bool SoundMixerHasAsyncPcmHandler() {
-  return false;
-}
-
 void UpdateSoundEngine() {
-  g_sound_mixer_state.CloseRetiredStreams();
+  g_sound_mixer_state.ReleaseMixerGarbage();
 }
 
 }  // namespace arctic
@@ -192,7 +180,6 @@ void SoundPlayer::Deinitialize() {
 }
 
 bool SoundPlayer::IsOk() {
-  UpdateSoundEngine();
   return g_sound_mixer_state.IsOk();
 }
 
@@ -251,10 +238,8 @@ struct async_private_data {
 
 static async_private_data g_data;
 static std::atomic<int> g_async_mixer_errno{0};
-// SIGIO stores -EPIPE / -ESTRPIPE here; UpdateSoundEngine recovers off-signal.
-static std::atomic<int> g_async_pcm_recover_code{0};
-// Covers prepare+priming after recover_code is exchanged to 0 (SIGIO early-out).
-static std::atomic<bool> g_async_pcm_recovering{false};
+// SIGIO requests -EPIPE / -ESTRPIPE here; UpdateSoundEngine recovers off-signal.
+static AsyncRecoverGate g_async_pcm_recover;
 static bool is_sound_thread = false;
 static std::thread sound_thread;
 
@@ -303,7 +288,7 @@ static void SoundErrorAppendInt(char *dst, size_t cap, size_t *pos, int value) {
   }
 }
 
-void MixSound(bool async_signal_safe);
+void MixSound();
 static void SoundReportErrorFromSignal(int err_code, const char *context);
 
 // Period-sized writes needed so queued frames meet start_threshold.
@@ -332,24 +317,22 @@ static int SoundMixerPrimingPeriodWrites() {
 }
 
 void UpdateSoundEngine() {
-  g_sound_mixer_state.CloseRetiredStreams();
+  g_sound_mixer_state.ReleaseMixerGarbage();
   // 1) Deferred underrun/suspend recover requested from SIGIO (no prepare there).
-  const int recover = g_async_pcm_recover_code.exchange(
-      0, std::memory_order_acq_rel);
+  // A non-zero claim holds SIGIO out for the whole prepare+prime window.
+  const int recover = g_async_pcm_recover.Claim();
+  struct AsyncPcmRecoverRelease {
+    bool claimed;
+    ~AsyncPcmRecoverRelease() {
+      if (claimed) {
+        g_async_pcm_recover.Release();
+      }
+    }
+  } recover_release{recover != 0};
   if (recover != 0
       && g_data.handle
       && g_data.ahandler
       && !g_sound_mixer_state.do_quit.load(std::memory_order_acquire)) {
-    // recover_code is already 0; hold SIGIO out for the whole prepare+prime window.
-    struct AsyncPcmRecoveringGuard {
-      AsyncPcmRecoveringGuard() {
-        g_async_pcm_recovering.store(true, std::memory_order_release);
-      }
-      ~AsyncPcmRecoveringGuard() {
-        g_async_pcm_recovering.store(false, std::memory_order_release);
-      }
-    } recovering_guard;
-
     int err = 0;
     if (recover == -ESTRPIPE) {
       err = snd_pcm_resume(g_data.handle);
@@ -370,11 +353,11 @@ void UpdateSoundEngine() {
       const int prime_writes = SoundMixerPrimingPeriodWrites();
       bool primed_ok = true;
       for (int count = 0; count < prime_writes; ++count) {
-        MixSound(false);
+        MixSound();
         err = snd_pcm_writei(g_data.handle, g_data.samples.data(),
             g_data.period_size);
         if (err == -EPIPE || err == -ESTRPIPE) {
-          g_async_pcm_recover_code.store(err, std::memory_order_release);
+          g_async_pcm_recover.Request(err);
           primed_ok = false;
           break;
         }
@@ -397,7 +380,7 @@ void UpdateSoundEngine() {
   }
 
   // 2) Lift a SIGIO-deferred hard error into SetError + log once.
-  // exchange clears the pending code, so later PumpMessages / IsOk stay quiet
+  // exchange clears the pending code, so a later UpdateSoundEngine stays quiet
   // until a new report. Acquire pairs with SoundReportErrorFromSignal release.
   int err = g_async_mixer_errno.exchange(0, std::memory_order_acq_rel);
   if (err == 0) {
@@ -445,11 +428,14 @@ const char *SoundMixerTestPeekAsyncErrorMessage() {
 
 void SoundMixerTestClearAsyncError() {
   g_async_mixer_errno.store(0, std::memory_order_release);
-  g_async_pcm_recover_code.store(0, std::memory_order_release);
-  g_async_pcm_recovering.store(false, std::memory_order_release);
+  g_async_pcm_recover.Reset();
 }
 
-void MixSound(bool async_signal_safe) {
+bool SoundMixerTestIsRunning() {
+  return is_sound_thread || g_data.ahandler != nullptr;
+}
+
+void MixSound() {
   async_private_data *data = &g_data;
   float *mix_l = &data->mix[0];
   float *mix_r = &data->mix[1];
@@ -457,7 +443,7 @@ void MixSound(bool async_signal_safe) {
   Si32 buffer_samples_per_channel = static_cast<Si32>(data->period_size);
 
   g_sound_mixer_state.MixSound(mix_l, mix_r, mix_stride,
-      buffer_samples_per_channel, data->tmp.data(), async_signal_safe);
+      buffer_samples_per_channel, data->tmp.data());
 
   // Convert to 16-bit integer format.
   unsigned char *out_buffer = (unsigned char *)data->samples.data();
@@ -470,18 +456,13 @@ void MixSound(bool async_signal_safe) {
   }
 }
 
-void MixSound() {
-  MixSound(false);
-}
-
 // SIGIO-safe. True when a full period can be mixed and written. In the XRUN
 // state avail_update itself returns -EPIPE (-ESTRPIPE when suspended) and no
 // write is attempted, so the recovery request must be raised here.
 static bool SoundMixerAsyncAvailAllowsWrite(snd_pcm_sframes_t avail,
     snd_pcm_sframes_t period_size) {
   if (avail == -EPIPE || avail == -ESTRPIPE) {
-    g_async_pcm_recover_code.store(static_cast<int>(avail),
-        std::memory_order_release);
+    g_async_pcm_recover.Request(static_cast<int>(avail));
     return false;
   }
   if (avail < 0) {
@@ -499,19 +480,18 @@ bool SoundMixerTestAsyncAvailAllowsWrite(Si64 avail, Si64 period_size) {
 }
 
 int SoundMixerTestPeekAsyncRecoverCode() {
-  return g_async_pcm_recover_code.load(std::memory_order_acquire);
+  return g_async_pcm_recover.PeekCode();
 }
 
 // Delivered from SIGIO. Only preallocated buffers and atomics.
-// Underrun/suspend: set g_async_pcm_recover_code; UpdateSoundEngine prepares.
+// Underrun/suspend: request g_async_pcm_recover; UpdateSoundEngine prepares.
 static void SoundMixerCallback(snd_async_handler_t *ahandler) {
   snd_pcm_t *handle = snd_async_handler_get_pcm(ahandler);
   async_private_data *data = static_cast<async_private_data*>(
       snd_async_handler_get_callback_private(ahandler));
 
   // Wait for off-signal recover (pending code or in-progress prepare/prime).
-  if (g_async_pcm_recovering.load(std::memory_order_acquire)
-      || g_async_pcm_recover_code.load(std::memory_order_acquire) != 0) {
+  if (g_async_pcm_recover.MustWait()) {
     return;
   }
 
@@ -521,12 +501,12 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
       return;
     }
 
-    MixSound(true);
+    MixSound();
 
     unsigned char *out_buffer = (unsigned char *)data->samples.data();
     int err = snd_pcm_writei(handle, out_buffer, data->period_size);
     if (err == -EPIPE || err == -ESTRPIPE) {
-      g_async_pcm_recover_code.store(err, std::memory_order_release);
+      g_async_pcm_recover.Request(err);
       return;
     }
     if (err < 0 || err != data->period_size) {
@@ -543,7 +523,7 @@ static void SoundMixerCallback(snd_async_handler_t *ahandler) {
 // buffer + do_quit, then UpdateSoundEngine SetError + Log once). No Check/Fatal here.
 void SoundMixerThreadFunction() {
   while (!g_sound_mixer_state.do_quit.load()) {
-    MixSound(false);
+    MixSound();
 
     Si16 *out_buffer = g_data.samples.data();
     Si32 size_left = static_cast<Si32>(g_data.period_size);
@@ -754,8 +734,7 @@ void StartSoundMixer(const char* output_device_name) {
   g_data.tmp.resize(static_cast<size_t>(g_data.period_size) * 2, 0);
   g_data.error_message[0] = '\0';
   g_async_mixer_errno.store(0, std::memory_order_relaxed);
-  g_async_pcm_recover_code.store(0, std::memory_order_relaxed);
-  g_async_pcm_recovering.store(false, std::memory_order_relaxed);
+  g_async_pcm_recover.Reset();
   g_sound_mixer_state.do_quit.store(false);
 
   // Mix from the ALSA async handler (SIGIO) when available; it must touch
@@ -810,8 +789,7 @@ cleanup:
 
 void StopSoundMixer() {
   g_sound_mixer_state.do_quit.store(true);
-  g_async_pcm_recover_code.store(0, std::memory_order_release);
-  g_async_pcm_recovering.store(false, std::memory_order_release);
+  g_async_pcm_recover.Reset();
   if (is_sound_thread) {
     sound_thread.join();
     is_sound_thread = false;
@@ -827,18 +805,6 @@ void StopSoundMixer() {
     g_data.handle = nullptr;
   }
   UpdateSoundEngine();
-}
-
-bool SoundMixerShouldUseDedicatedThread() {
-  return is_sound_thread;
-}
-
-bool SoundMixerIsDedicatedThreadRunning() {
-  return is_sound_thread;
-}
-
-bool SoundMixerHasAsyncPcmHandler() {
-  return g_data.ahandler != nullptr;
 }
 
 void SoundPlayerImpl::Initialize(const char *input_device_system_name,
@@ -889,9 +855,10 @@ std::deque<AudioDeviceInfo> SoundPlayerImpl::GetDeviceList() {
 
 #ifdef ARCTIC_TEST_SIGIO_REPRO
 // Test-only hooks for tests_sigio_repro.
-// --legacy-unsafe: MixSound + malloc from a signal (old hazard, aborts).
-// --safe: MixSound(async_signal_safe=true) from a signal under heap stress
-//         (the fixed SIGIO callback, must survive).
+// --legacy-unsafe: MixSound + malloc from a signal (the old shape); aborts
+//         once a signal lands while main is marked inside malloc/free.
+// --safe: MixSound alone from a signal under heap stress
+//         (what the SIGIO callback calls, must survive).
 
 static std::atomic<bool> g_sigio_repro_main_in_heap{false};
 
@@ -913,7 +880,7 @@ void SoundMixerSigioReproInvokeLegacyUnsafeFromSignal() {
   const bool overlap =
       g_sigio_repro_main_in_heap.load(std::memory_order_relaxed);
   // Deliberately unsafe: same shape as the old SoundCheck-from-SIGIO path.
-  MixSound(false);
+  MixSound();
   const char *error_message = "SIGIO legacy-unsafe SoundCheck allocation";
   size_t size = 1 + strlen(error_message);
   char *full_message = static_cast<char *>(malloc(size));
@@ -931,17 +898,8 @@ void SoundMixerSigioReproInvokeLegacyUnsafeFromSignal() {
 }
 
 void SoundMixerSigioReproInvokeSafeMixFromSignal() {
-  // Same call the SIGIO callback makes: MixSound with async_signal_safe=true (no heap).
-  MixSound(true);
-}
-
-void SoundMixerSigioReproInvokeMixFromThread() {
-  MixSound(false);
-}
-
-// Keep old name as alias used by existing harness until main is updated.
-void SoundMixerSigioReproInvokeMixFromSignal() {
-  SoundMixerSigioReproInvokeLegacyUnsafeFromSignal();
+  // Same call the SIGIO callback makes (no heap).
+  MixSound();
 }
 #endif  // ARCTIC_TEST_SIGIO_REPRO
 

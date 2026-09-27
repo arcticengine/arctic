@@ -187,60 +187,18 @@ void test_sound_8bit_signed_vs_unsigned() {
       (int)max_sample);
 }
 
-// Linux keeps snd_async_add_pcm_handler (SIGIO) when ALSA supports it.
-// The handler must mix using only preallocated buffers / atomics, never
-// SoundCheck-style malloc. Dedicated thread is only the -ENOSYS fallback.
-// The old heap race is reproduced by tests_sigio_repro --legacy-unsafe; the
-// fixed signal path is exercised by tests_sigio_repro --safe.
-void test_sound_mixer_alsa_async_sigio_is_signal_safe() {
-#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
-  // The suite uses kHiddenWindow, which already starts the process-wide mixer.
-  // Do not Initialize/Deinitialize a second SoundPlayer: that would reopen PCM
-  // under a live thread and/or stop the global mixer for later tests.
-  const bool async_on = SoundMixerHasAsyncPcmHandler();
-  const bool thread_on = SoundMixerIsDedicatedThreadRunning();
-  if (g_sound_mixer_state.IsOk() && (async_on || thread_on)) {
-    TEST_CHECK_(!(async_on && thread_on),
-        "async handler and dedicated thread must not both be active");
-    TEST_CHECK_(SoundMixerShouldUseDedicatedThread() == thread_on,
-        "ShouldUseDedicatedThread must reflect the ENOSYS thread fallback");
-    if (async_on) {
-      TEST_MSG("async PCM handler registered (SIGIO mix)");
-    } else {
-      TEST_MSG("dedicated thread fallback (snd_async_add_pcm_handler ENOSYS)");
-    }
-  } else if (!g_sound_mixer_state.IsOk()) {
-    TEST_MSG("skipped runtime mixer check: mixer not ok");
-  } else {
-    TEST_MSG("skipped runtime mixer check: mixer not started");
-  }
-#else
-  TEST_CHECK_(!SoundMixerHasAsyncPcmHandler(),
-      "non-ALSA platforms do not register an async PCM handler");
-#endif
-}
-
 // SpmcArray capacity (kPoolCapacity) is larger than the number of
 // allocated SoundTasks (kPoolSize), so returning every task via pool.enqueue
 // succeeds without a deferred return queue.
 void test_sound_mixer_pool_capacity_accepts_full_return() {
-  // Pause the process-wide mixer so MixSound cannot steal tasks while this
-  // test drains and refills the pool. (Linux ALSA only.)
-#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
-  const bool mixer_was_running =
-      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
-  if (mixer_was_running) {
-    StopSoundMixer();
-  }
-#else
-  const bool mixer_was_running = false;
-  (void)mixer_was_running;
-#endif
-
+  // The pool has a single producer, the mixer. A state of its own has no
+  // mixer running, so this thread may take that role; the process-wide one
+  // must not be touched while its platform mixer returns tasks.
+  SoundMixerState state;
   SoundTask *taken[SoundMixerState::kPoolSize];
   Si32 taken_n = 0;
   for (; taken_n < SoundMixerState::kPoolSize; ++taken_n) {
-    SoundTask *t = g_sound_mixer_state.AllocateSoundTask();
+    SoundTask *t = state.AllocateSoundTask();
     if (!t) {
       break;
     }
@@ -249,12 +207,12 @@ void test_sound_mixer_pool_capacity_accepts_full_return() {
   TEST_CHECK_(taken_n == SoundMixerState::kPoolSize,
       "must take the entire SoundTask pool (%d), got %d",
       (int)SoundMixerState::kPoolSize, (int)taken_n);
-  TEST_CHECK_(g_sound_mixer_state.AllocateSoundTask() == nullptr,
+  TEST_CHECK_(state.AllocateSoundTask() == nullptr,
       "pool must be empty after taking all tasks");
 
   // Enqueue all tasks back into the oversized SpmcArray.
   for (Si32 i = 0; i < taken_n; ++i) {
-    TEST_CHECK_(g_sound_mixer_state.pool.enqueue(taken[i]),
+    TEST_CHECK_(state.pool.enqueue(taken[i]),
         "pool.enqueue must succeed for every returned SoundTask "
         "(kPoolCapacity=%d > kPoolSize=%d)",
         (int)SoundMixerState::kPoolCapacity, (int)SoundMixerState::kPoolSize);
@@ -263,7 +221,7 @@ void test_sound_mixer_pool_capacity_accepts_full_return() {
   SoundTask *reclaimed[SoundMixerState::kPoolSize];
   Si32 reclaimed_n = 0;
   for (; reclaimed_n < SoundMixerState::kPoolSize; ++reclaimed_n) {
-    SoundTask *t = g_sound_mixer_state.AllocateSoundTask();
+    SoundTask *t = state.AllocateSoundTask();
     if (!t) {
       break;
     }
@@ -273,29 +231,22 @@ void test_sound_mixer_pool_capacity_accepts_full_return() {
       "after full return the full pool must be allocatable again (%d), got %d",
       (int)SoundMixerState::kPoolSize, (int)reclaimed_n);
 
-  // Restore pool for later tests.
+  // The pool deletes the tasks it holds when the state is destroyed.
   for (Si32 i = 0; i < reclaimed_n; ++i) {
-    TEST_CHECK_(g_sound_mixer_state.pool.enqueue(reclaimed[i]),
+    TEST_CHECK_(state.pool.enqueue(reclaimed[i]),
         "cleanup pool.enqueue must succeed");
   }
-
-#if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
-  if (mixer_was_running) {
-    StartSoundMixer(nullptr);
-    g_sound_mixer_state.do_quit.store(false);
-    g_sound_mixer_state.is_ok.store(true);
-  }
-#endif
 }
 
 #if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
 // SIGIO errors must fill a preallocated ~1000-byte buffer with detail
-// before publishing the atomic; UpdateSoundEngine (via IsOk) promotes + logs once.
+// before publishing the atomic; UpdateSoundEngine promotes it and logs once.
 void test_sound_mixer_async_error_message_is_detailed() {
   SoundPlayer player;
   // Simulate a SIGIO failure (no signal raised): fill the preallocated buffer,
-  // then publish via the atomic. IsOk promotes that buffer into SetError.
+  // then publish via the atomic. UpdateSoundEngine lifts that into SetError.
   SoundMixerTestReportAsyncError(-EPIPE, "async pcm write failed");
+  UpdateSoundEngine();
   TEST_CHECK_(!player.IsOk(),
       "IsOk must be false after a reported async mixer error");
   const std::string desc = player.GetErrorDescription();
@@ -335,7 +286,7 @@ void test_sound_mixer_async_error_message_is_detailed() {
 // IsOk still reports success.
 void test_sound_mixer_async_underrun_from_avail_requests_recovery() {
   const bool mixer_was_running =
-      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
+      SoundMixerTestIsRunning();
   if (mixer_was_running) {
     StopSoundMixer();
   }
@@ -381,6 +332,7 @@ void test_sound_mixer_async_underrun_from_avail_requests_recovery() {
   TEST_CHECK_(SoundMixerTestPeekAsyncRecoverCode() == 0,
       "-EIO must not be treated as an underrun, got recover code %d",
       SoundMixerTestPeekAsyncRecoverCode());
+  UpdateSoundEngine();
   TEST_CHECK_(!player.IsOk(), "-EIO from avail_update must become an error");
   const std::string desc = player.GetErrorDescription();
   TEST_CHECK_(desc.find("avail update failed") != std::string::npos,
@@ -407,7 +359,7 @@ void test_sound_mixer_async_underrun_from_avail_requests_recovery() {
 // the platform mixer is stopped because the task queue has a single consumer.
 void test_sound_handle_takes_uid_before_publish() {
   const bool mixer_was_running =
-      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
+      SoundMixerTestIsRunning();
   if (mixer_was_running) {
     StopSoundMixer();
   }
@@ -635,17 +587,26 @@ void test_sound_copy_does_not_share_decoder() {
 // the decoder over instead of closing it; a game thread closes it later.
 void test_sound_mixer_retires_vorbis_decoder_to_game_thread() {
   Sound sound;
-  sound.Load(ToneOggPath().c_str(), false);
+  const std::string path = ToneOggPath();
+  sound.Load(path.c_str(), false);
+  TEST_CHECK_(sound.GetInstance() != nullptr, "tone.ogg must load: %s",
+      path.c_str());
+  if (!sound.GetInstance()) {
+    return;
+  }
   SoundMixerState state;
   SoundTask *task = state.AllocateSoundTask();
   TEST_CHECK(task != nullptr);
+  if (!task) {
+    return;
+  }
   task->sound = sound;
   task->sound.OpenStream();
   task->volume = 1.f;
   task->action = SoundTaskAction::kStart;
   task->is_playing = true;
   task->sound.GetInstance()->IncPlaying();
-  TEST_CHECK(state.AddSoundTask(task));
+  state.AddSoundTask(task);
 
   const Si32 kPeriod = 441;
   std::vector<float> mix_l(kPeriod, 0.f);
@@ -703,7 +664,11 @@ void test_sound_update_sound_engine_closes_retired_streams() {
   TEST_CHECK(task->sound.IsStreamOpen());
   g_sound_mixer_state.RetireStream(task);
   TEST_CHECK(!task->sound.IsStreamOpen());
-  g_sound_mixer_state.ReturnSoundTask(task);
+  // Only the mixer may put a task back into the single-producer pool, so the
+  // task goes through the queue as a stop that matches no playing sound.
+  task->action = SoundTaskAction::kStop;
+  task->target_uid = task->uid;
+  g_sound_mixer_state.AddSoundTask(task);
   TEST_CHECK_(g_sound_mixer_state.retired_stream_count.load() == 1,
       "the decoder must be parked, count %d",
       (int)g_sound_mixer_state.retired_stream_count.load());
@@ -718,7 +683,7 @@ void test_sound_update_sound_engine_closes_retired_streams() {
 // no longer opens it, so without that a streamed Vorbis sound is silent.
 void test_sound_start_sound_opens_vorbis_stream() {
   const bool mixer_was_running =
-      SoundMixerIsDedicatedThreadRunning() || SoundMixerHasAsyncPcmHandler();
+      SoundMixerTestIsRunning();
   if (mixer_was_running) {
     StopSoundMixer();
   }
@@ -760,3 +725,85 @@ void test_sound_start_sound_opens_vorbis_stream() {
   TEST_MSG("skipped: needs a stoppable platform mixer (Linux ALSA only)");
 }
 #endif
+
+// The SIGIO handler requests an underrun recovery, a game thread claims it
+// and prepares the PCM. From the request until the release the handler must
+// stay out: if it mixed then, it would consume the task queue and write the
+// PCM together with the game thread. The claim used to clear the request
+// before it raised the busy flag, and the handler read the flag before the
+// request, so both could see "nothing going on" in the middle of a claim.
+void test_sound_async_recover_gate_holds_handler_out() {
+  {
+    AsyncRecoverGate gate;
+    TEST_CHECK(!gate.MustWait());
+    TEST_CHECK_(gate.Claim() == 0, "nothing was requested");
+    TEST_CHECK_(!gate.MustWait(), "an empty claim must not hold the handler");
+    gate.Request(-EPIPE);
+    TEST_CHECK(gate.MustWait());
+    TEST_CHECK(gate.PeekCode() == -EPIPE);
+    TEST_CHECK_(gate.Claim() == -EPIPE, "the claim returns the request");
+    TEST_CHECK_(gate.PeekCode() == 0, "the claim takes the request");
+    TEST_CHECK_(gate.MustWait(), "a claimed recovery holds the handler");
+    TEST_CHECK_(gate.Claim() == 0, "a request is claimed once");
+    TEST_CHECK_(gate.MustWait(), "an empty claim must not end a recovery");
+    gate.Request(-EAGAIN);
+    gate.Release();
+    TEST_CHECK_(gate.MustWait(),
+        "a request made during the recovery must survive the release");
+    TEST_CHECK(gate.Claim() == -EAGAIN);
+    gate.Release();
+    TEST_CHECK(!gate.MustWait());
+    gate.Request(-EPIPE);
+    gate.Reset();
+    TEST_CHECK(!gate.MustWait());
+    TEST_CHECK(gate.PeekCode() == 0);
+  }
+
+  // The game thread marks its window with an odd window_seq: it opens after
+  // the request and closes before the release. The handler thread counts the
+  // times it was let in while both reads of window_seq name the same open
+  // window.
+  AsyncRecoverGate gate;
+  std::atomic<Ui64> window_seq{0};
+  std::atomic<bool> done{false};
+  std::atomic<Si32> let_in{0};
+  std::atomic<Si32> checks{0};
+  std::thread handler([&]() {
+    Si32 local_let_in = 0;
+    Si32 local_checks = 0;
+    while (!done.load(std::memory_order_acquire)) {
+      const Ui64 before = window_seq.load(std::memory_order_acquire);
+      const bool must_wait = gate.MustWait();
+      const Ui64 after = window_seq.load(std::memory_order_acquire);
+      if ((before & 1) != 0 && before == after) {
+        ++local_checks;
+        if (!must_wait) {
+          ++local_let_in;
+        }
+      }
+    }
+    let_in.store(local_let_in);
+    checks.store(local_checks);
+  });
+  const Si32 kRounds = 2000000;
+  Si32 wrong_claims = 0;
+  for (Si32 i = 0; i < kRounds; ++i) {
+    gate.Request(-EPIPE);
+    window_seq.fetch_add(1, std::memory_order_acq_rel);
+    if (gate.Claim() != -EPIPE) {
+      ++wrong_claims;
+    }
+    window_seq.fetch_add(1, std::memory_order_acq_rel);
+    gate.Release();
+  }
+  done.store(true, std::memory_order_release);
+  handler.join();
+  TEST_CHECK_(wrong_claims == 0, "%d claims lost their request",
+      (int)wrong_claims);
+  TEST_CHECK_(checks.load() > 1000,
+      "the handler thread must look inside open windows, %d looks",
+      (int)checks.load());
+  TEST_CHECK_(let_in.load() == 0,
+      "the handler was let in %d times of %d during a recovery",
+      (int)let_in.load(), (int)checks.load());
+}

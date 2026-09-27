@@ -1,16 +1,17 @@
-// SIGIO heap-race harness (path 2).
+// SIGIO heap-race harness.
 //
 // Historical bug: ALSA's snd_async_add_pcm_handler ran MixSound / SoundCheck
 // from SIGIO while those paths allocated; concurrent malloc/free on the main
 // thread could abort with "free(): double free detected in tcache".
 //
-// Path 2 keeps the async/SIGIO handler but makes production MixSound
-// async-signal-safe (preallocated buffers, no malloc/SoundCheck in-handler).
+// The SIGIO handler is kept, and production MixSound is async-signal-safe
+// there (preallocated buffers, no malloc/SoundCheck in the handler).
 //
 // Modes:
-//   --legacy-unsafe / --unsafe  old hazard → expect abort / REPRODUCED
-//   --safe                      path-2 MixSound from signal under heap stress
-//                               → expect clean exit
+//   --legacy-unsafe / --unsafe  old shape from a signal; aborts once a signal
+//                               lands while main is marked inside malloc/free
+//   --safe                      signal-safe MixSound from a signal under heap
+//                               stress, empty task queue → expect clean exit
 //
 // Build: make tests_sigio_repro
 // Run:   ./tools/alsa/run_sigio_heap_repro.sh
@@ -134,7 +135,7 @@ int RunSafe(long iterations) {
   }
 
   std::fprintf(stderr,
-      "tests_sigio_repro --safe: path-2 MixSound(async_signal_safe) from "
+      "tests_sigio_repro --safe: signal-safe MixSound from "
       "SIGUSR1 while main hammers malloc/free (expects clean exit)\n");
   // raise() delivers to this thread between heap ops — stresses the fixed
   // signal path without starving the main loop.
@@ -175,7 +176,7 @@ int main(int argc, char **argv) {
         "Usage: %s --legacy-unsafe | --unsafe | --safe\n"
         "  --legacy-unsafe / --unsafe  old MixSound+malloc from SIGUSR1 "
         "(expects abort)\n"
-        "  --safe                      path-2 signal-safe MixSound from "
+        "  --safe                      signal-safe MixSound from "
         "SIGUSR1 (expects exit 0)\n",
         argv[0]);
     return 1;

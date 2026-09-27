@@ -73,9 +73,11 @@ class SoundPlayer {
 
 /// @brief Per-frame sound engine maintenance, called by Swap on every
 /// platform; game thread only.
-/// Closes the Vorbis decoders the mixer has parked (the mixer must not free).
+/// Frees what the mixer has parked because it must not free it itself: Vorbis
+/// decoders and heap chunks of the task queue.
 /// On Linux ALSA async also recovers SIGIO-deferred underrun/suspend (prepare/
-/// resume), then lifts a hard deferred mixer error into IsOk and logs it once.
+/// resume), then lifts a hard deferred mixer error into the mixer state and
+/// logs it once. IsOk only reads that state.
 void UpdateSoundEngine();
 
 
@@ -137,18 +139,10 @@ extern template class MpmcBestEffortFixedSizeBufferFixedSizePool<8, 4080>;
 
 /// @}
 
-/// @brief True when the Linux mixer fell back to a dedicated thread because
-/// snd_async_add_pcm_handler returned -ENOSYS. False when the async/SIGIO
-/// handler (SIGIO) is registered or on platforms without ALSA async.
-bool SoundMixerShouldUseDedicatedThread();
-
-/// @brief True while the dedicated Linux mixer thread is running (ENOSYS fallback).
-bool SoundMixerIsDedicatedThreadRunning();
-
-/// @brief True if an ALSA async PCM handler is currently registered (SIGIO path).
-bool SoundMixerHasAsyncPcmHandler();
-
 #if defined(ARCTIC_PLATFORM_PI) && !defined(ARCTIC_NO_ALSA)
+/// Test helper: true while the process-wide mixer consumes the task queue,
+/// on the dedicated thread or in the SIGIO handler.
+bool SoundMixerTestIsRunning();
 /// Test helper: fill the preallocated SIGIO error buffer and publish it the
 /// same way the async handler would (no signal raised).
 void SoundMixerTestReportAsyncError(int err_code, const char *context);
@@ -173,12 +167,8 @@ void SoundMixerSigioReproSetMainThreadInHeap(bool in_heap);
 bool SoundMixerSigioReproPrepareBuffers();
 /// Test-only: old unsafe path (MixSound + malloc) from a signal handler.
 void SoundMixerSigioReproInvokeLegacyUnsafeFromSignal();
-/// Test-only: signal-safe MixSound(async_signal_safe) from a signal handler.
+/// Test-only: signal-safe MixSound from a signal handler.
 void SoundMixerSigioReproInvokeSafeMixFromSignal();
-/// Test-only: MixSound from a normal thread.
-void SoundMixerSigioReproInvokeMixFromThread();
-/// Deprecated alias for InvokeLegacyUnsafeFromSignal.
-void SoundMixerSigioReproInvokeMixFromSignal();
 #endif  // ARCTIC_TEST_SIGIO_REPRO
 
 }  // namespace arctic

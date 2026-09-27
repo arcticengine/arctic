@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Path 2 SIGIO harness:
-#   --legacy-unsafe → must REPRODUCE / abort (old heap-from-signal hazard)
+# SIGIO heap-race harness (see tools/alsa/README.md):
+#   --legacy-unsafe → must REPRODUCE / abort (a signal overlapped malloc/free)
 #   --safe          → must PASS (signal-safe MixSound under malloc stress)
 set -euo pipefail
 
@@ -18,7 +18,7 @@ if [[ ! -x "${BIN}" ]]; then
   exit 1
 fi
 
-echo "=== --safe (path-2 signal-safe MixSound; must PASS) ==="
+echo "=== --safe (signal-safe MixSound; must PASS) ==="
 "${BIN}" --safe
 echo "safe: PASS"
 
@@ -50,4 +50,4 @@ if [[ "${reproduced}" -ne 1 ]]; then
   exit 1
 fi
 echo "legacy-unsafe: REPRODUCED (old hazard demonstrated)"
-echo "All SIGIO path-2 checks completed."
+echo "All SIGIO checks completed."

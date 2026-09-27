@@ -74,9 +74,9 @@ void FixedBlockQueue_Gears::front_cleanup(I_FixedSizeAllocator *pool,
     return;
   }
 
-  // let's transfer the state to the next block
+  // let's transfer the state to the next block; back_offset counts in the
+  // back block, which stays where it is
   front_offset -= item_count;
-  back_offset -= item_count;
 
   BlockItems *next_block = front->next;
   pool->free(front);

@@ -25,11 +25,12 @@ endif ()
 # =============================================================================
 # SIGIO heap-race reproduction binary (Linux / ALSA only)
 # =============================================================================
-# Production StartSoundMixer always uses a dedicated thread. This separate
-# target reintroduces MixSound/SoundCheck-from-signal only under
-# ARCTIC_TEST_SIGIO_REPRO so the historical "free(): double free detected in
-# tcache" hazard can be demonstrated. It is NOT part of the default ./tests
-# suite. See tools/alsa/run_sigio_heap_repro.sh.
+# Production StartSoundMixer mixes from the ALSA SIGIO handler when ALSA
+# supports it and on a dedicated thread otherwise. This separate target calls
+# MixSound from a signal handler under ARCTIC_TEST_SIGIO_REPRO: the old
+# allocating shape (the historical "free(): double free detected in tcache"
+# hazard) and the current signal-safe one. It is NOT part of the default
+# ./tests suite. See tools/alsa/README.md.
 if (UNIX AND NOT APPLE AND NOT EMSCRIPTEN AND ALSA_FOUND)
   set(SIGIO_REPRO_SOURCES ${SRC_FILES})
   list(REMOVE_ITEM SIGIO_REPRO_SOURCES

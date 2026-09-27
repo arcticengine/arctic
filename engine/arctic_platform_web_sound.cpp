@@ -81,7 +81,7 @@ void SoundPlayer::Deinitialize() {
 }
 
 void UpdateSoundEngine() {
-  g_sound_mixer_state.CloseRetiredStreams();
+  g_sound_mixer_state.ReleaseMixerGarbage();
 }
 
 SoundPlayer::~SoundPlayer() {
@@ -169,19 +169,6 @@ void SoundPlayerImpl::Deinitialize() {
   if (is_initialized) {
     is_initialized = false;
   }
-}
-
-
-bool SoundMixerShouldUseDedicatedThread() {
-  return true;
-}
-
-bool SoundMixerIsDedicatedThreadRunning() {
-  return false;
-}
-
-bool SoundMixerHasAsyncPcmHandler() {
-  return false;
 }
 
 }  // namespace arctic

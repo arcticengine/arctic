@@ -50,6 +50,61 @@ namespace arctic {
 /// @addtogroup global_sound
 /// @{
 
+/// @brief Hands an underrun/suspend recovery over from the SIGIO mixer, which
+/// must not prepare the PCM itself, to a game thread. The handler requests
+/// it; a claim holds the handler out until Release, so the handler never
+/// mixes while the game thread prepares and primes the PCM.
+class AsyncRecoverGate {
+ public:
+  /// @brief SIGIO side: asks a game thread to recover with this ALSA code.
+  void Request(int code) {
+    code_.store(code, std::memory_order_release);
+  }
+
+  /// @brief SIGIO side: true while a recovery is pending or in progress.
+  bool MustWait() const {
+    // The request first: a claim clears it only after raising busy_.
+    return code_.load(std::memory_order_acquire) != 0
+        || busy_.load(std::memory_order_seq_cst);
+  }
+
+  /// @brief Game side: takes the pending request.
+  /// @return The requested code, 0 if there was none. A non-zero result
+  /// holds the handler out until Release.
+  int Claim() {
+    if (code_.load(std::memory_order_acquire) == 0) {
+      return 0;
+    }
+    // Raised before the request is cleared, so the handler sees one of them.
+    busy_.store(true, std::memory_order_seq_cst);
+    const int code = code_.exchange(0, std::memory_order_acq_rel);
+    if (code == 0) {
+      busy_.store(false, std::memory_order_release);
+    }
+    return code;
+  }
+
+  /// @brief Game side: ends the recovery a non-zero Claim started.
+  void Release() {
+    busy_.store(false, std::memory_order_release);
+  }
+
+  /// @brief The pending code, 0 if there is none.
+  int PeekCode() const {
+    return code_.load(std::memory_order_acquire);
+  }
+
+  /// @brief Drops a pending request and an unfinished claim.
+  void Reset() {
+    code_.store(0, std::memory_order_release);
+    busy_.store(false, std::memory_order_release);
+  }
+
+ private:
+  std::atomic<int> code_{0};
+  std::atomic<bool> busy_{false};
+};
+
 /// @brief Represents the listener's head in 3D space for sound positioning
 struct SoundListenerHead {
   /// @brief Represents an ear of the listener
@@ -170,11 +225,16 @@ struct SoundMixerState {
   std::atomic<bool> do_quit = ATOMIC_VAR_INIT(false);  ///< Flag to indicate if the mixer should quit
   std::atomic<bool> is_ok = ATOMIC_VAR_INIT(true);  ///< Flag to indicate if the mixer state is okay
   std::mutex error_mutex;  ///< Mutex for protecting error-related data
-  // 32 no-fallback blocks: SIGIO must never malloc. An exhausted pool makes try_enqueue fail.
+  // No-fallback: the mixer may run in SIGIO and must never touch the heap.
+  // When the pool is empty a game thread enqueueing a task takes a chunk from
+  // the heap; the mixer parks it once released, ReleaseMixerGarbage frees it.
   MpmcNoFallbackFixedSizeBufferFixedSizePool<32, 4080> page_pool;  ///< Pool for memory allocation
   MpscVirtInfArray<SoundTask*, TuneDeletePayloadFlag<true>, TuneMemoryPoolFlag<true>> tasks;  ///< Queue for sound tasks
   SpmcArray<SoundTask, true> pool;  ///< Pool for SoundTask objects
   static constexpr Si32 kPoolSize = 1024;  ///< Number of SoundTask objects allocated
+  // Every task in the queue may be a slot the mixer skips.
+  static_assert(kPoolSize <= kMpscMaxSkippedSlots,
+    "the tasks queue has no reserve for skipping every task");
   // SpmcArray slot capacity > kPoolSize so returning all live tasks via
   // pool.enqueue always has spare room (no deferred return queue).
   static constexpr Si32 kPoolCapacity = 2048;  ///< SpmcArray construction size
@@ -236,6 +296,13 @@ struct SoundMixerState {
     }
   }
 
+  /// @brief Game thread side: frees what the mixer must not free itself,
+  /// the parked decoders and the heap chunks of the task queue.
+  void ReleaseMixerGarbage() {
+    CloseRetiredStreams();
+    tasks.freeReleasedHeapChunks();
+  }
+
   /// @brief Releases a buffer at the specified index
   /// @param idx Index of the buffer to release
   void ReleaseBufferAt(Si32 idx) {
@@ -273,7 +340,7 @@ struct SoundMixerState {
   /// @brief Allocates a new SoundTask
   /// @return Pointer to the allocated SoundTask, nullptr if allocation fails
   SoundTask *AllocateSoundTask() {
-    CloseRetiredStreams();
+    ReleaseMixerGarbage();
     SoundTask *p = pool.dequeue();
     if (p) {
       p->Clear(next_uid.fetch_add(1));
@@ -281,98 +348,18 @@ struct SoundMixerState {
     return p;
   }
 
-  /// @brief Returns a SoundTask to the pool without enqueueing it.
-  void ReturnSoundTask(SoundTask *task) {
-    if (!task) {
-      return;
-    }
-    task->uid = SoundTask::kInvalidSoundTaskUid;
-    if (!pool.enqueue(task)) {
-      abort();
+  /// @brief Adds a SoundTask to the mixer queue. Game thread only.
+  /// @param buffer Pointer to the SoundTask to add, nullptr is ignored
+  void AddSoundTask(SoundTask *buffer) {
+    if (buffer) {
+      tasks.enqueue(buffer);
     }
   }
 
-  /// @brief Adds a SoundTask to the mixer queue.
-  /// @param buffer Pointer to the SoundTask to add
-  /// @return false if buffer is null or the page_pool cannot grow the MPSC;
-  ///         on false the caller still owns buffer and should ReturnSoundTask.
-  bool AddSoundTask(SoundTask *buffer) {
-    if (!buffer) {
-      return false;
-    }
-    return tasks.try_enqueue(buffer);
-  }
-
-  /// @brief Processes input tasks for the mixer thread, dequeues tasks and processes them. Tasks are processed in a loop until the queue is empty or a nullptr is encountered.
+  /// @brief Processes up to 512 queued tasks on the mixer side. Safe to call
+  /// from SIGIO: never grows buffers beyond the reserved capacity and never
+  /// calls delete.
   void InputTasksToMixerThread() {
-    for (Si32 i = 0; i < 512; ++i) {
-      SoundTask *task = tasks.dequeue();
-      if (task == nullptr) {
-        return;
-      }
-      switch (task->action) {
-      case SoundTaskAction::kStart:
-        buffers.push_back(task);
-        task = nullptr;
-        break;
-      case SoundTaskAction::kStop:
-        {
-          Ui64 task_uid = task->target_uid;
-          for (Si32 idx = 0; idx < (Si32)buffers.size(); ++idx) {
-            SoundTask *buffer = buffers[idx];
-            if (task_uid == SoundTask::kInvalidSoundTaskUid
-                ? buffer->sound.GetInstance() == task->sound.GetInstance()
-                : task_uid == buffer->uid) {
-              buffer->sound.GetInstance()->DecPlaying();
-              ReleaseBufferAt(idx);
-              idx--;
-            }
-          }
-        }
-        break;
-      case SoundTaskAction::kSetHeadLocation:
-        head.loc = task->location;
-        head.UpdateEars();
-        break;
-      case SoundTaskAction::kSetLocation:
-        {
-          Ui64 task_uid = task->target_uid;
-          for (size_t idx = 0; idx < buffers.size(); ++idx) {
-            SoundTask *buffer = buffers[idx];
-            if (task_uid == SoundTask::kInvalidSoundTaskUid
-                ? buffer->sound.GetInstance() == task->sound.GetInstance()
-                : task_uid == buffer->uid) {
-
-              buffer->location = task->location;
-            }
-          }
-        }
-        break;
-      case SoundTaskAction::kStart3d:
-        task->is_3d = true;
-        task->next_position = 0;
-        for (Si32 i = 0; i < 2; ++i) {
-          task->channel_playback_state[i].delay = 0.f;
-          task->channel_playback_state[i].play_position = 0.f;
-          task->channel_playback_state[i].acc = 0.f;
-        }
-        buffers.push_back(task);
-        task = nullptr;
-        break;
-      }
-      if (task) {
-        RetireStream(task);
-        if (!pool.enqueue(task)) {
-          // SoundTasks are pool-backed; spare SpmcArray capacity must accept them.
-          abort();
-        }
-      }
-    }
-  }
-
-  /// @brief Like InputTasksToMixerThread, but safe to call from SIGIO:
-  /// never grows buffers beyond the reserved capacity and never calls delete.
-  void InputTasksToMixerThreadAsyncSignalSafe() {
     for (Si32 i = 0; i < 512; ++i) {
       SoundTask *task = tasks.dequeue();
       if (task == nullptr) {
@@ -472,12 +459,8 @@ struct SoundMixerState {
   /// @param tmp Temporary buffer for processing
   template <class T>
   void MixSound(T *mix_l, T *mix_r, Si32 mix_stride, Si32 buffer_samples_per_channel,
-      Si16 *tmp, bool async_signal_safe = false) {
-    if (async_signal_safe) {
-      InputTasksToMixerThreadAsyncSignalSafe();
-    } else {
-      InputTasksToMixerThread();
-    }
+      Si16 *tmp) {
+    InputTasksToMixerThread();
     float master_volume_16 = static_cast<float>(
       this->master_volume.load() / 32767.0);
 

@@ -91,8 +91,8 @@ class FixedBlockQueue_Gears {
   BlockItems *getNewBlock(I_FixedSizeAllocator *pool) {
     void *block = pool->alloc();
     if (block == nullptr) {
-      // No-fallback pools must not exhaust on the skip/retry path; abort
-      // rather than malloc (SIGIO-safe invariant for the mixer pool).
+      // The caller may be a signal handler, so there is no heap to fall back
+      // on; the pool must be sized for the worst case.
       abort();
     }
     return new(block) BlockItems;
@@ -118,6 +118,11 @@ class FixedBlockQueue_Gears {
 template<typename ElemType>
 class FixedBlockQueue : protected FixedBlockQueue_Gears {
  public:
+  /// @brief The pool block size that holds item_count elements.
+  static constexpr size_t blockSizeFor(size_t item_count) {
+    return sizeof(BlockItems) + item_count * sizeof(ElemType);
+  }
+
   /// @brief Pushes an element to the back of the queue.
   /// @param elem The element to push.
   /// @param pool The memory pool allocator.

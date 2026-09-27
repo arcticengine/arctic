@@ -5,8 +5,8 @@
 #
 # Note: userspace null/file PCMs return -ENOSYS for snd_async_add_pcm_handler,
 # so StartSoundMixer falls back to the dedicated thread here. On real hardware
-# the async/SIGIO path is used; its MixSound callback is async-signal-safe
-# (path 2). Validate that callback with: tests_sigio_repro --safe
+# the async/SIGIO path is used; its MixSound callback is async-signal-safe.
+# Exercise it with: tests_sigio_repro --safe
 
 pcm.!default {
     type plug
